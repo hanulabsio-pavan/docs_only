@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SETU: 24-Month Startup Execution Roadmap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a3a52 0%, #2c5aa0 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 0.95em;
+            opacity: 0.85;
+            font-style: italic;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .executive-summary {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%);
+            border-left: 5px solid #d4a574;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+
+        .executive-summary h2 {
+            color: #1a3a52;
+            margin-bottom: 15px;
+        }
+
+        .summary-box {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 3px;
+            border-left: 4px solid #2c5aa0;
+        }
+
+        .summary-box strong {
+            color: #2c5aa0;
+        }
+
+        h2 {
+            color: #1a3a52;
+            font-size: 1.8em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #d4a574;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #2c5aa0;
+            font-size: 1.3em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        h3::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #d4a574;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+
+        .phase {
+            background: #f8f9fa;
+            padding: 30px;
+            margin: 30px 0;
+            border-radius: 8px;
+            border-left: 5px solid #2c5aa0;
+        }
+
+        .phase h2 {
+            margin-top: 0;
+        }
+
+        .phase-badge {
+            display: inline-block;
+            background: #2c5aa0;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .phase-badge.phase1 { background: #2c5aa0; }
+        .phase-badge.phase2 { background: #5a7bad; }
+        .phase-badge.phase3 { background: #8c9dbc; }
+        .phase-badge.phase4 { background: #a8b8cc; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, #1a3a52 0%, #2c5aa0 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:nth-child(even) {
+            background: #f5f7fa;
+        }
+
+        tr:hover {
+            background: #eef2f8;
+        }
+
+        .deliverable-box {
+            background: #f0f8ff;
+            border-left: 4px solid #2c5aa0;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 3px;
+        }
+
+        .deliverable-box h4 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+
+        .deliverable-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .deliverable-box li {
+            padding: 5px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .deliverable-box li::before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            color: #2c5aa0;
+            font-weight: bold;
+        }
+
+        .de-risk {
+            background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
+            border-left: 5px solid #d9534f;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .de-risk h3 {
+            color: #c9302c;
+        }
+
+        .risk-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #d9534f;
+            border-radius: 3px;
+        }
+
+        .risk-rank {
+            display: inline-block;
+            background: #d9534f;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+
+        .checklist {
+            background: #f0f8ff;
+            border-left: 4px solid #5cb85c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .checklist h3 {
+            color: #5cb85c;
+        }
+
+        .checklist ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .checklist li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .checklist li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #5cb85c;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .timeline-diagram {
+            display: flex;
+            justify-content: space-between;
+            margin: 40px 0;
+            position: relative;
+        }
+
+        .timeline-item {
+            flex: 1;
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            margin: 0 5px;
+            border-radius: 5px;
+            border-top: 4px solid #2c5aa0;
+        }
+
+        .timeline-item h4 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+
+        .timeline-item p {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .financial-table {
+            margin: 20px 0;
+        }
+
+        .financial-highlight {
+            background: linear-gradient(90deg, #e8f4f8 0%, #d4e8f0 100%);
+            color: #1a3a52;
+            font-weight: 600;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #f0f1f3 100%);
+            padding: 20px;
+            border-radius: 8px;
+            border-top: 4px solid #2c5aa0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-card h4 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .metric-card .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1a3a52;
+            margin: 10px 0;
+        }
+
+        .metric-card p {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .founder-note {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%);
+            border-left: 5px solid #d4a574;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+            font-style: italic;
+            color: #555;
+        }
+
+        .founder-note::before {
+            content: "💡 ";
+            font-size: 1.2em;
+        }
+
+        .roadmap-summary {
+            background: #f8f9fa;
+            border: 2px solid #2c5aa0;
+            padding: 30px;
+            margin: 40px 0;
+            border-radius: 8px;
+        }
+
+        .roadmap-summary h3 {
+            color: #2c5aa0;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.5em;
+        }
+
+        .roadmap-box {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 5px solid #2c5aa0;
+            border-radius: 3px;
+        }
+
+        .roadmap-box h4 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+
+        .roadmap-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .roadmap-box li {
+            padding: 5px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .roadmap-box li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #5cb85c;
+            font-weight: bold;
+        }
+
+        .appendix {
+            background: #f5f5f5;
+            padding: 30px;
+            margin-top: 40px;
+            border-top: 3px solid #d4a574;
+        }
+
+        .appendix h2 {
+            border-bottom: 2px solid #d4a574;
+        }
+
+        footer {
+            background: #1a3a52;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .risk-high { color: #d9534f; font-weight: bold; }
+        .risk-med { color: #f0ad4e; font-weight: bold; }
+        .risk-low { color: #5cb85c; font-weight: bold; }
+
+        .section-divider {
+            width: 60%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #d4a574, transparent);
+            margin: 40px auto;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+
+            .metric-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        print-button {
+            display: block;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .print-btn {
+            background: #2c5aa0;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .print-btn:hover {
+            background: #1a3a52;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+            }
+            .print-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 SETU: 24-Month Startup Execution Roadmap</h1>
+            <p><strong>Premium IoT Home Automation System | India Market Entry</strong></p>
+            <p class="subtitle">Transitioning from IC Design to Consumer Hardware Success (2025–2027)</p>
+        </header>
+
+        <div class="content">
+            <!-- Print Button -->
+            <div style="text-align: center; margin: 20px 0;">
+                <button class="print-btn" onclick="window.print()">🖨️ Print / Export as PDF</button>
+            </div>
+
+            <!-- Executive Summary -->
+            <div class="executive-summary">
+                <h2>Executive Summary</h2>
+                <div class="summary-box">
+                    <strong>🎯 Mission:</strong> Launch SETU (premium capacitive touch panels with voice control) in H2 2027 with certified, manufacturable hardware and a validated go-to-market strategy.
+                </div>
+                <div class="summary-box">
+                    <strong>⚠️ Core De-Risking Strategy:</strong>
+                    <ol style="margin-top: 10px; margin-left: 20px;">
+                        <li><strong>Certification first</strong> (BIS/WPC) — regulatory delay = 4–6 months slippage</li>
+                        <li><strong>Manufacturing yield</strong> — PCB complexity & touch calibration for Indian electrical boxes</li>
+                        <li><strong>Voice integration</strong> — vendor lock-in and privacy/data handling in India</li>
+                        <li><strong>Team & execution</strong> — transitioning from IC design to product entrepreneurship</li>
+                    </ol>
+                </div>
+                <h3 style="margin-top: 20px;">Key Metrics by Phase</h3>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <h4>Phase 1</h4>
+                        <p>Prototype validation + team formation</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Phase 2</h4>
+                        <p>Certifications initiated + manufacturing DFM</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Phase 3</h4>
+                        <p>Pilot production + beta customer feedback</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Phase 4</h4>
+                        <p>Scale to 1K+ units/month + launch</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- PHASE 1 -->
+            <div class="phase">
+                <span class="phase-badge phase1">PHASE 1</span>
+                <h2>Foundation & Prototyping (Months 1–6, Q1–Q2 2025)</h2>
+                <p style="font-style: italic; color: #666; margin-bottom: 20px;">"Get the engineering and business fundamentals right"</p>
+
+                <h3>📱 Product & Engineering</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Microarchitecture Finalization</h4>
+                <p><strong>Touch Controller Spec:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Define capacitive touch IC (e.g., TI MSP430 + CAP1296 or STM32L0 with touch library)</li>
+                    <li>Sensor array: 4–12 zones + gesture detection (swipe, long-press)</li>
+                    <li>Calibration routine for Indian 230V electrical box EMI environment (critical de-risk)</li>
+                    <li>Power budget: &lt;2W quiescent (24/7 operation)</li>
+                </ul>
+
+                <p style="margin-top: 20px;"><strong>IoT Bridge (WiFi/Zigbee/Matter):</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Select SoC: ESP32-S3 or nRF5340 (Matter-ready for future)</li>
+                    <li>Decision: WiFi-first (simpler) vs. Zigbee mesh (resilient). <span style="background: #fff3cd; padding: 2px 6px; border-radius: 3px;">Recommend WiFi Phase 1, Zigbee Phase 3</span></li>
+                    <li>OTA firmware capability (non-negotiable for startup iteration)</li>
+                </ul>
+
+                <p style="margin-top: 20px;"><strong>Theme Engine (Voice Integration):</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Partner or open-source: OpenWakeWord + EdgeML (TensorFlow Lite)</li>
+                    <li>Supported themes: Devotional, Party, Movie, Sleep, Morning</li>
+                    <li>Initial launch: Pre-recorded voice prompts (Phase 1 MVP). Full voice assistant = Phase 3 + legal complexity</li>
+                    <li>Privacy first: All voice processing on-device (no cloud for Phase 1)</li>
+                </ul>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">PCB Design & Thermal Considerations</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Aspect</th>
+                        <th>Details</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Board Size</strong></td>
+                        <td>140mm × 100mm (fits Havells/Schneider/Legrand Indian boxes)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Power Input</strong></td>
+                        <td>230VAC with 5V converter for logic</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Critical Design</strong></td>
+                        <td>EMI shielding for touch IC in high-EMI environment (India's electrical infrastructure)</td>
+                    </tr>
+                </table>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Manufacturing Readiness (Early DFM)</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Partner with Pune/Bangalore PCB vendor for 4-layer design (cost: ₹2–4K per unit at 100qty)</li>
+                    <li>Touchscreen calibration: Develop automated test fixture (in-house, Phase 1)</li>
+                    <li>Assembly plan: Contract manufacturer vs. in-house (Phase 2 decision)</li>
+                </ul>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>Working prototype with touch + WiFi + theme engine</li>
+                        <li>EMI compliance report (in-house testing)</li>
+                        <li>PCB + BOM finalized</li>
+                        <li>Thermal modeling complete</li>
+                    </ul>
+                </div>
+
+                <h3>🛠️ Operations & Setup</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Tools & Infrastructure</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Tool</th>
+                        <th>Purpose</th>
+                        <th>Cost (INR)</th>
+                        <th>Timeline</th>
+                    </tr>
+                    <tr>
+                        <td><strong>EDA</strong></td>
+                        <td>Altium/KiCad (KiCad = free)</td>
+                        <td>0–15K</td>
+                        <td>Week 1</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PLM/Lifecycle</strong></td>
+                        <td>Jira + Confluence</td>
+                        <td>5K/yr</td>
+                        <td>Week 2</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Firmware</strong></td>
+                        <td>VS Code + ESP-IDF</td>
+                        <td>Free</td>
+                        <td>Week 1</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Testing</strong></td>
+                        <td>Oscilloscope, function gen</td>
+                        <td>40K</td>
+                        <td>Month 2</td>
+                    </tr>
+                </table>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Team Building (Months 2–4)</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Role</th>
+                        <th>Details</th>
+                        <th>Timeline</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Firmware Engineer</strong></td>
+                        <td>1–2 FTE | Embedded C, WiFi/BLE stack | Salary: ₹12–18L/yr</td>
+                        <td>Month 2–3</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PCB Layout Engineer</strong></td>
+                        <td>Contract, 6–9 months | High-speed digital + power | Rate: ₹50–80K/mo</td>
+                        <td>Month 2–3</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Operations/QA</strong></td>
+                        <td>0.5 FTE | Test protocol setup | Salary: ₹8–12L/yr</td>
+                        <td>Month 3–4</td>
+                    </tr>
+                </table>
+
+                <div class="founder-note">
+                    <strong>Avoid:</strong> Full-stack product managers, marketing teams. Use advisors instead in Phase 1.
+                </div>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Legal & Compliance Foundation</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Company Setup:</strong> Pvt Ltd (if raising capital) or LLP (bootstrapped). Lawyer cost: ₹20–30K</li>
+                    <li><strong>IP Protection:</strong>
+                        <ul style="margin-top: 10px;">
+                            <li>File provisional patent for "theme-based voice control UI" (₹30–50K, India)</li>
+                            <li>Trademark: "SETU" in Class 9/11 (₹15–25K, India)</li>
+                            <li><strong>Timeline:</strong> Do this NOW. Patent prosecution takes 18 months; filing delay risks copying</li>
+                        </ul>
+                    </li>
+                    <li><strong>Supplier Agreements:</strong> Begin NDAs with PCB vendors, chip suppliers</li>
+                </ul>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>Company incorporation + GST registration</li>
+                        <li>Patent provisional filed</li>
+                        <li>Core team (firmware + PCB engineer) in place or committed</li>
+                        <li>Lab setup with test equipment</li>
+                    </ul>
+                </div>
+
+                <h3>💼 Business & Market</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Brand Foundation (SETU)</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Positioning:</strong> "Intelligence in Silence" (premium, understated, Indian)</li>
+                    <li><strong>NOT:</strong> "Smart Home for everyone" (vs. Xiaomi/Kasa/Philips)</li>
+                    <li><strong>YES:</strong> "Handcrafted lighting + ambiance for discerning homes"</li>
+                    <li><strong>Target:</strong> Upper-middle class (₹50L+ annual income), metros + Tier 1 cities</li>
+                </ul>
+
+                <p style="margin-top: 20px;"><strong>Visual Identity:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Logo: Minimalist, inspired by Indian "Setu" (bridge) — connecting spaces</li>
+                    <li>Color: Deep blue + gold accents (premium, Indian cultural aesthetic)</li>
+                    <li>Launch a simple 1-page website (Webflow/Notion) to seed interest</li>
+                </ul>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Market Validation (0-Customer Learning)</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Element</th>
+                        <th>Details</th>
+                    </tr>
+                    <tr>
+                        <td><strong>ICP (Ideal Customer Profile)</strong></td>
+                        <td>Age: 35–55 | Income: ₹50L–₹2Cr | Tech-savvy professionals | Value premium aesthetics</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Validation Method</strong></td>
+                        <td>Interview 20–30 architects/designers in Bangalore, Mumbai, Delhi</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Key Learning</strong></td>
+                        <td>Does theme-based modes resonate? Is voice secondary?</td>
+                    </tr>
+                </table>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>Brand book (logo, colors, positioning statement)</li>
+                        <li>ICP validated with 20+ customer interviews</li>
+                        <li>Draft GTM strategy document</li>
+                        <li>Simple landing page (webform to capture interest)</li>
+                    </ul>
+                </div>
+
+                <div class="checklist">
+                    <h3>Phase 1 De-Risking Checklist</h3>
+                    <ul>
+                        <li><strong>Tech risk:</strong> Can you achieve &lt;5% touch false-trigger rate in 230V box? (Test by Month 5)</li>
+                        <li><strong>Team risk:</strong> Is firmware engineer available by Month 3? (Hire by Month 2 if not)</li>
+                        <li><strong>Manufacturing risk:</strong> Can your PCB vendor deliver in 8 weeks at target cost? (Qualify by Month 4)</li>
+                        <li><strong>Regulatory risk:</strong> Start certification discussions with TÜV India (BIS). Pre-filing by Month 6.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- PHASE 2 -->
+            <div class="phase">
+                <span class="phase-badge phase2">PHASE 2</span>
+                <h2>Validation & Certification Prep (Months 7–12, Q3–Q4 2025)</h2>
+                <p style="font-style: italic; color: #666; margin-bottom: 20px;">"Prove manufacturability and start regulatory compliance"</p>
+
+                <h3>📱 Product & Engineering</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Prototype Validation (v2 Hardware)</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>20 units: Thermal validation, touch reliability over 1,000 cycles</li>
+                    <li>Power consumption audit: Target &lt;2W quiescent, &lt;15W peak</li>
+                    <li>Electrical safety: High-voltage isolation, leakage current testing (prep for BIS)</li>
+                    <li>PCB failure mode analysis (FMEA): Identify weakest components</li>
+                </ul>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Design for Manufacturing (DFM) & Certification Readiness</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Activity</th>
+                        <th>Timeline</th>
+                        <th>Cost (INR)</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Manufacturing Partner Selection</strong></td>
+                        <td>Months 7–9</td>
+                        <td>0</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DFM Review</strong></td>
+                        <td>Months 8–9</td>
+                        <td>₹50–100K</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BIS Pre-Testing</strong></td>
+                        <td>Months 9–11</td>
+                        <td>₹1.5–2.5L</td>
+                    </tr>
+                    <tr>
+                        <td><strong>WPC Certification</strong></td>
+                        <td>Months 10–12</td>
+                        <td>₹50–80K</td>
+                    </tr>
+                </table>
+
+                <div class="founder-note">
+                    <strong>BIS Certification Timeline:</strong> 3–4 months for pre-testing + corrections. This is your longest lead-time item. Start Month 7.
+                </div>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>20-unit prototype batch tested</li>
+                        <li>Manufacturing partner selected + DFM review complete</li>
+                        <li>BIS pre-testing protocol submitted to TÜV India</li>
+                        <li>WPC certification initiated</li>
+                        <li>Firmware v1.0 frozen for testing</li>
+                    </ul>
+                </div>
+
+                <h3>🛠️ Operations & Setup</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Manufacturing Readiness</h4>
+                <p style="margin-top: 10px;"><strong>Component Sourcing:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Lock suppliers for touch IC, WiFi module, MCU (12-month agreements)</li>
+                    <li>Negotiate volume discounts (target: ₹1.5–2K COGS for electronics by 500qty)</li>
+                    <li>Supply chain risk: Maintain 2–3 alternate suppliers for critical components</li>
+                </ul>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Compliance & Legal</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Certification</th>
+                        <th>Timeline</th>
+                        <th>Cost (INR)</th>
+                        <th>Notes</th>
+                    </tr>
+                    <tr>
+                        <td><strong>BIS</strong></td>
+                        <td>3–4 months</td>
+                        <td>₹1.5–2.5L</td>
+                        <td>Engage TÜV India. Electrical safety for low-voltage devices.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>WPC</strong></td>
+                        <td>6–8 weeks</td>
+                        <td>₹50–80K</td>
+                        <td>WiFi certification. Straightforward with certified modules.</td>
+                    </tr>
+                </table>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>Component suppliers locked (12–24 month agreements)</li>
+                        <li>Manufacturing SLAs defined</li>
+                        <li>Customer support infrastructure live</li>
+                        <li>Knowledge base (100 FAQs) created</li>
+                        <li>Pitch deck finalized (if fundraising)</li>
+                    </ul>
+                </div>
+
+                <h3>💼 Business & Market</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Customer Validation (Design Your Product with Them)</h4>
+                <p style="margin-top: 10px;"><strong>Alpha User Program:</strong> Recruit 5–8 power users (architects, builders, early-adopters)</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Provide free prototypes for 3-month trial</li>
+                    <li>Collect feedback on theme preferences, ease of installation, support needs</li>
+                    <li>Key learning: Does voice control + theme modes resonate? Or is pure automation enough?</li>
+                </ul>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Go-to-Market Finalization</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Option</th>
+                        <th>Details</th>
+                        <th>Recommendation</th>
+                    </tr>
+                    <tr>
+                        <td><strong>A: Architect</strong></td>
+                        <td>Direct-to-architect (high touch, ₹20K+ per panel, Tier 1)</td>
+                        <td>✓ Phase 2 Start</td>
+                    </tr>
+                    <tr>
+                        <td><strong>B: B2B2C</strong></td>
+                        <td>Via Havells/Schneider premium retailers (volume, wider reach)</td>
+                        <td>Phase 4</td>
+                    </tr>
+                    <tr>
+                        <td><strong>C: Hybrid</strong></td>
+                        <td>Architects initially, scale via retailers later</td>
+                        <td>Phase 3+</td>
+                    </tr>
+                </table>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>Alpha user program launched (5–8 testers)</li>
+                        <li>Channel strategy finalized (architect vs. retailer vs. hybrid)</li>
+                        <li>Pricing model validated with 3–5 potential customers</li>
+                        <li>Demo video + case study created</li>
+                        <li>CRM + lead tracking system in place</li>
+                    </ul>
+                </div>
+
+                <div class="checklist">
+                    <h3>Phase 2 De-Risking Checklist</h3>
+                    <ul>
+                        <li><strong>Certification risk:</strong> Are BIS pre-tests passing? Any design changes needed? (Must know by Month 11)</li>
+                        <li><strong>Manufacturing risk:</strong> Can contract partner deliver first 100 units on schedule? (Proof run by Month 11)</li>
+                        <li><strong>Market risk:</strong> Do architects actually want this product? (Validate with 5+ inquiries by Month 12)</li>
+                        <li><strong>Supply chain risk:</strong> Are component suppliers committed? Any long-lead items? (Secure by Month 10)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- PHASE 3 -->
+            <div class="phase">
+                <span class="phase-badge phase3">PHASE 3</span>
+                <h2>Manufacturing & Market Entry (Months 13–18, Q1–Q2 2026)</h2>
+                <p style="font-style: italic; color: #666; margin-bottom: 20px;">"Certify, produce pilot batch, validate product-market fit"</p>
+
+                <h3>📱 Product & Engineering</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Certification Completion & Production Release</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>BIS Certification:</strong> Should be finalized by Month 13</li>
+                    <li><strong>WPC Approval:</strong> Expected by Month 14</li>
+                    <li><strong>Firmware Finalization:</strong> v1.1 release with bug fixes + performance tuning</li>
+                </ul>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Pilot Production (500–1,000 units)</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Metric</th>
+                        <th>Target</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Unit Volume</strong></td>
+                        <td>500 units (aim for 95%+ yield)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cost per Unit</strong></td>
+                        <td>₹3.5–4K (electronics + assembly + packaging)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Quality Metric</strong></td>
+                        <td>&lt;1% defect rate, 100% functionality pass</td>
+                    </tr>
+                </table>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>BIS + WPC certifications finalized</li>
+                        <li>500-unit production batch completed</li>
+                        <li>&lt;1% defect rate achieved</li>
+                        <li>Firmware v1.1 stable</li>
+                        <li>Product roadmap doc shared with team</li>
+                    </ul>
+                </div>
+
+                <h3>🛠️ Operations & Setup</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Team Scaling</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Role</th>
+                        <th>Details</th>
+                        <th>Salary (INR)</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Customer Support Manager</strong></td>
+                        <td>1 FTE | Handle architect/installer Q&A, troubleshooting</td>
+                        <td>₹8–10L/yr</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Manufacturing Engineer</strong></td>
+                        <td>1 FTE | Process optimization, vendor management, SQA</td>
+                        <td>₹12–15L/yr</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Marketing/Business Dev</strong></td>
+                        <td>1 FTE | Alpha follow-up, reference accounts, case studies</td>
+                        <td>₹10–12L/yr</td>
+                    </tr>
+                </table>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Support Infrastructure</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Set up toll-free number + email (support@setu.in)</li>
+                    <li>Create knowledge base (50–100 FAQs): Installation, WiFi setup, theme customization</li>
+                    <li>SLA targets: &lt;2hr email response, &lt;24hr issue resolution</li>
+                </ul>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>Leadership team (support + manufacturing + marketing) hired</li>
+                        <li>Regional support centers operational</li>
+                        <li>Distribution logistics finalized</li>
+                        <li>Series A funding (if applicable) closed or secured</li>
+                    </ul>
+                </div>
+
+                <h3>💼 Business & Market</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Product-Market Fit Validation</h4>
+                <p style="margin-top: 10px;"><strong>Launch Tier 1 Cities (Select):</strong> Bangalore, Mumbai, Delhi, Pune</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Partner with 2–3 premium retailers or architects in each city</li>
+                    <li>Target: 50–100 units sold in first 2 months</li>
+                    <li>NPS survey: Target &gt;50 (excellent for hardware)</li>
+                </ul>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Marketing Metrics</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Metric</th>
+                        <th>Target</th>
+                        <th>Timeline</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Units Sold</strong></td>
+                        <td>50–100</td>
+                        <td>First 2 months</td>
+                    </tr>
+                    <tr>
+                        <td><strong>NPS Score</strong></td>
+                        <td>&gt;50</td>
+                        <td>Month 15–16</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Case Studies</strong></td>
+                        <td>3–5 published</td>
+                        <td>Month 17–18</td>
+                    </tr>
+                </table>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>Tier 1 market entry completed (50–100 units sold)</li>
+                        <li>3–5 case studies published</li>
+                        <li>Customer NPS &gt;50 achieved</li>
+                        <li>Brand community (1,000+ members) established</li>
+                        <li>Retailer partnership discussions initiated</li>
+                    </ul>
+                </div>
+
+                <div class="checklist">
+                    <h3>Phase 3 De-Risking Checklist</h3>
+                    <ul>
+                        <li><strong>Production risk:</strong> Did 500-unit batch hit &lt;1% defect rate? (Must verify by Month 14)</li>
+                        <li><strong>Market risk:</strong> Did first 50 customers love the product? (NPS&gt;40 by Month 16)</li>
+                        <li><strong>Channel risk:</strong> Are architects actually buying? (5+ sales by Month 17, not just prototypes)</li>
+                        <li><strong>Team risk:</strong> Have you retained firmware + manufacturing engineers? (High attrition risk)</li>
+                        <li><strong>Cash risk:</strong> Is working capital sufficient for 2-month inventory? (Burn rate check by Month 15)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- PHASE 4 -->
+            <div class="phase">
+                <span class="phase-badge phase4">PHASE 4</span>
+                <h2>Scale & 2027 Launch (Months 19–24, Q3–Q4 2026)</h2>
+                <p style="font-style: italic; color: #666; margin-bottom: 20px;">"Prove unit economics, scale manufacturing, execute full market launch"</p>
+
+                <h3>📱 Product & Engineering</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Product Maturation</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Firmware v2.0:</strong> New features validated in Phase 3
+                        <ul style="margin-top: 10px;">
+                            <li>Multi-panel coordination (sync lighting across rooms)</li>
+                            <li>Cloud app (optional, privacy-first design)</li>
+                            <li>Alexa/Google Home integration (if market demand confirmed)</li>
+                            <li>Zigbee support (for mesh reliability)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Hardware Variants (Optional):</strong> 4-gang, 2-gang panels, wireless remotes (based on Phase 3 demand)</li>
+                    <li><strong>Quality & Reliability:</strong> Aim for 5,000+ operating hours MTBF | 2-year warranty</li>
+                </ul>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Manufacturing Scale (1,000–5,000 units/month)</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Aspect</th>
+                        <th>Details</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Capacity</strong></td>
+                        <td>Validate current CM can handle 5K units/month or identify 2nd CM</td>
+                    </tr>
+                    <tr>
+                        <td><strong>COGS Target</strong></td>
+                        <td>₹2.8–3.5K/unit (via volume leverage + process optimization)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Inventory</strong></td>
+                        <td>Secure 6-month component buffer (₹30–40L capex)</td>
+                    </tr>
+                </table>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>Firmware v2.0 released</li>
+                        <li>5,000 units/month manufacturing capacity validated</li>
+                        <li>COGS reduced to ₹2.8–3.5K</li>
+                        <li>Warranty + support SLAs finalized</li>
+                    </ul>
+                </div>
+
+                <h3>🛠️ Operations & Setup</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Organization Buildout</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Role</th>
+                        <th>Details</th>
+                        <th>Salary (INR)</th>
+                    </tr>
+                    <tr>
+                        <td><strong>VP Engineering</strong></td>
+                        <td>Firmware, PCB, manufacturing oversight</td>
+                        <td>₹20–25L/yr</td>
+                    </tr>
+                    <tr>
+                        <td><strong>VP Operations</strong></td>
+                        <td>Manufacturing, supply chain, QA</td>
+                        <td>₹18–22L/yr</td>
+                    </tr>
+                    <tr>
+                        <td><strong>VP Sales/Marketing</strong></td>
+                        <td>Channel expansion, brand, customer acquisition</td>
+                        <td>₹15–20L/yr</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CFO/Finance</strong></td>
+                        <td>Accounting, fundraising, financial planning (part-time initially)</td>
+                        <td>₹12–15L/yr (part-time)</td>
+                    </tr>
+                </table>
+
+                <p style="margin-top: 20px;"><strong>Headcount by end of Phase 4:</strong> 15–20 people | <strong>Annual payroll:</strong> ₹1.5–2Cr</p>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Post-Launch Operations</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Warranty & Support:</strong> Regional service centers (Bangalore, Mumbai, Delhi) | Cost: ₹50–100K/month per city</li>
+                    <li><strong>Logistics:</strong> Warehouses in 4–6 metros | 2-day delivery within metros, 5-day pan-India</li>
+                    <li><strong>Regulatory:</strong> Annual BIS compliance audits (₹50–100K/year) | Data protection compliance</li>
+                </ul>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>Leadership team hired (VP Eng, Ops, Sales, CFO)</li>
+                        <li>Regional support centers operational</li>
+                        <li>Distribution logistics finalized</li>
+                        <li>Series A funding (if applicable) closed or secured</li>
+                    </ul>
+                </div>
+
+                <h3>💼 Business & Market</h3>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Full Market Launch (H2 2026 → Full 2027)</h4>
+                <p style="margin-top: 10px;"><strong>Expansion to All Tier 1 + Tier 2 Cities:</strong> Target 10 metros by EOY 2026</p>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">2027 Revenue Targets</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Metric</th>
+                        <th>Target</th>
+                    </tr>
+                    <tr class="financial-highlight">
+                        <td><strong>Units Sold (Cumulative by end Phase 4)</strong></td>
+                        <td>5,000–10,000 panels</td>
+                    </tr>
+                    <tr class="financial-highlight">
+                        <td><strong>Annual Revenue (2027)</strong></td>
+                        <td>₹9–20Cr</td>
+                    </tr>
+                    <tr class="financial-highlight">
+                        <td><strong>Average Selling Price</strong></td>
+                        <td>₹18–25K per panel</td>
+                    </tr>
+                    <tr class="financial-highlight">
+                        <td><strong>Gross Margin</strong></td>
+                        <td>45–55%</td>
+                    </tr>
+                    <tr class="financial-highlight">
+                        <td><strong>EBITDA</strong></td>
+                        <td>Break-even to +5%</td>
+                    </tr>
+                </table>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Channel Expansion</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Channel</th>
+                        <th>Details</th>
+                        <th>Target</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Architect Channel</strong></td>
+                        <td>Direct relationships, high-touch sales</td>
+                        <td>100+ architects/designers</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Retail Partnerships</strong></td>
+                        <td>Havells, Schneider, Orient Electric</td>
+                        <td>5–10 partnerships</td>
+                    </tr>
+                    <tr>
+                        <td><strong>E-Commerce</strong></td>
+                        <td>setu.in direct sales</td>
+                        <td>Phase 4 late</td>
+                    </tr>
+                </table>
+
+                <h4 style="color: #2c5aa0; margin-top: 20px;">Marketing & Brand Investment</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Annual Budget:</strong> ₹1–1.5Cr</li>
+                    <li><strong>Channels:</strong> Design magazines (print), Instagram/LinkedIn (digital), Ifitex 2026 + 2027 (events)</li>
+                    <li><strong>PR:</strong> Celebrity architect/influencer endorsements (₹5–10L per partnership)</li>
+                    <li><strong>Showrooms:</strong> 3–4 high-end design districts in key metros</li>
+                </ul>
+
+                <div class="deliverable-box">
+                    <h4>Deliverables</h4>
+                    <ul>
+                        <li>Presence in 10+ metros (Tier 1 + Tier 2)</li>
+                        <li>5,000+ units sold (cumulative by end of Phase 4)</li>
+                        <li>3–5 retail partnerships active</li>
+                        <li>Break-even EBITDA achieved</li>
+                        <li>2028+ roadmap finalized (international + portfolio expansion)</li>
+                    </ul>
+                </div>
+
+                <div class="checklist">
+                    <h3>Phase 4 De-Risking Checklist</h3>
+                    <ul>
+                        <li><strong>Profitability risk:</strong> Is unit economics positive? (COGS &lt;50% of selling price by Month 22)</li>
+                        <li><strong>Scale risk:</strong> Can manufacturing keep up with demand? (No more than 20% MoM growth constraints)</li>
+                        <li><strong>Market risk:</strong> Are retailers selling through, or just sitting on inventory? (Track sell-through &gt;60% by Month 23)</li>
+                        <li><strong>Team risk:</strong> Has your VP Eng/Ops stayed committed? (Key person dependencies are highest risk)</li>
+                        <li><strong>Capital risk:</strong> Will you need Series B, or can you scale profitably? (Cash flow projection by Month 21)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Master De-Risking Timeline -->
+            <section>
+                <h2>🚨 Master De-Risking Timeline (Ranked by Probability)</h2>
+
+                <div class="de-risk">
+                    <table style="margin-top: 15px;">
+                        <tr>
+                            <th style="width: 10%;">Rank</th>
+                            <th style="width: 20%;">Risk</th>
+                            <th style="width: 15%;">Phase</th>
+                            <th style="width: 25%;">Impact</th>
+                            <th style="width: 30%;">Mitigation</th>
+                        </tr>
+                        <tr>
+                            <td><span class="risk-rank">1</span></td>
+                            <td><span class="risk-high">BIS/WPC Certification Delay</span></td>
+                            <td>2</td>
+                            <td>4–6 month slip</td>
+                            <td>Start Phase 1 Month 1; engage TÜV India by Phase 2 Month 7</td>
+                        </tr>
+                        <tr>
+                            <td><span class="risk-rank">2</span></td>
+                            <td><span class="risk-high">Manufacturing Yield &lt;90%</span></td>
+                            <td>2–3</td>
+                            <td>Quality crisis, cost overrun</td>
+                            <td>DFM review, pilot 500 units in Phase 3</td>
+                        </tr>
+                        <tr>
+                            <td><span class="risk-rank">3</span></td>
+                            <td><span class="risk-high">Firmware Stability (WiFi Crashes)</span></td>
+                            <td>3–4</td>
+                            <td>Customer returns, brand damage</td>
+                            <td>Aggressive testing in Phase 2; hire 2nd firmware engineer</td>
+                        </tr>
+                        <tr>
+                            <td><span class="risk-rank">4</span></td>
+                            <td><span class="risk-med">Touch False-Trigger in High-EMI</span></td>
+                            <td>1</td>
+                            <td>Product unfeasible</td>
+                            <td>EMI testing in Phase 1 Month 5; consider shielding redesign</td>
+                        </tr>
+                        <tr>
+                            <td><span class="risk-rank">5</span></td>
+                            <td><span class="risk-med">Architect Adoption Slower than Expected</span></td>
+                            <td>3</td>
+                            <td>Revenue miss</td>
+                            <td>Validate demand in Phase 2 (20+ interviews); adjust pricing early</td>
+                        </tr>
+                        <tr>
+                            <td><span class="risk-rank">6</span></td>
+                            <td><span class="risk-med">Component Supply Chain Disruption</span></td>
+                            <td>2–4</td>
+                            <td>Manufacturing halt</td>
+                            <td>Lock suppliers early; maintain 2 alternates per component</td>
+                        </tr>
+                        <tr>
+                            <td><span class="risk-rank">7</span></td>
+                            <td><span class="risk-med">Team Attrition (Engineer Leaves)</span></td>
+                            <td>3–4</td>
+                            <td>Delayed roadmap</td>
+                            <td>Competitive salary, equity, clear growth path; avoid burnout</td>
+                        </tr>
+                        <tr>
+                            <td><span class="risk-rank">8</span></td>
+                            <td><span class="risk-low">Working Capital Shortage</span></td>
+                            <td>3</td>
+                            <td>Can't scale manufacturing</td>
+                            <td>Raise seed/Series A by Phase 3; manage inventory tightly</td>
+                        </tr>
+                        <tr>
+                            <td><span class="risk-rank">9</span></td>
+                            <td><span class="risk-low">Retailer Channel Doesn't Work</span></td>
+                            <td>3–4</td>
+                            <td>Limited distribution</td>
+                            <td>Test with 2–3 retailers first; don't overcommit marketing budget</td>
+                        </tr>
+                        <tr>
+                            <td><span class="risk-rank">10</span></td>
+                            <td><span class="risk-low">Alexa/Google Integration Complicated</span></td>
+                            <td>4</td>
+                            <td>Feature delays</td>
+                            <td>Defer cloud/voice assistant to Phase 4+; local-first MVP in Phase 1–3</td>
+                        </tr>
+                    </table>
+                </div>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- Financial Summary -->
+            <section>
+                <h2>💰 Financial Summary (Estimated)</h2>
+
+                <h3>Capital Requirements by Phase</h3>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Phase</th>
+                        <th>Use of Funds</th>
+                        <th>Amount (₹)</th>
+                    </tr>
+                    <tr class="financial-highlight">
+                        <td><strong>Phase 1</strong></td>
+                        <td>Prototyping, team, lab setup</td>
+                        <td>50–70L</td>
+                    </tr>
+                    <tr class="financial-highlight">
+                        <td><strong>Phase 2</strong></td>
+                        <td>Certifications, manufacturing prep, team</td>
+                        <td>40–60L</td>
+                    </tr>
+                    <tr class="financial-highlight">
+                        <td><strong>Phase 3</strong></td>
+                        <td>Production run (500u), marketing, team</td>
+                        <td>1–1.5Cr</td>
+                    </tr>
+                    <tr class="financial-highlight">
+                        <td><strong>Phase 4</strong></td>
+                        <td>Scale-up, expansion, working capital</td>
+                        <td>1.5–2.5Cr</td>
+                    </tr>
+                    <tr class="financial-highlight">
+                        <td><strong>TOTAL</strong></td>
+                        <td>Bootstrap + seed/Series A</td>
+                        <td>3–5Cr</td>
+                    </tr>
+                </table>
+
+                <h3 style="margin-top: 30px;">Burn Rate Estimate & Runway</h3>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Phase</th>
+                        <th>Monthly Burn</th>
+                        <th>Runway (₹50L Capital)</th>
+                        <th>Notes</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Phase 1</strong></td>
+                        <td>₹10–15L</td>
+                        <td>3.5–5 months</td>
+                        <td>Bootstrap friendly</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phase 2</strong></td>
+                        <td>₹15–20L</td>
+                        <td>2.5–3.5 months</td>
+                        <td>Consider seed round</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phase 3</strong></td>
+                        <td>₹30–40L</td>
+                        <td>1.2–1.7 months</td>
+                        <td>Revenue starting to offset</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phase 4</strong></td>
+                        <td>₹40–50L</td>
+                        <td>Positive trend</td>
+                        <td>Break-even trajectory</td>
+                    </tr>
+                </table>
+
+                <div class="founder-note" style="margin-top: 30px;">
+                    <strong>Capital Strategy:</strong> Bootstrap Phase 1–2 with ₹1Cr angel/friends+family. Raise Series A in Phase 3 (Month 15–18) once you have traction (100+ units, certifications, team).
+                </div>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- Roadmap Summary -->
+            <div class="roadmap-summary">
+                <h3>SETU: 24-MONTH EXECUTION ROADMAP (2025–2027)</h3>
+
+                <div class="roadmap-box">
+                    <h4>📌 PHASE 1 (M1–6): PROTOTYPE + TEAM + BRAND</h4>
+                    <p><strong>Timeline:</strong> 2025 Q1–Q2</p>
+                    <ul>
+                        <li>Working prototype (touch + WiFi + voice)</li>
+                        <li>Core team hired (firmware, PCB)</li>
+                        <li>Brand + ICP validation</li>
+                        <li>Patent filed, company registered</li>
+                    </ul>
+                </div>
+
+                <div class="roadmap-box">
+                    <h4>📌 PHASE 2 (M7–12): CERTIFICATION + DFM + VALIDATION</h4>
+                    <p><strong>Timeline:</strong> 2025 Q3–Q4</p>
+                    <ul>
+                        <li>BIS + WPC certifications submitted</li>
+                        <li>Manufacturing partner selected</li>
+                        <li>20-unit prototype tested</li>
+                        <li>Alpha user program (5–8 testers)</li>
+                        <li>Channel strategy locked (architect-first)</li>
+                    </ul>
+                </div>
+
+                <div class="roadmap-box">
+                    <h4>📌 PHASE 3 (M13–18): PRODUCTION + MARKET ENTRY</h4>
+                    <p><strong>Timeline:</strong> 2026 Q1–Q2</p>
+                    <ul>
+                        <li>BIS + WPC certifications APPROVED</li>
+                        <li>500-unit production batch completed</li>
+                        <li>Tier 1 city launch (50–100 units sold)</li>
+                        <li>NPS >50, case studies published</li>
+                        <li>Retailer partnerships initiated</li>
+                    </ul>
+                </div>
+
+                <div class="roadmap-box">
+                    <h4>📌 PHASE 4 (M19–24): SCALE + 2027 LAUNCH</h4>
+                    <p><strong>Timeline:</strong> 2026 Q3–Q4</p>
+                    <ul>
+                        <li>Manufacturing: 5,000 units/month capacity</li>
+                        <li>Expansion: 10+ metro cities</li>
+                        <li>Revenue: ₹9–20Cr annual run-rate</li>
+                        <li>Profitability: EBITDA break-even</li>
+                        <li>Series A closed (if capital-raising path)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Appendix -->
+            <div class="appendix">
+                <h2>📋 Appendix: Founder Checklist (Your Next 30 Days)</h2>
+
+                <h3 style="margin-top: 20px;">Week 1: Foundation</h3>
+                <div class="checklist">
+                    <ul>
+                        <li>Incorporate company (Pvt Ltd or LLP) + GST registration</li>
+                        <li>Post firmware engineer role on LinkedIn, AngelList</li>
+                        <li>File trademark "SETU" (Class 9/11) with TM Registry</li>
+                        <li>Order oscilloscope, function generator for lab</li>
+                    </ul>
+                </div>
+
+                <h3 style="margin-top: 20px;">Week 2–3: Engineering</h3>
+                <div class="checklist">
+                    <ul>
+                        <li>Finalize touch IC + WiFi module selection</li>
+                        <li>Begin schematic + PCB layout (KiCad)</li>
+                        <li>Build EMI test plan for electrical box validation</li>
+                    </ul>
+                </div>
+
+                <h3 style="margin-top: 20px;">Week 4: Market</h3>
+                <div class="checklist">
+                    <ul>
+                        <li>Interview 10 architects/interior designers (Bangalore/Mumbai)</li>
+                        <li>Create simple landing page (Webflow)</li>
+                        <li>Write 1-page brand positioning doc + target ICP</li>
+                    </ul>
+                </div>
+
+                <h2 style="margin-top: 40px;">Final Thoughts: IC Design to Product Entrepreneurship</h2>
+
+                <p style="margin-top: 20px;">You have 13 years of deep-tech IC design expertise — this is a <strong>MASSIVE advantage</strong>. But entrepreneurship is a different muscle.</p>
+
+                <h3 style="margin-top: 20px;">🧠 Key Mindset Shifts</h3>
+                <ol style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>From "perfect" to "shipped":</strong> IC designs iterate slowly (tapeout costs ₹50L+). Hardware startups need fast fail/iterate cycles.</li>
+                    <li><strong>From technical depth to business breadth:</strong> Manufacturing, certification, sales channels, and team management matter as much as circuit design.</li>
+                    <li><strong>From solo expertise to delegation:</strong> You can't do everything. Hire people smarter than you in their domains.</li>
+                    <li><strong>From risk-aversion to calculated risk-taking:</strong> Startups require 70% confidence decisions, not 99%. Get comfortable with ambiguity.</li>
+                </ol>
+
+                <h3 style="margin-top: 20px;">🏁 Early Wins to Build Momentum</h3>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Month 3:</strong> Prototype working + team onboarded (dopamine hit)</li>
+                    <li><strong>Month 6:</strong> Patent + company legal setup (legitimacy)</li>
+                    <li><strong>Month 10:</strong> First certification approval (external validation)</li>
+                    <li><strong>Month 15:</strong> First 50 customers (proof of demand)</li>
+                </ul>
+
+                <div class="founder-note" style="margin-top: 30px;">
+                    <strong>Long-term vision:</strong> SETU can be a ₹500Cr+ business if executed well. The smart lighting + voice control + premium positioning is a 10-year TAM play. Stay focused, de-risk relentlessly, and don't get distracted by feature creep. You've got this. 🚀
+                </div>
+            </div>
+
+        </div>
+
+        <footer>
+            <p><strong>SETU: 24-Month Startup Execution Roadmap</strong> | Last Updated: May 2026 | Next Review: Quarter-end Phase 1 (M6) for trajectory correction</p>
+            <p>© 2026 — Confidential. For internal use only.</p>
+        </footer>
+    </div>
+</body>
+</html>

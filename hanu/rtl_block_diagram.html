@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HANU 1.0 — RV32IMAC RTL Block Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#060b12;color:#c0d0e0;font-family:'JetBrains Mono',monospace}
+#app{display:flex;flex-direction:column;height:100vh}
+#hdr{display:flex;align-items:center;gap:14px;padding:8px 18px;background:#0c1422;border-bottom:1px solid #182640;flex-shrink:0;z-index:10}
+.hdr-t{font-family:'Oxanium',sans-serif;font-size:14px;font-weight:700;color:#00d4ff;letter-spacing:2.5px}
+.hdr-s{font-size:9px;color:#334455;margin-top:2px;letter-spacing:.5px}
+#legend{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;align-items:center}
+.leg{display:flex;align-items:center;gap:4px;font-size:8.5px;color:#334455;cursor:pointer;padding:2px 6px;border-radius:3px;border:1px solid transparent;transition:all .15s;font-family:'JetBrains Mono',monospace;user-select:none}
+.leg:hover{color:#90a8c0;border-color:#182640}
+.leg.on{border-color:currentColor;color:inherit}
+.leg-d{width:7px;height:7px;border-radius:1px;flex-shrink:0}
+#main{display:flex;flex:1;overflow:hidden}
+#cv{flex:1;overflow:hidden;position:relative;background:#060b12}
+#cv.grab{cursor:grabbing !important}
+#dsvg{width:100%;height:100%;display:block;cursor:default}
+#sb{width:0;background:#0c1422;border-left:1px solid #182640;transition:width .22s ease;overflow:hidden;flex-shrink:0}
+#sb.on{width:355px}
+#sbi{width:355px;height:100%;overflow-y:auto;padding:16px;position:relative}
+#sbi::-webkit-scrollbar{width:3px}
+#sbi::-webkit-scrollbar-track{background:#0c1422}
+#sbi::-webkit-scrollbar-thumb{background:#182640;border-radius:2px}
+.sbx{position:absolute;top:10px;right:10px;width:22px;height:22px;border:1px solid #182640;background:none;color:#334455;cursor:pointer;border-radius:3px;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sbx:hover{color:#00d4ff;border-color:#00d4ff}
+.sb-cat{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;font-family:'Oxanium'}
+.sb-nm{font-family:'Oxanium';font-size:18px;font-weight:700;margin-bottom:2px;line-height:1.2}
+.sb-fi{font-size:8px;color:#334455;margin-bottom:10px;word-break:break-all}
+.sb-ds{font-size:9px;line-height:1.75;color:#7a90a0;background:#101c2e;padding:10px 12px;border-radius:4px;border-left:2px solid;margin-bottom:14px}
+.sb-sec{font-size:7.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#334455;margin:12px 0 5px;font-family:'Oxanium'}
+.pt{width:100%;border-collapse:collapse;font-size:8.5px}
+.pt th{text-align:left;color:#334455;padding:2px 5px;border-bottom:1px solid #182640;font-size:7px;letter-spacing:1px;text-transform:uppercase;font-weight:600}
+.pt td{padding:3.5px 5px;border-bottom:1px solid #101c2e;vertical-align:top;line-height:1.45}
+.pt tr:last-child td{border-bottom:none}
+.pt tr:hover td{background:#101c2e}
+.di{color:#00e676;font-weight:700;font-size:7.5px}.do{color:#ff4081;font-weight:700;font-size:7.5px}
+.dw{color:#ffab00;font-weight:700;font-size:7.5px}.dt{color:#445566;font-weight:700;font-size:7.5px}
+.pn{color:#7bc8e8}.pw{color:#334455;font-size:7.5px}.pd{color:#9aaac0}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.tag{font-size:8px;padding:1px 7px;border-radius:8px;border:1px solid;cursor:pointer;font-family:'JetBrains Mono';transition:opacity .15s}
+.tag:hover{opacity:.65}
+#zc{position:absolute;bottom:14px;left:14px;display:flex;gap:4px;z-index:5}
+.zb{width:28px;height:28px;background:#0c1422;border:1px solid #182640;color:#5a7090;cursor:pointer;border-radius:3px;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:monospace;transition:all .15s}
+.zb:hover{border-color:#00d4ff;color:#00d4ff}
+.zb.fit{width:auto;padding:0 9px;font-size:8.5px;letter-spacing:1px}
+#hint{position:absolute;bottom:14px;right:14px;font-size:7.5px;color:#1a2a3a;text-align:right;line-height:2;pointer-events:none}
+#tip{position:fixed;pointer-events:none;display:none;background:#101c2e;border:1px solid #182640;color:#7a98b0;font-size:8.5px;padding:4px 10px;border-radius:3px;z-index:1000;font-family:'JetBrains Mono';max-width:220px;line-height:1.55}
+@keyframes flow{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
+.an{stroke-dasharray:8 4!important;animation:flow .85s linear infinite}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hdr">
+    <div>
+      <div class="hdr-t">HANU 1.0 — RV32IMAC</div>
+      <div class="hdr-s">RTL Block Diagram · Xilinx Artix-7 xc7a200t · 100 MHz · 3-Stage In-Order Pipeline (IF → DE → WB) · 23 Modules</div>
+    </div>
+    <div id="legend"></div>
+  </div>
+  <div id="main">
+    <div id="cv">
+      <svg id="dsvg" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="zc">
+        <button class="zb" id="bzi" title="Zoom In">+</button>
+        <button class="zb" id="bzo" title="Zoom Out">−</button>
+        <button class="zb fit" id="bzf">FIT</button>
+      </div>
+      <div id="hint">Click module → interface details<br>Hover → highlight connections<br>Scroll → zoom · Drag → pan</div>
+    </div>
+    <div id="sb"><div id="sbi"></div></div>
+  </div>
+</div>
+<div id="tip"></div>
+<script>
+// ═══════════════════════════════════════════════
+// CATEGORY DEFINITIONS
+// ═══════════════════════════════════════════════
+const CAT={
+  pipeline:   {l:'Pipeline',      c:'#00d4ff'},
+  alu:        {l:'ALU / Math',    c:'#ffab00'},
+  memory:     {l:'Memory',        c:'#00e676'},
+  control:    {l:'Hazard / Fwd',  c:'#ff4081'},
+  csr:        {l:'CSR / Trap',    c:'#b06fff'},
+  atomic:     {l:'MDU / AMO',     c:'#ff6d00'},
+  compressed: {l:'C-Extension',   c:'#00bfa5'},
+  regfile:    {l:'Register File', c:'#ffd740'},
+  util:       {l:'Utility',       c:'#607d8b'},
+  sim:        {l:'Simulation',    c:'#455a64'},
+  external:   {l:'External',      c:'#546e7a'},
+};
+
+// ═══════════════════════════════════════════════
+// MODULE DEFINITIONS  (id, name, sub, cat, x,y,w,h, [ctr], [fi, ds, po, cn])
+// ═══════════════════════════════════════════════
+const M=[
+// ── External ──────────────────────────────────
+{id:'itcm',   nm:'ITCM',         sb:'32KB · 0x0000_4000',  cat:'external', x:60,  y:16, w:112,h:55},
+{id:'bootrom',nm:'Boot ROM',     sb:'16KB · 0x0000_0000',  cat:'external', x:188, y:16, w:112,h:55},
+{id:'dtcm',   nm:'DTCM',         sb:'32KB · 0x2000_0000',  cat:'external', x:422, y:16, w:112,h:55},
+{id:'ddr3',   nm:'DDR3',         sb:'256MB · 0x8000_0000', cat:'external', x:550, y:16, w:112,h:55},
+{id:'clint',  nm:'CLINT',        sb:'0xE000_0000',          cat:'external', x:740, y:16, w:88, h:55},
+{id:'plic',   nm:'PLIC',         sb:'0xE001_0000',          cat:'external', x:842, y:16, w:78, h:55},
+{id:'periph', nm:'GPIO/UART\nSPI/I2C', sb:'0xF000_xxxx',   cat:'external', x:936, y:16, w:148,h:55},
+{id:'irq',    nm:'Interrupts',   sb:'timer · ext · sw',    cat:'external', x:1105,y:16, w:118,h:55},
+
+// ── Memory Subsystem ──────────────────────────
+{id:'mem_ctrl',nm:'mem_controller',sb:'Address decoder & arbitrator',cat:'memory',
+ x:75, y:108, w:210, h:56,
+ fi:'rtl/memory/mem_controller.v',
+ ds:'Memory arbitrator and fixed address decoder. Routes instruction fetches and data accesses to ITCM (addr[31:28]=0x0), DTCM (0x2), DDR3 via MIG (0x8), or AXI4-Lite peripheral bus (0xE–0xF). 1-cycle latency for TCM, 10–40 cycles for DDR3.',
+ po:[
+  {d:'IN', n:'clk',        w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',      w:'1',  s:'Active-low synchronous reset'},
+  {d:'IN', n:'ifetch_addr',w:'32', s:'Instruction fetch address (PC)'},
+  {d:'OUT',n:'ifetch_data',w:'32', s:'Instruction data from ITCM/ROM'},
+  {d:'IN', n:'ifetch_req', w:'1',  s:'Instruction fetch request'},
+  {d:'IN', n:'data_addr',  w:'32', s:'Data access address'},
+  {d:'IN', n:'data_wdata', w:'32', s:'Write data'},
+  {d:'OUT',n:'data_rdata', w:'32', s:'Data read result'},
+  {d:'IN', n:'data_we',    w:'4',  s:'Byte-granule write enables'},
+  {d:'IN', n:'data_req',   w:'1',  s:'Data request valid'},
+  {d:'OUT',n:'data_ack',   w:'1',  s:'Acknowledge (always 1 for TCM)'},
+  {d:'OUT',n:'itcm_addr',  w:'32', s:'ITCM address'},
+  {d:'IN', n:'itcm_rdata', w:'32', s:'ITCM read data'},
+  {d:'OUT',n:'dtcm_addr',  w:'32', s:'DTCM address'},
+  {d:'OUT',n:'dtcm_we',    w:'4',  s:'DTCM byte write enables'},
+  {d:'IN', n:'dtcm_rdata', w:'32', s:'DTCM read data'},
+ ], cn:['itcm','dtcm','axi_mst']},
+
+{id:'axi_mst',nm:'axi4lite_master',sb:'AXI4-Lite bus master',cat:'memory',
+ x:920, y:108, w:210, h:56,
+ fi:'rtl/memory/axi4lite_master.v',
+ ds:'AXI4-Lite master interface. Converts core load/store requests to standard AXI4-Lite 5-channel protocol (AW/W/B/AR/R) for DDR3 (via Xilinx MIG) and peripheral access — CLINT, PLIC, GPIO, UART0, SPI0, I2C0.',
+ po:[
+  {d:'IN', n:'clk',       w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',     w:'1',  s:'Reset'},
+  {d:'IN', n:'core_addr', w:'32', s:'Request address from LSU'},
+  {d:'IN', n:'core_wdata',w:'32', s:'Write data'},
+  {d:'OUT',n:'core_rdata',w:'32', s:'Read data response'},
+  {d:'IN', n:'core_we',   w:'4',  s:'Byte write enables'},
+  {d:'IN', n:'core_req',  w:'1',  s:'Transaction request'},
+  {d:'OUT',n:'core_ack',  w:'1',  s:'Transaction complete'},
+  {d:'OUT',n:'awaddr',    w:'32', s:'AXI Write Address Channel'},
+  {d:'OUT',n:'awvalid',   w:'1',  s:'AWVALID'},
+  {d:'IN', n:'awready',   w:'1',  s:'AWREADY'},
+  {d:'OUT',n:'wdata',     w:'32', s:'AXI Write Data Channel'},
+  {d:'OUT',n:'wstrb',     w:'4',  s:'Write byte strobes'},
+  {d:'OUT',n:'wvalid',    w:'1',  s:'WVALID'},
+  {d:'IN', n:'bvalid',    w:'1',  s:'Write Response BVALID'},
+  {d:'OUT',n:'araddr',    w:'32', s:'AXI Read Address Channel'},
+  {d:'OUT',n:'arvalid',   w:'1',  s:'ARVALID'},
+  {d:'IN', n:'rdata',     w:'32', s:'AXI Read Data'},
+  {d:'IN', n:'rvalid',    w:'1',  s:'RVALID'},
+ ], cn:['ddr3','clint','plic','periph','mem_ctrl']},
+
+// ── rv32imac_core (container) ─────────────────
+{id:'core',nm:'rv32imac_core',sb:'RV32IMAC Processor Core',cat:'pipeline',
+ x:15, y:184, w:1360, h:585, ctr:true,
+ fi:'rtl/core/rv32imac_core.v',
+ ds:'Top-level RV32IMAC processor core. Integrates 3-stage in-order pipeline (IF→DE→WB), hazard detection, data forwarding, multiply/divide unit (M-ext), atomic memory unit (A-ext), C-extension pre-decoder, CSR file (Zicsr), and trap controller. Target: Xilinx Artix-7 xc7a200t at 100 MHz. Area: ~2,170 LUTs, 6 BRAM36, 2 DSP48E1.',
+ po:[
+  {d:'IN', n:'clk',              w:'1',  s:'Core clock (100 MHz)'},
+  {d:'IN', n:'rst_n',            w:'1',  s:'Synchronous active-low reset'},
+  {d:'OUT',n:'itcm_addr',        w:'32', s:'Instruction fetch address (PC)'},
+  {d:'IN', n:'itcm_data',        w:'32', s:'Instruction data from ITCM'},
+  {d:'OUT',n:'itcm_en',          w:'1',  s:'ITCM enable'},
+  {d:'OUT',n:'dmem_addr',        w:'32', s:'Data memory effective address'},
+  {d:'OUT',n:'dmem_wdata',       w:'32', s:'Store data'},
+  {d:'IN', n:'dmem_rdata',       w:'32', s:'Load data from memory'},
+  {d:'OUT',n:'dmem_we',          w:'4',  s:'Byte-granule write enables'},
+  {d:'OUT',n:'dmem_req',         w:'1',  s:'Data memory request'},
+  {d:'IN', n:'dmem_ack',         w:'1',  s:'Data memory acknowledge'},
+  {d:'IN', n:'irq_timer',        w:'1',  s:'Machine timer interrupt (CLINT)'},
+  {d:'IN', n:'irq_external',     w:'1',  s:'Machine external interrupt (PLIC)'},
+  {d:'IN', n:'irq_software',     w:'1',  s:'Machine software interrupt (CLINT)'},
+  {d:'IN', n:'debug_req',        w:'1',  s:'Debug request (JTAG)'},
+  {d:'OUT',n:'cycle_count',      w:'64', s:'mcycle performance counter'},
+  {d:'OUT',n:'instruction_count',w:'64', s:'minstret instruction counter'},
+ ], cn:['if_stg','de_stg','wb_stg','hzu']},
+
+// ── IF Stage (container) ──────────────────────
+{id:'if_stg',nm:'if_stage',sb:'Instruction Fetch',cat:'pipeline',
+ x:36, y:216, w:222, h:196, ctr:true,
+ fi:'rtl/core/if_stage.v',
+ ds:'Instruction Fetch stage. Manages 32-bit PC register with 4-input mux: sequential (PC+4/2), branch target, trap vector (highest priority), MRET mepc. Fetches from ITCM with 1-cycle latency. Passes fetched word through C-extension pre-decoder before IF/DE pipeline register. Detects instruction address misalignment.',
+ po:[
+  {d:'IN', n:'clk',          w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',        w:'1',  s:'Reset — PC initializes to 0x0000_0000'},
+  {d:'IN', n:'stall',        w:'1',  s:'Hold PC and IF/DE register'},
+  {d:'IN', n:'flush',        w:'1',  s:'Invalidate IF/DE slot'},
+  {d:'OUT',n:'itcm_addr',    w:'32', s:'PC output to instruction memory'},
+  {d:'IN', n:'itcm_data',    w:'32', s:'Raw 32-bit instruction from ITCM'},
+  {d:'OUT',n:'itcm_en',      w:'1',  s:'ITCM enable (always 1)'},
+  {d:'IN', n:'branch_target',w:'32', s:'Branch/JAL/JALR target from DE stage'},
+  {d:'IN', n:'branch_taken', w:'1',  s:'Branch condition resolved true'},
+  {d:'IN', n:'trap_vector',  w:'32', s:'mtvec-derived PC for trap entry'},
+  {d:'IN', n:'trap_valid',   w:'1',  s:'Trap redirect — highest PC priority'},
+  {d:'OUT',n:'if_pc',        w:'32', s:'Registered PC (into IF/DE register)'},
+  {d:'OUT',n:'if_instr',     w:'32', s:'32-bit instruction (C-expanded if needed)'},
+  {d:'OUT',n:'if_valid',     w:'1',  s:'Slot contains valid instruction (not bubble)'},
+ ], cn:['c_exp','de_stg','hzu','trap_c']},
+
+{id:'c_exp',nm:'c_expander',sb:'16→32b pre-decode',cat:'compressed',
+ x:56, y:348, w:190, h:50,
+ fi:'rtl/compressed/c_expander.v',
+ ds:'C-Extension (RV32C) pre-decoder. Detects 16-bit compressed instructions (inst[1:0] ≠ 2\'b11) and expands Q0/Q1/Q2 quadrant encodings to 32-bit canonical equivalents — combinationally, before the IF/DE pipeline register. Undefined C encodings expand to 0xFFFF_FFFF triggering Illegal Instruction exception.',
+ po:[
+  {d:'IN', n:'instr_16bit',w:'16', s:'Lower 16 bits of raw fetch from ITCM'},
+  {d:'OUT',n:'instr_32bit',w:'32', s:'Expanded 32-bit canonical RISC-V instruction'},
+  {d:'OUT',n:'is_valid',   w:'1',  s:'High when input was a compressed instruction'},
+ ], cn:['if_stg']},
+
+// ── DE Stage (container) ──────────────────────
+{id:'de_stg',nm:'de_stage',sb:'Decode / Execute',cat:'pipeline',
+ x:292, y:216, w:635, h:360, ctr:true,
+ fi:'rtl/core/de_stage.v',
+ ds:'Decode/Execute stage. Decodes 32-bit instruction, reads register file with forwarding bypass, generates sign-extended immediates, executes ALU/MDU/AMO operations, resolves branch conditions, computes effective addresses (rs1+imm), and drives the data memory interface for loads/stores.',
+ po:[
+  {d:'IN', n:'clk',          w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',        w:'1',  s:'Reset'},
+  {d:'IN', n:'stall',        w:'1',  s:'Hold DE/WB register'},
+  {d:'IN', n:'flush',        w:'1',  s:'Invalidate DE/WB slot'},
+  {d:'IN', n:'if_pc',        w:'32', s:'PC from IF/DE pipeline register'},
+  {d:'IN', n:'if_instr',     w:'32', s:'Instruction from IF/DE pipeline register'},
+  {d:'IN', n:'if_valid',     w:'1',  s:'Instruction valid flag'},
+  {d:'OUT',n:'dmem_addr',    w:'32', s:'Effective address (rs1 + sign-ext imm)'},
+  {d:'OUT',n:'dmem_wdata',   w:'32', s:'Store data (rs2 value)'},
+  {d:'IN', n:'dmem_rdata',   w:'32', s:'Load data from data memory'},
+  {d:'OUT',n:'dmem_we',      w:'4',  s:'Byte-granule write enables'},
+  {d:'OUT',n:'dmem_req',     w:'1',  s:'Data memory request'},
+  {d:'IN', n:'dmem_ack',     w:'1',  s:'Data memory acknowledge'},
+  {d:'OUT',n:'branch_target',w:'32', s:'Computed branch/JAL/JALR target'},
+  {d:'OUT',n:'branch_taken', w:'1',  s:'Branch condition true'},
+  {d:'OUT',n:'de_pc',        w:'32', s:'PC forwarded to DE/WB register'},
+  {d:'OUT',n:'de_valid',     w:'1',  s:'Valid instruction to WB stage'},
+  {d:'IN', n:'irq_timer',    w:'1',  s:'Timer interrupt'},
+  {d:'IN', n:'irq_external', w:'1',  s:'External interrupt'},
+  {d:'IN', n:'irq_software', w:'1',  s:'Software interrupt'},
+ ], cn:['reg_f','fwd_u','alu_u','mdu_u','amu_u','csr_f','wb_stg','hzu']},
+
+// Inside DE Stage
+{id:'reg_f',nm:'register_file',sb:'32×32 BRAM (SDP)',cat:'regfile',
+ x:310, y:267, w:148, h:53,
+ fi:'rtl/core/register_file.v',
+ ds:'32×32-bit integer register file. Two combinational (async) read ports for rs1/rs2. One synchronous write port from WB stage. x0 hardwired to zero — writes masked. Synthesized as Xilinx RAMB36E1 in SDP (Simple Dual-Port) mode. Resource: 2× RAMB36E1.',
+ po:[
+  {d:'IN', n:'clk',     w:'1',  s:'Clock (write port clocked)'},
+  {d:'IN', n:'rst_n',   w:'1',  s:'Reset — zeroes all registers'},
+  {d:'IN', n:'addr_rs1',w:'5',  s:'Read port 1 address'},
+  {d:'OUT',n:'rd_data1',w:'32', s:'Read port 1 data (combinational)'},
+  {d:'IN', n:'addr_rs2',w:'5',  s:'Read port 2 address'},
+  {d:'OUT',n:'rd_data2',w:'32', s:'Read port 2 data (combinational)'},
+  {d:'IN', n:'addr_wr', w:'5',  s:'Write port address (from WB)'},
+  {d:'IN', n:'wr_data', w:'32', s:'Write data (from WB stage)'},
+  {d:'IN', n:'we',      w:'1',  s:'Write enable (masked for x0)'},
+ ], cn:['fwd_u','wb_stg']},
+
+{id:'fwd_u',nm:'forwarding_unit',sb:'RAW hazard bypass',cat:'control',
+ x:472, y:267, w:153, h:53,
+ fi:'rtl/core/forwarding_unit.v',
+ ds:'Data forwarding network. Eliminates RAW data hazards for ALU→ALU back-to-back sequences (0 stall cycles) by selecting WB-stage result over register file output. Detects load-use hazard (forwarding not possible — requires 1-cycle stall from hazard_ctrl).',
+ po:[
+  {d:'IN', n:'rs1_value',w:'32', s:'RS1 data from register file'},
+  {d:'IN', n:'rs2_value',w:'32', s:'RS2 data from register file'},
+  {d:'IN', n:'wb_data',  w:'32', s:'WB-stage forwarded result'},
+  {d:'OUT',n:'rs1_data', w:'32', s:'Forwarded RS1 operand to functional units'},
+  {d:'OUT',n:'rs2_data', w:'32', s:'Forwarded RS2 operand to functional units'},
+ ], cn:['reg_f','alu_u','mdu_u','amu_u']},
+
+{id:'alu_u',nm:'alu',sb:'32-bit combinational',cat:'alu',
+ x:638, y:267, w:128, h:53,
+ fi:'rtl/alu/alu.v',
+ ds:'32-bit combinational ALU. Supports all RV32I operations: ADD/SUB, AND, OR, XOR, SLT (signed), SLTU (unsigned), SLL (logical left), SRL (logical right), SRA (arithmetic right). Zero flag for branch evaluation. No pipeline latency.',
+ po:[
+  {d:'IN', n:'operand_a', w:'32', s:'Operand A (rs1 or forwarded)'},
+  {d:'IN', n:'operand_b', w:'32', s:'Operand B (rs2 or immediate)'},
+  {d:'IN', n:'alu_ctrl',  w:'3',  s:'Operation select (funct3)'},
+  {d:'IN', n:'is_sub_sra',w:'1',  s:'SUB/SRA flag (funct7[5])'},
+  {d:'OUT',n:'result',    w:'32', s:'ALU computation result'},
+  {d:'OUT',n:'zero_flag', w:'1',  s:'Result == 0 (branch condition)'},
+ ], cn:['add_u','cmp_u']},
+
+{id:'add_u',nm:'adder',sb:'ripple-carry',cat:'alu',
+ x:638, y:334, w:128, h:44,
+ fi:'rtl/alu/adder.v',
+ ds:'32-bit ripple-carry adder with carry-out. Used by ALU for ADD, SUB, and address computation. Inferred as Xilinx CARRY4 primitives on Artix-7 for optimal carry-chain timing.',
+ po:[
+  {d:'IN', n:'operand_a',w:'32', s:'Operand A'},
+  {d:'IN', n:'operand_b',w:'32', s:'Operand B'},
+  {d:'IN', n:'carry_in', w:'1',  s:'Carry input (1 for SUB)'},
+  {d:'OUT',n:'sum',      w:'32', s:'Sum (A + B + Cin)'},
+  {d:'OUT',n:'carry_out',w:'1',  s:'Carry output'},
+ ], cn:['alu_u']},
+
+{id:'cmp_u',nm:'comparator',sb:'signed / unsigned',cat:'alu',
+ x:638, y:388, w:128, h:44,
+ fi:'rtl/alu/comparator.v',
+ ds:'32-bit signed/unsigned comparator. Produces less_than and greater_equal flags. Used for SLT/SLTU instructions and branch condition evaluation (BLT, BGE, BLTU, BGEU).',
+ po:[
+  {d:'IN', n:'operand_a',    w:'32', s:'Operand A'},
+  {d:'IN', n:'operand_b',    w:'32', s:'Operand B'},
+  {d:'IN', n:'is_unsigned',  w:'1',  s:'0=signed, 1=unsigned comparison'},
+  {d:'OUT',n:'less_than',    w:'1',  s:'A < B'},
+  {d:'OUT',n:'greater_equal',w:'1',  s:'A >= B'},
+ ], cn:['alu_u']},
+
+{id:'mdu_u',nm:'mdu',sb:'M-Ext · MUL/DIV router',cat:'atomic',
+ x:310, y:337, w:148, h:96,
+ fi:'rtl/multiply_divide/mdu.v',
+ ds:'Multiply/Divide Unit (M-extension). Routes MUL/MULH/MULHSU/MULHU to 2-cycle Booth multiplier (DSP48E1), DIV/DIVU/REM/REMU to 34-cycle non-restoring iterative divider. Asserts mdu_busy to stall pipeline during multi-cycle operations.',
+ po:[
+  {d:'IN', n:'clk',       w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',     w:'1',  s:'Reset'},
+  {d:'IN', n:'operand_a', w:'32', s:'Multiplicand / Dividend'},
+  {d:'IN', n:'operand_b', w:'32', s:'Multiplier / Divisor'},
+  {d:'IN', n:'funct3',    w:'3',  s:'000=MUL 001=MULH 010=MULHSU 011=MULHU 100=DIV 101=DIVU 110=REM 111=REMU'},
+  {d:'IN', n:'mdu_req',   w:'1',  s:'Start operation'},
+  {d:'OUT',n:'mdu_busy',  w:'1',  s:'In progress — stalls pipeline'},
+  {d:'OUT',n:'mdu_result',w:'32', s:'Completed result'},
+ ], cn:['mul_u','div_u']},
+
+{id:'mul_u',nm:'multiplier',sb:'2-cycle · DSP48E1',cat:'alu',
+ x:310, y:446, w:148, h:46,
+ fi:'rtl/multiply_divide/multiplier.v',
+ ds:'2-cycle pipelined Booth-encoded 32×32 multiplier. Sign/zero-extends operands per operation type. Maps to 2× cascaded Artix-7 DSP48E1 slices. Returns lower 32 bits (MUL) or upper 32 bits (MULH/MULHSU/MULHU). Timing: 3.6 ns — satisfies 10 ns budget.',
+ po:[
+  {d:'IN', n:'clk',       w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',     w:'1',  s:'Reset'},
+  {d:'IN', n:'operand_a', w:'32', s:'Multiplicand'},
+  {d:'IN', n:'operand_b', w:'32', s:'Multiplier'},
+  {d:'IN', n:'funct3',    w:'2',  s:'00=MUL 01=MULH 10=MULHSU 11=MULHU'},
+  {d:'IN', n:'mul_req',   w:'1',  s:'Start multiply'},
+  {d:'OUT',n:'mul_result',w:'32', s:'Product (lower or upper 32 bits)'},
+  {d:'OUT',n:'mul_done',  w:'1',  s:'Result valid (2 cycles after req)'},
+ ], cn:['mdu_u']},
+
+{id:'div_u',nm:'divider',sb:'34-cycle · non-restoring',cat:'alu',
+ x:470, y:446, w:148, h:46,
+ fi:'rtl/multiply_divide/divider.v',
+ ds:'34-cycle non-restoring iterative divider (32 shift-subtract iterations + 2 setup cycles). RISC-V corner cases: div-by-zero → quotient=0xFFFFFFFF, remainder=dividend; signed INT_MIN÷-1 → quotient=INT_MIN, remainder=0.',
+ po:[
+  {d:'IN', n:'clk',        w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',      w:'1',  s:'Reset'},
+  {d:'IN', n:'operand_a',  w:'32', s:'Dividend'},
+  {d:'IN', n:'operand_b',  w:'32', s:'Divisor'},
+  {d:'IN', n:'is_rem',     w:'1',  s:'0=quotient result, 1=remainder result'},
+  {d:'IN', n:'is_unsigned',w:'1',  s:'0=signed, 1=unsigned'},
+  {d:'IN', n:'div_req',    w:'1',  s:'Start division'},
+  {d:'OUT',n:'div_result', w:'32', s:'Quotient or remainder (34 cycles)'},
+  {d:'OUT',n:'div_done',   w:'1',  s:'Result valid signal'},
+ ], cn:['mdu_u']},
+
+{id:'amu_u',nm:'amu',sb:'A-Ext · LR/SC/AMO',cat:'atomic',
+ x:472, y:337, w:153, h:96,
+ fi:'rtl/atomic/amu.v',
+ ds:'Atomic Memory Unit (A-extension). LR.W sets 32-byte cache-line reservation; SC.W conditionally writes (0=success, 1=fail). Nine AMO word operations: AMOSWAP, AMOADD, AMOXOR, AMOAND, AMOOR, AMOMIN/MAX (signed), AMOMINU/MAXU (unsigned). Stalls pipeline during atomic RMW (5 cycles DTCM). Reservation cleared by trap, MRET, or competing store.',
+ po:[
+  {d:'IN', n:'clk',       w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',     w:'1',  s:'Reset (clears reservation_valid)'},
+  {d:'IN', n:'addr',      w:'32', s:'Atomic operation address'},
+  {d:'IN', n:'wdata',     w:'32', s:'Write data (SC.W or AMO operand)'},
+  {d:'IN', n:'amo_type',  w:'5',  s:'0=LR.W 1=SC.W 5=SWAP 0=ADD etc.'},
+  {d:'IN', n:'amo_req',   w:'1',  s:'Operation request'},
+  {d:'OUT',n:'mem_addr',  w:'32', s:'Memory address output'},
+  {d:'OUT',n:'mem_wdata', w:'32', s:'Memory write data'},
+  {d:'IN', n:'mem_rdata', w:'32', s:'Memory read data'},
+  {d:'OUT',n:'mem_we',    w:'1',  s:'Memory write enable'},
+  {d:'OUT',n:'amo_result',w:'32', s:'Original value (AMO) or 0/1 (SC success/fail)'},
+  {d:'OUT',n:'amo_done',  w:'1',  s:'Operation complete'},
+ ], cn:['de_stg']},
+
+// ── WB Stage ──────────────────────────────────
+{id:'wb_stg',nm:'wb_stage',sb:'Writeback',cat:'pipeline',
+ x:962, y:216, w:200, h:145,
+ fi:'rtl/core/wb_stage.v',
+ ds:'Writeback stage. Write-back data mux: 00=ALU result, 01=load data (byte-lane aligned), 10=PC+4 (JAL/JALR link), 11=CSR read data. Writes to register file. Commits CSR trap save sequences and MRET state restoration. Increments minstret on each retired instruction.',
+ po:[
+  {d:'IN', n:'clk',      w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',    w:'1',  s:'Reset'},
+  {d:'IN', n:'de_pc',    w:'32', s:'PC from DE/WB pipeline register'},
+  {d:'IN', n:'de_valid', w:'1',  s:'Instruction valid'},
+  {d:'OUT',n:'rf_addr_wr',w:'5', s:'Destination register address'},
+  {d:'OUT',n:'rf_data_wr',w:'32',s:'Write-back data'},
+  {d:'OUT',n:'rf_we',    w:'1',  s:'Register file write enable'},
+  {d:'OUT',n:'wb_pc',    w:'32', s:'Committed PC (debug / minstret)'},
+  {d:'OUT',n:'wb_valid', w:'1',  s:'Instruction retired this cycle'},
+ ], cn:['reg_f']},
+
+// ── Hazard Control ────────────────────────────
+{id:'hzu',nm:'hazard_ctrl',sb:'Stall · Flush · Forward detection',cat:'control',
+ x:36, y:543, w:760, h:57,
+ fi:'rtl/core/hazard_ctrl.v',
+ ds:'Pipeline hazard detection and control. Detects RAW hazards — ALU→ALU resolved by forwarding (0 cycles), Load→Use stalls 1 cycle. Priority: Trap/IRQ > AMO lock (4–6c) > DIV active (34c) > MUL cycle-2 (1c) > Load-use (1c) > Branch/JAL/JALR (1c) > DDR3 stall (10–40c). Typical CPI: 1.183.',
+ po:[
+  {d:'IN', n:'clk',     w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',   w:'1',  s:'Reset'},
+  {d:'IN', n:'if_instr',w:'32', s:'Instruction in IF slot (rs1/rs2 check)'},
+  {d:'IN', n:'de_instr',w:'32', s:'Instruction in DE slot (rd check)'},
+  {d:'IN', n:'dmem_ack',w:'1',  s:'Data memory ack (DDR3 stall detection)'},
+  {d:'OUT',n:'stall',   w:'1',  s:'Hold PC + IF/DE register'},
+  {d:'OUT',n:'flush',   w:'1',  s:'Kill instruction in IF/DE slot'},
+ ], cn:['if_stg','de_stg']},
+
+// ── CSR / Trap ────────────────────────────────
+{id:'csr_f',nm:'csr_file',sb:'Zicsr register file',cat:'csr',
+ x:1097, y:372, w:183, h:62,
+ fi:'rtl/csr/csr_file.v',
+ ds:'Machine-mode CSR file. Implements: mstatus (reset=0x1800), misa (RV32IMAC=0x4014_1105 RO), mie, mtvec, mscratch, mepc, mcause, mtval, mip (MEIP/MTIP wired from irq, MSIP writable), mcycle/mcycleh, minstret/minstreth, mvendorid/marchid/mimpid/mhartid (RO).',
+ po:[
+  {d:'IN', n:'clk',         w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',       w:'1',  s:'Reset — mstatus=0x1800 (MPP=11)'},
+  {d:'IN', n:'csr_addr',    w:'12', s:'12-bit CSR address'},
+  {d:'IN', n:'csr_wdata',   w:'32', s:'Write data'},
+  {d:'OUT',n:'csr_rdata',   w:'32', s:'Read data (current value)'},
+  {d:'IN', n:'csr_op',      w:'3',  s:'001=CSRRW 010=CSRRS 011=CSRRC 101-111=imm variants'},
+  {d:'IN', n:'csr_valid',   w:'1',  s:'CSR access valid'},
+  {d:'IN', n:'irq_timer',   w:'1',  s:'Timer IRQ → mip[7] MTIP'},
+  {d:'IN', n:'irq_external',w:'1',  s:'External IRQ → mip[11] MEIP'},
+  {d:'IN', n:'irq_software',w:'1',  s:'Software IRQ → mip[3] MSIP'},
+  {d:'OUT',n:'mie_meie',    w:'1',  s:'Machine External IRQ Enable (mie[11])'},
+  {d:'OUT',n:'mie_mtie',    w:'1',  s:'Machine Timer IRQ Enable (mie[7])'},
+  {d:'OUT',n:'mie_msie',    w:'1',  s:'Machine Software IRQ Enable (mie[3])'},
+ ], cn:['de_stg','trap_c','irq']},
+
+{id:'trap_c',nm:'trap_ctrl',sb:'Exception / IRQ handler',cat:'csr',
+ x:1097, y:450, w:183, h:62,
+ fi:'rtl/interrupt_exception/trap_ctrl.v',
+ ds:'Trap controller. Priority: MEI > MSI > MTI. On trap: saves mepc←current_pc, mcause←cause, mtval←fault addr. Computes trap vector: Direct (mtvec[1:0]=00) → all traps jump to BASE; Vectored (01) → interrupts jump to BASE + 4×cause[4:0] for fast ISR dispatch. MRET restores MIE←MPIE, PC←mepc.',
+ po:[
+  {d:'IN', n:'clk',              w:'1',  s:'Clock'},
+  {d:'IN', n:'rst_n',            w:'1',  s:'Reset'},
+  {d:'IN', n:'trap_valid',       w:'1',  s:'Trap accepted this cycle'},
+  {d:'IN', n:'trap_cause',       w:'32', s:'mcause encoding (bit[31]=interrupt)'},
+  {d:'IN', n:'trap_value',       w:'32', s:'mtval: faulting address or instruction'},
+  {d:'IN', n:'current_pc',       w:'32', s:'PC of faulting/interrupted instruction'},
+  {d:'IN', n:'mtvec',            w:'32', s:'Trap vector base[31:2] + mode[1:0]'},
+  {d:'OUT',n:'mepc',             w:'32', s:'Exception PC saved to CSR'},
+  {d:'OUT',n:'mcause',           w:'32', s:'Trap cause saved to CSR'},
+  {d:'OUT',n:'mtval',            w:'32', s:'Trap value saved to CSR'},
+  {d:'OUT',n:'trap_vector',      w:'32', s:'Target PC for trap handler entry'},
+  {d:'OUT',n:'trap_vector_valid',w:'1',  s:'Redirect IF stage to trap_vector'},
+ ], cn:['csr_f','if_stg']},
+
+// ── Utility ───────────────────────────────────
+{id:'sync_c',nm:'sync_cell',sb:'CDC synchronizer',cat:'util',
+ x:40, y:818, w:140, h:50,
+ fi:'rtl/util/sync_cell.v',
+ ds:'2-stage flip-flop synchronizer for clock domain crossing (CDC). Prevents metastability for asynchronous inputs. Used for irq_timer, irq_external, irq_software signals and sys_rst_n → synchronous rst_n conversion.',
+ po:[
+  {d:'IN', n:'clk',     w:'1', s:'Destination domain clock'},
+  {d:'IN', n:'rst_n',   w:'1', s:'Asynchronous reset for chain'},
+  {d:'IN', n:'async_in',w:'1', s:'Asynchronous input signal'},
+  {d:'OUT',n:'sync_out',w:'1', s:'2-stage synchronized output'},
+ ], cn:[]},
+
+{id:'fifo_m',nm:'fifo',sb:'#(WIDTH, DEPTH)',cat:'util',
+ x:198, y:818, w:135, h:50,
+ fi:'rtl/util/fifo.v',
+ ds:'Parameterized synchronous FIFO with configurable WIDTH and DEPTH. Provides write-full / read-empty flags and occupancy count output. Used for AXI request buffering and store queue implementation.',
+ po:[
+  {d:'IN', n:'clk',     w:'1', s:'Clock'},
+  {d:'IN', n:'rst_n',   w:'1', s:'Reset (clears pointers)'},
+  {d:'IN', n:'wr_data', w:'W', s:'Write data'},
+  {d:'IN', n:'wr_en',   w:'1', s:'Write enable'},
+  {d:'OUT',n:'wr_full', w:'1', s:'FIFO full'},
+  {d:'OUT',n:'rd_data', w:'W', s:'Read data (async)'},
+  {d:'IN', n:'rd_en',   w:'1', s:'Read enable'},
+  {d:'OUT',n:'rd_empty',w:'1', s:'FIFO empty'},
+  {d:'OUT',n:'count',   w:'⌈log₂D⌉',s:'Occupancy count'},
+ ], cn:[]},
+
+// ── Simulation ────────────────────────────────
+{id:'tbench',nm:'testbench',sb:'Simulation top-level',cat:'sim',
+ x:390, y:818, w:155, h:50,
+ fi:'rtl/sim/testbench.v',
+ ds:'Top-level simulation testbench. Instantiates rv32imac_core with behavioral ITCM/DTCM memory_model instances. Generates 100 MHz clock (10 ns). Releases rst_n after 100 ns. Dumps VCD waveforms. Terminates at t=10 µs.',
+ po:[
+  {d:'INT',n:'clk',  w:'1', s:'Generated 100 MHz clock'},
+  {d:'INT',n:'rst_n',w:'1', s:'Reset deasserts at t=100ns'},
+ ], cn:['mem_m']},
+
+{id:'mem_m',nm:'memory_model',sb:'#(DEPTH, WIDTH)',cat:'sim',
+ x:560, y:818, w:160, h:50,
+ fi:'rtl/sim/memory_model.v',
+ ds:'Behavioral memory model for RTL simulation. Parameterized DEPTH and WIDTH. Initialized with ADDI x0,x0,0 NOPs (0x00000013). Supports byte-granule write enables for accurate DTCM store simulation.',
+ po:[
+  {d:'IN',   n:'clk', w:'1', s:'Clock (synchronous write)'},
+  {d:'IN',   n:'addr',w:'32',s:'Byte address'},
+  {d:'INOUT',n:'data',w:'W', s:'Bidirectional data bus'},
+  {d:'IN',   n:'we',  w:'4', s:'Byte write enables'},
+  {d:'IN',   n:'en',  w:'1', s:'Memory enable'},
+ ], cn:['tbench']},
+];
+
+// ═══════════════════════════════════════════════
+// CONNECTION DEFINITIONS
+// ═══════════════════════════════════════════════
+const CONNS=[
+ // External → Memory Layer
+ {f:'itcm',   t:'mem_ctrl', c:'#00e676', l:'imem_rdata[31:0]',     tp:'d'},
+ {f:'bootrom',t:'mem_ctrl', c:'#00e676', l:'imem_rdata[31:0]',     tp:'d'},
+ {f:'dtcm',   t:'mem_ctrl', c:'#00e676', l:'dtcm_rdata[31:0]',     tp:'d'},
+ {f:'ddr3',   t:'axi_mst',  c:'#00e676', l:'AXI4-Lite RDATA',      tp:'d'},
+ {f:'clint',  t:'axi_mst',  c:'#546e7a', l:'AXI4-Lite',            tp:'d'},
+ {f:'plic',   t:'axi_mst',  c:'#546e7a', l:'AXI4-Lite',            tp:'d'},
+ {f:'periph', t:'axi_mst',  c:'#546e7a', l:'AXI4-Lite',            tp:'d'},
+ {f:'irq',    t:'csr_f',    c:'#ff4081', l:'irq_timer/ext/sw',     tp:'c'},
+ // Memory Layer → Core
+ {f:'mem_ctrl',t:'if_stg',  c:'#00e676', l:'itcm_data[31:0]',      tp:'d'},
+ {f:'mem_ctrl',t:'de_stg',  c:'#00e676', l:'data_rdata/ack',        tp:'d'},
+ {f:'de_stg', t:'mem_ctrl', c:'#00d4ff', l:'dmem_addr/wdata/we/req',tp:'d'},
+ {f:'axi_mst',t:'de_stg',   c:'#00e676', l:'axi_rdata/ack',         tp:'d'},
+ // Pipeline Flow
+ {f:'if_stg', t:'de_stg',   c:'#00d4ff', l:'if_pc · if_instr · if_valid', tp:'d'},
+ {f:'de_stg', t:'wb_stg',   c:'#00d4ff', l:'de_pc · de_valid',      tp:'d'},
+ {f:'wb_stg', t:'reg_f',    c:'#ffd740', l:'rf_we · addr_wr · wr_data', tp:'d'},
+ // Hazard Control
+ {f:'hzu',    t:'if_stg',   c:'#ff4081', l:'stall · flush',          tp:'c'},
+ {f:'hzu',    t:'de_stg',   c:'#ff4081', l:'stall · flush',          tp:'c'},
+ {f:'if_stg', t:'hzu',      c:'#607d8b', l:'if_instr[31:0]',         tp:'c'},
+ {f:'de_stg', t:'hzu',      c:'#607d8b', l:'de_instr · dmem_ack',    tp:'c'},
+ // Branch Feedback
+ {f:'de_stg', t:'if_stg',   c:'#ff4081', l:'branch_target · taken',  tp:'c'},
+ // C-Expander
+ {f:'c_exp',  t:'if_stg',   c:'#00bfa5', l:'instr_32bit · is_valid', tp:'d'},
+ // DE Internal
+ {f:'reg_f',  t:'fwd_u',    c:'#ffd740', l:'rs1_data · rs2_data',    tp:'d'},
+ {f:'fwd_u',  t:'alu_u',    c:'#ffab00', l:'operand_a · operand_b',  tp:'d'},
+ {f:'fwd_u',  t:'mdu_u',    c:'#ff6d00', l:'operand_a · operand_b',  tp:'d'},
+ {f:'fwd_u',  t:'amu_u',    c:'#ff6d00', l:'wdata',                  tp:'d'},
+ {f:'alu_u',  t:'add_u',    c:'#ffab00', l:'uses adder',              tp:'d'},
+ {f:'alu_u',  t:'cmp_u',    c:'#ffab00', l:'uses comparator',         tp:'d'},
+ {f:'mdu_u',  t:'mul_u',    c:'#ff6d00', l:'mul_req · operands',      tp:'d'},
+ {f:'mdu_u',  t:'div_u',    c:'#ff6d00', l:'div_req · operands',      tp:'d'},
+ // CSR / Trap
+ {f:'de_stg', t:'csr_f',    c:'#b06fff', l:'csr_addr · op · wdata',  tp:'d'},
+ {f:'csr_f',  t:'de_stg',   c:'#b06fff', l:'csr_rdata · mie_*',       tp:'d'},
+ {f:'csr_f',  t:'trap_c',   c:'#b06fff', l:'mtvec · mip',             tp:'c'},
+ {f:'trap_c', t:'if_stg',   c:'#ff4081', l:'trap_vector · valid',     tp:'c'},
+ {f:'de_stg', t:'trap_c',   c:'#ff4081', l:'trap_valid · cause · pc', tp:'c'},
+ // Simulation
+ {f:'tbench', t:'mem_m',    c:'#455a64', l:'addr · data · we · en',   tp:'d'},
+];
+
+// ═══════════════════════════════════════════════
+// SVG RENDERING ENGINE
+// ═══════════════════════════════════════════════
+const svg=document.getElementById('dsvg');
+const ns='http://www.w3.org/2000/svg';
+const tip=document.getElementById('tip');
+
+let vs={x:0,y:0,s:1};
+let drag=false,dstart=null;
+let selId=null;
+
+function el(tag,attrs){
+  const e=document.createElementNS(ns,tag);
+  for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);
+  return e;
+}
+
+function txt(content,attrs){
+  const e=el('text',attrs);
+  e.textContent=content;
+  return e;
+}
+
+function getM(id){return M.find(m=>m.id===id)}
+
+function edges(src,dst){
+  const sx=src.x+src.w/2, sy=src.y+src.h/2;
+  const dx=dst.x+dst.w/2, dy=dst.y+dst.h/2;
+  const ddx=dx-sx, ddy=dy-sy;
+  if(Math.abs(ddx)>=Math.abs(ddy)) return ddx>0?['right','left']:['left','right'];
+  return ddy>0?['bottom','top']:['top','bottom'];
+}
+
+function anchor(m,e){
+  if(e==='right')  return[m.x+m.w, m.y+m.h/2];
+  if(e==='left')   return[m.x,     m.y+m.h/2];
+  if(e==='bottom') return[m.x+m.w/2, m.y+m.h];
+  if(e==='top')    return[m.x+m.w/2, m.y];
+  return[m.x+m.w/2, m.y+m.h/2];
+}
+
+function connPath(sx,sy,dx,dy,se,de){
+  const mx=(sx+dx)/2, my=(sy+dy)/2;
+  if(se==='right'&&de==='left')   return`M${sx},${sy}C${mx},${sy} ${mx},${dy} ${dx},${dy}`;
+  if(se==='left'&&de==='right')   return`M${sx},${sy}C${mx},${sy} ${mx},${dy} ${dx},${dy}`;
+  if(se==='bottom'&&de==='top')   return`M${sx},${sy}C${sx},${my} ${dx},${my} ${dx},${dy}`;
+  if(se==='top'&&de==='bottom')   return`M${sx},${sy}C${sx},${my} ${dx},${my} ${dx},${dy}`;
+  if(se==='right'&&de==='top')    return`M${sx},${sy}C${mx+30},${sy} ${dx},${my} ${dx},${dy}`;
+  if(se==='bottom'&&de==='left')  return`M${sx},${sy}C${sx},${my+30} ${mx},${dy} ${dx},${dy}`;
+  return`M${sx},${sy}C${mx},${sy} ${mx},${dy} ${dx},${dy}`;
+}
+
+function build(){
+  // Defs
+  const defs=el('defs',{});
+  // Arrow markers
+  const arrowCols=['#00d4ff','#00e676','#ff4081','#b06fff','#ff6d00','#ffab00','#ffd740','#00bfa5','#607d8b','#546e7a','#455a64'];
+  for(const c of arrowCols){
+    const mid=el('marker',{id:`ar${c.replace('#','')}`,markerWidth:'7',markerHeight:'7',refX:'6',refY:'3',orient:'auto',markerUnits:'strokeWidth'});
+    mid.appendChild(el('path',{d:'M0,0 L0,6 L6,3 z',fill:c,opacity:'.85'}));
+    defs.appendChild(mid);
+  }
+  // Dot grid
+  const pat=el('pattern',{id:'dotp',width:'22',height:'22',patternUnits:'userSpaceOnUse'});
+  pat.appendChild(el('circle',{cx:'1',cy:'1',r:'.7',fill:'#182640',opacity:'.6'}));
+  defs.appendChild(pat);
+  // Glow filter
+  const gf=el('filter',{id:'glow',x:'-30%',y:'-30%',width:'160%',height:'160%'});
+  gf.appendChild(el('feGaussianBlur',{stdDeviation:'4',result:'b'}));
+  const fm=el('feMerge',{});
+  fm.appendChild(el('feMergeNode',{in:'b'}));
+  fm.appendChild(el('feMergeNode',{in:'SourceGraphic'}));
+  gf.appendChild(fm);
+  defs.appendChild(gf);
+  svg.appendChild(defs);
+
+  // Static background
+  svg.appendChild(el('rect',{width:'100%',height:'100%',fill:'#060b12'}));
+  svg.appendChild(el('rect',{width:'100%',height:'100%',fill:'url(#dotp)'}));
+
+  // Main group (pan/zoom)
+  const g=el('g',{id:'mg'});
+  svg.appendChild(g);
+
+  // Connection layer (below modules)
+  const cg=el('g',{id:'cg'});
+  g.appendChild(cg);
+
+  // Module layer
+  const modg=el('g',{id:'modg'});
+  g.appendChild(modg);
+
+  // Draw containers first
+  M.filter(m=>m.ctr).forEach(m=>drawCtr(modg,m));
+  // Draw regular modules
+  M.filter(m=>!m.ctr).forEach(m=>drawMod(modg,m));
+  // Draw connections
+  CONNS.forEach(c=>drawConn(cg,c));
+
+  fitView();
+  buildLegend();
+  setupEvents();
+}
+
+function drawCtr(g,m){
+  const col=CAT[m.cat]?CAT[m.cat].c:'#aaa';
+  const grp=el('g',{id:`m-${m.id}`,class:'mg',style:'cursor:pointer'});
+  grp.appendChild(el('rect',{x:m.x,y:m.y,width:m.w,height:m.h,rx:'10',
+    fill:'rgba(10,16,26,.55)',stroke:col,'stroke-width':'1',
+    'stroke-dasharray':'7 4',opacity:'.85'}));
+  // Top label bar
+  grp.appendChild(el('rect',{x:m.x,y:m.y,width:m.w,height:'22',rx:'8',fill:`${col}18`}));
+  grp.appendChild(el('rect',{x:m.x,y:m.y+14,width:m.w,height:'8',fill:`${col}18`}));
+  grp.appendChild(txt(m.nm,{x:m.x+10,y:m.y+13,fill:col,'font-size':'10',
+    'font-family':"'Oxanium',sans-serif",'font-weight':'700','letter-spacing':'1.5',
+    style:'text-transform:uppercase',opacity:'.95','pointer-events':'none'}));
+  if(m.sb){
+    grp.appendChild(txt(m.sb,{x:m.x+10,y:m.y+24,fill:'#2a3d52','font-size':'7.5',
+      'font-family':"'JetBrains Mono',monospace",'pointer-events':'none'}));
+  }
+  if(m.fi||m.ds){
+    grp.addEventListener('click',e=>{e.stopPropagation();selMod(m.id)});
+  }
+  g.appendChild(grp);
+}
+
+function drawMod(g,m){
+  const col=CAT[m.cat]?CAT[m.cat].c:'#aaa';
+  const grp=el('g',{id:`m-${m.id}`,class:'mg',style:'cursor:pointer'});
+
+  // Glow halo
+  const halo=el('rect',{x:m.x-3,y:m.y-3,width:m.w+6,height:m.h+6,
+    rx:'9',fill:'none',stroke:col,'stroke-width':'1',opacity:'0.1',filter:'url(#glow)'});
+  grp.appendChild(halo);
+
+  // Body
+  const body=el('rect',{x:m.x,y:m.y,width:m.w,height:m.h,rx:'6',
+    fill:'#0c1830',stroke:col,'stroke-width':'1.5',class:'mr'});
+  grp.appendChild(body);
+
+  // Top accent strip
+  grp.appendChild(el('rect',{x:m.x,y:m.y,width:m.w,height:'3.5',rx:'6',fill:col,opacity:'.75'}));
+  grp.appendChild(el('rect',{x:m.x,y:m.y+3.5,width:m.w,height:'2',fill:col,opacity:'.12'}));
+
+  // Module name (handle \n)
+  const lines=m.nm.split('\n');
+  const totalH=lines.length*13;
+  const baseY=m.y+m.h/2-(m.sb?7:0)-totalH/2+7;
+  lines.forEach((ln,i)=>{
+    grp.appendChild(txt(ln,{x:m.x+m.w/2,y:baseY+i*13,
+      fill:'#dce8f0','font-size':'9.5','font-family':"'JetBrains Mono',monospace",
+      'font-weight':'500','text-anchor':'middle','dominant-baseline':'middle','pointer-events':'none'}));
+  });
+
+  // Sub-label
+  if(m.sb){
+    const sblines=m.sb.split('\n');
+    sblines.forEach((sl,i)=>{
+      grp.appendChild(txt(sl,{x:m.x+m.w/2,y:m.y+m.h-7+(i-sblines.length+1)*10,
+        fill:'#2a3d52','font-size':'7.5','font-family':"'JetBrains Mono',monospace",
+        'text-anchor':'middle','pointer-events':'none'}));
+    });
+  }
+
+  // Category indicator dot
+  grp.appendChild(el('circle',{cx:m.x+m.w-8,cy:m.y+9,r:'3',fill:col,opacity:'.6'}));
+
+  grp.addEventListener('click',e=>{e.stopPropagation();selMod(m.id)});
+  grp.addEventListener('mouseenter',()=>{
+    body.setAttribute('stroke-width','2.5');
+    halo.setAttribute('opacity','.35');
+    hlConns(m.id);
+  });
+  grp.addEventListener('mouseleave',()=>{
+    body.setAttribute('stroke-width','1.5');
+    halo.setAttribute('opacity','0.1');
+    resetConns();
+  });
+  g.appendChild(grp);
+}
+
+function drawConn(g,conn){
+  const src=getM(conn.f); const dst=getM(conn.t);
+  if(!src||!dst) return;
+  const[se,de]=edges(src,dst);
+  const[sx,sy]=anchor(src,se);
+  const[dx,dy]=anchor(dst,de);
+  const d=connPath(sx,sy,dx,dy,se,de);
+  const mc=conn.c.replace('#','');
+  const p=el('path',{d,stroke:conn.c,
+    'stroke-width':conn.tp==='c'?'1':'1.5',
+    'stroke-dasharray':conn.tp==='c'?'5 3':'none',
+    fill:'none',opacity:conn.tp==='c'?'.4':'.6',
+    'marker-end':`url(#ar${mc})`,
+    class:'cp','data-f':conn.f,'data-t':conn.t,'data-l':conn.l||''});
+  p.addEventListener('mouseenter',e=>{
+    tip.style.display='block';
+    tip.style.left=e.clientX+12+'px';
+    tip.style.top=e.clientY-20+'px';
+    tip.textContent=conn.l||'';
+  });
+  p.addEventListener('mousemove',e=>{
+    tip.style.left=e.clientX+12+'px';
+    tip.style.top=e.clientY-20+'px';
+  });
+  p.addEventListener('mouseleave',()=>tip.style.display='none');
+  g.appendChild(p);
+}
+
+function hlConns(id){
+  document.querySelectorAll('.cp').forEach(p=>{
+    const f=p.getAttribute('data-f'),t=p.getAttribute('data-t');
+    if(f===id||t===id){
+      p.style.opacity='1';
+      p.style.strokeWidth='2.5';
+      p.classList.add('an');
+    } else {
+      p.style.opacity='.05';
+    }
+  });
+}
+
+function resetConns(){
+  document.querySelectorAll('.cp').forEach(p=>{
+    p.style.opacity='';
+    p.style.strokeWidth='';
+    p.classList.remove('an');
+  });
+}
+
+// ─── Sidebar ────────────────────────────────
+function selMod(id){
+  selId=id;
+  document.querySelectorAll('.mg').forEach(g=>g.classList.remove('sel'));
+  const grp=document.getElementById(`m-${id}`);
+  if(grp) grp.classList.add('sel');
+  const m=getM(id);
+  if(!m) return;
+  showSB(m);
+}
+
+function showSB(m){
+  const col=CAT[m.cat]?CAT[m.cat].c:'#aaa';
+  const dirC={IN:'di',OUT:'do',INOUT:'dw',INT:'dt',INTERNAL:'dt'};
+  const dirL={IN:'IN',OUT:'OUT',INOUT:'IO',INT:'SIM',INTERNAL:'SIM'};
+
+  let portHtml='';
+  if(m.po&&m.po.length){
+    portHtml=`<div class="sb-sec">Interface Ports</div>
+    <table class="pt">
+    <thead><tr><th>Dir</th><th>Signal</th><th>Width</th><th>Description</th></tr></thead>
+    <tbody>
+    ${m.po.map(p=>`<tr>
+      <td><span class="${dirC[p.d]||'di'}">${dirL[p.d]||p.d}</span></td>
+      <td class="pn">${p.n}</td>
+      <td class="pw">[${p.w}]</td>
+      <td class="pd">${p.s}</td>
+    </tr>`).join('')}
+    </tbody></table>`;
+  }
+
+  let cnHtml='';
+  if(m.cn&&m.cn.length){
+    const tags=m.cn.map(cid=>{
+      const cm=getM(cid);
+      const cc=cm?(CAT[cm.cat]?CAT[cm.cat].c:'#aaa'):'#aaa';
+      return`<span class="tag" style="color:${cc};border-color:${cc}55"
+        onclick="selMod('${cid}')">${cm?cm.nm:cid}</span>`;
+    }).join('');
+    cnHtml=`<div class="sb-sec">Connects To</div><div class="tags">${tags}</div>`;
+  }
+
+  document.getElementById('sbi').innerHTML=`
+    <button class="sbx" onclick="closeSB()">×</button>
+    <div class="sb-cat" style="color:${col}">${CAT[m.cat]?CAT[m.cat].l:m.cat}</div>
+    <div class="sb-nm" style="color:${col}">${m.nm}</div>
+    <div class="sb-fi">${m.fi||'(internal / no file)'}</div>
+    ${m.ds?`<div class="sb-ds" style="border-color:${col}44">${m.ds}</div>`:''}
+    ${portHtml}${cnHtml}
+  `;
+  document.getElementById('sb').classList.add('on');
+}
+
+function closeSB(){
+  document.getElementById('sb').classList.remove('on');
+  document.querySelectorAll('.mg').forEach(g=>g.classList.remove('sel'));
+  selId=null;
+}
+window.selMod=selMod;
+window.closeSB=closeSB;
+
+// ─── Legend ─────────────────────────────────
+function buildLegend(){
+  const leg=document.getElementById('legend');
+  for(const[key,val]of Object.entries(CAT)){
+    const d=document.createElement('div');
+    d.className='leg';
+    d.style.color=val.c;
+    d.innerHTML=`<div class="leg-d" style="background:${val.c}"></div>${val.l}`;
+    d.addEventListener('click',()=>{
+      const on=d.classList.toggle('on');
+      document.querySelectorAll('.mg').forEach(g=>{
+        const id=g.id.replace('m-','');
+        const m=getM(id);
+        g.style.opacity=(!on||m?.cat===key)?'1':'0.12';
+      });
+      if(!on) document.querySelectorAll('.mg').forEach(g=>g.style.opacity='');
+    });
+    leg.appendChild(d);
+  }
+}
+
+// ─── Pan / Zoom ──────────────────────────────
+function fitView(){
+  const area=document.getElementById('cv');
+  const W=area.clientWidth||1200,H=area.clientHeight||700;
+  const VW=1395,VH=895;
+  const s=Math.min(W/VW,H/VH)*.92;
+  vs={x:(W-VW*s)/2,y:(H-VH*s)/2,s};
+  applyT();
+}
+
+function applyT(){
+  document.getElementById('mg').setAttribute('transform',`translate(${vs.x},${vs.y}) scale(${vs.s})`);
+}
+
+function zoom(factor,cx,cy){
+  const area=document.getElementById('cv');
+  cx=cx??area.clientWidth/2;
+  cy=cy??area.clientHeight/2;
+  vs.x=cx-(cx-vs.x)*factor;
+  vs.y=cy-(cy-vs.y)*factor;
+  vs.s*=factor;
+  applyT();
+}
+
+function setupEvents(){
+  const cv=document.getElementById('cv');
+  cv.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const r=cv.getBoundingClientRect();
+    zoom(e.deltaY>0?.88:1.12,e.clientX-r.left,e.clientY-r.top);
+  },{passive:false});
+
+  let ds=null;
+  cv.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;
+    drag=true; ds={x:e.clientX-vs.x,y:e.clientY-vs.y};
+    cv.classList.add('grab');
+  });
+  window.addEventListener('mousemove',e=>{
+    if(!drag||!ds)return;
+    vs.x=e.clientX-ds.x; vs.y=e.clientY-ds.y; applyT();
+  });
+  window.addEventListener('mouseup',()=>{drag=false; document.getElementById('cv').classList.remove('grab')});
+  svg.addEventListener('click',e=>{if(e.target===svg)closeSB()});
+  document.getElementById('bzi').onclick=()=>zoom(1.22);
+  document.getElementById('bzo').onclick=()=>zoom(.82);
+  document.getElementById('bzf').onclick=()=>fitView();
+}
+
+// ─── Init ────────────────────────────────────
+build();
+</script>
+</body>
+</html>

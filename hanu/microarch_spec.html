@@ -1,0 +1,2690 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>RISC-V RV32IMAC ISA Reference</title><style>
+* {margin:0;padding:0;box-sizing:border-box}
+:root {
+  --primary-color:#2e3440;--secondary-color:#3b4252;--accent-color:#88c0d0;--accent-dark:#5e81ac;
+  --success-color:#a3be8c;--warning-color:#ebcb8b;--error-color:#bf616a;
+  --text-color:#eceff4;--text-secondary:#d8dee9;--bg-color:#2e3440;--bg-secondary:#3b4252;--border-color:#434c5e
+}
+body {font-family:'Segoe UI','Roboto','Helvetica','Arial',sans-serif;line-height:1.6;color:var(--text-color);background-color:var(--bg-color)}
+.container {display:flex;max-width:1400px;margin:0 auto}
+.toc-sidebar {position:fixed;left:0;top:0;width:250px;height:100vh;background-color:var(--secondary-color);border-right:2px solid var(--border-color);overflow-y:auto;padding:20px 0;z-index:100}
+.toc-header {font-size:1.2em;font-weight:bold;color:var(--accent-color);padding:0 20px 20px 20px;border-bottom:2px solid var(--accent-dark);margin-bottom:10px}
+.toc-list {list-style:none}
+.toc-list ul {list-style:none;padding-left:20px}
+.toc-list li {margin:5px 0}
+.toc-list a {color:var(--accent-color);text-decoration:none;font-size:0.95em;display:block;padding:5px 20px;transition:all 0.3s ease}
+.toc-list a:hover {color:var(--text-color);background-color:var(--bg-color);padding-left:30px}
+.content {margin-left:250px;padding:40px 60px;flex:1}
+h1,h2,h3,h4,h5,h6 {margin-top:1.5em;margin-bottom:0.5em;font-weight:600;line-height:1.2}
+h1 {font-size:2.8em;color:var(--accent-color);border-bottom:3px solid var(--accent-color);padding-bottom:10px}
+h2 {font-size:2.2em;color:var(--accent-color);border-left:4px solid var(--accent-dark);padding-left:15px}
+h3 {font-size:1.8em;color:var(--text-secondary)}
+h4 {font-size:1.5em;color:var(--text-secondary)}
+p {margin:1em 0;text-align:justify}
+a {color:var(--accent-color);text-decoration:none;transition:color 0.3s ease}
+a:hover {color:var(--text-color);text-decoration:underline}
+code {background-color:var(--secondary-color);color:var(--success-color);padding:2px 6px;border-radius:3px;font-family:'Courier New','Consolas',monospace;font-size:0.9em}
+pre {background-color:var(--secondary-color);border:1px solid var(--border-color);border-radius:5px;padding:15px;overflow-x:auto;margin:1.5em 0;line-height:1.4}
+pre code {background-color:transparent;color:inherit;padding:0}
+.styled-table {width:100%;border-collapse:collapse;margin:1.5em 0;border:1px solid var(--border-color);border-radius:5px;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.3)}
+.styled-table thead {background-color:var(--accent-dark);color:var(--text-color);font-weight:bold}
+.styled-table th {padding:15px;text-align:left;font-weight:600;border-bottom:2px solid var(--accent-color)}
+.styled-table td {padding:12px 15px;border-bottom:1px solid var(--border-color)}
+.styled-table tbody tr.even-row {background-color:var(--secondary-color)}
+.styled-table tbody tr.odd-row {background-color:var(--bg-color)}
+.styled-table tbody tr:hover {background-color:var(--accent-dark);opacity:0.8}
+blockquote {border-left:4px solid var(--accent-color);padding:10px 20px;margin:1.5em 0;background-color:var(--secondary-color);color:var(--text-secondary);font-style:italic}
+ul,ol {margin:1em 0;padding-left:2em}
+li {margin:0.5em 0}
+hr {border:none;height:2px;background:linear-gradient(to right,var(--border-color),var(--accent-dark),var(--border-color));margin:2em 0}
+img {max-width:100%;height:auto;border-radius:5px;margin:1.5em 0}
+strong,b {color:var(--warning-color);font-weight:600}
+em,i {color:var(--text-secondary)}
+::-webkit-scrollbar {width:8px}
+::-webkit-scrollbar-track {background:var(--secondary-color)}
+::-webkit-scrollbar-thumb {background:var(--accent-dark);border-radius:4px}
+::-webkit-scrollbar-thumb:hover {background:var(--accent-color)}
+@media (max-width:768px) {.toc-sidebar {position:relative;width:100%;height:auto;border-right:none;border-bottom:2px solid var(--border-color)}.content {margin-left:0;padding:20px}h1{font-size:2em}h2{font-size:1.6em}h3{font-size:1.4em}}
+</style><script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body><div class="container"><nav class="toc-sidebar"><div class="toc-header">Contents</div><ul class="toc-list"><ul><ul><li><a href="#heading-2-1">RV32IMAC Microarchitecture Specification</a></li><ul><li><a href="#heading-3-1">Table of Contents</a></li><li><a href="#heading-3-2">1. Document Scope & Conventions</a></li><li><a href="#heading-3-3">2. Top-Level Block Diagram</a></li><li><a href="#heading-3-4">3. Pipeline Architecture</a></li><li><a href="#heading-3-5">4. Register File & Forwarding Unit</a></li><li><a href="#heading-3-6">5. Instruction Fetch Stage (IF)</a></li><li><a href="#heading-3-7">6. Decode / Execute Stage (DE)</a></li><li><a href="#heading-3-8">7. Writeback Stage (WB)</a></li><li><a href="#heading-3-9">8. Hazard Control Unit</a></li><li><a href="#heading-3-10">9. M-Extension — Multiply / Divide Unit</a></li><li><a href="#heading-3-11">10. A-Extension — Atomic Memory Unit</a></li><li><a href="#heading-3-12">11. C-Extension — Pre-Decode Expander</a></li><li><a href="#heading-3-13">12. Memory System & Bus Interface</a></li><li><a href="#heading-3-14">13. CSR File & Trap Controller</a></li><li><a href="#heading-3-15">14. Control Signal Reference</a></li><li><a href="#heading-3-16">15. FPGA Resource Utilization</a></li><li><a href="#heading-3-17">16. Timing Closure & Power Notes</a></li><li><a href="#heading-3-18">17. Revision History</a></li></ul></ul></ul></nav><div class="content"><h2 id="heading-2-1">RV32IMAC Microarchitecture Specification</h2>
+<h4 id="hardware-implementation-guide-rtl-coding-phase-reference">Hardware Implementation Guide — RTL Coding Phase Reference</h4>
+<hr/>
+<blockquote>
+<p><strong>Document Authority:</strong> This specification is subordinate to and must remain consistent with<br/>
+<code>docs/rv32imac_isa_reference.md</code> (ISA String: <code>RV32IMAC_Zicsr_Zifencei</code>). In any conflict<br/>
+between this document and the ISA reference, the ISA reference takes precedence.<br/>
+Target platform: <strong>Xilinx Artix-7 xc7a200t (Nexys Video)</strong>. Target workload: <strong>FreeRTOS /<br/>
+Zephyr RTOS on IoT sensor nodes</strong>. All microarchitectural decisions are constrained by the<br/>
+FPGA fabric resource budget and the real-time determinism requirements of the RTOS tick handler.</p>
+</blockquote>
+<hr/>
+<h3 id="heading-3-1">Table of Contents</h3>
+<ol>
+<li><a href="#1-document-scope--conventions">Document Scope &amp; Conventions</a></li>
+<li><a href="#2-top-level-block-diagram">Top-Level Block Diagram</a></li>
+<li><a href="#3-pipeline-architecture">Pipeline Architecture</a></li>
+<li><a href="#4-register-file--forwarding-unit">Register File &amp; Forwarding Unit</a></li>
+<li><a href="#5-instruction-fetch-stage-if">Instruction Fetch Stage (IF)</a></li>
+<li><a href="#6-decode--execute-stage-de">Decode / Execute Stage (DE)</a></li>
+<li><a href="#7-writeback-stage-wb">Writeback Stage (WB)</a></li>
+<li><a href="#8-hazard-control-unit">Hazard Control Unit</a></li>
+<li><a href="#9-m-extension--multiply--divide-unit">M-Extension — Multiply / Divide Unit</a></li>
+<li><a href="#10-a-extension--atomic-memory-unit">A-Extension — Atomic Memory Unit</a></li>
+<li><a href="#11-c-extension--pre-decode-expander">C-Extension — Pre-Decode Expander</a></li>
+<li><a href="#12-memory-system--bus-interface">Memory System &amp; Bus Interface</a></li>
+<li><a href="#13-csr-file--trap-controller">CSR File &amp; Trap Controller</a></li>
+<li><a href="#14-control-signal-reference">Control Signal Reference</a></li>
+<li><a href="#15-fpga-resource-utilization">FPGA Resource Utilization</a></li>
+<li><a href="#16-timing-closure--power-notes">Timing Closure &amp; Power Notes</a></li>
+<li><a href="#17-revision-history">Revision History</a></li>
+</ol>
+<hr/>
+<h3 id="heading-3-2">1. Document Scope &amp; Conventions</h3>
+<h4 id="11-rtl-file-mapping">1.1 RTL File Mapping</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Module</th>
+<th>RTL File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>Top-level</td>
+<td><code>rtl/core/rv32imac_core.v</code></td>
+<td>Core wrapper, resets, clock gating</td>
+</tr>
+<tr class="odd-row">
+<td>Fetch</td>
+<td><code>rtl/core/if_stage.v</code></td>
+<td>PC mux, ITCM interface, C-pre-decode</td>
+</tr>
+<tr class="even-row">
+<td>Decode/Execute</td>
+<td><code>rtl/core/de_stage.v</code></td>
+<td>Decoder, ALU, branch resolver, LSU</td>
+</tr>
+<tr class="odd-row">
+<td>Writeback</td>
+<td><code>rtl/core/wb_stage.v</code></td>
+<td>Regfile write, load data align, CSR commit</td>
+</tr>
+<tr class="even-row">
+<td>Register File</td>
+<td><code>rtl/core/regfile.v</code></td>
+<td>32×32 synchronous BRAM + bypass</td>
+</tr>
+<tr class="odd-row">
+<td>Hazard Unit</td>
+<td><code>rtl/core/hazard_ctrl.v</code></td>
+<td>Stall / flush / forward control</td>
+</tr>
+<tr class="even-row">
+<td>Mul/Div Unit</td>
+<td><code>rtl/core/mdu.v</code></td>
+<td>DSP48E1 multiplier + iterative divider</td>
+</tr>
+<tr class="odd-row">
+<td>Atomic Unit</td>
+<td><code>rtl/core/amu.v</code></td>
+<td>LR/SC reservation + AMO sequencer</td>
+</tr>
+<tr class="even-row">
+<td>C-Expander</td>
+<td><code>rtl/core/c_expand.v</code></td>
+<td>16→32-bit instruction expansion</td>
+</tr>
+<tr class="odd-row">
+<td>CSR File</td>
+<td><code>rtl/core/csr_file.v</code></td>
+<td>mstatus, mepc, mcause, mtvec, mie, mip, …</td>
+</tr>
+<tr class="even-row">
+<td>Trap Ctrl</td>
+<td><code>rtl/core/trap_ctrl.v</code></td>
+<td>Interrupt arbitration, trap entry/exit</td>
+</tr>
+<tr class="odd-row">
+<td>Memory Decode</td>
+<td><code>rtl/core/mmu_decode.v</code></td>
+<td>Address → bus routing (fixed decode)</td>
+</tr>
+<tr class="even-row">
+<td>AXI4-Lite Master</td>
+<td><code>rtl/bus/axi4lite_master.v</code></td>
+<td>Peripheral bus master</td>
+</tr>
+</tbody>
+</table>
+<h4 id="12-signal-naming-conventions">1.2 Signal Naming Conventions</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Prefix/Suffix</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>if_</code></td>
+<td>Signals originating in IF stage</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_</code></td>
+<td>Signals originating in DE stage</td>
+</tr>
+<tr class="even-row">
+<td><code>wb_</code></td>
+<td>Signals originating in WB stage</td>
+</tr>
+<tr class="odd-row">
+<td><code>_q</code></td>
+<td>Registered (flopped) version of a signal</td>
+</tr>
+<tr class="even-row">
+<td><code>_n</code></td>
+<td>Next-cycle combinational value</td>
+</tr>
+<tr class="odd-row">
+<td><code>_en</code></td>
+<td>Enable qualifier</td>
+</tr>
+<tr class="even-row">
+<td><code>_vld</code></td>
+<td>Validity qualifier</td>
+</tr>
+<tr class="odd-row">
+<td><code>stall_*</code></td>
+<td>Pipeline stall cause</td>
+</tr>
+<tr class="even-row">
+<td><code>flush_*</code></td>
+<td>Pipeline flush cause</td>
+</tr>
+<tr class="odd-row">
+<td><code>fwd_*</code></td>
+<td>Forwarding path signal</td>
+</tr>
+</tbody>
+</table>
+<h4 id="13-rtl-folder-structure-organization">1.3 RTL Folder Structure &amp; Organization</h4>
+<p>The RTL codebase is organized into modular, hierarchical components for maintainability, testability, and synthesis scalability.</p>
+<div class="highlight"><div class="highlight"><pre><span></span>rtl/
+├── core/                          # Core CPU pipeline and control
+│   ├── rv32imac_core.v           # Top-level core module wrapper
+│   ├── if_stage.v                # Fetch stage (instruction memory interface)
+│   ├── de_stage.v                # Decode/Execute stage (decoder, ALU, LSU)
+│   ├── wb_stage.v                # Writeback stage (register write, CSR commit)
+│   ├── register_file.v           # 32×32 register file with bypassing
+│   ├── control_path.v            # Control signals generation
+│   ├── hazard_ctrl.v             # RAW/WAW/structural hazard detection &amp; stall logic
+│   └── forwarding_unit.v         # Data forwarding logic (EX→EX, MEM→EX paths)
+│
+├── alu/                          # Arithmetic Logic Unit (I-extension base)
+│   ├── alu.v                     # Main ALU (ADD, SUB, AND, OR, XOR, SLT, shifts)
+│   ├── adder.v                   # 32-bit ripple/carry-select adder
+│   └── comparator.v              # Signed/unsigned comparison logic
+│
+├── multiply_divide/              # M-extension (multiply &amp; divide)
+│   ├── mdu.v                     # Top-level multiply/divide unit
+│   ├── multiplier.v              # Booth-encoded 2-cycle pipelined multiplier
+│   ├── multiplier_dsp48e1.v      # Artix-7 DSP48E1 optimized variant
+│   ├── divider.v                 # Non-restoring iterative divider (32-cycle)
+│   └── mul_div_control.v         # Control logic for MUL/DIV pipeline stages
+│
+├── atomic/                       # A-extension (atomic memory operations)
+│   ├── amu.v                     # Top-level atomic memory unit
+│   ├── lr_sc_unit.v              # Load-Reserved/Store-Conditional logic
+│   ├── amo_unit.v                # Atomic Memory Operations (ADD, XOR, AND, OR, MIN, MAX)
+│   └── reservation_cache.v       # Reservation tracking (32-byte cache line granule)
+│
+├── compressed/                   # C-extension (16-bit instruction encoding)
+│   ├── c_expander.v              # Pre-decode expander (16-bit → 32-bit instruction)
+│   └── c_decoder.v               # Compressed instruction format decoder
+│
+├── csr/                          # Zicsr extension (control &amp; status registers)
+│   ├── csr_file.v                # CSR register file (mstatus, mie, mtvec, mepc, etc.)
+│   ├── csr_alu.v                 # CSRRW/CSRRS/CSRRC logic
+│   └── csr_control.v             # CSR access control &amp; validation
+│
+├── interrupt_exception/          # Interrupt &amp; exception handling
+│   ├── trap_ctrl.v               # Exception/interrupt dispatcher &amp; handler
+│   ├── interrupt_controller.v    # Prioritizes MEIE, MSIE, MTIE
+│   └── exception_detector.v      # Detects illegal instructions, misaligned access, etc.
+│
+├── memory/                       # Memory interface &amp; arbitration
+│   ├── mem_controller.v          # Memory arbitrator (ITCM, DTCM, DDR3, peripherals)
+│   ├── axi4lite_master.v         # AXI4-Lite master interface to peripherals/DDR3
+│   ├── axi4lite_slave.v          # AXI4-Lite slave for debug/test (optional)
+│   ├── write_buffer.v            # Store buffer for pipelined writes
+│   └── mmu_decode.v              # Fixed MMU decode (address → region routing)
+│
+├── cache/                        # Optional: Caching subsystem
+│   ├── icache.v                  # Instruction cache controller (optional for performance)
+│   ├── dcache.v                  # Data cache controller (optional for performance)
+│   └── cache_ctrl.v              # Cache coherency &amp; invalidation logic
+│
+├── debug/                        # Debug module (optional for development)
+│   ├── debug_module.v            # JTAG interface &amp; debug protocol handler
+│   └── debug_transport.v         # Debug transport layer
+│
+├── clocking/                     # Clock &amp; reset distribution
+│   ├── clock_divider.v           # Core clock divider (if variable frequency needed)
+│   └── reset_sync.v              # Synchronous reset distribution &amp; meta-stability handling
+│
+├── top/                          # Top-level integration &amp; platform-specific
+│   ├── hanu_soc.v                # System-on-Chip wrapper (core + memory + peripherals)
+│   ├── artix7_wrapper.v          # Xilinx Artix-7 specific wrapper (DSP48E1, BRAM primitives)
+│   └── nexys_video_top.v         # Nexys Video board specific pin mapping &amp; constraints
+│
+├── util/                         # Utility modules &amp; primitives
+│   ├── fifo.v                    # Parameterized FIFO (for buffering)
+│   ├── mux_tree.v                # Multiplexer primitives (for area/timing optimization)
+│   ├── encoder.v                 # Priority encoders (for interrupt arbitration)
+│   ├── parity.v                  # Parity generation &amp; checking
+│   └── sync_cell.v               # Clock domain crossing synchronizers
+│
+└── sim/                          # Simulation &amp; test components
+    ├── testbench.v               # Top-level testbench
+    ├── memory_model.v            # Behavioral memory model (ITCM, DTCM, DDR3)
+    ├── peripheral_stub.v         # Mock peripherals (UART, GPIO, SPI) for simulation
+    └── vcd_dumper.v              # VCD waveform dump control
+</pre></div>
+</div>
+<h5 id="design-principles">Design Principles</h5>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Principle</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><strong>Single Responsibility</strong></td>
+<td>Each module has one clear purpose (fetch, decode, ALU, etc.)</td>
+</tr>
+<tr class="odd-row">
+<td><strong>Parameterization</strong></td>
+<td>Width, depth, and behavior configurable via parameters</td>
+</tr>
+<tr class="even-row">
+<td><strong>FPGA Awareness</strong></td>
+<td>Artix-7 DSP48E1 and BRAM primitives used for MUL and register file</td>
+</tr>
+<tr class="odd-row">
+<td><strong>Pipeline Staging</strong></td>
+<td>Explicit pipeline registers (IF/DE, DE/WB) with registered control signals</td>
+</tr>
+<tr class="even-row">
+<td><strong>Hazard Isolation</strong></td>
+<td>Hazard logic centralized in <code>hazard_ctrl.v</code> to prevent distributing stall logic</td>
+</tr>
+<tr class="odd-row">
+<td><strong>CSR Separation</strong></td>
+<td>CSR operations isolated in dedicated <code>csr_file.v</code> and <code>trap_ctrl.v</code></td>
+</tr>
+<tr class="even-row">
+<td><strong>Memory Decoding</strong></td>
+<td>Fixed address decode in <code>mmu_decode.v</code>; no dynamic address translation</td>
+</tr>
+<tr class="odd-row">
+<td><strong>Modular Testing</strong></td>
+<td>Each module can be instantiated independently with directed testbenches</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h3 id="heading-3-3">2. Top-Level Block Diagram</h3>
+<div class="highlight"><div class="highlight"><pre><span></span>graph TD
+    subgraph CORE ["RV32IMAC Core  (rv32imac_core.v)"]
+        direction TB
+
+        subgraph IF ["Stage 1 — FETCH  (if_stage.v)"]
+            PC["PC Register\n[31:0]"]
+            PCMUX["PC Mux\n(normal/branch/trap)"]
+            CEXP["C-Expander\n(c_expand.v)\n16→32 bit"]
+            IFID["IF/DE Pipeline Reg"]
+        end
+
+        subgraph DE ["Stage 2 — DECODE / EXECUTE  (de_stage.v)"]
+            DEC["Instruction\nDecoder"]
+            RF["Register File\n32×32b\n(regfile.v)"]
+            FWD["Forwarding\nUnit"]
+            IMM["Immediate\nGen"]
+            ALU["ALU\n(32-bit)"]
+            BRU["Branch\nResolver"]
+            LSU["Load/Store\nUnit"]
+            MDU["Mul/Div Unit\n(mdu.v)"]
+            AMU["Atomic Unit\n(amu.v)"]
+            CSR_EX["CSR Execute\n(csr_file.v)"]
+            DEID["DE/WB Pipeline Reg"]
+        end
+
+        subgraph WB ["Stage 3 — WRITEBACK  (wb_stage.v)"]
+            LDALIGN["Load-Data\nAligner"]
+            RFWR["Reg File\nWrite Port"]
+            CSRWR["CSR Commit\n(trap_ctrl.v)"]
+        end
+
+        HCU["Hazard Control Unit\n(hazard_ctrl.v)"]
+    end
+
+    subgraph MEM ["Memory System"]
+        ITCM["ITCM 32KB\n0x0000_4000\n(RAMB36E1)"]
+        DTCM["DTCM 32KB\n0x2000_0000\n(RAMB36E1)"]
+        BOOTROM["Boot ROM 16KB\n0x0000_0000"]
+    end
+
+    subgraph BUS ["AXI4-Lite Peripheral Bus"]
+        AXIM["AXI4-Lite Master\n(axi4lite_master.v)"]
+        CLINT_P["CLINT\n0xE000_0000"]
+        PLIC_P["PLIC\n0xE001_0000"]
+        GPIO_P["GPIO\n0xF000_0000"]
+        UART_P["UART0\n0xF000_1000"]
+        SPI_P["SPI0\n0xF000_2000"]
+        I2C_P["I2C0\n0xF000_3000"]
+    end
+
+    subgraph EXT ["External"]
+        DDR3["DDR3 256MiB\n0x8000_0000\n(MIG Controller)"]
+    end
+
+    %% Instruction path
+    ITCM --&gt;|"imem_rdata[31:0]"| CEXP
+    BOOTROM --&gt;|"imem_rdata[31:0]"| CEXP
+    PC --&gt;|"imem_addr[31:0]"| ITCM
+    PC --&gt;|"imem_addr[31:0]"| BOOTROM
+
+    %% Data path
+    LSU &lt;--&gt;|"dmem_addr/data/we"| DTCM
+    LSU &lt;--&gt;|"dmem_addr/data/we"| AXIM
+    LSU &lt;--&gt;|"dmem_addr/data/we"| DDR3
+
+    %% Pipeline flow
+    CEXP --&gt; IFID --&gt; DEC
+    DEC --&gt; RF &amp; IMM &amp; CSR_EX
+    RF --&gt; FWD
+    FWD --&gt; ALU &amp; MDU &amp; AMU
+    IMM --&gt; ALU
+    ALU --&gt; BRU &amp; LSU
+    MDU --&gt; DEID
+    AMU --&gt; DEID
+    LSU --&gt; DEID
+    ALU --&gt; DEID
+    DEID --&gt; LDALIGN --&gt; RFWR
+    DEID --&gt; CSRWR
+
+    %% Hazard control
+    HCU &lt;--&gt;|"stall/flush"| IF
+    HCU &lt;--&gt;|"stall/flush"| DE
+    HCU --&gt;|"fwd_sel[1:0]"| FWD
+
+    %% Interrupts
+    CLINT_P --&gt;|"mti_irq / msi_irq"| CSRWR
+    PLIC_P  --&gt;|"mei_irq[31:0]"| CSRWR
+    AXIM &lt;--&gt; CLINT_P &amp; PLIC_P &amp; GPIO_P &amp; UART_P &amp; SPI_P &amp; I2C_P
+
+    %% PC redirect
+    BRU --&gt;|"branch_target / taken"| PCMUX
+    CSRWR --&gt;|"trap_pc / mret_pc"| PCMUX
+    PCMUX --&gt; PC
+</pre></div>
+</div>
+<hr/>
+<h3 id="heading-3-4">3. Pipeline Architecture</h3>
+<h4 id="31-stage-definitions">3.1 Stage Definitions</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Stage</th>
+<th>RTL Module</th>
+<th>Key Operations</th>
+<th>Latency</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><strong>IF</strong> — Instruction Fetch</td>
+<td><code>if_stage.v</code></td>
+<td>PC increment, ITCM/ROM access, C-expansion (16→32), alignment check</td>
+<td>1 cycle (ITCM/ROM); variable (DDR3)</td>
+</tr>
+<tr class="odd-row">
+<td><strong>DE</strong> — Decode / Execute</td>
+<td><code>de_stage.v</code></td>
+<td>Decode, register read, immediate gen, ALU, branch resolve, LSU addr, CSR read/write, MUL/DIV launch</td>
+<td>1 cycle (ALU/branch); 2 (MUL); 34 (DIV); 5 (AMO DTCM)</td>
+</tr>
+<tr class="even-row">
+<td><strong>WB</strong> — Writeback</td>
+<td><code>wb_stage.v</code></td>
+<td>Load-data byte lane select, register file write, CSR commit, trap acknowledgement</td>
+<td>1 cycle</td>
+</tr>
+</tbody>
+</table>
+<h4 id="32-pipeline-timing-diagram-nominal-flow">3.2 Pipeline Timing Diagram — Nominal Flow</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>gantt
+    title 3-Stage Pipeline — 5 Consecutive ALU Instructions (No Hazards)
+    dateFormat  X
+    axisFormat  Cycle %s
+
+    section Instr I0
+    IF  : 1, 2
+    DE  : 2, 3
+    WB  : 3, 4
+
+    section Instr I1
+    IF  : 2, 3
+    DE  : 3, 4
+    WB  : 4, 5
+
+    section Instr I2
+    IF  : 3, 4
+    DE  : 4, 5
+    WB  : 5, 6
+
+    section Instr I3
+    IF  : 4, 5
+    DE  : 5, 6
+    WB  : 6, 7
+
+    section Instr I4
+    IF  : 5, 6
+    DE  : 6, 7
+    WB  : 7, 8
+</pre></div>
+</div>
+<h4 id="33-pipeline-registers">3.3 Pipeline Registers</h4>
+<h5 id="ifde-pipeline-register-if_de_reg">IF/DE Pipeline Register (<code>if_de_reg</code>)</h5>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Width</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>if_de_pc</code></td>
+<td>32</td>
+<td>Program counter of fetched instruction</td>
+</tr>
+<tr class="odd-row">
+<td><code>if_de_pc_plus</code></td>
+<td>32</td>
+<td>PC + 4 (or PC + 2 for C-instruction)</td>
+</tr>
+<tr class="even-row">
+<td><code>if_de_instr</code></td>
+<td>32</td>
+<td>Expanded 32-bit instruction word</td>
+</tr>
+<tr class="odd-row">
+<td><code>if_de_is_compressed</code></td>
+<td>1</td>
+<td>High if original encoding was 16-bit (C-ext)</td>
+</tr>
+<tr class="even-row">
+<td><code>if_de_vld</code></td>
+<td>1</td>
+<td>Slot contains a valid instruction (low = bubble)</td>
+</tr>
+<tr class="odd-row">
+<td><code>if_de_exc_iam</code></td>
+<td>1</td>
+<td>Instruction address misaligned exception latched</td>
+</tr>
+</tbody>
+</table>
+<h5 id="dewb-pipeline-register-de_wb_reg">DE/WB Pipeline Register (<code>de_wb_reg</code>)</h5>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Width</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>de_wb_pc</code></td>
+<td>32</td>
+<td>PC of instruction in WB</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_wb_rd</code></td>
+<td>5</td>
+<td>Destination register address</td>
+</tr>
+<tr class="even-row">
+<td><code>de_wb_rd_we</code></td>
+<td>1</td>
+<td>Register file write enable</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_wb_result</code></td>
+<td>32</td>
+<td>ALU / CSR / upper immediate result</td>
+</tr>
+<tr class="even-row">
+<td><code>de_wb_mem_rdata</code></td>
+<td>32</td>
+<td>Raw data from DTCM / AXI read</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_wb_mem_op</code></td>
+<td>3</td>
+<td>Load size/sign (<code>funct3</code> encoding)</td>
+</tr>
+<tr class="even-row">
+<td><code>de_wb_is_load</code></td>
+<td>1</td>
+<td>Result comes from memory (select aligner output)</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_wb_csr_we</code></td>
+<td>1</td>
+<td>CSR write enable</td>
+</tr>
+<tr class="even-row">
+<td><code>de_wb_csr_addr</code></td>
+<td>12</td>
+<td>CSR address</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_wb_csr_wdata</code></td>
+<td>32</td>
+<td>CSR write data</td>
+</tr>
+<tr class="even-row">
+<td><code>de_wb_mepc_we</code></td>
+<td>1</td>
+<td>Trap: latch <code>mepc</code> ← <code>de_wb_pc</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>de_wb_mcause</code></td>
+<td>32</td>
+<td>Trap cause to commit</td>
+</tr>
+<tr class="even-row">
+<td><code>de_wb_mtval</code></td>
+<td>32</td>
+<td>Trap value to commit</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_wb_trap_vld</code></td>
+<td>1</td>
+<td>A trap is being committed this cycle</td>
+</tr>
+<tr class="even-row">
+<td><code>de_wb_mret</code></td>
+<td>1</td>
+<td>MRET instruction — restore PC from <code>mepc</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>de_wb_vld</code></td>
+<td>1</td>
+<td>Slot valid</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Implementation Tip:</strong> Reset all <code>_vld</code> bits to <code>0</code> on power-on and any flush event.<br/>
+This ensures that bubbles propagate cleanly through the pipeline without triggering<br/>
+spurious register writes or CSR updates during flush cycles.</p>
+</blockquote>
+<hr/>
+<h3 id="heading-3-5">4. Register File &amp; Forwarding Unit</h3>
+<h4 id="41-register-file-implementation">4.1 Register File Implementation</h4>
+<p>The 32×32-bit integer register file (<code>regfile.v</code>) is mapped to a <strong>Xilinx Simple Dual-Port BRAM</strong> configured as a 32-deep × 32-wide synchronous memory.</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>Primitive</td>
+<td><code>RAMB36E1</code> (SDP mode, one per 18-bit half)</td>
+</tr>
+<tr class="odd-row">
+<td>Read ports</td>
+<td>2 (rs1, rs2) — registered outputs, 1-cycle latency</td>
+</tr>
+<tr class="even-row">
+<td>Write port</td>
+<td>1 (rd) — synchronous on WB rising edge</td>
+</tr>
+<tr class="odd-row">
+<td>x0 hardwire</td>
+<td>Write to addr <code>00000</code> is silently masked by <code>rd_we_masked = rd_we &amp; (rd != 5'b00000)</code></td>
+</tr>
+<tr class="even-row">
+<td>Reset</td>
+<td>Not required; <code>x0</code> is masked at the write port</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Implementation Tip — BRAM Read-First Mode:</strong> Set the BRAM <code>READ_WIDTH</code> / <code>WRITE_WIDTH</code><br/>
+to match exactly. Use <code>READ_FIRST</code> collision mode so that a simultaneous read and write<br/>
+to the same address (which cannot occur in this pipeline, but protects against synthesis<br/>
+elaboration warnings) returns the old value — consistent with the forwarding logic below.</p>
+</blockquote>
+<h4 id="42-forwarding-unit-hazard_ctrlv-de_stagev">4.2 Forwarding Unit (<code>hazard_ctrl.v</code> + <code>de_stage.v</code>)</h4>
+<p>The forwarding unit resolves <strong>RAW (Read After Write) data hazards</strong> for ALU-to-ALU sequences with zero stall penalty by selecting from the WB-stage result bus rather than the register file output.</p>
+<div class="highlight"><div class="highlight"><pre><span></span>fwd_rs1_sel:
+  11 → forward de_wb_result  (WB-stage result, for ALU→ALU)
+  10 → forward wb_rd_wdata   (Committed regfile data, fallback)
+  00 → use rf_rs1_q          (No hazard)
+
+fwd_rs2_sel:
+  11 → forward de_wb_result
+  10 → forward wb_rd_wdata
+  00 → use rf_rs2_q
+</pre></div>
+</div>
+<p><strong>Forwarding Decision Logic (combinational):</strong></p>
+<div class="highlight"><div class="highlight"><pre><span></span>// Forward from WB result to DE operand A (rs1)
+if (de_wb_vld &amp;&amp; de_wb_rd_we &amp;&amp; (de_wb_rd == de_rs1) &amp;&amp; (de_rs1 != 5'b0))
+    fwd_rs1_sel = 2'b11;
+else
+    fwd_rs1_sel = 2'b00;
+
+// Load-use hazard: forward not possible, stall required
+if (de_wb_is_load &amp;&amp; de_wb_rd_we &amp;&amp;
+    ((de_wb_rd == if_de_rs1) || (de_wb_rd == if_de_rs2)))
+    stall_load_use = 1'b1;
+</pre></div>
+</div>
+<h4 id="43-raw-hazard-matrix">4.3 RAW Hazard Matrix</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Producer Stage</th>
+<th>Consumer Stage</th>
+<th>Hazard Type</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>DE (ALU result in <code>de_wb_result</code>)</td>
+<td>DE (next instruction reading rs1/rs2)</td>
+<td>RAW — ALU→ALU</td>
+<td>Forward <code>de_wb_result</code> → operand mux (0 stall cycles)</td>
+</tr>
+<tr class="odd-row">
+<td>WB (load data in <code>wb_rd_wdata</code>)</td>
+<td>DE (instruction in DE needing the loaded value)</td>
+<td>RAW — Load→Use</td>
+<td>Insert 1 bubble: stall IF, stall DE, flush WB input</td>
+</tr>
+<tr class="even-row">
+<td>WB (CSR read result)</td>
+<td>DE (next instruction reading same rs1)</td>
+<td>RAW — CSR→ALU</td>
+<td>Treat as ALU→ALU; forward <code>de_wb_result</code></td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h3 id="heading-3-6">5. Instruction Fetch Stage (IF)</h3>
+<h4 id="51-pc-register-mux">5.1 PC Register &amp; Mux</h4>
+<p>The PC is a 32-bit registered value with a 4-input mux selecting the next value each cycle.</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th><code>pc_sel[1:0]</code></th>
+<th>Source</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>2'b00</code></td>
+<td><code>PC + 4</code> or <code>PC + 2</code></td>
+<td>Normal sequential flow</td>
+</tr>
+<tr class="odd-row">
+<td><code>2'b01</code></td>
+<td><code>de_branch_target</code></td>
+<td>Branch taken or JAL/JALR resolved in DE</td>
+</tr>
+<tr class="even-row">
+<td><code>2'b10</code></td>
+<td><code>mtvec_target</code></td>
+<td>Trap entry (from <code>trap_ctrl.v</code>)</td>
+</tr>
+<tr class="odd-row">
+<td><code>2'b11</code></td>
+<td><code>mepc</code></td>
+<td>MRET instruction</td>
+</tr>
+</tbody>
+</table>
+<p>Priority (highest first): <code>trap</code> &gt; <code>branch_taken</code> &gt; <code>mret</code> &gt; <code>sequential</code>.</p>
+<blockquote>
+<p><strong>Implementation Tip — PC Retiming:</strong> The PC adder (<code>PC + 4</code>) is on the critical<br/>
+path from the BRAM output to the next BRAM address input. Registering the PC mux<br/>
+output with a dedicated fast-path flip-flop (set <code>KEEP_HIERARCHY = "TRUE"</code> on<br/>
+<code>if_stage</code>) typically recovers 0.3–0.5 ns of slack at 100 MHz on Artix-7 −1.</p>
+</blockquote>
+<h4 id="52-instruction-memory-interface">5.2 Instruction Memory Interface</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>imem_addr  [31:0]  → ITCM / Boot ROM address (PC)
+imem_rdata [31:0]  ← Instruction word (registered BRAM output, 1-cycle)
+imem_vld          ← BRAM data valid (always 1 for ITCM; gated for DDR3 stall)
+imem_stall        → Assert to hold PC and IF/DE register (DDR3 miss)
+</pre></div>
+</div>
+<h4 id="53-alignment-exception-detection">5.3 Alignment &amp; Exception Detection</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>// 32-bit instruction: must be 4-byte aligned
+if (!if_de_is_compressed &amp;&amp; PC[1:0] != 2'b00)
+    if_de_exc_iam = 1'b1;   // mcause = 0x0000_0000
+
+// Compressed instruction: must be 2-byte aligned (PC[0] == 0)
+if (if_de_is_compressed &amp;&amp; PC[0] != 1'b0)
+    if_de_exc_iam = 1'b1;
+</pre></div>
+</div>
+<hr/>
+<h3 id="heading-3-7">6. Decode / Execute Stage (DE)</h3>
+<h4 id="61-instruction-decoder">6.1 Instruction Decoder</h4>
+<p>The decoder is a purely combinational block that converts the 32-bit instruction word (post C-expansion) into the control signal bundle consumed by the rest of the DE stage.</p>
+<p><strong>Decoder outputs (partial — full list in Section 14):</strong></p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Signal</th>
+<th>Width</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>de_alu_op</code></td>
+<td>4</td>
+<td>ALU operation select</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_alu_src_b</code></td>
+<td>1</td>
+<td>0 = rs2, 1 = immediate</td>
+</tr>
+<tr class="even-row">
+<td><code>de_mem_we</code></td>
+<td>1</td>
+<td>Data memory write enable</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_mem_re</code></td>
+<td>1</td>
+<td>Data memory read enable</td>
+</tr>
+<tr class="even-row">
+<td><code>de_mem_size</code></td>
+<td>3</td>
+<td>funct3 encoding for load/store width/sign</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_rd_we</code></td>
+<td>1</td>
+<td>Register file write enable</td>
+</tr>
+<tr class="even-row">
+<td><code>de_rd_sel</code></td>
+<td>2</td>
+<td>WB mux: 00=ALU, 01=load, 10=PC+4, 11=CSR</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_branch</code></td>
+<td>1</td>
+<td>Instruction is a branch</td>
+</tr>
+<tr class="even-row">
+<td><code>de_jump</code></td>
+<td>1</td>
+<td>Instruction is JAL/JALR</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_csr_op</code></td>
+<td>3</td>
+<td>CSR operation (funct3 from ISA ref §8.1)</td>
+</tr>
+<tr class="even-row">
+<td><code>de_is_mdu</code></td>
+<td>1</td>
+<td>Route to Mul/Div Unit</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_is_amu</code></td>
+<td>1</td>
+<td>Route to Atomic Unit</td>
+</tr>
+<tr class="even-row">
+<td><code>de_sys_op</code></td>
+<td>2</td>
+<td>00=none, 01=ECALL, 10=EBREAK, 11=MRET</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_illegal</code></td>
+<td>1</td>
+<td>Illegal instruction exception</td>
+</tr>
+</tbody>
+</table>
+<h4 id="62-alu">6.2 ALU</h4>
+<p>32-bit combinational ALU supporting all RV32I arithmetic, logical, shift, and comparison operations. Operation select encoding:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th><code>de_alu_op[3:0]</code></th>
+<th>Operation</th>
+<th>ISA Instruction(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>0000</code></td>
+<td><code>rs1 + rs2_or_imm</code></td>
+<td>ADD, ADDI, loads, stores, AUIPC</td>
+</tr>
+<tr class="odd-row">
+<td><code>0001</code></td>
+<td><code>rs1 - rs2</code></td>
+<td>SUB</td>
+</tr>
+<tr class="even-row">
+<td><code>0010</code></td>
+<td><code>rs1 &amp; rs2_or_imm</code></td>
+<td>AND, ANDI</td>
+</tr>
+<tr class="odd-row">
+<td><code>0011</code></td>
+<td><code>rs1 \| rs2_or_imm</code></td>
+<td>OR, ORI</td>
+</tr>
+<tr class="even-row">
+<td><code>0100</code></td>
+<td><code>rs1 ^ rs2_or_imm</code></td>
+<td>XOR, XORI</td>
+</tr>
+<tr class="odd-row">
+<td><code>0101</code></td>
+<td><code>rs1 &lt;&lt; rs2[4:0]</code></td>
+<td>SLL, SLLI</td>
+</tr>
+<tr class="even-row">
+<td><code>0110</code></td>
+<td><code>rs1 &gt;&gt;ₗ rs2[4:0]</code></td>
+<td>SRL, SRLI</td>
+</tr>
+<tr class="odd-row">
+<td><code>0111</code></td>
+<td><code>rs1 &gt;&gt;ₐ rs2[4:0]</code></td>
+<td>SRA, SRAI</td>
+</tr>
+<tr class="even-row">
+<td><code>1000</code></td>
+<td><code>(rs1 &lt;ₛ rs2) ? 1:0</code></td>
+<td>SLT, SLTI</td>
+</tr>
+<tr class="odd-row">
+<td><code>1001</code></td>
+<td><code>(rs1 &lt;ᵤ rs2) ? 1:0</code></td>
+<td>SLTU, SLTIU</td>
+</tr>
+<tr class="even-row">
+<td><code>1010</code></td>
+<td>Pass <code>imm[31:12]∥0¹²</code></td>
+<td>LUI</td>
+</tr>
+<tr class="odd-row">
+<td><code>1011</code></td>
+<td>Pass <code>PC+4</code></td>
+<td>JAL, JALR (link)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="63-branch-resolution-unit-bru">6.3 Branch Resolution Unit (BRU)</h4>
+<p>The BRU evaluates branch conditions and computes the target address entirely within the DE stage, generating a 1-cycle flush of the IF stage on a taken branch or any unconditional jump.</p>
+<p>$$\text{branch_target} = \text{PC}_{DE} + \text{sx}(\text{imm})$$</p>
+<p>$$\text{JALR target} = (\text{rs1} + \text{sx}(\text{imm}))\ \&amp;\ \sim1$$</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Condition signal</th>
+<th>Branch type</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>bru_eq</code></td>
+<td>BEQ</td>
+</tr>
+<tr class="odd-row">
+<td><code>!bru_eq</code></td>
+<td>BNE</td>
+</tr>
+<tr class="even-row">
+<td><code>bru_lt_s</code></td>
+<td>BLT</td>
+</tr>
+<tr class="odd-row">
+<td><code>!bru_lt_s</code></td>
+<td>BGE</td>
+</tr>
+<tr class="even-row">
+<td><code>bru_lt_u</code></td>
+<td>BLTU</td>
+</tr>
+<tr class="odd-row">
+<td><code>!bru_lt_u</code></td>
+<td>BGEU</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Branch penalty:</strong> Always <strong>1 cycle</strong> (fetch slot behind a branch is unconditionally squashed when the branch is determined taken in DE). No branch predictor is implemented.</p>
+<h4 id="64-load-store-unit-lsu">6.4 Load / Store Unit (LSU)</h4>
+<p>The LSU computes the effective address in DE and drives the data memory interface. For DTCM accesses, read data is available in the next cycle (WB stage), where it is byte-lane aligned.</p>
+<div class="highlight"><div class="highlight"><pre><span></span>dmem_addr  = rs1 + sx(imm)     // effective address
+dmem_wdata = rs2                // store data (pre-alignment)
+dmem_we    = de_mem_we          // write enable
+dmem_size  = de_mem_size[1:0]   // 00=byte, 01=half, 10=word
+dmem_stall → stall_load_use     // DTCM: never; DDR3: variable
+</pre></div>
+</div>
+<p><strong>Address misalignment check (combinational in DE):</strong></p>
+<div class="highlight"><div class="highlight"><pre><span></span>case (de_mem_size[1:0])
+    2'b01: dmem_exc_align = dmem_addr[0];       // halfword: addr[0] must = 0
+    2'b10: dmem_exc_align = |dmem_addr[1:0];    // word:     addr[1:0] must = 0
+    default: dmem_exc_align = 1'b0;             // byte: always aligned
+endcase
+</pre></div>
+</div>
+<hr/>
+<h3 id="heading-3-8">7. Writeback Stage (WB)</h3>
+<h4 id="71-load-data-aligner">7.1 Load Data Aligner</h4>
+<p>Raw DTCM output is always 32 bits wide. The aligner extracts and sign/zero-extends based on <code>de_wb_mem_op</code> (the <code>funct3</code> field passed through the pipeline register):</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th><code>de_wb_mem_op</code></th>
+<th>Width</th>
+<th>Signed?</th>
+<th>ISA Mnemonic</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>3'b000</code></td>
+<td>8-bit</td>
+<td>Yes</td>
+<td>LB</td>
+</tr>
+<tr class="odd-row">
+<td><code>3'b001</code></td>
+<td>16-bit</td>
+<td>Yes</td>
+<td>LH</td>
+</tr>
+<tr class="even-row">
+<td><code>3'b010</code></td>
+<td>32-bit</td>
+<td>N/A</td>
+<td>LW</td>
+</tr>
+<tr class="odd-row">
+<td><code>3'b100</code></td>
+<td>8-bit</td>
+<td>No</td>
+<td>LBU</td>
+</tr>
+<tr class="even-row">
+<td><code>3'b101</code></td>
+<td>16-bit</td>
+<td>No</td>
+<td>LHU</td>
+</tr>
+</tbody>
+</table>
+<p>Byte lane extraction uses <code>dmem_addr[1:0]</code> latched in <code>de_wb_reg</code> to select which byte/halfword of the 32-bit BRAM output to use.</p>
+<h4 id="72-writeback-mux">7.2 Writeback Mux</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>wb_rd_wdata = de_wb_is_load  ? load_aligner_out :
+              de_wb_rd_sel==2'b10 ? de_wb_pc_plus4 :   // JAL/JALR link
+              de_wb_rd_sel==2'b11 ? de_wb_csr_rdata :  // CSR read
+                                    de_wb_result;       // ALU result
+</pre></div>
+</div>
+<p>The write is gated: <code>rf_we = de_wb_rd_we &amp; de_wb_vld &amp; ~(de_wb_rd == 5'b0)</code>.</p>
+<hr/>
+<h3 id="heading-3-9">8. Hazard Control Unit</h3>
+<h4 id="81-stall-flush-architecture">8.1 Stall &amp; Flush Architecture</h4>
+<p>The Hazard Control Unit (<code>hazard_ctrl.v</code>) generates three categories of pipeline control signals:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Signal</th>
+<th>Affected Register</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>stall_if</code></td>
+<td>PC, <code>if_de_reg</code></td>
+<td>Hold PC and IF/DE register at current value</td>
+</tr>
+<tr class="odd-row">
+<td><code>stall_de</code></td>
+<td><code>de_wb_reg</code></td>
+<td>Hold DE/WB register; insert bubble into WB slot</td>
+</tr>
+<tr class="even-row">
+<td><code>flush_if</code></td>
+<td><code>if_de_reg</code></td>
+<td>Zero <code>if_de_vld</code> — kill instruction in IF slot</td>
+</tr>
+<tr class="odd-row">
+<td><code>flush_de</code></td>
+<td><code>de_wb_reg</code></td>
+<td>Zero <code>de_wb_vld</code> — kill instruction in DE slot</td>
+</tr>
+</tbody>
+</table>
+<h4 id="82-hazard-priority-highest-to-lowest">8.2 Hazard Priority (highest to lowest)</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>Priority 1: Trap / Interrupt          → flush_if, flush_de (full pipeline drain)
+Priority 2: AMO bus lock active       → stall_if, stall_de (hold both front stages)
+Priority 3: DIV in progress           → stall_if, stall_de
+Priority 4: MUL cycle 2 pending       → stall_if (1 cycle)
+Priority 5: Load-use RAW              → stall_if, flush_de (insert bubble)
+Priority 6: Branch taken / JAL/JALR   → flush_if (1-cycle fetch squash)
+Priority 7: DDR3 imem stall           → stall_if
+Priority 8: DDR3 dmem stall           → stall_if, stall_de
+</pre></div>
+</div>
+<h4 id="83-hazard-summary-table">8.3 Hazard Summary Table</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Hazard Type</th>
+<th>Detect Point</th>
+<th>Resolution</th>
+<th>Stall Penalty</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>RAW — ALU→ALU</td>
+<td>DE (compare <code>de_wb_rd</code> vs <code>if_de_rs1/rs2</code>)</td>
+<td>Bypass <code>de_wb_result</code> → operand mux</td>
+<td><strong>0 cycles</strong></td>
+</tr>
+<tr class="odd-row">
+<td>RAW — Load→Use</td>
+<td>DE (detect <code>de_wb_is_load</code> + rd match)</td>
+<td>Stall IF + flush DE bubble</td>
+<td><strong>1 cycle</strong></td>
+</tr>
+<tr class="even-row">
+<td>Control — Branch taken</td>
+<td>DE (BRU resolves condition)</td>
+<td>Flush IF slot</td>
+<td><strong>1 cycle</strong></td>
+</tr>
+<tr class="odd-row">
+<td>Control — JAL</td>
+<td>DE (unconditional, resolved in decode)</td>
+<td>Flush IF slot</td>
+<td><strong>1 cycle</strong></td>
+</tr>
+<tr class="even-row">
+<td>Control — JALR</td>
+<td>DE (needs rs1 value)</td>
+<td>Flush IF slot</td>
+<td><strong>1 cycle</strong></td>
+</tr>
+<tr class="odd-row">
+<td>MUL latency (2-cycle)</td>
+<td>DE (detect <code>de_is_mdu &amp; !div</code>)</td>
+<td>Stall IF 1 cycle</td>
+<td><strong>1 cycle</strong></td>
+</tr>
+<tr class="even-row">
+<td>DIV latency (34-cycle)</td>
+<td>DE (detect <code>de_is_mdu &amp; div</code>)</td>
+<td>Stall IF+DE 33 cycles</td>
+<td><strong>33 cycles</strong></td>
+</tr>
+<tr class="odd-row">
+<td>AMO bus lock</td>
+<td>DE (detect <code>de_is_amu</code>)</td>
+<td>Stall IF+DE for AMO duration</td>
+<td><strong>4–6 cycles (DTCM)</strong></td>
+</tr>
+<tr class="even-row">
+<td>Trap / Interrupt</td>
+<td>WB/trap_ctrl</td>
+<td>Flush IF + DE, vector to <code>mtvec</code></td>
+<td><strong>5 cycles</strong></td>
+</tr>
+<tr class="odd-row">
+<td>DDR3 imem miss</td>
+<td>IF (imem_vld = 0)</td>
+<td>Stall IF</td>
+<td><strong>10–40 cycles</strong></td>
+</tr>
+<tr class="even-row">
+<td>DDR3 dmem miss</td>
+<td>DE (dmem_stall = 1)</td>
+<td>Stall IF + DE</td>
+<td><strong>10–40 cycles</strong></td>
+</tr>
+</tbody>
+</table>
+<h4 id="84-cpi-model">8.4 CPI Model</h4>
+<p>$$\text{CPI} = 1 + \sum_{i} \left( f_i \times P_i \right)$$</p>
+<p>$$\text{CPI}_{typical} = 1 + (0.10 \times 1) + (0.05 \times 1) + (0.001 \times 33) \approx \mathbf{1.183}$$</p>
+<p>Where $f_i$ is the fraction of instructions of type $i$ and $P_i$ is the stall penalty for that type. Assumed instruction mix: 10% load-use, 5% branches taken, 0.1% division.</p>
+<hr/>
+<h3 id="heading-3-10">9. M-Extension — Multiply / Divide Unit</h3>
+<h4 id="91-mdu-overview">9.1 MDU Overview</h4>
+<p>The Multiply/Divide Unit (<code>mdu.v</code>) is instantiated in the DE stage and uses a shared result register visible to the WB stage. It implements:</p>
+<ul>
+<li><strong>MUL / MULH / MULHSU / MULHU</strong> via a <strong>2-cycle Booth-encoded pipelined multiplier</strong> using two cascaded <code>DSP48E1</code> slices.</li>
+<li><strong>DIV / DIVU / REM / REMU</strong> via a <strong>34-cycle non-restoring iterative divider</strong> using LUT fabric.</li>
+</ul>
+<p>Both sub-units share the <code>mdu_result[31:0]</code> output register and an <code>mdu_done</code> handshake signal.</p>
+<h4 id="92-multiplier-datapath-dsp48e1">9.2 Multiplier Datapath (DSP48E1)</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>  rs1[31:0] ──────────────────────────────────────────────┐
+  rs2[31:0] ──────────────────────────────────────────────┤
+                                                           ▼
+                          ┌─────────────────────────────────────┐
+                          │          DSP48E1 Slice #0           │
+                          │  A[29:0] = rs1[29:0]                │
+                          │  B[17:0] = rs2[17:0]                │
+                          │  Operation: MULTIPLY                 │
+                          │  P[47:0] → lower partial product    │
+                          └──────────────┬──────────────────────┘
+                                         │ cascade PCIN[47:0]
+                          ┌──────────────▼──────────────────────┐
+                          │          DSP48E1 Slice #1           │
+                          │  A[29:0] = rs1[31:30]∥0             │
+                          │  B[17:0] = rs2[17:0] (upper)       │
+                          │  Operation: MULTIPLY + ACCUMULATE   │
+                          │  P[63:0] → full 64-bit product      │
+                          └──────────────┬──────────────────────┘
+                                         ▼
+                              product[63:0]
+                        MUL  → product[31:0]
+                        MULH → product[63:32]  (sign adjust for MULH/MULHSU)
+</pre></div>
+</div>
+<p><strong>Sign handling:</strong><br/>
+- <code>MUL</code> / <code>MULH</code>: both operands sign-extended to 33 bits before DSP input<br/>
+- <code>MULHSU</code>: <code>rs1</code> sign-extended, <code>rs2</code> zero-extended<br/>
+- <code>MULHU</code>: both zero-extended</p>
+<p><strong>Latency:</strong></p>
+<p>$$T_{MUL} = T_{DSP48} + T_{cascade} \approx 3.2\ \text{ns} + 0.4\ \text{ns} = 3.6\ \text{ns} \quad (\text{satisfies 10 ns at 100 MHz})$$</p>
+<p><strong>Pipeline timing (MUL):</strong></p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Cycle</th>
+<th>IF</th>
+<th>DE</th>
+<th>WB</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>N</td>
+<td>MUL</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr class="odd-row">
+<td>N+1</td>
+<td>I1 (stalled)</td>
+<td>MUL cycle 1</td>
+<td>—</td>
+</tr>
+<tr class="even-row">
+<td>N+2</td>
+<td>I1</td>
+<td>MUL cycle 2 (result ready)</td>
+<td>MUL WB</td>
+</tr>
+</tbody>
+</table>
+<p>One bubble is inserted by the Hazard Unit (<code>stall_if</code> for 1 cycle) while the multiplier completes its second pipeline stage.</p>
+<h4 id="93-divider-datapath">9.3 Divider Datapath</h4>
+<p>The divider uses a <strong>non-restoring shift-and-subtract</strong> algorithm, consuming 1 LUT slice per bit-step. A 6-bit iteration counter drives the <code>mdu_busy</code> signal for 32 active steps plus 2 overhead cycles.</p>
+<div class="highlight"><div class="highlight"><pre><span></span>State: { quotient[31:0], remainder[31:0], dividend[31:0], divisor[31:0], iter[5:0] }
+
+Each cycle:
+  shifted   = {remainder[30:0], dividend[31]}
+  trial_sub = shifted - divisor
+  if trial_sub[32] == 0 (no borrow):
+      remainder ← trial_sub[31:0]
+      quotient  ← {quotient[30:0], 1'b1}
+  else:
+      remainder ← shifted[31:0]
+      quotient  ← {quotient[30:0], 1'b0}
+  dividend ← {dividend[30:0], 1'b0}
+  iter     ← iter + 1
+  if iter == 32: mdu_done ← 1
+</pre></div>
+</div>
+<p><strong>Corner cases (mandated by ISA reference §5.3):</strong></p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Condition</th>
+<th>DIV/DIVU Result</th>
+<th>REM/REMU Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>rs2 == 0</code></td>
+<td><code>0xFFFF_FFFF</code></td>
+<td><code>rs1</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>rs1 == INT_MIN</code> and <code>rs2 == -1</code> (signed)</td>
+<td><code>rs1</code> (INT_MIN)</td>
+<td><code>0</code></td>
+</tr>
+</tbody>
+</table>
+<p>These are detected combinationally before the iterative loop starts (<code>mdu_corner_case</code> signal), bypassing all 34 cycles.</p>
+<blockquote>
+<p><strong>Implementation Tip — DIV in ISR:</strong> Division must never be used inside interrupt<br/>
+service routines unless the ISR explicitly saves the MDU state. Since the iterative<br/>
+divider is fully contained within <code>mdu.v</code> and the pipeline stalls the front stages,<br/>
+a trap arriving during a DIV will stall until <code>mdu_done</code> before the trap sequence<br/>
+begins. Factor the worst-case 34-cycle MDU stall into the RTOS interrupt latency<br/>
+budget (see ISA ref §9.5). For FreeRTOS at 100 MHz with a 1 ms tick period:<br/>
+34 cycles ≪ 100,000 cycles — comfortably within budget.</p>
+</blockquote>
+<hr/>
+<h3 id="heading-3-11">10. A-Extension — Atomic Memory Unit</h3>
+<h4 id="101-amu-architecture-overview">10.1 AMU Architecture Overview</h4>
+<p>The Atomic Memory Unit (<code>amu.v</code>) implements LR.W, SC.W, and all nine AMO word instructions. It is instantiated in the DE stage and interacts directly with the DTCM interface and AXI4-Lite master.</p>
+<p>The AMU contains three sub-components:</p>
+<ol>
+<li><strong>Reservation Register</strong> — holds the reserved physical address and a <code>resv_valid</code> flag.</li>
+<li><strong>AMO Sequencer FSM</strong> — drives read-modify-write cycles on the DTCM or AXI bus.</li>
+<li><strong>Bus-Hold Arbitration</strong> — asserts <code>stall_if</code> and <code>stall_de</code> for the duration of an atomic operation.</li>
+</ol>
+<h4 id="102-reservation-set-logic">10.2 Reservation Set Logic</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>// Reservation granule: 32 bytes (bits [4:0] of address are masked)
+localparam GRANULE_BITS = 5;
+
+reg [31:GRANULE_BITS] resv_tag;
+reg                   resv_valid;
+
+// LR.W: set reservation
+if (amu_lr_w &amp;&amp; !stall_de) begin
+    resv_tag   &lt;= dmem_addr[31:GRANULE_BITS];
+    resv_valid &lt;= 1'b1;
+end
+
+// SC.W: check reservation
+sc_success = resv_valid &amp;&amp; (dmem_addr[31:GRANULE_BITS] == resv_tag);
+
+// Invalidation: any store to same granule, or any exception/interrupt
+if ((dmem_we &amp;&amp; (dmem_addr[31:GRANULE_BITS] == resv_tag)) ||
+    trap_vld || mret)
+    resv_valid &lt;= 1'b0;
+</pre></div>
+</div>
+<blockquote>
+<p><strong>Implementation Note — DMA Invalidation:</strong> Any AXI master (DMA controller, external<br/>
+debug probe) writing to the same 32-byte granule as the reservation will assert the<br/>
+AXI <code>BRESP</code> on the monitored granule address. The AMU monitors the AXI interconnect<br/>
+<code>WADDR[31:5]</code> on all write channels via a sideband <code>axi_snoop_addr</code> port. If a match<br/>
+occurs while <code>resv_valid == 1</code>, the reservation is immediately invalidated. IoT DMA<br/>
+channels must not be configured to target the reservation granule during lock-critical<br/>
+sections.</p>
+</blockquote>
+<h4 id="103-amo-sequencer-fsm">10.3 AMO Sequencer FSM</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>stateDiagram-v2
+    [*] --&gt; IDLE
+
+    IDLE --&gt; LR_LOAD     : amu_lr_w
+    IDLE --&gt; SC_CHECK    : amu_sc_w
+    IDLE --&gt; AMO_LOAD    : amu_amo_op
+
+    LR_LOAD --&gt; LR_LATCH : dmem_vld
+    LR_LATCH --&gt; IDLE    : (rd ← mem_data;\n resv set)
+
+    SC_CHECK --&gt; SC_STORE : sc_success
+    SC_CHECK --&gt; SC_FAIL  : !sc_success
+    SC_STORE --&gt; SC_COMMIT : dmem_ack
+    SC_COMMIT --&gt; IDLE    : (rd ← 0)
+    SC_FAIL --&gt; IDLE      : (rd ← 1; no write)
+
+    AMO_LOAD --&gt; AMO_LATCH  : dmem_vld
+    AMO_LATCH --&gt; AMO_COMPUTE : (temp_val ← mem_data)
+    AMO_COMPUTE --&gt; AMO_STORE : (new_val = OP(temp_val, rs2))
+    AMO_STORE --&gt; AMO_COMMIT  : dmem_ack
+    AMO_COMMIT --&gt; IDLE       : (rd ← temp_val)
+</pre></div>
+</div>
+<h4 id="104-amo-state-table">10.4 AMO State Table</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>State</th>
+<th><code>stall_if</code></th>
+<th><code>stall_de</code></th>
+<th><code>dmem_re</code></th>
+<th><code>dmem_we</code></th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>IDLE</code></td>
+<td>0</td>
+<td>0</td>
+<td>—</td>
+<td>—</td>
+<td>No AMO in progress</td>
+</tr>
+<tr class="odd-row">
+<td><code>LR_LOAD</code></td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>Issue read; hold pipeline</td>
+</tr>
+<tr class="even-row">
+<td><code>LR_LATCH</code></td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>Wait for <code>dmem_vld</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>SC_CHECK</code></td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>Evaluate <code>resv_valid</code> combinationally</td>
+</tr>
+<tr class="even-row">
+<td><code>SC_STORE</code></td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>Issue conditional write</td>
+</tr>
+<tr class="odd-row">
+<td><code>SC_COMMIT</code></td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>Release stall; <code>rd ← 0</code></td>
+</tr>
+<tr class="even-row">
+<td><code>SC_FAIL</code></td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>Release stall; <code>rd ← 1</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>AMO_LOAD</code></td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>Exclusive read</td>
+</tr>
+<tr class="even-row">
+<td><code>AMO_LATCH</code></td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>Data capture</td>
+</tr>
+<tr class="odd-row">
+<td><code>AMO_COMPUTE</code></td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>ALU computes <code>new_val</code></td>
+</tr>
+<tr class="even-row">
+<td><code>AMO_STORE</code></td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>Exclusive write</td>
+</tr>
+<tr class="odd-row">
+<td><code>AMO_COMMIT</code></td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>Release; <code>rd ← temp_val</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>AMO latency (DTCM, 1-cycle access):</strong></p>
+<p>$$L_{AMO} = L_{read}(2) + L_{compute}(1) + L_{write}(2) = 5\ \text{cycles}$$</p>
+<h4 id="105-amo-operation-compute-logic">10.5 AMO Operation Compute Logic</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Mnemonic</th>
+<th><code>amu_op[3:0]</code></th>
+<th><code>new_val</code> Expression</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>AMOSWAP.W</code></td>
+<td><code>0001</code></td>
+<td><code>rs2</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>AMOADD.W</code></td>
+<td><code>0000</code></td>
+<td><code>temp_val + rs2</code></td>
+</tr>
+<tr class="even-row">
+<td><code>AMOXOR.W</code></td>
+<td><code>0100</code></td>
+<td><code>temp_val ^ rs2</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>AMOAND.W</code></td>
+<td><code>1100</code></td>
+<td><code>temp_val &amp; rs2</code></td>
+</tr>
+<tr class="even-row">
+<td><code>AMOOR.W</code></td>
+<td><code>1000</code></td>
+<td><code>temp_val \| rs2</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>AMOMIN.W</code></td>
+<td><code>0010</code></td>
+<td><code>$signed(temp_val) &lt; $signed(rs2) ? temp_val : rs2</code></td>
+</tr>
+<tr class="even-row">
+<td><code>AMOMAX.W</code></td>
+<td><code>0110</code></td>
+<td><code>$signed(temp_val) &gt; $signed(rs2) ? temp_val : rs2</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>AMOMINU.W</code></td>
+<td><code>0011</code></td>
+<td><code>temp_val &lt;ᵤ rs2 ? temp_val : rs2</code></td>
+</tr>
+<tr class="even-row">
+<td><code>AMOMAXU.W</code></td>
+<td><code>0111</code></td>
+<td><code>temp_val &gt;ᵤ rs2 ? temp_val : rs2</code></td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h3 id="heading-3-12">11. C-Extension — Pre-Decode Expander</h3>
+<h4 id="111-placement-in-pipeline">11.1 Placement in Pipeline</h4>
+<p>The C-Expander (<code>c_expand.v</code>) sits <strong>between the ITCM output and the IF/DE pipeline register</strong>, operating purely combinationally within the IF stage. All 16-bit instructions are expanded to their 32-bit canonical equivalents before the <code>if_de_instr</code> register is written. The DE stage decoder therefore always sees a 32-bit instruction and requires no knowledge of the C extension.</p>
+<div class="highlight"><div class="highlight"><pre><span></span>ITCM_rdata[31:0]
+       │
+       ▼
+  ┌────────────────────────────────────────┐
+  │           c_expand.v                   │
+  │                                        │
+  │  if inst[1:0] != 2'b11:               │
+  │    consume 16 bits (inst[15:0])        │
+  │    expand → 32-bit equivalent          │
+  │    pc_increment ← 2                   │
+  │    if_de_is_compressed ← 1            │
+  │  else:                                 │
+  │    pass through 32 bits               │
+  │    pc_increment ← 4                   │
+  │    if_de_is_compressed ← 0            │
+  └────────────────────────────────────────┘
+       │
+       ▼
+  if_de_instr[31:0]  (always 32-bit canonical)
+</pre></div>
+</div>
+<h4 id="112-quadrant-detection">11.2 Quadrant Detection</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th><code>inst[1:0]</code></th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>2'b00</code></td>
+<td>Q0: expand using Q0 decode table</td>
+</tr>
+<tr class="odd-row">
+<td><code>2'b01</code></td>
+<td>Q1: expand using Q1 decode table</td>
+</tr>
+<tr class="even-row">
+<td><code>2'b10</code></td>
+<td>Q2: expand using Q2 decode table</td>
+</tr>
+<tr class="odd-row">
+<td><code>2'b11</code></td>
+<td>Not C-extension; pass through inst[31:0]</td>
+</tr>
+</tbody>
+</table>
+<h4 id="113-expansion-logic-critical-cases">11.3 Expansion Logic — Critical Cases</h4>
+<p>The following encodings require special handling beyond simple field remapping:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>16-bit</th>
+<th>Expansion Rule</th>
+<th>Critical Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>C.ADDI4SPN</code></td>
+<td><code>ADDI rd', sp, nzuimm</code></td>
+<td>Trap <code>nzuimm == 0</code> as illegal instruction</td>
+</tr>
+<tr class="odd-row">
+<td><code>C.LUI rd, nzimm</code></td>
+<td><code>LUI rd, nzimm</code></td>
+<td>Trap <code>nzimm == 0</code> or <code>rd == x2</code> as illegal</td>
+</tr>
+<tr class="even-row">
+<td><code>C.ADDI16SP</code></td>
+<td><code>ADDI sp, sp, nzimm</code></td>
+<td>Detected by <code>rd == x2</code>; trap <code>nzimm == 0</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>C.JAL</code></td>
+<td><code>JAL x1, imm</code></td>
+<td>RV32 only; expander must set <code>rd = x1</code> (ra)</td>
+</tr>
+<tr class="even-row">
+<td><code>C.JR</code></td>
+<td><code>JALR x0, rs1, 0</code></td>
+<td><code>rs1 != 0</code> check; zero rs1 → illegal</td>
+</tr>
+<tr class="odd-row">
+<td><code>C.JALR</code></td>
+<td><code>JALR x1, rs1, 0</code></td>
+<td><code>rs1 != 0</code> check</td>
+</tr>
+<tr class="even-row">
+<td><code>C.EBREAK</code></td>
+<td><code>EBREAK</code></td>
+<td>Detected by <code>funct4=1001, rs1=0, rs2=0</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>C.FLW / C.FSW</code></td>
+<td><em>(F-extension)</em></td>
+<td><strong>Not implemented</strong> — expand to <code>ILLEGAL</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Implementation Tip — Illegal C Encoding:</strong> Any undefined C encoding (reserved<br/>
+encodings per the RISC-V spec) must expand to a 32-bit <code>ILLEGAL</code> pattern<br/>
+(<code>32'hFFFF_FFFF</code>) so that the decoder in DE generates <code>de_illegal = 1</code> and triggers<br/>
+an Illegal Instruction exception (<code>mcause = 0x0000_0002</code>). This is critical for<br/>
+correct RTOS behavior — undefined instructions in RTOS-generated code are almost<br/>
+always a linker script or toolchain configuration error that should be trapped loudly.</p>
+</blockquote>
+<h4 id="114-immediate-reconstruction-examples">11.4 Immediate Reconstruction Examples</h4>
+<p>C-extension immediates are non-contiguous in the 16-bit encoding. The expander must reassemble them:</p>
+<p><strong>C.LW <code>uimm[6:2]</code> from <code>inst[12:10,6:5]</code>:</strong></p>
+<div class="highlight"><div class="highlight"><pre><span></span>uimm = {inst[5], inst[12:10], inst[6], 2'b00};   // uimm[6:2] → byte offset
+</pre></div>
+</div>
+<p><strong>C.J / C.JAL <code>imm[11:1]</code> from scattered bits:</strong></p>
+<div class="highlight"><div class="highlight"><pre><span></span>imm = {inst[12], inst[8], inst[10:9], inst[6],
+       inst[7], inst[2], inst[11], inst[5:3], 1'b0};
+</pre></div>
+</div>
+<p><strong>C.BEQZ / C.BNEZ <code>imm[8:1]</code>:</strong></p>
+<div class="highlight"><div class="highlight"><pre><span></span>imm = {inst[12], inst[6:5], inst[2], inst[11:10], inst[4:3], 1'b0};
+</pre></div>
+</div>
+<hr/>
+<h3 id="heading-3-13">12. Memory System &amp; Bus Interface</h3>
+<h4 id="121-harvard-architecture-overview">12.1 Harvard Architecture Overview</h4>
+<p>The core uses a <strong>modified Harvard architecture</strong> with separate instruction and data paths to the tightly-coupled memories, converging onto a shared AXI4-Lite bus for peripheral and DDR3 access.</p>
+<div class="highlight"><div class="highlight"><pre><span></span>                ┌─────────┐       ┌──────────────┐
+   Instr Path   │  ITCM   │       │   Boot ROM   │
+  ─────────────▶│ 32 KiB  │       │   16 KiB     │
+  imem_addr[31:0│RAMB36E1 │       │(synthesized) │
+                └────┬────┘       └──────┬───────┘
+                     │                   │
+                     └────────┬──────────┘
+                              │ imem_rdata[31:0]
+                              ▼
+                         IF/DE Reg
+
+                ┌─────────┐
+   Data Path    │  DTCM   │
+  ─────────────▶│ 32 KiB  │
+  dmem_addr[31:0│RAMB36E1 │◀── AMU exclusive R/W
+                └────┬────┘
+                     │ dmem_rdata[31:0]
+                     ▼
+                  WB Load Aligner
+
+                         ┌──────────────────────┐
+  dmem_addr &gt;= 0xE000_000│  AXI4-Lite Master    │───▶ CLINT, PLIC, GPIO,
+  or  0x8000_0000        │  (axi4lite_master.v) │     UART0, SPI0, I2C0
+                         └──────────────────────┘
+                                   │
+                         ┌─────────▼────────────┐
+                         │   MIG DDR3 Controller │───▶ DDR3 (256 MiB)
+                         └──────────────────────┘
+</pre></div>
+</div>
+<h4 id="122-address-decode-logic-mmu_decodev">12.2 Address Decode Logic (<code>mmu_decode.v</code>)</h4>
+<p>The address decoder is a <strong>combinational priority mux</strong> operating on <code>dmem_addr[31:28]</code> (top nibble) to select the downstream target.</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th><code>dmem_addr[31:28]</code></th>
+<th>Target</th>
+<th>Latency</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>4'h0</code></td>
+<td>ITCM / Boot ROM (instruction path only)</td>
+<td>1 cycle</td>
+</tr>
+<tr class="odd-row">
+<td><code>4'h2</code></td>
+<td>DTCM</td>
+<td>1 cycle</td>
+</tr>
+<tr class="even-row">
+<td><code>4'h8</code></td>
+<td>DDR3 via MIG</td>
+<td>10–40 cycles</td>
+</tr>
+<tr class="odd-row">
+<td><code>4'hE</code></td>
+<td>AXI4-Lite (CLINT, PLIC)</td>
+<td>3–5 cycles</td>
+</tr>
+<tr class="even-row">
+<td><code>4'hF</code></td>
+<td>AXI4-Lite (GPIO, UART, SPI, I2C)</td>
+<td>3–5 cycles</td>
+</tr>
+<tr class="odd-row">
+<td>Others</td>
+<td>Fault — <code>mcause = 0x0000_0005</code> (Load Access Fault) or <code>0x0000_0007</code> (Store/AMO Access Fault)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h4 id="123-axi4-lite-master-interface">12.3 AXI4-Lite Master Interface</h4>
+<p>The <code>axi4lite_master.v</code> module presents a simple request/acknowledge interface to the LSU and converts it to the AXI4-Lite 5-channel protocol.</p>
+<p><strong>Internal interface (LSU → AXI Master):</strong></p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Signal</th>
+<th>Dir</th>
+<th>Width</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>axi_req_vld</code></td>
+<td>→</td>
+<td>1</td>
+<td>Request valid</td>
+</tr>
+<tr class="odd-row">
+<td><code>axi_req_addr</code></td>
+<td>→</td>
+<td>32</td>
+<td>Target address</td>
+</tr>
+<tr class="even-row">
+<td><code>axi_req_we</code></td>
+<td>→</td>
+<td>1</td>
+<td>1=write, 0=read</td>
+</tr>
+<tr class="odd-row">
+<td><code>axi_req_wdata</code></td>
+<td>→</td>
+<td>32</td>
+<td>Write data</td>
+</tr>
+<tr class="even-row">
+<td><code>axi_req_wstrb</code></td>
+<td>→</td>
+<td>4</td>
+<td>Byte strobes</td>
+</tr>
+<tr class="odd-row">
+<td><code>axi_resp_vld</code></td>
+<td>←</td>
+<td>1</td>
+<td>Response valid</td>
+</tr>
+<tr class="even-row">
+<td><code>axi_resp_rdata</code></td>
+<td>←</td>
+<td>32</td>
+<td>Read data</td>
+</tr>
+<tr class="odd-row">
+<td><code>axi_resp_err</code></td>
+<td>←</td>
+<td>1</td>
+<td>SLVERR / DECERR received</td>
+</tr>
+</tbody>
+</table>
+<p><strong>AXI4-Lite channel mapping:</strong></p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>AXI Channel</th>
+<th>Signals</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>Write Address (AW)</td>
+<td><code>AWADDR</code>, <code>AWVALID</code>, <code>AWREADY</code></td>
+<td>Driven simultaneously with W channel</td>
+</tr>
+<tr class="odd-row">
+<td>Write Data (W)</td>
+<td><code>WDATA</code>, <code>WSTRB</code>, <code>WVALID</code>, <code>WREADY</code></td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td>Write Response (B)</td>
+<td><code>BRESP</code>, <code>BVALID</code>, <code>BREADY</code></td>
+<td>SLVERR → <code>axi_resp_err</code></td>
+</tr>
+<tr class="odd-row">
+<td>Read Address (AR)</td>
+<td><code>ARADDR</code>, <code>ARVALID</code>, <code>ARREADY</code></td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td>Read Data (R)</td>
+<td><code>RDATA</code>, <code>RRESP</code>, <code>RVALID</code>, <code>RREADY</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Implementation Tip — AXI Timing Closure:</strong> The AXI4-Lite master should register<br/>
+all AXI outputs (AWADDR, WDATA, ARADDR) using pipeline registers before driving<br/>
+the board-level fabric. On Artix-7, unregistered AXI paths routed to the MIG<br/>
+interface frequently violate the 10 ns constraint due to the MIG's internal clock<br/>
+domain crossing logic. Use a 2FF synchronizer on the <code>RVALID</code> → <code>axi_resp_vld</code><br/>
+return path if the peripheral clock domain differs from the core clock.</p>
+</blockquote>
+<hr/>
+<h3 id="heading-3-14">13. CSR File &amp; Trap Controller</h3>
+<h4 id="131-csr-file-implementation-csr_filev">13.1 CSR File Implementation (<code>csr_file.v</code>)</h4>
+<p>All CSRs required for Machine-mode operation are implemented as registers in <code>csr_file.v</code>. The file is accessed synchronously by the DE stage and committed in the WB stage.</p>
+<p><strong>Implemented CSRs (from ISA ref §8.2):</strong></p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>CSR Addr</th>
+<th>Name</th>
+<th>Reset Value</th>
+<th>Writable Bits</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>0x300</code></td>
+<td><code>mstatus</code></td>
+<td><code>0x0000_1800</code></td>
+<td>MIE[3], MPIE[7], MPP[12:11]</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x301</code></td>
+<td><code>misa</code></td>
+<td><code>0x4014_1105</code></td>
+<td>Read-only</td>
+</tr>
+<tr class="even-row">
+<td><code>0x304</code></td>
+<td><code>mie</code></td>
+<td><code>0x0000_0000</code></td>
+<td>MEIE[11], MTIE[7], MSIE[3]</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x305</code></td>
+<td><code>mtvec</code></td>
+<td><code>0x0000_0000</code></td>
+<td>BASE[31:2], MODE[1:0]</td>
+</tr>
+<tr class="even-row">
+<td><code>0x310</code></td>
+<td><code>mstatush</code></td>
+<td><code>0x0000_0000</code></td>
+<td>Reserved (RV32 filler)</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x340</code></td>
+<td><code>mscratch</code></td>
+<td><code>0x0000_0000</code></td>
+<td>All 32 bits</td>
+</tr>
+<tr class="even-row">
+<td><code>0x341</code></td>
+<td><code>mepc</code></td>
+<td><code>—</code></td>
+<td>[31:1] (bit 0 hardwired 0)</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x342</code></td>
+<td><code>mcause</code></td>
+<td><code>—</code></td>
+<td>All 32 bits</td>
+</tr>
+<tr class="even-row">
+<td><code>0x343</code></td>
+<td><code>mtval</code></td>
+<td><code>—</code></td>
+<td>All 32 bits</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x344</code></td>
+<td><code>mip</code></td>
+<td><code>0x0000_0000</code></td>
+<td>MSIP[3] (MTIP/MEIP are read-only, wired from CLINT/PLIC)</td>
+</tr>
+<tr class="even-row">
+<td><code>0xB00</code></td>
+<td><code>mcycle</code></td>
+<td><code>0x0000_0000</code></td>
+<td>All 32 bits</td>
+</tr>
+<tr class="odd-row">
+<td><code>0xB80</code></td>
+<td><code>mcycleh</code></td>
+<td><code>0x0000_0000</code></td>
+<td>All 32 bits</td>
+</tr>
+<tr class="even-row">
+<td><code>0xB02</code></td>
+<td><code>minstret</code></td>
+<td><code>0x0000_0000</code></td>
+<td>All 32 bits</td>
+</tr>
+<tr class="odd-row">
+<td><code>0xB82</code></td>
+<td><code>minstreth</code></td>
+<td><code>0x0000_0000</code></td>
+<td>All 32 bits</td>
+</tr>
+<tr class="even-row">
+<td><code>0xF11</code></td>
+<td><code>mvendorid</code></td>
+<td><code>0x0000_0000</code></td>
+<td>Read-only</td>
+</tr>
+<tr class="odd-row">
+<td><code>0xF12</code></td>
+<td><code>marchid</code></td>
+<td><code>0x0000_0000</code></td>
+<td>Read-only</td>
+</tr>
+<tr class="even-row">
+<td><code>0xF13</code></td>
+<td><code>mimpid</code></td>
+<td><code>0x0000_0001</code></td>
+<td>Read-only</td>
+</tr>
+<tr class="odd-row">
+<td><code>0xF14</code></td>
+<td><code>mhartid</code></td>
+<td><code>0x0000_0000</code></td>
+<td>Read-only</td>
+</tr>
+</tbody>
+</table>
+<h4 id="132-trap-controller-trap_ctrlv">13.2 Trap Controller (<code>trap_ctrl.v</code>)</h4>
+<p>The trap controller arbitrates between simultaneous interrupt sources and exceptions, serialises the CSR update sequence, and generates the PC redirect signal.</p>
+<p><strong>Interrupt priority logic (from ISA ref §9.1):</strong></p>
+<div class="highlight"><div class="highlight"><pre><span></span>// Priority: MEI &gt; MSI &gt; MTI
+always_comb begin
+    trap_vld   = 1'b0;
+    trap_cause = 32'h0;
+
+    if (mstatus_MIE) begin
+        if (mip_MEIP &amp; mie_MEIE) begin
+            trap_vld   = 1'b1;
+            trap_cause = 32'h8000_000B;   // Machine External Interrupt
+        end else if (mip_MSIP &amp; mie_MSIE) begin
+            trap_vld   = 1'b1;
+            trap_cause = 32'h8000_0003;   // Machine Software Interrupt
+        end else if (mip_MTIP &amp; mie_MTIE) begin
+            trap_vld   = 1'b1;
+            trap_cause = 32'h8000_0007;   // Machine Timer Interrupt
+        end
+    end
+
+    // Exceptions always taken regardless of MIE
+    if (de_wb_exc_vld) begin
+        trap_vld   = 1'b1;
+        trap_cause = de_wb_exc_cause;     // mcause from ISA ref §8.6
+    end
+end
+</pre></div>
+</div>
+<p><strong>Trap entry sequence (5 cycles, matches ISA ref §9.2):</strong></p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Cycle</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>N (detect)</td>
+<td><code>trap_vld</code> asserted in WB; <code>flush_if</code>, <code>flush_de</code> asserted</td>
+</tr>
+<tr class="odd-row">
+<td>N+1</td>
+<td><code>mepc ← PC_of_faulting_instr</code>; <code>mcause ← trap_cause</code>; <code>mtval ← fault_addr_or_0</code></td>
+</tr>
+<tr class="even-row">
+<td>N+2</td>
+<td><code>mstatus.MPIE ← mstatus.MIE</code>; <code>mstatus.MIE ← 0</code>; <code>mstatus.MPP ← 2'b11</code></td>
+</tr>
+<tr class="odd-row">
+<td>N+3</td>
+<td><code>PC ← mtvec</code> (Direct) or <code>mtvec.BASE + (4 × cause[4:0])</code> (Vectored)</td>
+</tr>
+<tr class="even-row">
+<td>N+4</td>
+<td>First instruction of trap handler enters IF</td>
+</tr>
+</tbody>
+</table>
+<h4 id="133-mtvec-vectored-mode-address-computation">13.3 mtvec Vectored Mode Address Computation</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>// mtvec MODE field (ISA ref §8.5)
+wire [1:0] mtvec_mode  = mtvec[1:0];
+wire [31:2] mtvec_base = mtvec[31:2];
+
+assign trap_pc = (mtvec_mode == 2'b01 &amp;&amp; trap_cause[31]) ?
+                 // Vectored mode for interrupts only
+                 {mtvec_base, 2'b00} + (trap_cause[4:0] &lt;&lt; 2) :
+                 // Direct mode for all others
+                 {mtvec_base, 2'b00};
+</pre></div>
+</div>
+<blockquote>
+<p><strong>RTOS Tip — Vectored mtvec:</strong> For FreeRTOS, configure <code>mtvec</code> with <code>MODE=01</code> (Vectored).<br/>
+The machine timer interrupt (<code>mcause = 0x8000_0007</code>, cause[4:0] = 7) will vector to<br/>
+<code>BASE + 28</code>, directly to the tick ISR entry, saving approximately 8 cycles of dispatch<br/>
+overhead per tick compared to a software switch in Direct mode. Place the vector table<br/>
+at a 64-byte aligned address to ensure all 12 vector slots fit within a single<br/>
+cache-line-sized region and avoid AXI latency on the first vector fetch.</p>
+</blockquote>
+<hr/>
+<h3 id="heading-3-15">14. Control Signal Reference</h3>
+<h4 id="141-de-stage-decoder-complete-control-signal-map">14.1 DE Stage Decoder — Complete Control Signal Map</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Signal</th>
+<th>Width</th>
+<th style="text-align: center;"><code>0110011</code> (R)</th>
+<th style="text-align: center;"><code>0010011</code> (I-arith)</th>
+<th style="text-align: center;"><code>0000011</code> (Load)</th>
+<th style="text-align: center;"><code>0100011</code> (Store)</th>
+<th style="text-align: center;"><code>1100011</code> (Branch)</th>
+<th style="text-align: center;"><code>1101111</code> (JAL)</th>
+<th style="text-align: center;"><code>1100111</code> (JALR)</th>
+<th style="text-align: center;"><code>0110111</code> (LUI)</th>
+<th style="text-align: center;"><code>0010111</code> (AUIPC)</th>
+<th style="text-align: center;"><code>1110011</code> (SYSTEM)</th>
+<th style="text-align: center;"><code>0101111</code> (AMO)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>de_alu_op</code></td>
+<td>4</td>
+<td style="text-align: center;">funct</td>
+<td style="text-align: center;">funct</td>
+<td style="text-align: center;"><code>0000</code> (add)</td>
+<td style="text-align: center;"><code>0000</code> (add)</td>
+<td style="text-align: center;">funct</td>
+<td style="text-align: center;"><code>0000</code></td>
+<td style="text-align: center;"><code>0000</code></td>
+<td style="text-align: center;"><code>1010</code></td>
+<td style="text-align: center;"><code>0000</code></td>
+<td style="text-align: center;"><code>—</code></td>
+<td style="text-align: center;"><code>0000</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>de_alu_src_b</code></td>
+<td>1</td>
+<td style="text-align: center;">0 (rs2)</td>
+<td style="text-align: center;">1 (imm)</td>
+<td style="text-align: center;">1 (imm)</td>
+<td style="text-align: center;">1 (imm)</td>
+<td style="text-align: center;">0 (rs2)</td>
+<td style="text-align: center;">1 (imm)</td>
+<td style="text-align: center;">1 (imm)</td>
+<td style="text-align: center;">1 (imm)</td>
+<td style="text-align: center;">1 (imm)</td>
+<td style="text-align: center;"><code>—</code></td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr class="even-row">
+<td><code>de_rd_we</code></td>
+<td>1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><code>csr_we</code></td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_rd_sel</code></td>
+<td>2</td>
+<td style="text-align: center;"><code>00</code></td>
+<td style="text-align: center;"><code>00</code></td>
+<td style="text-align: center;"><code>01</code></td>
+<td style="text-align: center;"><code>—</code></td>
+<td style="text-align: center;"><code>—</code></td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>00</code></td>
+<td style="text-align: center;"><code>00</code></td>
+<td style="text-align: center;"><code>11</code></td>
+<td style="text-align: center;"><code>00</code></td>
+</tr>
+<tr class="even-row">
+<td><code>de_mem_re</code></td>
+<td>1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;"><code>amo/lr</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>de_mem_we</code></td>
+<td>1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;"><code>sc/amo</code></td>
+</tr>
+<tr class="even-row">
+<td><code>de_branch</code></td>
+<td>1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_jump</code></td>
+<td>1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr class="even-row">
+<td><code>de_is_mdu</code></td>
+<td>1</td>
+<td style="text-align: center;">funct7=<code>0000001</code></td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_is_amu</code></td>
+<td>1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr class="even-row">
+<td><code>de_csr_op</code></td>
+<td>3</td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;">funct3</td>
+<td style="text-align: center;"><code>000</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>de_illegal</code></td>
+<td>1</td>
+<td style="text-align: center;">if undef funct</td>
+<td style="text-align: center;">if undef</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">if undef</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">if undef</td>
+<td style="text-align: center;">if undef</td>
+</tr>
+</tbody>
+</table>
+<h4 id="142-pipeline-stall-flush-signal-source-map">14.2 Pipeline Stall / Flush Signal Source Map</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Signal</th>
+<th>Asserted By</th>
+<th>De-asserted By</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>stall_if</code></td>
+<td><code>hazard_ctrl</code>: load-use, DIV, AMO, DDR3-stall</td>
+<td>Hazard cleared</td>
+</tr>
+<tr class="odd-row">
+<td><code>stall_de</code></td>
+<td><code>hazard_ctrl</code>: DIV, AMO, DDR3-dmem stall</td>
+<td>Hazard cleared</td>
+</tr>
+<tr class="even-row">
+<td><code>flush_if</code></td>
+<td><code>hazard_ctrl</code>: branch taken, JAL, JALR, trap entry</td>
+<td>Next cycle (1-shot)</td>
+</tr>
+<tr class="odd-row">
+<td><code>flush_de</code></td>
+<td><code>hazard_ctrl</code>: trap entry, load-use bubble insert</td>
+<td>Next cycle (1-shot)</td>
+</tr>
+<tr class="even-row">
+<td><code>pc_sel[1:0]</code></td>
+<td><code>trap_ctrl</code> (trap→<code>2'b10</code>); BRU (branch→<code>2'b01</code>); WB (mret→<code>2'b11</code>)</td>
+<td>Returns to <code>2'b00</code></td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h3 id="heading-3-16">15. FPGA Resource Utilization</h3>
+<h4 id="151-target-device">15.1 Target Device</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>Device</td>
+<td>Xilinx Artix-7 <code>xc7a200t-1fbg484</code></td>
+</tr>
+<tr class="odd-row">
+<td>Board</td>
+<td>Nexys Video</td>
+</tr>
+<tr class="even-row">
+<td>Speed Grade</td>
+<td>−1</td>
+</tr>
+<tr class="odd-row">
+<td>Target Fmax</td>
+<td>100 MHz (10 ns period)</td>
+</tr>
+<tr class="even-row">
+<td>Estimated Fmax (post-PAR)</td>
+<td>~110 MHz</td>
+</tr>
+</tbody>
+</table>
+<h4 id="152-resource-estimate-by-module">15.2 Resource Estimate by Module</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Module</th>
+<th>LUTs</th>
+<th>FFs</th>
+<th>BRAM (RAMB36E1)</th>
+<th>DSP48E1</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>if_stage.v</code> + <code>c_expand.v</code></td>
+<td>~180</td>
+<td>~80</td>
+<td>0</td>
+<td>0</td>
+<td>PC mux, alignment, C-expander</td>
+</tr>
+<tr class="odd-row">
+<td><code>de_stage.v</code> (decoder + ALU + BRU)</td>
+<td>~850</td>
+<td>~320</td>
+<td>0</td>
+<td>0</td>
+<td>ALU is ~400 LUTs alone</td>
+</tr>
+<tr class="even-row">
+<td><code>regfile.v</code></td>
+<td>~40</td>
+<td>~20</td>
+<td>2</td>
+<td>0</td>
+<td>2× RAMB36E1 SDP (32×32)</td>
+</tr>
+<tr class="odd-row">
+<td><code>mdu.v</code> (multiplier)</td>
+<td>~50</td>
+<td>~60</td>
+<td>0</td>
+<td>2</td>
+<td>DSP48E1 cascade</td>
+</tr>
+<tr class="even-row">
+<td><code>mdu.v</code> (divider)</td>
+<td>~280</td>
+<td>~130</td>
+<td>0</td>
+<td>0</td>
+<td>32-step iterative; heavy LUT</td>
+</tr>
+<tr class="odd-row">
+<td><code>amu.v</code></td>
+<td>~120</td>
+<td>~90</td>
+<td>0</td>
+<td>0</td>
+<td>FSM + reservation logic</td>
+</tr>
+<tr class="even-row">
+<td><code>wb_stage.v</code></td>
+<td>~80</td>
+<td>~40</td>
+<td>0</td>
+<td>0</td>
+<td>Aligner, mux</td>
+</tr>
+<tr class="odd-row">
+<td><code>hazard_ctrl.v</code></td>
+<td>~60</td>
+<td>~20</td>
+<td>0</td>
+<td>0</td>
+<td>Combinational + stall FFs</td>
+</tr>
+<tr class="even-row">
+<td><code>csr_file.v</code> + <code>trap_ctrl.v</code></td>
+<td>~350</td>
+<td>~400</td>
+<td>0</td>
+<td>0</td>
+<td>CSR registers + trap mux</td>
+</tr>
+<tr class="odd-row">
+<td><code>mmu_decode.v</code></td>
+<td>~40</td>
+<td>~10</td>
+<td>0</td>
+<td>0</td>
+<td>Address decode (combinational)</td>
+</tr>
+<tr class="even-row">
+<td><code>axi4lite_master.v</code></td>
+<td>~120</td>
+<td>~90</td>
+<td>0</td>
+<td>0</td>
+<td>AXI4-Lite channel FSM</td>
+</tr>
+<tr class="odd-row">
+<td>ITCM</td>
+<td>0</td>
+<td>0</td>
+<td>2</td>
+<td>0</td>
+<td>2× RAMB36E1 (32KB total)</td>
+</tr>
+<tr class="even-row">
+<td>DTCM</td>
+<td>0</td>
+<td>0</td>
+<td>2</td>
+<td>0</td>
+<td>2× RAMB36E1 (32KB total)</td>
+</tr>
+<tr class="odd-row">
+<td><strong>Total (Core Only)</strong></td>
+<td><strong>~2,170</strong></td>
+<td><strong>~1,260</strong></td>
+<td><strong>6</strong></td>
+<td><strong>2</strong></td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td><strong>Total with ITCM/DTCM</strong></td>
+<td><strong>~2,170</strong></td>
+<td><strong>~1,260</strong></td>
+<td><strong>6</strong></td>
+<td><strong>2</strong></td>
+<td>4 BRAMs for TCM + 2 for regfile</td>
+</tr>
+</tbody>
+</table>
+<h4 id="153-artix-7-xc7a200t-utilization-percentage">15.3 Artix-7 xc7a200t Utilization Percentage</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Resource</th>
+<th>Available</th>
+<th>Used (Est.)</th>
+<th>Utilization</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>Slice LUTs</td>
+<td>134,600</td>
+<td>~2,170</td>
+<td><strong>1.6%</strong></td>
+</tr>
+<tr class="odd-row">
+<td>Slice FFs</td>
+<td>269,200</td>
+<td>~1,260</td>
+<td><strong>0.5%</strong></td>
+</tr>
+<tr class="even-row">
+<td>RAMB36E1</td>
+<td>365</td>
+<td>6</td>
+<td><strong>1.6%</strong></td>
+</tr>
+<tr class="odd-row">
+<td>DSP48E1</td>
+<td>740</td>
+<td>2</td>
+<td><strong>0.3%</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Implementation Note:</strong> These estimates exclude the MIG DDR3 controller (~8,000 LUTs),<br/>
+PLIC (~1,500 LUTs), and board-level I/O logic. The full SoC fit comfortably within the<br/>
+xc7a200t resource envelope, with substantial headroom for application-layer co-processors<br/>
+(e.g., AES-128 for IoT encryption, ~3,500 LUTs) or a second hart.</p>
+</blockquote>
+<hr/>
+<h3 id="heading-3-17">16. Timing Closure &amp; Power Notes</h3>
+<h4 id="161-critical-paths">16.1 Critical Paths</h4>
+<p>The following paths are most likely to limit Fmax on Artix-7 −1 and must be constrained with appropriate <code>set_multicycle_path</code> or pipelining in the RTL:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Path</th>
+<th>Estimated Delay</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>ALU carry chain (32-bit adder)</td>
+<td>~3.8 ns</td>
+<td>Accept; fits 10 ns budget</td>
+</tr>
+<tr class="odd-row">
+<td>Branch comparator + PC mux + BRAM setup</td>
+<td>~7.2 ns</td>
+<td><strong>Critical</strong> — register branch target before BRAM addr input</td>
+</tr>
+<tr class="even-row">
+<td>Divider partial remainder logic</td>
+<td>~4.5 ns/iteration</td>
+<td>Iterative; not on clock-period critical path</td>
+</tr>
+<tr class="odd-row">
+<td>C-expander immediate reassembly</td>
+<td>~2.1 ns</td>
+<td>Combinational; acceptable</td>
+</tr>
+<tr class="even-row">
+<td>CSR read-to-ALU operand mux</td>
+<td>~3.2 ns</td>
+<td>Use <code>de_alu_src_b</code> registered 1 cycle early</td>
+</tr>
+<tr class="odd-row">
+<td>AXI return data → load aligner → regfile write</td>
+<td>~5.5 ns</td>
+<td>Register AXI <code>RDATA</code> at master boundary</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Timing Closure Tip — Branch Path:</strong> The deepest combinational path in the design is<br/>
+the branch-taken path: <code>BRU condition eval → pc_sel mux → PC register input</code>. In<br/>
+Vivado, constrain this with:<br/>
+<code>tcl
+set_max_delay -datapath_only -from [get_cells de_stage/bru/*] \
+              -to   [get_cells if_stage/pc_reg*] 9.0</code><br/>
+If this path still fails post-route, pipeline the <code>branch_target</code> address by 1 cycle<br/>
+and accept the <strong>2-cycle branch penalty</strong> (update CPI model accordingly: change the<br/>
+1-cycle branch penalty to 2 in Section 8.4).</p>
+</blockquote>
+<h4 id="162-clock-domain-reset-strategy">16.2 Clock Domain &amp; Reset Strategy</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Domain</th>
+<th>Source</th>
+<th>Consumers</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>clk_core</code> (100 MHz)</td>
+<td>MMCM from 100 MHz board clock</td>
+<td>All RTL modules</td>
+</tr>
+<tr class="odd-row">
+<td><code>clk_axi</code> (100 MHz, phase-aligned)</td>
+<td>Same MMCM output</td>
+<td>AXI4-Lite master, MIG AXI slave</td>
+</tr>
+<tr class="even-row">
+<td><code>clk_ref</code> (10 MHz)</td>
+<td>MMCM output</td>
+<td>CLINT <code>mtime</code> increment</td>
+</tr>
+<tr class="odd-row">
+<td><code>rst_n</code> (synchronous, active-low)</td>
+<td>Button + MMCM locked</td>
+<td>All registers; 2-FF synchronized</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Reset Tip:</strong> Use a <strong>synchronous reset</strong> for all pipeline registers and CSRs to avoid<br/>
+combinational reset paths that violate timing. Tie the reset de-assertion to the<br/>
+<code>MMCM_LOCKED</code> output to prevent the core from starting before the clock is stable.<br/>
+This is especially important for the RTOS tick timer — a glitched <code>mtime</code> value at<br/>
+startup can cause a spurious tick interrupt before the RTOS scheduler is initialised.</p>
+</blockquote>
+<h4 id="163-power-optimization-for-iot">16.3 Power Optimization for IoT</h4>
+<blockquote>
+<p><strong>Power Tip — Clock Gating:</strong> Synthesize the MDU with clock gating: assert<br/>
+<code>mdu_clk_en</code> only when <code>de_is_mdu = 1</code> or <code>mdu_busy = 1</code>. On a typical IoT sensor<br/>
+workload (mostly GPIO polling, UART reads, and light arithmetic), the MDU is active<br/>
+less than 1% of the time. Using <code>BUFGCE</code> primitives to gate the MDU clock can reduce<br/>
+dynamic power by 5–10 mW at 100 MHz on Artix-7.</p>
+<p><strong>Power Tip — BRAM Sleep Mode:</strong> Configure DTCM BRAMs with the <code>SLEEP</code> port connected<br/>
+to a power management register bit when the core is halted via <code>WFI</code> (Wait For<br/>
+Interrupt). Artix-7 RAMB36E1 in sleep mode consumes &lt; 0.5 mW vs ~8 mW active.<br/>
+The RTOS idle task should execute <code>WFI</code> when the run queue is empty:<br/>
+<code>asm
+void vApplicationIdleHook(void) {
+    __asm volatile ("wfi");
+}</code></p>
+<p><strong>Power Tip — DDR3 Access Reduction:</strong> For latency-sensitive IoT paths, ensure all<br/>
+hot-path code and data structures reside in ITCM/DTCM (0x0000_4000 / 0x2000_0000).<br/>
+DDR3 accesses via the MIG controller dissipate approximately 20× more energy per<br/>
+access than DTCM. Use the RTOS heap allocator to place FreeRTOS task stacks and<br/>
+queues in DTCM by defining <code>configAPPLICATION_ALLOCATED_HEAP = 1</code> and placing the<br/>
+heap array in the <code>.dtcm_data</code> linker section.</p>
+</blockquote>
+<hr/>
+<h3 id="heading-3-18">17. Revision History</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Author</th>
+<th>Changes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>0.1</td>
+<td>2024-04-05</td>
+<td>Arch Team</td>
+<td>Initial draft — pipeline structure, IF/DE/WB registers</td>
+</tr>
+<tr class="odd-row">
+<td>0.2</td>
+<td>2024-05-01</td>
+<td>Arch Team</td>
+<td>Added MDU datapath, DSP48E1 cascading detail</td>
+</tr>
+<tr class="even-row">
+<td>0.3</td>
+<td>2024-06-15</td>
+<td>Arch Team</td>
+<td>Added AMU FSM, reservation set logic, AXI interface</td>
+</tr>
+<tr class="odd-row">
+<td>0.4</td>
+<td>2024-07-20</td>
+<td>Arch Team</td>
+<td>C-Expander section, critical path analysis</td>
+</tr>
+<tr class="even-row">
+<td>1.0</td>
+<td>2024-08-01</td>
+<td>Arch Team</td>
+<td>First production release — all sections complete</td>
+</tr>
+<tr class="odd-row">
+<td>1.1</td>
+<td>2025-02-10</td>
+<td>Arch Team</td>
+<td>Added control signal table, power optimization notes, Mermaid diagrams</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<p><em>End of RV32IMAC Microarchitecture Specification</em><br/>
+<em>Cross-reference: <code>docs/rv32imac_isa_reference.md</code> v1.1 — Hardware Architecture Team</em></p></div></div><script>document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'})});});window.addEventListener('scroll',()=>{const h=document.querySelectorAll('h1,h2,h3');let c='';h.forEach(e=>{if(e.getBoundingClientRect().top<200)c=e.id});document.querySelectorAll('.toc-list a').forEach(e=>{e.classList.remove('active');if(e.getAttribute('href')==='#'+c)e.classList.add('active')});});</script></body></html>

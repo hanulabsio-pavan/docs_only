@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SETU — Hardware Implementation Draft</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #16a085;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --hv-zone: #fff5f5;
+            --lv-zone: #f0fff4;
+            --bg: #f4f7f6;
+            --text: #333;
+            --white: #ffffff;
+            --border: #dee2e6;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border-radius: 12px;
+        }
+        header {
+            border-bottom: 4px solid var(--accent);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+        .status-badge {
+            display: inline-block;
+            background: var(--warning);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            float: right;
+        }
+        h1 { color: var(--primary); margin: 0; font-size: 2.2rem; }
+        .subtitle { font-style: italic; color: #666; margin-top: 5px; }
+        h2 { 
+            color: var(--primary); 
+            border-left: 6px solid var(--accent); 
+            padding-left: 15px; 
+            margin-top: 50px;
+            background: #f8f9fa;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+        h3 { color: var(--accent); margin-top: 30px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95rem;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        th { background-color: #f1f3f5; color: var(--primary); font-weight: 600; }
+        tr:nth-child(even) { background-color: #fcfcfc; }
+        
+        .domain-table td:last-child { font-weight: bold; }
+        .risk-lethal { color: var(--danger); }
+        .risk-safe { color: var(--accent); }
+
+        .architecture-box {
+            display: flex;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .zone {
+            flex: 1;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px dashed #ccc;
+        }
+        .zone-hv { background-color: var(--hv-zone); border-color: var(--danger); }
+        .zone-lv { background-color: var(--lv-zone); border-color: var(--accent); }
+        .zone h4 { margin-top: 0; color: var(--primary); text-align: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+
+        .callout {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        .callout-header { font-weight: bold; color: #856404; margin-bottom: 5px; display: block; }
+
+        .mermaid { margin: 40px 0; background: white; padding: 20px; border-radius: 8px; }
+        
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-critical { background: var(--danger); color: white; }
+        .badge-high { background: var(--warning); color: white; }
+        .badge-medium { background: var(--primary); color: white; }
+
+        footer {
+            text-align: center;
+            color: #888;
+            margin-top: 60px;
+            font-size: 0.85rem;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        code {
+            background: #e9ecef;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        .bom-input {
+            width: 70px;
+            padding: 4px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <span class="status-badge">PRE-SCHEMATIC DRAFT v0.1</span>
+            <h1>SETU — Hardware Implementation</h1>
+            <p class="subtitle">Premium IoT Smart Switch Board | Circuit Architecture & Component Selection</p>
+            <p style="margin-top: 20px; font-size: 0.9rem;"><strong>Date:</strong> May 2026 | <strong>Project:</strong> setu1.0</p>
+        </header>
+
+        <section id="architecture">
+            <h2>1. System Architecture Overview</h2>
+            <p>The SETU board operates from 230VAC mains and strictly separates three functional domains for safety and performance.</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Domain</th>
+                        <th>Voltage</th>
+                        <th>Isolation</th>
+                        <th>Risk Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>HV Power Stage</strong></td>
+                        <td>230VAC / 325V DC bus</td>
+                        <td>HV side</td>
+                        <td class="risk-lethal">Lethal</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Load Switching Stage</strong></td>
+                        <td>230VAC (relay contacts)</td>
+                        <td>HV side</td>
+                        <td class="risk-lethal">Lethal</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Logic Stage</strong></td>
+                        <td>3.3V / 5V DC</td>
+                        <td class="risk-safe">LV side (isolated)</td>
+                        <td class="risk-safe">Safe</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="architecture-box">
+                <div class="zone zone-hv">
+                    <h4>HV DOMAIN (230VAC)</h4>
+                    <ul style="font-size: 0.85rem;">
+                        <li>Surge → Fuse → EMI Filter</li>
+                        <li>Rectifier → Bulk Cap</li>
+                        <li>Flyback Transformer Primary</li>
+                        <li>Relay Contacts (COM/NO/NC)</li>
+                    </ul>
+                </div>
+                <div style="display: flex; align-items: center; font-weight: bold; color: #999;">║</div>
+                <div class="zone zone-lv">
+                    <h4>LV DOMAIN (3.3V / 5V)</h4>
+                    <ul style="font-size: 0.85rem;">
+                        <li>ESP32-S3 MCU</li>
+                        <li>Touch IC (CAP1296)</li>
+                        <li>LED Drivers / WiFi Antenna</li>
+                        <li>Relay Coil Driver (Isolated)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="power-stage">
+            <h2>2. Power Stage Architecture</h2>
+            
+            <h3>Stage 1 — Input Protection & Filtering</h3>
+            <p>Designed for Indian mains conditions (spikes, noise, and instability).</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ref</th>
+                        <th>Function</th>
+                        <th>Critical Spec (India)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>F1</strong></td><td>Slow-blow fuse</td><td>500mA/250VAC (PSU rail only)</td></tr>
+                    <tr><td><strong>RV1</strong></td><td>MOV</td><td>275VAC continuous, ≥80J surge energy</td></tr>
+                    <tr><td><strong>F2</strong></td><td>Load fuse</td><td>10A/250VAC (One per gang)</td></tr>
+                    <tr><td><strong>C1</strong></td><td>X2 Capacitor</td><td>100nF/275VAC X2-rated</td></tr>
+                </tbody>
+            </table>
+            <div class="callout">
+                <span class="callout-header">India-Specific Requirement:</span>
+                MOV must be rated <strong>275VAC</strong> (not 250VAC). Indian grid voltage frequently sustains 270V+; a 250V component will degrade rapidly.
+            </div>
+
+            <h3>Stage 3 — Isolated Flyback Converter</h3>
+            <p>Galvanic isolation is non-negotiable for a premium touch-based product.</p>
+            <ul>
+                <li><strong>Phase 1:</strong> Using HLK-PM05 encapsulated module for rapid prototyping.</li>
+                <li><strong>Phase 3:</strong> Custom TNY268PN based design for cost and footprint optimization.</li>
+            </ul>
+        </section>
+
+        <section id="logic-stage">
+            <h2>3. Logic Stage Architecture</h2>
+            
+            <h3>3.1 Main MCU — ESP32-S3</h3>
+            <p>Selected for native AI acceleration (Voice) and superior connectivity.</p>
+            <table>
+                <tr><th>Selection</th><td><strong>ESP32-S3-WROOM-1-N8R8</strong></td></tr>
+                <tr><th>Memory</th><td>8MB Flash + 8MB PSRAM</td></tr>
+                <tr><th>Features</th><td>WiFi, BLE 5.0, Vector instructions for TFLite</td></tr>
+            </table>
+
+            <h3>3.2 Touch Controller — CAP1296</h3>
+            <p>Hardware-level touch sensing with superior EMI rejection compared to MCU-based sensing.</p>
+            <table>
+                <tr><th>Selection</th><td><strong>CAP1296-1-SN</strong></td></tr>
+                <tr><th>Interface</th><td>I2C (up to 400kHz)</td></tr>
+                <tr><th>Key Feature</th><td>Active shielding output to minimize false triggers in HV environments</td></tr>
+            </table>
+        </section>
+
+        <section id="isolation">
+            <h2>4. Isolation & Safety Strategy</h2>
+            <p>Compliance with <strong>BIS IS 1293</strong> is the primary design driver for the PCB layout.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Measurement</th>
+                        <th>Minimum Requirement</th>
+                        <th>SETU Implementation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Creepage (HV to LV)</td>
+                        <td><strong>6mm</strong></td>
+                        <td>Physical PCB Slot (Groove)</td>
+                    </tr>
+                    <tr>
+                        <td>Clearance (Air gap)</td>
+                        <td><strong>3mm</strong></td>
+                        <td>Component placement keepouts</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="bom">
+            <h2>5. Component Selection</h2>
+            <h3>5.1 Active Components</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ref</th>
+                        <th>Description</th>
+                        <th>Primary MPN</th>
+                        <th>Manufacturer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>U1</td><td>Flyback Controller</td><td>TNY268PN</td><td>Power Integrations</td></tr>
+                    <tr><td>U3</td><td>Main MCU</td><td>ESP32-S3-WROOM-1-N8R8</td><td>Espressif</td></tr>
+                    <tr><td>U4</td><td>Touch Controller</td><td>CAP1296-1-SN</td><td>Microchip</td></tr>
+                    <tr><td>RL1-4</td><td>10A Relay</td><td>G5Q-14-DC5</td><td>Omron</td></tr>
+                    <tr><td>D1</td><td>Bridge Rectifier</td><td>MB6S</td><td>Vishay</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="diagram">
+            <h2>6. Schematic Block Diagram</h2>
+            <div class="mermaid">
+                graph TD
+                subgraph HV["HV Domain (230VAC) — DANGER ZONE"]
+                    AC_IN["J1: 230VAC"]
+                    F1["F1: Fuse 500mA"]
+                    EMI["EMI Filter"]
+                    D1["D1: Bridge Rectifier"]
+                    U1["U1: Flyback PSU"]
+                    RL_CON["Relay Contacts"]
+                end
+
+                subgraph ISO["~~~ ISOLATION BARRIER ~~~"]
+                end
+
+                subgraph LV["LV Domain (Safe Zone)"]
+                    V33["3.3V Logic Rail"]
+                    U3["ESP32-S3 MCU"]
+                    U4["CAP1296 Touch"]
+                    TOUCH["Touch Pads"]
+                    RL_COIL["Relay Coils"]
+                end
+
+                AC_IN --> F1 --> EMI --> D1 --> U1
+                U1 --> ISO --> V33
+                V33 --> U3
+                V33 --> U4
+                TOUCH --> U4
+                U4 --> U3
+                U3 --> RL_COIL
+                RL_COIL -.->|Mechanical| RL_CON
+            </div>
+        </section>
+
+        <section id="bom-estimate">
+            <h2>7. Advanced BOM (Phase 1 Prototype)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ref</th>
+                        <th>Description</th>
+                        <th>Unit Cost (₹)</th>
+                        <th>Qty</th>
+                        <th>Extended (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="bom-item"><td>U_MOD</td><td>AC-DC Module (HLK-PM05)</td><td><input type="number" class="bom-input unit-cost" value="200" oninput="updateBOM()"></td><td><input type="number" class="bom-input qty" value="1" oninput="updateBOM()"></td><td class="extended">200</td></tr>
+                    <tr class="bom-item"><td>U3</td><td>ESP32-S3 Module</td><td><input type="number" class="bom-input unit-cost" value="450" oninput="updateBOM()"></td><td><input type="number" class="bom-input qty" value="1" oninput="updateBOM()"></td><td class="extended">450</td></tr>
+                    <tr class="bom-item"><td>U4</td><td>Touch IC CAP1296</td><td><input type="number" class="bom-input unit-cost" value="180" oninput="updateBOM()"></td><td><input type="number" class="bom-input qty" value="1" oninput="updateBOM()"></td><td class="extended">180</td></tr>
+                    <tr class="bom-item"><td>RL1-4</td><td>Omron Relays</td><td><input type="number" class="bom-input unit-cost" value="85" oninput="updateBOM()"></td><td><input type="number" class="bom-input qty" value="4" oninput="updateBOM()"></td><td class="extended">340</td></tr>
+                    <tr class="bom-item"><td>PCB</td><td>4-Layer (140x100mm)</td><td><input type="number" class="bom-input unit-cost" value="800" oninput="updateBOM()"></td><td><input type="number" class="bom-input qty" value="1" oninput="updateBOM()"></td><td class="extended">800</td></tr>
+                    <tr style="background:#f1f3f5; font-weight:bold;">
+                        <td colspan="4" style="text-align:right;">Subtotal</td>
+                        <td id="bom-subtotal">₹1,970</td>
+                    </tr>
+                    <tr style="background:#f1f3f5; font-weight:bold;">
+                        <td colspan="4" style="text-align:right;">Tax/GST (%)</td>
+                        <td><input type="number" id="tax-percent" class="bom-input" value="18" oninput="updateBOM()"></td>
+                    </tr>
+                    <tr style="background:#2c3e50; color: white; font-weight:bold;">
+                        <td colspan="4" style="text-align:right;">Final Landed Cost</td>
+                        <td id="bom-total">₹2,325</td>
+                    </tr>
+                </tbody>
+            </table>
+            <button onclick="exportBOMToCSV()" style="margin-top: 10px; padding: 10px 20px; background-color: var(--accent); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                Export to CSV
+            </button>
+        </section>
+
+        <section id="checklist">
+            <h2>8. Critical Design Rules Checklist</h2>
+            <ul>
+                <li><input type="checkbox"> <strong>HV Protection:</strong> Fuse F1 is the absolute first element after J1 input.</li>
+                <li><input type="checkbox"> <strong>Thermal:</strong> Bulk cap C3 rated for 450V (Standard 400V is insufficient for India).</li>
+                <li><input type="checkbox"> <strong>Isolation:</strong> Physical slot routed in PCB between HV and LV zones.</li>
+                <li><input type="checkbox"> <strong>RF:</strong> 15mm copper-free keepout zone below ESP32 antenna.</li>
+                <li><input type="checkbox"> <strong>Touch:</strong> 1MΩ series resistors placed immediately at IC pins.</li>
+            </ul>
+        </section>
+
+        <section id="actions">
+            <h2>9. Next Actions</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Priority</th>
+                        <th>Timeline</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Finalize Touch IC (CAP1296 vs IQS7222C)</td>
+                        <td><span class="badge badge-critical">Critical</span></td>
+                        <td>Week 1</td>
+                    </tr>
+                    <tr>
+                        <td>Build EMI Test Rig</td>
+                        <td><span class="badge badge-critical">Critical</span></td>
+                        <td>Month 2</td>
+                    </tr>
+                    <tr>
+                        <td>Schematic v0.1 (KiCad)</td>
+                        <td><span class="badge badge-high">High</span></td>
+                        <td>Month 2</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 SETU Smart Home Systems. Proprietary and Confidential.</p>
+        </footer>
+    </div>
+
+    <script>
+        function updateBOM() {
+            let subtotal = 0;
+            const rows = document.querySelectorAll('.bom-item');
+            rows.forEach(row => {
+                const cost = parseFloat(row.querySelector('.unit-cost').value) || 0;
+                const qty = parseFloat(row.querySelector('.qty').value) || 0;
+                const extended = cost * qty;
+                row.querySelector('.extended').innerText = extended.toLocaleString('en-IN');
+                subtotal += extended;
+            });
+
+            const taxPercent = parseFloat(document.getElementById('tax-percent').value) || 0;
+            const total = subtotal * (1 + taxPercent / 100);
+
+            document.getElementById('bom-subtotal').innerText = '₹' + subtotal.toLocaleString('en-IN');
+            document.getElementById('bom-total').innerText = '₹' + Math.round(total).toLocaleString('en-IN');
+        }
+
+        function exportBOMToCSV() {
+            const rows = document.querySelectorAll('#bom-estimate tr');
+            let csv = [];
+            
+            rows.forEach(row => {
+                let rowData = [];
+                const cols = row.querySelectorAll('th, td');
+                cols.forEach(col => {
+                    let text = col.querySelector('input') ? col.querySelector('input').value : col.innerText;
+                    // Clean currency symbols and commas for CSV compatibility
+                    text = text.replace(/₹/g, "").replace(/,/g, "").trim();
+                    rowData.push('"' + text + '"');
+                });
+                csv.push(rowData.join(","));
+            });
+
+            const blob = new Blob([csv.join("\n")], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", "SETU_BOM_Export.csv");
+            link.click();
+        }
+    </script>
+</body>
+</html>

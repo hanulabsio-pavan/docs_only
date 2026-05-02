@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SETU — Repository Structure & Documentation</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #16a085;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --bg: #f4f7f6;
+            --text: #333;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            background: var(--white);
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        header {
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        h1 { color: var(--primary); margin-bottom: 5px; }
+        .subtitle { font-style: italic; color: #666; }
+        h2 { 
+            color: var(--primary); 
+            border-left: 5px solid var(--accent); 
+            padding-left: 15px; 
+            margin-top: 40px;
+        }
+        h3 { color: var(--accent); margin-top: 25px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th { background-color: #f8f9fa; color: var(--primary); }
+        tr:hover { background-color: #f1f1f1; }
+        .tree {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: auto;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-critical { background: var(--danger); color: white; }
+        .badge-high { background: var(--warning); color: white; }
+        .badge-medium { background: var(--primary); color: white; }
+        .golden-rule {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .mermaid { margin: 30px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SETU — Repository Structure</h1>
+            <p class="subtitle">Premium IoT Smart Switch Board | India Market Entry</p>
+            <p><strong>Last Updated:</strong> May 2026 | <strong>Version:</strong> 1.0</p>
+        </header>
+
+        <section id="overview">
+            <h2>1. Quick Overview</h2>
+            <p>This document is the single source of truth for how the SETU repository is organized. <strong>Golden Rule:</strong> Distinguish clearly between Design and Production files.</p>
+            
+            <div class="golden-rule">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Definition</th>
+                            <th>Examples</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Design Files</strong></td>
+                            <td>Source of truth. Files you edit.</td>
+                            <td>KiCad <code>.kicad_sch</code>, C source <code>.c</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Production Files</strong></td>
+                            <td>Exported FROM design. Never edit directly.</td>
+                            <td>Gerbers, BOM CSV, Firmware <code>.bin</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="directory">
+            <h2>2. Full Directory Tree</h2>
+            <div class="tree">
+                setu1.0/<br>
+                ├── CLAUDE.md &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← AI context (read first)<br>
+                ├── README.md &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← Project overview<br>
+                ├── .claude/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← Claude Code config<br>
+                ├── hardware/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← PCB DESIGN FILES<br>
+                ├── firmware/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← EMBEDDED SOFTWARE<br>
+                ├── manufacturing/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← PRODUCTION OUTPUTS<br>
+                ├── industrial-design/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← ENCLOSURE & PACKAGING<br>
+                ├── certification/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← REGULATORY DOCS<br>
+                └── docs/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← ALL DOCUMENTATION
+            </div>
+        </section>
+
+        <section id="hardware">
+            <h2>3. Hardware Section Detail</h2>
+            <h3>3.1 Schematics</h3>
+            <p><strong>Naming:</strong> <code>SETU_SCH_v{major}.{minor}.kicad_sch</code></p>
+            <ul>
+                <li>Store KiCad source and custom libraries.</li>
+                <li>Do NOT store PDFs or Gerbers here.</li>
+            </ul>
+
+            <h3>3.2 PCB Layout Constraints</h3>
+            <table>
+                <tr><td>Board Outline</td><td>140mm × 100mm</td></tr>
+                <tr><td>Stackup</td><td>4-layer (Signal / GND / PWR / Signal)</td></tr>
+                <tr><td>HV Clearance</td><td>4mm creepage / 2.5mm clearance</td></tr>
+            </table>
+        </section>
+
+        <section id="firmware">
+            <h2>4. Firmware Section Detail</h2>
+            <p>Structure follows a modular approach for ESP-IDF:</p>
+            <table>
+                <thead>
+                    <tr><th>Component</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>main/</code></td><td>Entry point and task initialization</td></tr>
+                    <tr><td><code>drivers/</code></td><td>Touch (CAP1296), Relay, and LED drivers</td></tr>
+                    <tr><td><code>middleware/</code></td><td>WiFi, OTA, and Voice Engines</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="process">
+            <h2>5. Phase-Gate Lifecycle</h2>
+            <div class="mermaid">
+                graph LR
+                A[Phase 1: Design] --> B[Phase 2: Prototyping]
+                B --> C[Phase 3: Production]
+                C --> D[Phase 4: Scaling]
+                style A fill:#d1e7dd
+                style B fill:#fff3cd
+                style C fill:#f8d7da
+                style D fill:#cfe2ff
+            </div>
+        </section>
+
+        <section id="gap-analysis">
+            <h2>6. Gap Analysis (Missing Items)</h2>
+            <h3>Required Before Phase 2 (Month 7)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Target Location</th>
+                        <th>Priority</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Schematic v1.0</td>
+                        <td><code>hardware/design/schematics/</code></td>
+                        <td><span class="badge badge-critical">CRITICAL</span></td>
+                    </tr>
+                    <tr>
+                        <td>PCB Layout v1.0</td>
+                        <td><code>hardware/design/pcb-layout/</code></td>
+                        <td><span class="badge badge-critical">CRITICAL</span></td>
+                    </tr>
+                    <tr>
+                        <td>EMI Pre-test Report</td>
+                        <td><code>certification/BIS/pre-test/</code></td>
+                        <td><span class="badge badge-high">High</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="naming">
+            <h2>7. Naming Conventions</h2>
+            <table>
+                <thead>
+                    <tr><th>Asset</th><th>Convention</th><th>Example</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Schematic</td><td><code>SETU_SCH_v{M}.{m}.kicad_sch</code></td><td><code>SETU_SCH_v1.0.kicad_sch</code></td></tr>
+                    <tr><td>Firmware Bin</td><td><code>SETU_FW_v{M}.{m}.{p}.bin</code></td><td><code>SETU_FW_v1.0.0.bin</code></td></tr>
+                    <tr><td>Test Plan</td><td><code>TP-{NNN}_{Name}.md</code></td><td><code>TP-001_Touch.md</code></td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="certification">
+            <h2>8. Certification Detail</h2>
+            <h3>BIS Certification (IS 1293:2002)</h3>
+            <p>Critical path for India entry. Est. Cost: ₹1.5–2.5L. Timeline: 4–6 months.</p>
+            <ul>
+                <li>Requires Safety Manual and Isolation drawings.</li>
+                <li>Final certificates are <strong>immutable</strong>.</li>
+            </ul>
+        </section>
+
+        <footer>
+            <p style="text-align: center; color: #999; margin-top: 50px; font-size: 0.9em;">
+                &copy; 2026 SETU Smart Home Systems. Proprietary and Confidential.
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

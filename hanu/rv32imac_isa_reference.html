@@ -1,0 +1,1966 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>RISC-V RV32IMAC ISA Reference</title><style>
+* {margin:0;padding:0;box-sizing:border-box}
+:root {
+  --primary-color:#2e3440;--secondary-color:#3b4252;--accent-color:#88c0d0;--accent-dark:#5e81ac;
+  --success-color:#a3be8c;--warning-color:#ebcb8b;--error-color:#bf616a;
+  --text-color:#eceff4;--text-secondary:#d8dee9;--bg-color:#2e3440;--bg-secondary:#3b4252;--border-color:#434c5e
+}
+body {font-family:'Segoe UI','Roboto','Helvetica','Arial',sans-serif;line-height:1.6;color:var(--text-color);background-color:var(--bg-color)}
+.container {display:flex;max-width:1400px;margin:0 auto}
+.toc-sidebar {position:fixed;left:0;top:0;width:250px;height:100vh;background-color:var(--secondary-color);border-right:2px solid var(--border-color);overflow-y:auto;padding:20px 0;z-index:100}
+.toc-header {font-size:1.2em;font-weight:bold;color:var(--accent-color);padding:0 20px 20px 20px;border-bottom:2px solid var(--accent-dark);margin-bottom:10px}
+.toc-list {list-style:none}
+.toc-list ul {list-style:none;padding-left:20px}
+.toc-list li {margin:5px 0}
+.toc-list a {color:var(--accent-color);text-decoration:none;font-size:0.95em;display:block;padding:5px 20px;transition:all 0.3s ease}
+.toc-list a:hover {color:var(--text-color);background-color:var(--bg-color);padding-left:30px}
+.content {margin-left:250px;padding:40px 60px;flex:1}
+h1,h2,h3,h4,h5,h6 {margin-top:1.5em;margin-bottom:0.5em;font-weight:600;line-height:1.2}
+h1 {font-size:2.8em;color:var(--accent-color);border-bottom:3px solid var(--accent-color);padding-bottom:10px}
+h2 {font-size:2.2em;color:var(--accent-color);border-left:4px solid var(--accent-dark);padding-left:15px}
+h3 {font-size:1.8em;color:var(--text-secondary)}
+h4 {font-size:1.5em;color:var(--text-secondary)}
+p {margin:1em 0;text-align:justify}
+a {color:var(--accent-color);text-decoration:none;transition:color 0.3s ease}
+a:hover {color:var(--text-color);text-decoration:underline}
+code {background-color:var(--secondary-color);color:var(--success-color);padding:2px 6px;border-radius:3px;font-family:'Courier New','Consolas',monospace;font-size:0.9em}
+pre {background-color:var(--secondary-color);border:1px solid var(--border-color);border-radius:5px;padding:15px;overflow-x:auto;margin:1.5em 0;line-height:1.4}
+pre code {background-color:transparent;color:inherit;padding:0}
+.styled-table {width:100%;border-collapse:collapse;margin:1.5em 0;border:1px solid var(--border-color);border-radius:5px;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.3)}
+.styled-table thead {background-color:var(--accent-dark);color:var(--text-color);font-weight:bold}
+.styled-table th {padding:15px;text-align:left;font-weight:600;border-bottom:2px solid var(--accent-color)}
+.styled-table td {padding:12px 15px;border-bottom:1px solid var(--border-color)}
+.styled-table tbody tr.even-row {background-color:var(--secondary-color)}
+.styled-table tbody tr.odd-row {background-color:var(--bg-color)}
+.styled-table tbody tr:hover {background-color:var(--accent-dark);opacity:0.8}
+blockquote {border-left:4px solid var(--accent-color);padding:10px 20px;margin:1.5em 0;background-color:var(--secondary-color);color:var(--text-secondary);font-style:italic}
+ul,ol {margin:1em 0;padding-left:2em}
+li {margin:0.5em 0}
+hr {border:none;height:2px;background:linear-gradient(to right,var(--border-color),var(--accent-dark),var(--border-color));margin:2em 0}
+img {max-width:100%;height:auto;border-radius:5px;margin:1.5em 0}
+strong,b {color:var(--warning-color);font-weight:600}
+em,i {color:var(--text-secondary)}
+::-webkit-scrollbar {width:8px}
+::-webkit-scrollbar-track {background:var(--secondary-color)}
+::-webkit-scrollbar-thumb {background:var(--accent-dark);border-radius:4px}
+::-webkit-scrollbar-thumb:hover {background:var(--accent-color)}
+@media (max-width:768px) {.toc-sidebar {position:relative;width:100%;height:auto;border-right:none;border-bottom:2px solid var(--border-color)}.content {margin-left:0;padding:20px}h1{font-size:2em}h2{font-size:1.6em}h3{font-size:1.4em}}
+</style><script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body><div class="container"><nav class="toc-sidebar"><div class="toc-header">Contents</div><ul class="toc-list"><ul><ul><li><a href="#heading-2-1">RV32IMAC ISA Reference Document</a></li><ul><li><a href="#heading-3-1">Table of Contents</a></li><li><a href="#heading-3-2">1. Document Scope & Conventions</a></li><li><a href="#heading-3-3">2. Memory Map</a></li><li><a href="#heading-3-4">3. Register File — RV32I Base</a></li><li><a href="#heading-3-5">4. Base Integer ISA (I Extension)</a></li><li><a href="#heading-3-6">5. Multiply/Divide Extension (M)</a></li><li><a href="#heading-3-7">6. Atomic Extension (A)</a></li><li><a href="#heading-3-8">7. Compressed Extension (C)</a></li><li><a href="#heading-3-9">8. Control & Status Registers — Zicsr</a></li><li><a href="#heading-3-10">9. Interrupt & Exception Handling</a></li><li><a href="#heading-3-11">10. Pipeline Microarchitecture Notes</a></li><li><a href="#heading-3-12">11. Revision History</a></li></ul></ul></ul></nav><div class="content"><h2 id="heading-2-1">RV32IMAC ISA Reference Document</h2>
+<h4 id="single-source-of-truth-hardware-implementation-software-toolchain">Single Source of Truth — Hardware Implementation &amp; Software Toolchain</h4>
+<hr/>
+<blockquote>
+<p><strong>Project Context:</strong> This document defines the ISA specification for an RV32IMAC soft-core processor<br/>
+targeting the <strong>Xilinx Artix-7 FPGA (Nexys Video board)</strong>. The implementation uses a <strong>3-stage<br/>
+in-order pipeline</strong> (Fetch → Decode/Execute → Writeback) optimized for area efficiency and<br/>
+deterministic timing, suitable for <strong>IoT RTOS workloads</strong> (e.g., FreeRTOS, Zephyr RTOS).<br/>
+All design decisions herein balance FPGA resource constraints against real-time responsiveness.</p>
+</blockquote>
+<hr/>
+<h3 id="heading-3-1">Table of Contents</h3>
+<ol>
+<li><a href="#1-document-scope--conventions">Document Scope &amp; Conventions</a></li>
+<li><a href="#2-memory-map">Memory Map</a></li>
+<li><a href="#3-register-file--rv32i-base">Register File — RV32I Base</a></li>
+<li><a href="#4-base-integer-isa-i-extension">Base Integer ISA (I Extension)</a></li>
+<li><a href="#5-multiplydivide-extension-m">Multiply/Divide Extension (M)</a></li>
+<li><a href="#6-atomic-extension-a">Atomic Extension (A)</a></li>
+<li><a href="#7-compressed-extension-c">Compressed Extension (C)</a></li>
+<li><a href="#8-control--status-registers--zicsr">Control &amp; Status Registers — Zicsr</a></li>
+<li><a href="#9-interrupt--exception-handling">Interrupt &amp; Exception Handling</a></li>
+<li><a href="#10-pipeline-microarchitecture-notes">Pipeline Microarchitecture Notes</a></li>
+<li><a href="#11-revision-history">Revision History</a></li>
+</ol>
+<hr/>
+<h3 id="heading-3-2">1. Document Scope &amp; Conventions</h3>
+<h4 id="11-isa-string">1.1 ISA String</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>RV32IMAC_Zicsr_Zifencei
+</pre></div>
+</div>
+<p>This core implements the following ratified RISC-V extensions:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Extension</th>
+<th>Version</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>I</code></td>
+<td>2.1</td>
+<td>Base 32-bit integer ISA</td>
+</tr>
+<tr class="odd-row">
+<td><code>M</code></td>
+<td>2.0</td>
+<td>Integer multiply and divide</td>
+</tr>
+<tr class="even-row">
+<td><code>A</code></td>
+<td>2.1</td>
+<td>Atomic memory operations</td>
+</tr>
+<tr class="odd-row">
+<td><code>C</code></td>
+<td>2.0</td>
+<td>16-bit compressed instructions</td>
+</tr>
+<tr class="even-row">
+<td><code>Zicsr</code></td>
+<td>2.0</td>
+<td>Control and status register instructions</td>
+</tr>
+<tr class="odd-row">
+<td><code>Zifencei</code></td>
+<td>2.0</td>
+<td>Instruction-fetch fence</td>
+</tr>
+</tbody>
+</table>
+<h4 id="12-notation-conventions">1.2 Notation Conventions</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>rd</code></td>
+<td>Destination register</td>
+</tr>
+<tr class="odd-row">
+<td><code>rs1</code>, <code>rs2</code></td>
+<td>Source registers 1 and 2</td>
+</tr>
+<tr class="even-row">
+<td><code>imm</code></td>
+<td>Immediate value (sign-extended unless noted)</td>
+</tr>
+<tr class="odd-row">
+<td><code>[N:M]</code></td>
+<td>Bit-field from bit N down to bit M (inclusive)</td>
+</tr>
+<tr class="even-row">
+<td><code>PC</code></td>
+<td>Program Counter</td>
+</tr>
+<tr class="odd-row">
+<td><code>M[addr]</code></td>
+<td>Memory read at <code>addr</code></td>
+</tr>
+<tr class="even-row">
+<td><code>XLEN</code></td>
+<td>Register width = 32 bits</td>
+</tr>
+<tr class="odd-row">
+<td><code>←</code></td>
+<td>Assignment operator</td>
+</tr>
+<tr class="even-row">
+<td><code>∥</code></td>
+<td>Concatenation operator</td>
+</tr>
+<tr class="odd-row">
+<td><code>sx(v)</code></td>
+<td>Sign-extension of value <code>v</code> to XLEN</td>
+</tr>
+</tbody>
+</table>
+<h4 id="13-instruction-encoding-fields">1.3 Instruction Encoding Fields</h4>
+<p>All 32-bit instructions share a common field layout:</p>
+<div class="highlight"><div class="highlight"><pre><span></span> 31        25 24    20 19    15 14  12 11      7 6      0
+┌────────────┬────────┬────────┬──────┬─────────┬────────┐
+│  funct7    │  rs2   │  rs1   │funct3│   rd    │ opcode │
+│  [31:25]   │[24:20] │[19:15] │[14:12]│[11:7]  │ [6:0]  │
+└────────────┴────────┴────────┴──────┴─────────┴────────┘
+</pre></div>
+</div>
+<hr/>
+<h3 id="heading-3-3">2. Memory Map</h3>
+<blockquote>
+<p><strong>IoT Implementation Note:</strong> This memory map is fixed in RTL and must match the<br/>
+linker script (<code>link.ld</code>) used by the RTOS. Do <strong>not</strong> remap regions without<br/>
+regenerating the address decode logic in <code>rtl/core/mmu_decode.v</code>.</p>
+</blockquote>
+<h4 id="21-physical-address-space-32-bit-4-gib">2.1 Physical Address Space (32-bit, 4 GiB)</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Region</th>
+<th>Base Address</th>
+<th>End Address</th>
+<th>Size</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>Boot ROM</td>
+<td><code>0x0000_0000</code></td>
+<td><code>0x0000_3FFF</code></td>
+<td>16 KiB</td>
+<td>RX</td>
+<td>First-stage bootloader</td>
+</tr>
+<tr class="odd-row">
+<td>ITCM (Instruction TCM)</td>
+<td><code>0x0000_4000</code></td>
+<td><code>0x0000_BFFF</code></td>
+<td>32 KiB</td>
+<td>RX</td>
+<td>FPGA Block RAM, 1-cycle access</td>
+</tr>
+<tr class="even-row">
+<td>DTCM (Data TCM)</td>
+<td><code>0x2000_0000</code></td>
+<td><code>0x2000_7FFF</code></td>
+<td>32 KiB</td>
+<td>RW</td>
+<td>FPGA Block RAM, 1-cycle access</td>
+</tr>
+<tr class="odd-row">
+<td>External DDR3</td>
+<td><code>0x8000_0000</code></td>
+<td><code>0x8FFF_FFFF</code></td>
+<td>256 MiB</td>
+<td>RW</td>
+<td>MIG controller, variable latency</td>
+</tr>
+<tr class="even-row">
+<td>CLINT</td>
+<td><code>0xE000_0000</code></td>
+<td><code>0xE000_FFFF</code></td>
+<td>64 KiB</td>
+<td>RW</td>
+<td>Core-Local Interruptor</td>
+</tr>
+<tr class="odd-row">
+<td>PLIC</td>
+<td><code>0xE001_0000</code></td>
+<td><code>0xE001_FFFF</code></td>
+<td>64 KiB</td>
+<td>RW</td>
+<td>Platform-Level Interrupt Controller</td>
+</tr>
+<tr class="even-row">
+<td>GPIO</td>
+<td><code>0xF000_0000</code></td>
+<td><code>0xF000_0FFF</code></td>
+<td>4 KiB</td>
+<td>RW</td>
+<td>AXI-Lite GPIO</td>
+</tr>
+<tr class="odd-row">
+<td>UART0</td>
+<td><code>0xF000_1000</code></td>
+<td><code>0xF000_1FFF</code></td>
+<td>4 KiB</td>
+<td>RW</td>
+<td>16550-compatible UART</td>
+</tr>
+<tr class="even-row">
+<td>SPI0</td>
+<td><code>0xF000_2000</code></td>
+<td><code>0xF000_2FFF</code></td>
+<td>4 KiB</td>
+<td>RW</td>
+<td>SPI Master (IoT sensors)</td>
+</tr>
+<tr class="odd-row">
+<td>I2C0</td>
+<td><code>0xF000_3000</code></td>
+<td><code>0xF000_3FFF</code></td>
+<td>4 KiB</td>
+<td>RW</td>
+<td>I2C Master</td>
+</tr>
+<tr class="even-row">
+<td>Reserved</td>
+<td><code>0xF000_4000</code></td>
+<td><code>0xFFFF_FFFF</code></td>
+<td>—</td>
+<td>—</td>
+<td>Undefined, access causes fault</td>
+</tr>
+</tbody>
+</table>
+<h4 id="22-clint-register-map">2.2 CLINT Register Map</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Offset</th>
+<th>Register</th>
+<th>Width</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>0x0000</code></td>
+<td><code>msip</code></td>
+<td>32-bit</td>
+<td>Machine software interrupt pending</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x4000</code></td>
+<td><code>mtimecmp[0:3]</code></td>
+<td>64-bit</td>
+<td>Machine timer compare register</td>
+</tr>
+<tr class="even-row">
+<td><code>0xBFF8</code></td>
+<td><code>mtime[0:3]</code></td>
+<td>64-bit</td>
+<td>Machine real-time counter</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>mtime</code> register increments at <strong>a fixed 10 MHz reference clock</strong>, independent of core frequency.</p>
+<p>$$T_{tick} = \frac{1}{f_{ref}} = \frac{1}{10 \times 10^6} = 100\ \text{ns per tick}$$</p>
+<hr/>
+<h3 id="heading-3-4">3. Register File — RV32I Base</h3>
+<h4 id="31-integer-register-file-x0x31">3.1 Integer Register File (x0–x31)</h4>
+<p>The core implements 32 general-purpose 32-bit registers. Register <code>x0</code> is hardwired to zero; writes are silently discarded.</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Register</th>
+<th>ABI Name</th>
+<th>Role</th>
+<th>Saved By</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>x0</code></td>
+<td><code>zero</code></td>
+<td>Hardwired zero</td>
+<td>—</td>
+</tr>
+<tr class="odd-row">
+<td><code>x1</code></td>
+<td><code>ra</code></td>
+<td>Return address</td>
+<td>Caller</td>
+</tr>
+<tr class="even-row">
+<td><code>x2</code></td>
+<td><code>sp</code></td>
+<td>Stack pointer</td>
+<td>Callee</td>
+</tr>
+<tr class="odd-row">
+<td><code>x3</code></td>
+<td><code>gp</code></td>
+<td>Global pointer</td>
+<td>—</td>
+</tr>
+<tr class="even-row">
+<td><code>x4</code></td>
+<td><code>tp</code></td>
+<td>Thread pointer</td>
+<td>—</td>
+</tr>
+<tr class="odd-row">
+<td><code>x5</code></td>
+<td><code>t0</code></td>
+<td>Temporary / alt link register</td>
+<td>Caller</td>
+</tr>
+<tr class="even-row">
+<td><code>x6–x7</code></td>
+<td><code>t1–t2</code></td>
+<td>Temporaries</td>
+<td>Caller</td>
+</tr>
+<tr class="odd-row">
+<td><code>x8</code></td>
+<td><code>s0/fp</code></td>
+<td>Saved register / frame pointer</td>
+<td>Callee</td>
+</tr>
+<tr class="even-row">
+<td><code>x9</code></td>
+<td><code>s1</code></td>
+<td>Saved register</td>
+<td>Callee</td>
+</tr>
+<tr class="odd-row">
+<td><code>x10–x11</code></td>
+<td><code>a0–a1</code></td>
+<td>Function arguments / return values</td>
+<td>Caller</td>
+</tr>
+<tr class="even-row">
+<td><code>x12–x17</code></td>
+<td><code>a2–a7</code></td>
+<td>Function arguments</td>
+<td>Caller</td>
+</tr>
+<tr class="odd-row">
+<td><code>x18–x27</code></td>
+<td><code>s2–s11</code></td>
+<td>Saved registers</td>
+<td>Callee</td>
+</tr>
+<tr class="even-row">
+<td><code>x28–x31</code></td>
+<td><code>t3–t6</code></td>
+<td>Temporaries</td>
+<td>Caller</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Implementation Note (Artix-7):</strong> The 32×32 register file is implemented as a<br/>
+synchronous BRAM with a dedicated forwarding bypass path. Two read ports and one<br/>
+write port are synthesized using SDP (Simple Dual-Port) BRAM primitives. The<br/>
+forwarding unit resolves RAW hazards within the 3-stage pipeline with zero stall<br/>
+cycles for ALU→ALU sequences.</p>
+</blockquote>
+<h4 id="32-program-counter-pc">3.2 Program Counter (PC)</h4>
+<ul>
+<li>Width: 32 bits</li>
+<li>Reset value: <code>0x0000_0000</code> (Boot ROM entry point)</li>
+<li>Alignment: Must be 4-byte aligned for 32-bit instructions; 2-byte aligned for compressed (C-extension) instructions</li>
+<li>Misaligned fetch raises: <strong>Instruction Address Misaligned</strong> exception (<code>mcause = 0</code>)</li>
+</ul>
+<p>$$\text{PC}_{next} = \begin{cases} \text{PC} + 4 &amp; \text{normal flow (32-bit)} \ \text{PC} + 2 &amp; \text{compressed instruction} \ \text{target} &amp; \text{branch/jump taken} \end{cases}$$</p>
+<hr/>
+<h3 id="heading-3-5">4. Base Integer ISA (I Extension)</h3>
+<h4 id="41-instruction-formats">4.1 Instruction Formats</h4>
+<p>Six canonical instruction formats are defined:</p>
+<div class="highlight"><div class="highlight"><pre><span></span>R-type: [ funct7 | rs2 | rs1 | funct3 | rd | opcode ]
+I-type: [ imm[11:0]      | rs1 | funct3 | rd | opcode ]
+S-type: [ imm[11:5]| rs2 | rs1 | funct3 |imm[4:0]|opcode]
+B-type: [imm[12|10:5]|rs2|rs1|funct3|imm[4:1|11]|opcode]
+U-type: [ imm[31:12]               | rd | opcode ]
+J-type: [imm[20|10:1|11|19:12]     | rd | opcode ]
+</pre></div>
+</div>
+<h4 id="42-opcode-map">4.2 Opcode Map</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th><code>opcode[6:0]</code></th>
+<th>Format</th>
+<th>Instruction Class</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>0110011</code></td>
+<td>R</td>
+<td>Integer Register-Register (ADD, SUB, AND, OR, XOR, SLT, SLL, SRL, SRA)</td>
+</tr>
+<tr class="odd-row">
+<td><code>0010011</code></td>
+<td>I</td>
+<td>Integer Register-Immediate (ADDI, ANDI, ORI, XORI, SLTI, SLLI, SRLI, SRAI)</td>
+</tr>
+<tr class="even-row">
+<td><code>0000011</code></td>
+<td>I</td>
+<td>Load (LB, LH, LW, LBU, LHU)</td>
+</tr>
+<tr class="odd-row">
+<td><code>0100011</code></td>
+<td>S</td>
+<td>Store (SB, SH, SW)</td>
+</tr>
+<tr class="even-row">
+<td><code>1100011</code></td>
+<td>B</td>
+<td>Branch (BEQ, BNE, BLT, BGE, BLTU, BGEU)</td>
+</tr>
+<tr class="odd-row">
+<td><code>1101111</code></td>
+<td>J</td>
+<td>JAL</td>
+</tr>
+<tr class="even-row">
+<td><code>1100111</code></td>
+<td>I</td>
+<td>JALR</td>
+</tr>
+<tr class="odd-row">
+<td><code>0110111</code></td>
+<td>U</td>
+<td>LUI</td>
+</tr>
+<tr class="even-row">
+<td><code>0010111</code></td>
+<td>U</td>
+<td>AUIPC</td>
+</tr>
+<tr class="odd-row">
+<td><code>1110011</code></td>
+<td>I</td>
+<td>System (ECALL, EBREAK, CSR instructions)</td>
+</tr>
+<tr class="even-row">
+<td><code>0001111</code></td>
+<td>I</td>
+<td>FENCE / FENCE.I</td>
+</tr>
+</tbody>
+</table>
+<h4 id="43-arithmetic-logic-instructions-r-type-and-i-type">4.3 Arithmetic &amp; Logic Instructions (R-type and I-type)</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Mnemonic</th>
+<th>funct7</th>
+<th>funct3</th>
+<th>Operation</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>ADD</code></td>
+<td><code>0000000</code></td>
+<td><code>000</code></td>
+<td><code>rd ← rs1 + rs2</code></td>
+<td>Wraps on overflow</td>
+</tr>
+<tr class="odd-row">
+<td><code>SUB</code></td>
+<td><code>0100000</code></td>
+<td><code>000</code></td>
+<td><code>rd ← rs1 − rs2</code></td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td><code>AND</code></td>
+<td><code>0000000</code></td>
+<td><code>111</code></td>
+<td><code>rd ← rs1 &amp; rs2</code></td>
+<td></td>
+</tr>
+<tr class="odd-row">
+<td><code>OR</code></td>
+<td><code>0000000</code></td>
+<td><code>110</code></td>
+<td><code>rd ← rs1 \| rs2</code></td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td><code>XOR</code></td>
+<td><code>0000000</code></td>
+<td><code>100</code></td>
+<td><code>rd ← rs1 ^ rs2</code></td>
+<td></td>
+</tr>
+<tr class="odd-row">
+<td><code>SLL</code></td>
+<td><code>0000000</code></td>
+<td><code>001</code></td>
+<td><code>rd ← rs1 &lt;&lt; rs2[4:0]</code></td>
+<td>Logical left shift</td>
+</tr>
+<tr class="even-row">
+<td><code>SRL</code></td>
+<td><code>0000000</code></td>
+<td><code>101</code></td>
+<td><code>rd ← rs1 &gt;&gt; rs2[4:0]</code></td>
+<td>Logical right shift</td>
+</tr>
+<tr class="odd-row">
+<td><code>SRA</code></td>
+<td><code>0100000</code></td>
+<td><code>101</code></td>
+<td><code>rd ← rs1 &gt;&gt;&gt; rs2[4:0]</code></td>
+<td>Arithmetic right shift</td>
+</tr>
+<tr class="even-row">
+<td><code>SLT</code></td>
+<td><code>0000000</code></td>
+<td><code>010</code></td>
+<td><code>rd ← (rs1 &lt; rs2) ? 1 : 0</code></td>
+<td>Signed compare</td>
+</tr>
+<tr class="odd-row">
+<td><code>SLTU</code></td>
+<td><code>0000000</code></td>
+<td><code>011</code></td>
+<td><code>rd ← (rs1 &lt;ᵤ rs2) ? 1 : 0</code></td>
+<td>Unsigned compare</td>
+</tr>
+<tr class="even-row">
+<td><code>ADDI</code></td>
+<td>—</td>
+<td><code>000</code></td>
+<td><code>rd ← rs1 + sx(imm)</code></td>
+<td>I-type; imm[11:0]</td>
+</tr>
+<tr class="odd-row">
+<td><code>SLTI</code></td>
+<td>—</td>
+<td><code>010</code></td>
+<td><code>rd ← (rs1 &lt; sx(imm)) ? 1 : 0</code></td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td><code>SLLI</code></td>
+<td><code>0000000</code></td>
+<td><code>001</code></td>
+<td><code>rd ← rs1 &lt;&lt; imm[4:0]</code></td>
+<td>I-type, shamt</td>
+</tr>
+<tr class="odd-row">
+<td><code>SRLI</code></td>
+<td><code>0000000</code></td>
+<td><code>101</code></td>
+<td><code>rd ← rs1 &gt;&gt; imm[4:0]</code></td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td><code>SRAI</code></td>
+<td><code>0100000</code></td>
+<td><code>101</code></td>
+<td><code>rd ← rs1 &gt;&gt;&gt; imm[4:0]</code></td>
+<td></td>
+</tr>
+<tr class="odd-row">
+<td><code>LUI</code></td>
+<td>—</td>
+<td>—</td>
+<td><code>rd ← imm[31:12] ∥ 0¹²</code></td>
+<td>U-type</td>
+</tr>
+<tr class="even-row">
+<td><code>AUIPC</code></td>
+<td>—</td>
+<td>—</td>
+<td><code>rd ← PC + (imm[31:12] ∥ 0¹²)</code></td>
+<td>U-type</td>
+</tr>
+</tbody>
+</table>
+<h4 id="44-loadstore-instructions">4.4 Load/Store Instructions</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Mnemonic</th>
+<th>funct3</th>
+<th>Width</th>
+<th>Operation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>LB</code></td>
+<td><code>000</code></td>
+<td>8-bit</td>
+<td><code>rd ← sx(M[rs1+imm][7:0])</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>LH</code></td>
+<td><code>001</code></td>
+<td>16-bit</td>
+<td><code>rd ← sx(M[rs1+imm][15:0])</code></td>
+</tr>
+<tr class="even-row">
+<td><code>LW</code></td>
+<td><code>010</code></td>
+<td>32-bit</td>
+<td><code>rd ← M[rs1+imm][31:0]</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>LBU</code></td>
+<td><code>100</code></td>
+<td>8-bit</td>
+<td><code>rd ← zx(M[rs1+imm][7:0])</code></td>
+</tr>
+<tr class="even-row">
+<td><code>LHU</code></td>
+<td><code>101</code></td>
+<td>16-bit</td>
+<td><code>rd ← zx(M[rs1+imm][15:0])</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>SB</code></td>
+<td><code>000</code></td>
+<td>8-bit</td>
+<td><code>M[rs1+imm][7:0] ← rs2[7:0]</code></td>
+</tr>
+<tr class="even-row">
+<td><code>SH</code></td>
+<td><code>001</code></td>
+<td>16-bit</td>
+<td><code>M[rs1+imm][15:0] ← rs2[15:0]</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>SW</code></td>
+<td><code>010</code></td>
+<td>32-bit</td>
+<td><code>M[rs1+imm][31:0] ← rs2[31:0]</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Implementation Note:</strong> All load/store operations to the DTCM complete in <strong>1 cycle</strong>.<br/>
+Accesses to external DDR3 incur variable latency (typically 10–40 cycles via MIG).<br/>
+The pipeline stalls by inserting bubble cycles; no out-of-order execution is performed.</p>
+</blockquote>
+<h4 id="45-branch-instructions">4.5 Branch Instructions</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Mnemonic</th>
+<th>funct3</th>
+<th>Condition</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>BEQ</code></td>
+<td><code>000</code></td>
+<td><code>rs1 == rs2</code></td>
+<td><code>PC ← PC + sx(imm)</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>BNE</code></td>
+<td><code>001</code></td>
+<td><code>rs1 != rs2</code></td>
+<td><code>PC ← PC + sx(imm)</code></td>
+</tr>
+<tr class="even-row">
+<td><code>BLT</code></td>
+<td><code>100</code></td>
+<td><code>rs1 &lt;ₛ rs2</code></td>
+<td><code>PC ← PC + sx(imm)</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>BGE</code></td>
+<td><code>110</code></td>
+<td><code>rs1 ≥ₛ rs2</code></td>
+<td><code>PC ← PC + sx(imm)</code></td>
+</tr>
+<tr class="even-row">
+<td><code>BLTU</code></td>
+<td><code>110</code></td>
+<td><code>rs1 &lt;ᵤ rs2</code></td>
+<td><code>PC ← PC + sx(imm)</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>BGEU</code></td>
+<td><code>111</code></td>
+<td><code>rs1 ≥ᵤ rs2</code></td>
+<td><code>PC ← PC + sx(imm)</code></td>
+</tr>
+</tbody>
+</table>
+<p>Branch offset is 13-bit signed (range: −4096 to +4094 bytes).</p>
+<p><strong>Branch Penalty:</strong> The 3-stage pipeline always incurs a <strong>1-cycle branch penalty</strong> (fetch bubble). No branch predictor is implemented; all branches are assumed not-taken.</p>
+<p>$$\text{CPI}<em _text_taken="\text{taken">{\text{branch}} = 1 + P</em> \cdot 1$$}</p>
+<p>Where $P_{\text{taken}}$ is the probability of the branch being taken.</p>
+<h4 id="46-jump-instructions">4.6 Jump Instructions</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Mnemonic</th>
+<th>Format</th>
+<th>Operation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>JAL rd, imm</code></td>
+<td>J-type</td>
+<td><code>rd ← PC+4; PC ← PC + sx(imm[20:1])</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>JALR rd, rs1, imm</code></td>
+<td>I-type</td>
+<td><code>rd ← PC+4; PC ← (rs1 + sx(imm)) &amp; ~1</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>RTOS Note:</strong> <code>JAL x0, imm</code> (infinite loop with <code>ra</code> discarded) is the canonical<br/>
+RISC-V idiom for a bare spin-loop. FreeRTOS uses <code>JALR x0, x1, 0</code> for function<br/>
+returns. The <code>&amp; ~1</code> masking in JALR clears the LSB, allowing Thumb-like encoding<br/>
+hints without hardware mode switching.</p>
+</blockquote>
+<hr/>
+<h3 id="heading-3-6">5. Multiply/Divide Extension (M)</h3>
+<h4 id="51-instruction-encoding-r-type-opcode-0110011-funct7-0000001">5.1 Instruction Encoding (R-type, opcode = <code>0110011</code>, funct7 = <code>0000001</code>)</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Mnemonic</th>
+<th>funct3</th>
+<th>Operand Types</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>MUL</code></td>
+<td><code>000</code></td>
+<td>Signed × Signed</td>
+<td>Lower 32 bits of 64-bit product</td>
+</tr>
+<tr class="odd-row">
+<td><code>MULH</code></td>
+<td><code>001</code></td>
+<td>Signed × Signed</td>
+<td>Upper 32 bits of 64-bit product</td>
+</tr>
+<tr class="even-row">
+<td><code>MULHSU</code></td>
+<td><code>010</code></td>
+<td>Signed × Unsigned</td>
+<td>Upper 32 bits</td>
+</tr>
+<tr class="odd-row">
+<td><code>MULHU</code></td>
+<td><code>011</code></td>
+<td>Unsigned × Unsigned</td>
+<td>Upper 32 bits</td>
+</tr>
+<tr class="even-row">
+<td><code>DIV</code></td>
+<td><code>100</code></td>
+<td>Signed ÷ Signed</td>
+<td>Quotient</td>
+</tr>
+<tr class="odd-row">
+<td><code>DIVU</code></td>
+<td><code>101</code></td>
+<td>Unsigned ÷ Unsigned</td>
+<td>Quotient</td>
+</tr>
+<tr class="even-row">
+<td><code>REM</code></td>
+<td><code>110</code></td>
+<td>Signed % Signed</td>
+<td>Remainder</td>
+</tr>
+<tr class="odd-row">
+<td><code>REMU</code></td>
+<td><code>111</code></td>
+<td>Unsigned % Unsigned</td>
+<td>Remainder</td>
+</tr>
+</tbody>
+</table>
+<h4 id="52-mul-mulh-implementation">5.2 MUL / MULH Implementation</h4>
+<p>The 32×32→64 bit multiplier is implemented using a <strong>Booth-encoded 2-cycle pipelined multiplier</strong> mapped to Artix-7 DSP48E1 slices.</p>
+<p>$$\text{MUL: } rd = (rs1 \times rs2)[31:0]$$</p>
+<p>$$\text{MULH: } rd = (rs1 \times rs2)[63:32]$$</p>
+<blockquote>
+<p><strong>Implementation Note (Artix-7 DSP48E1):</strong> Two DSP48E1 slices are cascaded to produce<br/>
+the full 64-bit result. <code>MULH</code>, <code>MULHSU</code>, and <code>MULHU</code> each require sign/zero extension<br/>
+before the multiply. The multiplier introduces a <strong>2-cycle latency</strong>; the pipeline<br/>
+inserts one bubble automatically via a stall signal from the Decode stage hazard unit.</p>
+</blockquote>
+<p><strong>Timing estimate</strong> (Artix-7 -1 speed grade):</p>
+<p>$$T_{MUL} = T_{DSP48} + T_{cascade} \approx 3.2\ \text{ns} + 0.4\ \text{ns} = 3.6\ \text{ns}$$</p>
+<p>This satisfies a 10 ns clock period (100 MHz) with positive slack.</p>
+<h4 id="53-div-rem-implementation">5.3 DIV / REM Implementation</h4>
+<p>Division is implemented via a <strong>non-restoring iterative algorithm</strong> (32 iterations, one bit per cycle).</p>
+<p>$$\text{Latency: } L_{DIV} = 32 + 2\ \text{(overhead cycles)} = 34\ \text{cycles}$$</p>
+<blockquote>
+<p><strong>RTOS Warning:</strong> Avoid division in ISR context unless the ISR stack is sized to<br/>
+accommodate 34-cycle stalls. For FreeRTOS, configure <code>configUSE_PREEMPTION = 1</code><br/>
+and ensure the tick timer interrupt latency budget accounts for worst-case division.</p>
+</blockquote>
+<p><strong>Corner Case Behavior (mandated by RISC-V spec):</strong></p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Condition</th>
+<th><code>DIV</code>/<code>DIVU</code> Result</th>
+<th><code>REM</code>/<code>REMU</code> Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>Division by zero</td>
+<td><code>0xFFFF_FFFF</code> (−1)</td>
+<td><code>rs1</code> (dividend)</td>
+</tr>
+<tr class="odd-row">
+<td>Signed overflow (<code>INT_MIN / −1</code>)</td>
+<td><code>rs1</code> (INT_MIN)</td>
+<td><code>0</code></td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h3 id="heading-3-7">6. Atomic Extension (A)</h3>
+<h4 id="61-overview">6.1 Overview</h4>
+<p>Atomic instructions use opcode <code>0101111</code>. They include a <strong>2-bit ordering field</strong>:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th><code>aq</code></th>
+<th><code>rl</code></th>
+<th>Ordering Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>0</td>
+<td>0</td>
+<td>Relaxed (no ordering guarantees)</td>
+</tr>
+<tr class="odd-row">
+<td>1</td>
+<td>0</td>
+<td>Acquire (no loads/stores after can move before this)</td>
+</tr>
+<tr class="even-row">
+<td>0</td>
+<td>1</td>
+<td>Release (no loads/stores before can move after this)</td>
+</tr>
+<tr class="odd-row">
+<td>1</td>
+<td>1</td>
+<td>Sequentially consistent</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>RTOS Implementation Note:</strong> FreeRTOS spinlocks and queue primitives require<br/>
+<strong>acquire</strong> semantics on loads and <strong>release</strong> semantics on stores. Use<br/>
+<code>LR.W aq=1, rl=0</code> / <code>SC.W aq=0, rl=1</code> pairs for all critical-section entry/exit.</p>
+</blockquote>
+<h4 id="62-load-reserved-store-conditional-lrw-scw">6.2 Load-Reserved / Store-Conditional (LR.W / SC.W)</h4>
+<h5 id="lrw-load-reserved-word">LR.W — Load Reserved Word</h5>
+<div class="highlight"><div class="highlight"><pre><span></span>Encoding: [ 00010 | 00000 | rs1 | 010 | rd | 0101111 ]
+</pre></div>
+</div>
+<p><strong>Operation:</strong><br/>
+1. Load the word at address <code>rs1</code> into <code>rd</code><br/>
+2. Register a <strong>reservation</strong> on the cache line containing <code>rs1</code><br/>
+3. The reservation is valid until a matching <code>SC.W</code> or any exception/interrupt</p>
+<p>$$\text{LR.W: } rd \leftarrow M[rs1],\quad \text{Reservation} \leftarrow rs1$$</p>
+<h5 id="scw-store-conditional-word">SC.W — Store Conditional Word</h5>
+<div class="highlight"><div class="highlight"><pre><span></span>Encoding: [ 00011 | rs2 | rs1 | 010 | rd | 0101111 ]
+</pre></div>
+</div>
+<p><strong>Operation:</strong><br/>
+1. If reservation on <code>rs1</code> is <strong>valid</strong>: write <code>rs2</code> to <code>M[rs1]</code>, set <code>rd ← 0</code> (success)<br/>
+2. If reservation is <strong>invalid</strong>: do not write, set <code>rd ← 1</code> (failure)</p>
+<p>$$\text{SC.W: } \begin{cases} M[rs1] \leftarrow rs2,\ rd \leftarrow 0 &amp; \text{if reservation valid} \ rd \leftarrow 1 &amp; \text{if reservation invalid} \end{cases}$$</p>
+<h5 id="canonical-lrsc-mutex-pattern">Canonical LR/SC Mutex Pattern</h5>
+<div class="highlight"><div class="highlight"><pre><span></span>lock:
+    li      t0, 1               # lock value = 1
+retry:
+    lr.w.aq t1, (a0)            # load-reserved from lock address
+    bnez    t1, retry           # spin if already locked
+    sc.w.rl t1, t0, (a0)        # attempt store-conditional
+    bnez    t1, retry           # retry if SC failed
+    ret
+
+unlock:
+    sw      zero, 0(a0)         # unconditional store clears lock
+    ret
+</pre></div>
+</div>
+<blockquote>
+<p><strong>Reservation Granule:</strong> In this implementation, the reservation granule is<br/>
+<strong>one cache line (32 bytes)</strong>. Any store to the same granule by any agent<br/>
+(DMA, other harts, AXI masters) will invalidate the reservation. This must<br/>
+be factored into IoT peripheral DMA configuration.</p>
+</blockquote>
+<h4 id="63-amo-instructions">6.3 AMO Instructions</h4>
+<p>All AMO instructions are <strong>R-type</strong> with opcode <code>0101111</code> and funct3 = <code>010</code> (word width).</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Mnemonic</th>
+<th>funct5</th>
+<th>Operation</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>AMOSWAP.W</code></td>
+<td><code>00001</code></td>
+<td><code>rd←M[rs1]; M[rs1]←rs2</code></td>
+<td>Atomic swap</td>
+</tr>
+<tr class="odd-row">
+<td><code>AMOADD.W</code></td>
+<td><code>00000</code></td>
+<td><code>rd←M[rs1]; M[rs1]←rd+rs2</code></td>
+<td>Atomic add</td>
+</tr>
+<tr class="even-row">
+<td><code>AMOXOR.W</code></td>
+<td><code>00100</code></td>
+<td><code>rd←M[rs1]; M[rs1]←rd^rs2</code></td>
+<td>Atomic XOR</td>
+</tr>
+<tr class="odd-row">
+<td><code>AMOAND.W</code></td>
+<td><code>01100</code></td>
+<td><code>rd←M[rs1]; M[rs1]←rd&amp;rs2</code></td>
+<td>Atomic AND</td>
+</tr>
+<tr class="even-row">
+<td><code>AMOOR.W</code></td>
+<td><code>01000</code></td>
+<td><code>rd←M[rs1]; M[rs1]←rd\|rs2</code></td>
+<td>Atomic OR</td>
+</tr>
+<tr class="odd-row">
+<td><code>AMOMIN.W</code></td>
+<td><code>10000</code></td>
+<td><code>rd←M[rs1]; M[rs1]←min_s(rd,rs2)</code></td>
+<td>Signed min</td>
+</tr>
+<tr class="even-row">
+<td><code>AMOMAX.W</code></td>
+<td><code>10100</code></td>
+<td><code>rd←M[rs1]; M[rs1]←max_s(rd,rs2)</code></td>
+<td>Signed max</td>
+</tr>
+<tr class="odd-row">
+<td><code>AMOMINU.W</code></td>
+<td><code>11000</code></td>
+<td><code>rd←M[rs1]; M[rs1]←min_u(rd,rs2)</code></td>
+<td>Unsigned min</td>
+</tr>
+<tr class="even-row">
+<td><code>AMOMAXU.W</code></td>
+<td><code>11100</code></td>
+<td><code>rd←M[rs1]; M[rs1]←max_u(rd,rs2)</code></td>
+<td>Unsigned max</td>
+</tr>
+</tbody>
+</table>
+<h5 id="amo-logic-flow-microarchitectural">AMO Logic Flow (Microarchitectural)</h5>
+<div class="highlight"><div class="highlight"><pre><span></span>┌─────────────────────────────────────────────────────────────┐
+│                     AMO Execution Unit                      │
+│                                                             │
+│  1. Issue AXI4 Exclusive Read  → M[rs1]  →  temp_val       │
+│  2. Stall pipeline (bus hold signal asserted)               │
+│  3. Compute:  new_val = OP(temp_val, rs2)                   │
+│  4. Issue AXI4 Exclusive Write → M[rs1] ← new_val          │
+│  5. rd ← temp_val (original value returned to register)     │
+│  6. Deassert bus hold                                       │
+└─────────────────────────────────────────────────────────────┘
+</pre></div>
+</div>
+<p><strong>AMO Latency:</strong></p>
+<p>$$L_{AMO} = L_{read} + L_{compute} + L_{write} \approx 2 + 1 + 2 = 5\ \text{cycles (DTCM)}$$</p>
+<hr/>
+<h3 id="heading-3-8">7. Compressed Extension (C)</h3>
+<h4 id="71-overview">7.1 Overview</h4>
+<p>The C extension defines 16-bit instruction encodings sharing opcode space via quadrants identified by <code>inst[1:0]</code>:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th><code>inst[1:0]</code></th>
+<th>Quadrant</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>00</code></td>
+<td>Q0 — Load/Store</td>
+</tr>
+<tr class="odd-row">
+<td><code>01</code></td>
+<td>Q1 — Control / Arithmetic</td>
+</tr>
+<tr class="even-row">
+<td><code>10</code></td>
+<td>Q2 — Register / Stack</td>
+</tr>
+<tr class="odd-row">
+<td><code>11</code></td>
+<td><em>(32-bit instruction — not C extension)</em></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Fetch Unit Note:</strong> The instruction fetch unit must detect <code>inst[1:0] != 11</code><br/>
+to identify a 16-bit instruction and advance PC by 2 instead of 4. The decode<br/>
+stage expands the 16-bit encoding to its 32-bit equivalent before execution.</p>
+</blockquote>
+<h4 id="72-compressed-register-encoding">7.2 Compressed Register Encoding</h4>
+<p>Many C instructions use a 3-bit register specifier <code>rs1'</code>/<code>rs2'</code> mapping to the <strong>8 most commonly used registers</strong>:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>3-bit field</th>
+<th>ABI Register</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>000</code></td>
+<td><code>x8</code> (s0)</td>
+</tr>
+<tr class="odd-row">
+<td><code>001</code></td>
+<td><code>x9</code> (s1)</td>
+</tr>
+<tr class="even-row">
+<td><code>010</code></td>
+<td><code>x10</code> (a0)</td>
+</tr>
+<tr class="odd-row">
+<td><code>011</code></td>
+<td><code>x11</code> (a1)</td>
+</tr>
+<tr class="even-row">
+<td><code>100</code></td>
+<td><code>x12</code> (a2)</td>
+</tr>
+<tr class="odd-row">
+<td><code>101</code></td>
+<td><code>x13</code> (a3)</td>
+</tr>
+<tr class="even-row">
+<td><code>110</code></td>
+<td><code>x14</code> (a4)</td>
+</tr>
+<tr class="odd-row">
+<td><code>111</code></td>
+<td><code>x15</code> (a5)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="73-instruction-expansion-table-quadrant-0-q0">7.3 Instruction Expansion Table — Quadrant 0 (Q0)</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>16-bit Mnemonic</th>
+<th>Encoding <code>[15:0]</code></th>
+<th>32-bit Expansion</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>C.ADDI4SPN rd', nzuimm</code></td>
+<td><code>000\|nzuimm\|rd'\|00</code></td>
+<td><code>ADDI rd', sp, nzuimm</code></td>
+<td>nzuimm ≠ 0</td>
+</tr>
+<tr class="odd-row">
+<td><code>C.LW rd', rs1', uimm</code></td>
+<td><code>010\|uimm\|rs1'\|rd'\|00</code></td>
+<td><code>LW rd', uimm(rs1')</code></td>
+<td>uimm[6:2]</td>
+</tr>
+<tr class="even-row">
+<td><code>C.SW rs1', rs2', uimm</code></td>
+<td><code>110\|uimm\|rs1'\|rs2'\|00</code></td>
+<td><code>SW rs2', uimm(rs1')</code></td>
+<td></td>
+</tr>
+<tr class="odd-row">
+<td><code>C.FLW</code></td>
+<td><code>011\|...</code></td>
+<td><em>(F-extension, not implemented)</em></td>
+<td>Illegal in RV32IMAC</td>
+</tr>
+<tr class="even-row">
+<td><code>C.FSW</code></td>
+<td><code>111\|...</code></td>
+<td><em>(F-extension, not implemented)</em></td>
+<td>Illegal in RV32IMAC</td>
+</tr>
+</tbody>
+</table>
+<h4 id="74-instruction-expansion-table-quadrant-1-q1">7.4 Instruction Expansion Table — Quadrant 1 (Q1)</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>16-bit Mnemonic</th>
+<th>32-bit Expansion</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>C.NOP</code></td>
+<td><code>ADDI x0, x0, 0</code></td>
+<td><code>funct3=000, rs1=0, imm=0</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>C.ADDI rd, nzimm</code></td>
+<td><code>ADDI rd, rd, nzimm</code></td>
+<td>nzimm ≠ 0</td>
+</tr>
+<tr class="even-row">
+<td><code>C.JAL imm</code></td>
+<td><code>JAL x1, imm</code></td>
+<td>RV32 only; links to <code>ra</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>C.LI rd, imm</code></td>
+<td><code>ADDI rd, x0, imm</code></td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td><code>C.LUI rd, nzimm</code></td>
+<td><code>LUI rd, nzimm</code></td>
+<td>nzimm ≠ 0; rd ≠ 0, 2</td>
+</tr>
+<tr class="odd-row">
+<td><code>C.ADDI16SP nzimm</code></td>
+<td><code>ADDI sp, sp, nzimm</code></td>
+<td>rd = x2; nzimm ≠ 0</td>
+</tr>
+<tr class="even-row">
+<td><code>C.SRLI rd', uimm</code></td>
+<td><code>SRLI rd', rd', uimm</code></td>
+<td></td>
+</tr>
+<tr class="odd-row">
+<td><code>C.SRAI rd', uimm</code></td>
+<td><code>SRAI rd', rd', uimm</code></td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td><code>C.ANDI rd', imm</code></td>
+<td><code>ANDI rd', rd', imm</code></td>
+<td></td>
+</tr>
+<tr class="odd-row">
+<td><code>C.SUB rd', rs2'</code></td>
+<td><code>SUB rd', rd', rs2'</code></td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td><code>C.XOR rd', rs2'</code></td>
+<td><code>XOR rd', rd', rs2'</code></td>
+<td></td>
+</tr>
+<tr class="odd-row">
+<td><code>C.OR rd', rs2'</code></td>
+<td><code>OR rd', rd', rs2'</code></td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td><code>C.AND rd', rs2'</code></td>
+<td><code>AND rd', rd', rs2'</code></td>
+<td></td>
+</tr>
+<tr class="odd-row">
+<td><code>C.J imm</code></td>
+<td><code>JAL x0, imm</code></td>
+<td>No link; unconditional jump</td>
+</tr>
+<tr class="even-row">
+<td><code>C.BEQZ rs1', imm</code></td>
+<td><code>BEQ rs1', x0, imm</code></td>
+<td></td>
+</tr>
+<tr class="odd-row">
+<td><code>C.BNEZ rs1', imm</code></td>
+<td><code>BNE rs1', x0, imm</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h4 id="75-instruction-expansion-table-quadrant-2-q2">7.5 Instruction Expansion Table — Quadrant 2 (Q2)</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>16-bit Mnemonic</th>
+<th>32-bit Expansion</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>C.SLLI rd, uimm</code></td>
+<td><code>SLLI rd, rd, uimm</code></td>
+<td>rd ≠ 0</td>
+</tr>
+<tr class="odd-row">
+<td><code>C.LWSP rd, uimm</code></td>
+<td><code>LW rd, uimm(sp)</code></td>
+<td>rd ≠ 0</td>
+</tr>
+<tr class="even-row">
+<td><code>C.SWSP rs2, uimm</code></td>
+<td><code>SW rs2, uimm(sp)</code></td>
+<td></td>
+</tr>
+<tr class="odd-row">
+<td><code>C.JR rs1</code></td>
+<td><code>JALR x0, rs1, 0</code></td>
+<td>rs1 ≠ 0</td>
+</tr>
+<tr class="even-row">
+<td><code>C.MV rd, rs2</code></td>
+<td><code>ADD rd, x0, rs2</code></td>
+<td>rd ≠ 0, rs2 ≠ 0</td>
+</tr>
+<tr class="odd-row">
+<td><code>C.JALR rs1</code></td>
+<td><code>JALR x1, rs1, 0</code></td>
+<td>rs1 ≠ 0</td>
+</tr>
+<tr class="even-row">
+<td><code>C.ADD rd, rs2</code></td>
+<td><code>ADD rd, rd, rs2</code></td>
+<td>rd ≠ 0, rs2 ≠ 0</td>
+</tr>
+<tr class="odd-row">
+<td><code>C.EBREAK</code></td>
+<td><code>EBREAK</code></td>
+<td>funct4=1001, rs1=0, rs2=0</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h3 id="heading-3-9">8. Control &amp; Status Registers — Zicsr</h3>
+<h4 id="81-csr-instruction-encoding-opcode-1110011">8.1 CSR Instruction Encoding (opcode = <code>1110011</code>)</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Mnemonic</th>
+<th>funct3</th>
+<th>Operation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>CSRRW rd, csr, rs1</code></td>
+<td><code>001</code></td>
+<td><code>t←CSR; CSR←rs1; rd←t</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>CSRRS rd, csr, rs1</code></td>
+<td><code>010</code></td>
+<td><code>t←CSR; CSR←CSR\|rs1; rd←t</code></td>
+</tr>
+<tr class="even-row">
+<td><code>CSRRC rd, csr, rs1</code></td>
+<td><code>011</code></td>
+<td><code>t←CSR; CSR←CSR&amp;~rs1; rd←t</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>CSRRWI rd, csr, uimm</code></td>
+<td><code>101</code></td>
+<td><code>t←CSR; CSR←zx(uimm[4:0]); rd←t</code></td>
+</tr>
+<tr class="even-row">
+<td><code>CSRRSI rd, csr, uimm</code></td>
+<td><code>110</code></td>
+<td><code>t←CSR; CSR←CSR\|zx(uimm); rd←t</code></td>
+</tr>
+<tr class="odd-row">
+<td><code>CSRRCI rd, csr, uimm</code></td>
+<td><code>111</code></td>
+<td><code>t←CSR; CSR←CSR&amp;~zx(uimm); rd←t</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="82-required-csr-register-map-machine-mode">8.2 Required CSR Register Map (Machine Mode)</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>CSR Address</th>
+<th>Name</th>
+<th>Access</th>
+<th>Reset</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>0x300</code></td>
+<td><code>mstatus</code></td>
+<td>RW</td>
+<td><code>0x0000_1800</code></td>
+<td>Machine status register</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x301</code></td>
+<td><code>misa</code></td>
+<td>RO</td>
+<td><code>0x4014_1105</code></td>
+<td>ISA and extensions (<code>RV32IMAC</code>)</td>
+</tr>
+<tr class="even-row">
+<td><code>0x304</code></td>
+<td><code>mie</code></td>
+<td>RW</td>
+<td><code>0x0</code></td>
+<td>Machine interrupt enable</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x305</code></td>
+<td><code>mtvec</code></td>
+<td>RW</td>
+<td><code>0x0000_0000</code></td>
+<td>Trap vector base address</td>
+</tr>
+<tr class="even-row">
+<td><code>0x310</code></td>
+<td><code>mstatush</code></td>
+<td>RW</td>
+<td><code>0x0</code></td>
+<td>Upper 32-bits of mstatus (RV32 only)</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x340</code></td>
+<td><code>mscratch</code></td>
+<td>RW</td>
+<td><code>0x0</code></td>
+<td>Scratch register for ISR</td>
+</tr>
+<tr class="even-row">
+<td><code>0x341</code></td>
+<td><code>mepc</code></td>
+<td>RW</td>
+<td>—</td>
+<td>Machine exception PC</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x342</code></td>
+<td><code>mcause</code></td>
+<td>RW</td>
+<td>—</td>
+<td>Trap cause</td>
+</tr>
+<tr class="even-row">
+<td><code>0x343</code></td>
+<td><code>mtval</code></td>
+<td>RW</td>
+<td>—</td>
+<td>Trap value (faulting address)</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x344</code></td>
+<td><code>mip</code></td>
+<td>RW</td>
+<td><code>0x0</code></td>
+<td>Machine interrupt pending</td>
+</tr>
+<tr class="even-row">
+<td><code>0xB00</code></td>
+<td><code>mcycle</code></td>
+<td>RW</td>
+<td>0</td>
+<td>Cycle counter (lower 32)</td>
+</tr>
+<tr class="odd-row">
+<td><code>0xB80</code></td>
+<td><code>mcycleh</code></td>
+<td>RW</td>
+<td>0</td>
+<td>Cycle counter (upper 32)</td>
+</tr>
+<tr class="even-row">
+<td><code>0xB02</code></td>
+<td><code>minstret</code></td>
+<td>RW</td>
+<td>0</td>
+<td>Retired instruction counter (lower 32)</td>
+</tr>
+<tr class="odd-row">
+<td><code>0xB82</code></td>
+<td><code>minstreth</code></td>
+<td>RW</td>
+<td>0</td>
+<td>Retired instruction counter (upper 32)</td>
+</tr>
+<tr class="even-row">
+<td><code>0xF11</code></td>
+<td><code>mvendorid</code></td>
+<td>RO</td>
+<td><code>0x0</code></td>
+<td>Vendor ID</td>
+</tr>
+<tr class="odd-row">
+<td><code>0xF12</code></td>
+<td><code>marchid</code></td>
+<td>RO</td>
+<td><code>0x0</code></td>
+<td>Architecture ID</td>
+</tr>
+<tr class="even-row">
+<td><code>0xF13</code></td>
+<td><code>mimpid</code></td>
+<td>RO</td>
+<td><code>0x0001</code></td>
+<td>Implementation ID</td>
+</tr>
+<tr class="odd-row">
+<td><code>0xF14</code></td>
+<td><code>mhartid</code></td>
+<td>RO</td>
+<td><code>0x0</code></td>
+<td>Hardware thread ID</td>
+</tr>
+</tbody>
+</table>
+<h4 id="83-mstatus-register-bit-field-map">8.3 <code>mstatus</code> Register Bit Field Map</h4>
+<div class="highlight"><div class="highlight"><pre><span></span> 31 30:23 22  21  20  19  18  17  16:15 14:13 12:11 10:9  8    7    6    5    4    3    2    1    0
+┌──┬──────┬───┬───┬───┬───┬───┬───┬─────┬─────┬─────┬────┬────┬────┬────┬────┬────┬────┬────┬────┐
+│SD│  0   │TSR│TW │TVM│MXR│SUM│MRP│  XS │  FS │ MPP │ VS │SPP │MPIE│UBE │SPIE│ 0  │MIE │ 0  │SIE │
+└──┴──────┴───┴───┴───┴───┴───┴───┴─────┴─────┴─────┴────┴────┴────┴────┴────┴────┴────┴────┴────┘
+</pre></div>
+</div>
+<p>Key fields for RTOS:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Bits</th>
+<th>Reset</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>MIE</code></td>
+<td>[3]</td>
+<td>0</td>
+<td>Machine Interrupt Enable (global)</td>
+</tr>
+<tr class="odd-row">
+<td><code>MPIE</code></td>
+<td>[7]</td>
+<td>0</td>
+<td>Previous MIE value (saved on trap)</td>
+</tr>
+<tr class="even-row">
+<td><code>MPP</code></td>
+<td>[12:11]</td>
+<td><code>11</code></td>
+<td>Previous privilege mode (Machine=11)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>RTOS Note:</strong> FreeRTOS context switching uses <code>CSRRW</code> to save/restore <code>mstatus.MIE</code>.<br/>
+The <code>MPP</code> field must be <code>11</code> (Machine mode) at reset since this implementation supports<br/>
+<strong>Machine mode only</strong> — no Supervisor or User modes are implemented, as is typical for<br/>
+bare-metal IoT targets.</p>
+</blockquote>
+<h4 id="84-mie-mip-bit-layout">8.4 <code>mie</code> / <code>mip</code> Bit Layout</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Direction</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>[11]</td>
+<td><code>MEIE</code> / <code>MEIP</code></td>
+<td>Enable / Pending</td>
+<td>Machine External Interrupt</td>
+</tr>
+<tr class="odd-row">
+<td>[7]</td>
+<td><code>MTIE</code> / <code>MTIP</code></td>
+<td>Enable / Pending</td>
+<td>Machine Timer Interrupt</td>
+</tr>
+<tr class="even-row">
+<td>[3]</td>
+<td><code>MSIE</code> / <code>MSIP</code></td>
+<td>Enable / Pending</td>
+<td>Machine Software Interrupt</td>
+</tr>
+</tbody>
+</table>
+<h4 id="85-mtvec-trap-vector">8.5 <code>mtvec</code> — Trap Vector</h4>
+<div class="highlight"><div class="highlight"><pre><span></span> 31                              2    1     0
+┌────────────────────────────────────┬──────┐
+│              BASE[31:2]            │ MODE │
+└────────────────────────────────────┴──────┘
+</pre></div>
+</div>
+<table class="styled-table">
+<thead>
+<tr>
+<th>MODE</th>
+<th>Value</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>Direct</td>
+<td><code>00</code></td>
+<td>All traps jump to <code>BASE</code></td>
+</tr>
+<tr class="odd-row">
+<td>Vectored</td>
+<td><code>01</code></td>
+<td>Interrupts jump to <code>BASE + 4×cause</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>RTOS Implementation Note:</strong> Configure <code>mtvec</code> in <strong>Vectored mode</strong> (<code>MODE=01</code>)<br/>
+for the RTOS tick handler. This allows the timer interrupt (<code>cause=7</code>) to vector<br/>
+directly to <code>BASE + 28</code> without a central dispatch routine, reducing interrupt<br/>
+latency by approximately 8 cycles compared to Direct mode.</p>
+</blockquote>
+<h4 id="86-mcause-values">8.6 <code>mcause</code> Values</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Value</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td><code>0x8000_0003</code></td>
+<td>Interrupt</td>
+<td>Machine Software Interrupt</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x8000_0007</code></td>
+<td>Interrupt</td>
+<td>Machine Timer Interrupt</td>
+</tr>
+<tr class="even-row">
+<td><code>0x8000_000B</code></td>
+<td>Interrupt</td>
+<td>Machine External Interrupt</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x0000_0000</code></td>
+<td>Exception</td>
+<td>Instruction Address Misaligned</td>
+</tr>
+<tr class="even-row">
+<td><code>0x0000_0001</code></td>
+<td>Exception</td>
+<td>Instruction Access Fault</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x0000_0002</code></td>
+<td>Exception</td>
+<td>Illegal Instruction</td>
+</tr>
+<tr class="even-row">
+<td><code>0x0000_0003</code></td>
+<td>Exception</td>
+<td>Breakpoint (<code>EBREAK</code>)</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x0000_0004</code></td>
+<td>Exception</td>
+<td>Load Address Misaligned</td>
+</tr>
+<tr class="even-row">
+<td><code>0x0000_0005</code></td>
+<td>Exception</td>
+<td>Load Access Fault</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x0000_0006</code></td>
+<td>Exception</td>
+<td>Store/AMO Address Misaligned</td>
+</tr>
+<tr class="even-row">
+<td><code>0x0000_0007</code></td>
+<td>Exception</td>
+<td>Store/AMO Access Fault</td>
+</tr>
+<tr class="odd-row">
+<td><code>0x0000_000B</code></td>
+<td>Exception</td>
+<td>Environment Call from M-mode (<code>ECALL</code>)</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h3 id="heading-3-10">9. Interrupt &amp; Exception Handling</h3>
+<h4 id="91-interrupt-priority">9.1 Interrupt Priority</h4>
+<p>Priority is evaluated in the following order (highest first):</p>
+<p>$$\text{Priority: MEI} &gt; \text{MSI} &gt; \text{MTI}$$</p>
+<ol>
+<li><strong>Machine External Interrupt (MEI)</strong> — PLIC-aggregated peripheral IRQs</li>
+<li><strong>Machine Software Interrupt (MSI)</strong> — CLINT <code>msip</code> register write</li>
+<li><strong>Machine Timer Interrupt (MTI)</strong> — <code>mtime ≥ mtimecmp</code></li>
+</ol>
+<h4 id="92-trap-entry-sequence">9.2 Trap Entry Sequence</h4>
+<p>When a trap is accepted (interrupt or exception), the hardware performs atomically:</p>
+<div class="highlight"><div class="highlight"><pre><span></span>1. mepc   ← PC of interrupted/faulting instruction
+2. mcause ← trap cause code
+3. mtval  ← faulting address (if applicable) or 0
+4. mstatus.MPIE ← mstatus.MIE
+5. mstatus.MIE  ← 0           # Disable interrupts
+6. mstatus.MPP  ← current_privilege (always 11 = Machine)
+7. PC ← mtvec (Direct) OR mtvec.BASE + 4×cause (Vectored)
+</pre></div>
+</div>
+<p><strong>Trap Latency:</strong></p>
+<p>$$L_{trap} = L_{pipe_flush} + L_{csr_write} = 2 + 3 = 5\ \text{cycles (worst case)}$$</p>
+<blockquote>
+<p><strong>Determinism Note:</strong> The 5-cycle trap latency is deterministic for ITCM/DTCM accesses.<br/>
+If a trap occurs during a multi-cycle instruction (e.g., <code>DIV</code> at cycle 20/34), the<br/>
+instruction is <strong>aborted</strong> and the pipeline is flushed before the trap sequence begins.<br/>
+<code>mepc</code> is set to the address of the aborted instruction, which will be re-executed on<br/>
+<code>MRET</code>. Ensure idempotency of instructions that may be interrupted mid-execution.</p>
+</blockquote>
+<h4 id="93-trap-return-mret">9.3 Trap Return — MRET</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>MRET
+</pre></div>
+</div>
+<p>Hardware sequence:</p>
+<div class="highlight"><div class="highlight"><pre><span></span>1. PC           ← mepc
+2. mstatus.MIE  ← mstatus.MPIE
+3. mstatus.MPIE ← 1
+4. mstatus.MPP  ← 11 (Machine)
+</pre></div>
+</div>
+<h4 id="94-canonical-rtos-isr-context-switch-freertos">9.4 Canonical RTOS ISR Context Switch (FreeRTOS)</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>    .global trap_handler
+    .align  4
+trap_handler:
+    # Save caller-saved registers to current task's stack
+    addi    sp, sp, -128
+    sw      ra,   0(sp)
+    sw      t0,   4(sp)
+    sw      t1,   8(sp)
+    # ... (t2–t6, a0–a7)
+
+    # Save mepc and mstatus for nested interrupt support
+    csrr    t0, mepc
+    sw      t0, 120(sp)
+    csrr    t0, mstatus
+    sw      t0, 124(sp)
+
+    # Identify cause and dispatch
+    csrr    a0, mcause
+    li      t0, 0x80000007      # Machine timer interrupt
+    beq     a0, t0, timer_isr
+
+    # ... other handlers
+
+timer_isr:
+    call    vTaskSwitchContext  # FreeRTOS scheduler
+    # Update mtimecmp for next tick
+    li      t0, CLINT_BASE
+    lw      a0, 0xBFF8(t0)      # Read mtime low
+    li      a1, TICK_CYCLES
+    add     a0, a0, a1
+    sw      a0, 0x4000(t0)      # Write mtimecmp
+
+    # Restore context
+    lw      t0, 120(sp)
+    csrw    mepc, t0
+    lw      t0, 124(sp)
+    csrw    mstatus, t0
+    lw      ra,   0(sp)
+    # ... restore remaining registers
+    addi    sp, sp, 128
+    mret
+</pre></div>
+</div>
+<h4 id="95-interrupt-latency-budget-rtos-tick-1-ms">9.5 Interrupt Latency Budget (RTOS Tick = 1 ms)</h4>
+<p>$$f_{core} = 100\ \text{MHz},\quad T_{tick} = 10\ \text{ms (configurable)}$$</p>
+<p>$$T_{RTOS_tick} = \frac{1}{1000\ \text{Hz}} = 1\ \text{ms} = 100{,}000\ \text{cycles}$$</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Phase</th>
+<th>Cycles</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>Trap detection</td>
+<td>1</td>
+<td>End of current EX stage</td>
+</tr>
+<tr class="odd-row">
+<td>Pipeline flush</td>
+<td>2</td>
+<td>Fetch + Decode bubbles</td>
+</tr>
+<tr class="even-row">
+<td>CSR atomic update</td>
+<td>3</td>
+<td>mepc, mcause, mstatus</td>
+</tr>
+<tr class="odd-row">
+<td>ISR prologue (context save)</td>
+<td>~40</td>
+<td>10 registers × 4 cycles (DTCM)</td>
+</tr>
+<tr class="even-row">
+<td>FreeRTOS tick body</td>
+<td>~200</td>
+<td>Scheduler + list walk</td>
+</tr>
+<tr class="odd-row">
+<td>ISR epilogue (restore)</td>
+<td>~40</td>
+<td></td>
+</tr>
+<tr class="even-row">
+<td>MRET + refill</td>
+<td>3</td>
+<td></td>
+</tr>
+<tr class="odd-row">
+<td><strong>Total worst case</strong></td>
+<td><strong>~289 cycles</strong></td>
+<td><strong>&lt; 0.3% overhead at 100 MHz</strong></td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h3 id="heading-3-11">10. Pipeline Microarchitecture Notes</h3>
+<h4 id="101-3-stage-pipeline-architecture">10.1 3-Stage Pipeline Architecture</h4>
+<div class="highlight"><div class="highlight"><pre><span></span>        ┌──────────┐      ┌──────────────────┐      ┌─────────────┐
+Clock──▶│  STAGE 1 │─────▶│    STAGE 2       │─────▶│  STAGE 3    │
+        │  FETCH   │      │  DECODE/EXECUTE  │      │  WRITEBACK  │
+        │          │      │                  │      │             │
+        │ PC Mux   │      │ Reg Read         │      │ Reg Write   │
+        │ ITCM/ROM │      │ ALU / Branch     │      │ Load data   │
+        │ Inst Buf │      │ Load/Store Addr  │      │ CSR Update  │
+        │ C-Expand │      │ CSR Exec         │      │             │
+        └──────────┘      └──────────────────┘      └─────────────┘
+              │                    │                        │
+              ▼                    ▼                        ▼
+         IF/ID Reg           ID/EX Reg               Result Bus
+</pre></div>
+</div>
+<h4 id="102-hazard-summary">10.2 Hazard Summary</h4>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Hazard Type</th>
+<th>Detection</th>
+<th>Resolution</th>
+<th>Penalty</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>RAW (ALU→ALU)</td>
+<td>EX forwarding</td>
+<td>Bypass path</td>
+<td>0 cycles</td>
+</tr>
+<tr class="odd-row">
+<td>RAW (Load→Use)</td>
+<td>Decode stage</td>
+<td>1 stall inserted</td>
+<td>1 cycle</td>
+</tr>
+<tr class="even-row">
+<td>Control (Branch)</td>
+<td>EX stage</td>
+<td>Flush fetch</td>
+<td>1 cycle</td>
+</tr>
+<tr class="odd-row">
+<td>Control (JAL/JALR)</td>
+<td>Decode stage</td>
+<td>Flush fetch</td>
+<td>1 cycle</td>
+</tr>
+<tr class="even-row">
+<td>MUL latency</td>
+<td>Decode/EX</td>
+<td>1 stall</td>
+<td>1 cycle</td>
+</tr>
+<tr class="odd-row">
+<td>DIV latency</td>
+<td>Decode/EX</td>
+<td>33 stalls</td>
+<td>33 cycles</td>
+</tr>
+<tr class="even-row">
+<td>AMO bus lock</td>
+<td>EX/MEM</td>
+<td>Bus stall</td>
+<td>4–6 cycles</td>
+</tr>
+<tr class="odd-row">
+<td>Trap/Interrupt</td>
+<td>EX stage</td>
+<td>Full flush</td>
+<td>5 cycles</td>
+</tr>
+</tbody>
+</table>
+<h4 id="103-cpi-model">10.3 CPI Model</h4>
+<p>$$\text{CPI} = 1 + \text{stall_cycles_per_instruction}$$</p>
+<p>$$\text{CPI}_{typical} \approx 1 + (0.1 \times 1) + (0.05 \times 1) + (0.001 \times 33) = 1.183$$</p>
+<p>Where approximate instruction mix fractions are assumed: 10% load-use, 5% branches, 0.1% division.</p>
+<blockquote>
+<p><strong>FPGA Resource Estimate (Artix-7, xc7a200t):</strong><br/>
+- LUTs: ~2,800 (core logic, excluding multiplier/BRAM)<br/>
+- FFs: ~1,400<br/>
+- BRAM: 4× RAMB36E1 (32KB ITCM + 32KB DTCM)<br/>
+- DSP48E1: 2 (multiplier)<br/>
+- Fmax: ~110 MHz (−1 speed grade, post-place-and-route estimate)</p>
+</blockquote>
+<hr/>
+<h3 id="heading-3-12">11. Revision History</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Author</th>
+<th>Changes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even-row">
+<td>0.1</td>
+<td>2024-01-15</td>
+<td>Core Team</td>
+<td>Initial draft — I and M extensions</td>
+</tr>
+<tr class="odd-row">
+<td>0.2</td>
+<td>2024-02-10</td>
+<td>Core Team</td>
+<td>Added A extension, LR/SC logic flow</td>
+</tr>
+<tr class="even-row">
+<td>0.3</td>
+<td>2024-03-01</td>
+<td>Core Team</td>
+<td>Added C expansion tables, CSR map</td>
+</tr>
+<tr class="odd-row">
+<td>1.0</td>
+<td>2024-04-01</td>
+<td>Core Team</td>
+<td>First production release — full IMAC + Zicsr</td>
+</tr>
+<tr class="even-row">
+<td>1.1</td>
+<td>2025-01-20</td>
+<td>Core Team</td>
+<td>Added RTOS interrupt latency budget, pipeline CPI model</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<p><em>End of RV32IMAC ISA Reference Document</em><br/>
+<em>Maintained by the Hardware Architecture Team — Single Source of Truth for RTL and Toolchain Development</em></p></div></div><script>document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'})});});window.addEventListener('scroll',()=>{const h=document.querySelectorAll('h1,h2,h3');let c='';h.forEach(e=>{if(e.getBoundingClientRect().top<200)c=e.id});document.querySelectorAll('.toc-list a').forEach(e=>{e.classList.remove('active');if(e.getAttribute('href')==='#'+c)e.classList.add('active')});});</script></body></html>
