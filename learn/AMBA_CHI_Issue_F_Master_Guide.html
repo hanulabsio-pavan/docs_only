@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMBA CHI Issue F — 10-Hour Master Roadmap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-bottom: 4px solid #764ba2;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            margin: 5px 0;
+        }
+
+        .nav-section {
+            background: #f0f2f5;
+            padding: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .toc {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .toc-item {
+            background: white;
+            padding: 12px;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toc-item:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .toc-item a {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin: 40px 0 20px 0;
+            font-size: 2em;
+        }
+
+        h2 {
+            color: #764ba2;
+            margin: 30px 0 15px 0;
+            font-size: 1.6em;
+            border-left: 4px solid #764ba2;
+            padding-left: 12px;
+        }
+
+        h3 {
+            color: #667eea;
+            margin: 20px 0 12px 0;
+            font-size: 1.3em;
+        }
+
+        h4 {
+            color: #555;
+            margin: 15px 0 10px 0;
+            font-size: 1.1em;
+        }
+
+        p {
+            margin: 12px 0;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin: 15px 0 15px 30px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        pre {
+            background: #1e1e1e;
+            color: #e0e0e0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        pre code {
+            background: none;
+            color: #e0e0e0;
+            padding: 0;
+        }
+
+        .waveform {
+            background: #f9f9f9;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .waveform-title {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        table th {
+            padding: 14px;
+            text-align: left;
+            font-weight: 600;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #e0e0e0;
+            border-right: 1px solid #f0f0f0;
+        }
+
+        table tr:hover {
+            background: #f5f7fa;
+        }
+
+        table tr:nth-child(even) {
+            background: #fafbfc;
+        }
+
+        .comparison-table td:first-child {
+            font-weight: 600;
+            color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #fff5e6 0%, #fff0d6 100%);
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .highlight-box.warning {
+            background: linear-gradient(135deg, #ffe6e6 0%, #ffd6d6 100%);
+            border-left-color: #f44336;
+        }
+
+        .highlight-box.success {
+            background: linear-gradient(135deg, #e6f7ed 0%, #d6f0e5 100%);
+            border-left-color: #4caf50;
+        }
+
+        .highlight-box.info {
+            background: linear-gradient(135deg, #e6f3ff 0%, #d6ecff 100%);
+            border-left-color: #667eea;
+        }
+
+        .session-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            margin: 20px 0 15px 0;
+            border-radius: 5px;
+        }
+
+        .session-header h2 {
+            color: white;
+            border: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .drill-section {
+            background: #f5f7fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .drill-title {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .qa-block {
+            background: white;
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #667eea;
+        }
+
+        .qa-block strong {
+            color: #667eea;
+        }
+
+        .key-insight {
+            background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
+            border-left: 4px solid #fbc02d;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        .red-flag {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border-left: 4px solid #f44336;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 4px;
+            color: #c62828;
+        }
+
+        .block-diagram {
+            background: #f9f9f9;
+            border: 2px dashed #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            overflow-x: auto;
+            font-size: 0.85em;
+            line-height: 1.3;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .grid-2col > div {
+            background: #f5f7fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2col {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        .session-box {
+            background: white;
+            border: 2px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .session-box .time {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+
+        .metric-table td {
+            text-align: center;
+        }
+
+        .footer {
+            background: #f0f2f5;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 2px solid #667eea;
+            margin-top: 40px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-right: 5px;
+            font-weight: 600;
+        }
+
+        .badge.warning {
+            background: #ff9800;
+        }
+
+        .badge.error {
+            background: #f44336;
+        }
+
+        .badge.success {
+            background: #4caf50;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            padding: 12px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-decoration: none;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+        }
+
+        .tip-box {
+            background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+            border-left: 4px solid #4caf50;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 4px;
+            color: #1b5e20;
+        }
+
+        print {
+            font-size: 10pt;
+            page-break-inside: avoid;
+        }
+
+        /* Improved Diagram Styles */
+        .topology-diagram {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+
+        .topology-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .topology-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .topology-node {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 120px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            font-weight: 600;
+        }
+
+        .topology-connector {
+            height: 30px;
+            border-left: 3px solid #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .topology-center {
+            background: linear-gradient(135deg, #ffd54f 0%, #ffb74d 100%);
+            color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 200px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(255, 179, 71, 0.3);
+        }
+
+        .flit-structure {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .flit-field {
+            display: inline-flex;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
+            margin: 5px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .flit-field.alt {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .flow-diagram {
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: flex-start;
+            margin: 15px 0;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .flow-step-num {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .flow-step-content {
+            flex: 1;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: #667eea;
+            font-size: 1.5em;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .hn-f-block {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border: 2px solid #ff9800;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .hn-f-component {
+            background: white;
+            border: 1px solid #ff9800;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .directory-table {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .directory-row {
+            display: grid;
+            grid-template-columns: 20% 40% 40%;
+            gap: 10px;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+        }
+
+        .directory-row:first-child {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .directory-row:hover {
+            background: #f5f7fa;
+        }
+
+        .code-example {
+            background: #1e1e1e;
+            color: #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .example-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .example-card {
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid;
+        }
+
+        .example-card.bad {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+
+        .example-card.good {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            .back-to-top {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1>🏗️ AMBA CHI Issue F Master Guide</h1>
+        <p><strong>10-Hour Intensive Roadmap for AXI Experts</strong></p>
+        <p style="margin-top: 15px; font-size: 0.95em;">Senior Design Engineers with AXI expertise → CHI mastery for Staff/Lead interviews</p>
+    </div>
+
+    <!-- Table of Contents -->
+    <div class="nav-section">
+        <div style="margin-bottom: 15px;">
+            <h3 style="color: #667eea; margin: 0 0 15px 0;">📚 Table of Contents</h3>
+        </div>
+        <div class="toc">
+            <div class="toc-item"><a href="#session1">Session 1: Protocol Layering</a></div>
+            <div class="toc-item"><a href="#session2">Session 2: Node Types</a></div>
+            <div class="toc-item"><a href="#session3">Session 3: Virtual Channels</a></div>
+            <div class="toc-item"><a href="#session4">Session 4: Credit Flow Control</a></div>
+            <div class="toc-item"><a href="#session5">Session 5: Cache Coherency</a></div>
+            <div class="toc-item"><a href="#session6">Session 6: ReadShared Flow</a></div>
+            <div class="toc-item"><a href="#session7">Session 7: WriteUnique Flow</a></div>
+            <div class="toc-item"><a href="#session8">Session 8: Snoop Filter</a></div>
+            <div class="toc-item"><a href="#session9">Session 9: Issue F Additions</a></div>
+            <div class="toc-item"><a href="#session10">Session 10: Interview Scenarios</a></div>
+            <div class="toc-item"><a href="#quick-ref">Quick Reference Tables</a></div>
+            <div class="toc-item"><a href="#final-test">Final Exam</a></div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <!-- Session 1 -->
+        <div id="session1"></div>
+        <div class="session-header">
+            <h2>🔹 Session 1: Protocol Layering & Why CHI Exists</h2>
+        </div>
+
+        <h3>Core Concept (45 min)</h3>
+
+        <h4>AXI Limitations</h4>
+        <ul>
+            <li><strong>Single-layer protocol:</strong> Handshake = protocol layer + physical signaling mixed</li>
+            <li><strong>No native multi-hop routing:</strong> Point-to-point only</li>
+            <li><strong>No native coherency:</strong> ACE is a bolt-on extension</li>
+            <li><strong>VALID/READY deadlock:</strong> Cannot handle cyclic topologies at scale</li>
+        </ul>
+
+        <h4>CHI Solution: Three-Layer Stack</h4>
+        <ol>
+            <li><strong>Protocol Layer</strong> — Transaction semantics, coherency state machine</li>
+            <li><strong>Network Layer</strong> — Routing, QoS, ordered/unordered paths</li>
+            <li><strong>Link Layer</strong> — Credit-based flow control, flit packetization, retry/poison</li>
+        </ol>
+
+        <div class="highlight-box info">
+            <strong>💡 Key Insight:</strong> Multi-hop fabrics (ARM CMN-700, Neoverse mesh) need protocol-agnostic routing. Link-layer credits decouple backpressure from protocol handshakes — prevents deadlock in cyclic topologies.
+        </div>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>AXI</th>
+                    <th>CHI</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Flow Control</td>
+                    <td>VALID/READY handshake (immediate)</td>
+                    <td>Credit-based (sender pre-allocates buffer)</td>
+                </tr>
+                <tr>
+                    <td>Channels</td>
+                    <td>5 channels (AR/R/AW/W/B)</td>
+                    <td>4 virtual channels (REQ/RSP/SNP/DAT)</td>
+                </tr>
+                <tr>
+                    <td>Topology</td>
+                    <td>Point-to-point only</td>
+                    <td>Multi-hop routing via interconnect nodes</td>
+                </tr>
+                <tr>
+                    <td>Coherency</td>
+                    <td>ACE bolted on</td>
+                    <td>Native coherency in Protocol Layer</td>
+                </tr>
+                <tr>
+                    <td>Scalability</td>
+                    <td>Limited (~16 cores)</td>
+                    <td>Scales to 100+ cores</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="drill-section">
+            <div class="drill-title">📋 Interview Drill (15 min)</div>
+            <div class="qa-block">
+                <p><strong>Q1: "Why can't AXI scale to 100+ core coherent systems?"</strong></p>
+                <p><strong>Answer:</strong></p>
+                <ul style="margin: 10px 0;">
+                    <li>No multi-hop routing (requires full crossbar = area explosion)</li>
+                    <li>VALID/READY creates deadlock in cyclic graphs</li>
+                    <li>No ordered/unordered separation (all traffic treated equally)</li>
+                    <li>ACE broadcast snooping doesn't scale (N² snoop traffic)</li>
+                </ul>
+            </div>
+
+            <div class="qa-block">
+                <p><strong>Q2: "What problem does credit-based flow control solve?"</strong></p>
+                <p><strong>Answer:</strong></p>
+                <ul style="margin: 10px 0;">
+                    <li>Prevents head-of-line blocking in multi-hop networks</li>
+                    <li>Sender knows buffer availability <strong>before</strong> transmission</li>
+                    <li>Each hop manages credits independently</li>
+                    <li>No wasted cycles on rejected transactions</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Session 2 -->
+        <div id="session2"></div>
+        <div class="session-header">
+            <h2>🔹 Session 2: Node Types & System Topology</h2>
+        </div>
+
+        <h3>Core Concept (45 min)</h3>
+        <p><strong>CHI defines node roles, not IP blocks.</strong> One physical component can implement multiple roles.</p>
+
+        <h4>Node Type Definitions</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Node Type</th>
+                    <th>Full Name</th>
+                    <th>Role</th>
+                    <th>AXI Equivalent</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>RN-F</strong></td>
+                    <td>Request Node — Fully coherent</td>
+                    <td>CPU core, GPU, coherent accelerator (has cache, receives snoops)</td>
+                    <td>ACE master with snooping</td>
+                </tr>
+                <tr>
+                    <td><strong>RN-I</strong></td>
+                    <td>Request Node — I/O coherent</td>
+                    <td>DMA, PCIe, NIC (no cache, but respects coherency)</td>
+                    <td>ACE-Lite master</td>
+                </tr>
+                <tr>
+                    <td><strong>RN-D</strong></td>
+                    <td>Request Node — DMA</td>
+                    <td>Pure DMA, no coherency participation</td>
+                    <td>AXI master</td>
+                </tr>
+                <tr>
+                    <td><strong>HN-F</strong></td>
+                    <td>Home Node — Fully coherent</td>
+                    <td>DDR controller with coherency directory/snoop filter</td>
+                    <td>Memory controller in ACE</td>
+                </tr>
+                <tr>
+                    <td><strong>HN-I</strong></td>
+                    <td>Home Node — I/O</td>
+                    <td>Peripheral slave (UART, SPI, non-coherent memory)</td>
+                    <td>AXI slave</td>
+                </tr>
+                <tr>
+                    <td><strong>SN-F</strong></td>
+                    <td>Slave Node — Fully coherent</td>
+                    <td>Cache-attached SRAM, CXL device with coherency</td>
+                    <td>— (new in CHI)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Typical System Topology</h4>
+        <div class="topology-diagram">
+            <div class="topology-grid">
+                <div class="topology-row">
+                    <div class="topology-node">🔹 RN-F<br>(Core0)</div>
+                    <div class="topology-node">🔹 RN-F<br>(Core1)</div>
+                    <div class="topology-node">🔹 RN-F<br>(Core2)</div>
+                    <div class="topology-node">🔹 RN-F<br>(Core3)</div>
+                </div>
+                <div class="topology-connector"></div>
+                <div class="topology-center">
+                    🌐 Interconnect (CMN-700)
+                </div>
+                <div class="topology-connector"></div>
+                <div class="topology-row">
+                    <div class="topology-node" style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);">💾 HN-F<br>(DDR)</div>
+                    <div class="topology-node" style="background: linear-gradient(135deg, #ff9800 0%, #fb8c00 100%);">📤 RN-I<br>(DMA)</div>
+                    <div class="topology-node" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);">🔧 HN-I<br>(IO)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="key-insight">
+            🔑 <strong>Key Insight:</strong> HN-F = DDR controller + snoop filter. RN-F cores request from HN-F. HN-F may snoop other RN-Fs based on directory state.
+        </div>
+
+        <!-- Session 3 -->
+        <div id="session3"></div>
+        <div class="session-header">
+            <h2>🔹 Session 3: Virtual Channels & Flit Structure</h2>
+        </div>
+
+        <h3>Core Concept (45 min)</h3>
+        <p><strong>CHI replaces AXI's 5 channels with 4 virtual channels over physical links.</strong></p>
+
+        <h4>Virtual Channel Mapping</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Virtual Channel</th>
+                    <th>Direction</th>
+                    <th>Purpose</th>
+                    <th>AXI Analogue</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>REQ</strong></td>
+                    <td>RN → HN or RN → SN</td>
+                    <td>Read/Write requests</td>
+                    <td>AR + AW combined</td>
+                </tr>
+                <tr>
+                    <td><strong>RSP</strong></td>
+                    <td>HN → RN or SN → RN or RN → RN</td>
+                    <td>Acknowledgments, CompAck, data-less responses</td>
+                    <td>B channel</td>
+                </tr>
+                <tr>
+                    <td><strong>SNP</strong></td>
+                    <td>HN → RN</td>
+                    <td>Snoop requests to coherent caches</td>
+                    <td>AC channel (ACE)</td>
+                </tr>
+                <tr>
+                    <td><strong>DAT</strong></td>
+                    <td>Any → Any</td>
+                    <td>Data transfer (bidirectional)</td>
+                    <td>R + W combined</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box success">
+            ✅ <strong>Why Virtual Channels?</strong>
+            <ul style="margin: 10px 0;">
+                <li><strong>Prevents deadlock:</strong> Snoops can't be blocked by requests</li>
+                <li><strong>Simplifies routing:</strong> Data is direction-agnostic</li>
+                <li><strong>Enables QoS:</strong> Different channels can have different priorities</li>
+            </ul>
+        </div>
+
+        <h4>Flit Structure</h4>
+        <p>All CHI messages are encoded as <strong>flits</strong>. Flit width = 256 or 512 bits (configurable).</p>
+
+        <div class="flit-structure">
+            <p style="margin-bottom: 15px; font-weight: 600; color: #667eea;">Flit Header Fields:</p>
+            <div style="display: flex; flex-wrap: wrap; justify-content: flex-start;">
+                <div class="flit-field">QoS [3:0]</div>
+                <div class="flit-field">TgtID [11:0]</div>
+                <div class="flit-field">SrcID [11:0]</div>
+                <div class="flit-field">TxnID [11:0]</div>
+                <div class="flit-field alt">Opcode [6:0]</div>
+                <div class="flit-field">...</div>
+            </div>
+        </div>
+
+        <div class="grid-2col">
+            <div>
+                <h4 style="margin-top: 0;">Key Fields</h4>
+                <ul style="font-size: 0.95em;">
+                    <li><strong>TxnID</strong> — Ties request to response (12 bits = 4096 parallel transactions)</li>
+                    <li><strong>TgtID / SrcID</strong> — Node identifiers for routing</li>
+                    <li><strong>Opcode</strong> — Transaction type</li>
+                    <li><strong>QoS</strong> — Quality of Service priority</li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="margin-top: 0;">AXI → CHI Opcode Mapping</h4>
+                <ul style="font-size: 0.95em;">
+                    <li>AR → ReadShared / ReadUnique / ReadNoSnoop</li>
+                    <li>AW+W → WriteUniqueFull / WriteUniquePtl / WriteBackFull</li>
+                    <li>AC → SnpShared / SnpUnique / SnpCleanInvalid</li>
+                    <li>R → CompData (on DAT channel)</li>
+                    <li>W → Data flit (on DAT channel)</li>
+                    <li>B → Comp / CompAck (on RSP channel)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Session 4 -->
+        <div id="session4"></div>
+        <div class="session-header">
+            <h2>🔹 Session 4: Credit-Based Flow Control (Link Layer)</h2>
+        </div>
+
+        <h3>Core Concept (45 min)</h3>
+
+        <h4>CHI Credit System</h4>
+        <p><strong>Receiver pre-advertises available buffer slots via LCRDV (Link Credit Valid) signal.</strong></p>
+
+        <div class="highlight-box info">
+            <strong>💡 How It Works:</strong>
+            <ul style="margin: 10px 0;">
+                <li>Sender maintains local credit counter</li>
+                <li>Sender decrements counter on every flit sent</li>
+                <li>When credits = 0, sender stalls</li>
+                <li>Receiver replenishes credits as it drains buffers</li>
+            </ul>
+        </div>
+
+        <h4>Credit Grant & Flit Transmission Waveform</h4>
+        <div class="waveform">
+            <div class="waveform-title">⚡ ASCII Timing Diagram</div>
+            <pre>Clock:      |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |
+LCRDV:      |  1  |  0  |  1  |  0  |  0  |  1  |  0  |  0  |  ← Receiver grants credits
+FLITPEND:   |  0  |  1  |  1  |  1  |  0  |  0  |  1  |  0  |  ← Sender has flit ready
+FLITV:      |  0  |  0  |  1  |  1  |  0  |  0  |  0  |  1  |  ← Flit valid (transmitted)
+Flit Data:  |  -  |  -  | REQ | DAT |  -  |  -  |  -  | RSP |
+
+Credits (Sender's view):
+  Initial:   2 (from earlier LCRDV pulses)
+  Cycle 1:   +1 (LCRDV) → 3
+  Cycle 3:   -1 (FLITV sent REQ) → 2
+  Cycle 3:   +1 (LCRDV) → 3
+  Cycle 4:   -1 (FLITV sent DAT) → 2
+  Cycle 6:   +1 (LCRDV) → 3
+  Cycle 8:   -1 (FLITV sent RSP) → 2</pre>
+        </div>
+
+        <h4>Implementation Details</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Separate Pools</strong></td>
+                    <td>REQ, RSP, SNP, DAT each have own credit counter</td>
+                </tr>
+                <tr>
+                    <td><strong>Credit Init</strong></td>
+                    <td>Receiver sends N LCRDV pulses (N = buffer depth)</td>
+                </tr>
+                <tr>
+                    <td><strong>Stall Condition</strong></td>
+                    <td>credits_available == 0 → sender stalls (FLITPEND without FLITV)</td>
+                </tr>
+                <tr>
+                    <td><strong>Deadlock Prevention</strong></td>
+                    <td>Separate credit pools for REQ/RSP/SNP/DAT prevent circular dependency</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="red-flag">
+            ⚠️ <strong>RED FLAG:</strong> Sharing credit pools across virtual channels causes deadlock. CHI spec mandates separate pools.
+        </div>
+
+        <!-- Session 5 -->
+        <div id="session5"></div>
+        <div class="session-header">
+            <h2>🔹 Session 5: Cache Coherency States — CHI vs. MESI</h2>
+        </div>
+
+        <h3>Core Concept (45 min)</h3>
+        <p><strong>CHI uses an extended MOESI-like model with additional states for optimization.</strong></p>
+
+        <h4>CHI Cache States</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>State</th>
+                    <th>Meaning</th>
+                    <th>MESI Equivalent</th>
+                    <th>Key Difference</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>I</strong></td>
+                    <td>Invalid</td>
+                    <td>I (Invalid)</td>
+                    <td>Same — line not present</td>
+                </tr>
+                <tr>
+                    <td><strong>UC</strong></td>
+                    <td>UniqueClean</td>
+                    <td>E (Exclusive Clean)</td>
+                    <td>Can be written without snoop (already unique)</td>
+                </tr>
+                <tr>
+                    <td><strong>UD</strong></td>
+                    <td>UniqueDirty</td>
+                    <td>M (Modified)</td>
+                    <td>Same — exclusive + dirty</td>
+                </tr>
+                <tr>
+                    <td><strong>SC</strong></td>
+                    <td>SharedClean</td>
+                    <td>S (Shared)</td>
+                    <td>Same — read-only, other caches may have copies</td>
+                </tr>
+                <tr>
+                    <td><strong>SD</strong></td>
+                    <td>SharedDirty</td>
+                    <td>O (Owned in MOESI)</td>
+                    <td><strong>Dirty data shared! One cache owns, others read-only</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="key-insight">
+            🔑 <strong>The SD (SharedDirty) State:</strong> Allows dirty sharing — one cache owns dirty line, others have read-only copies. This is a game-changer for producer-consumer patterns!
+        </div>
+
+        <h4>MESI vs. CHI Comparison</h4>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>MESI Behavior</th>
+                    <th>CHI Behavior</th>
+                    <th>Winner</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>A writes, B reads</strong></td>
+                    <td>A: M → S (must write back to memory first)<br>B: I → S</td>
+                    <td>A: UD → SD (keeps dirty copy)<br>B: I → SC<br><span style="color: #4caf50; font-weight: bold;">✓ Less memory traffic</span></td>
+                    <td><span class="badge success">CHI</span></td>
+                </tr>
+                <tr>
+                    <td><strong>A has E, wants to write</strong></td>
+                    <td>Silent transition E → M</td>
+                    <td>Silent transition UC → UD</td>
+                    <td><span class="badge">Same</span></td>
+                </tr>
+                <tr>
+                    <td><strong>A has S, wants to write</strong></td>
+                    <td>Must invalidate other sharers</td>
+                    <td>Send MakeUnique, others transition SC → I</td>
+                    <td><span class="badge">Same</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Why SD Matters: Concrete Example</h4>
+        <div class="example-grid">
+            <div class="example-card bad">
+                <h4 style="color: #f44336; margin-top: 0;">❌ MESI (No SD State)</h4>
+                <div class="code-example" style="background: #ffebee; color: #333; border-left-color: #f44336;">Core 0 writes X = 5 (state M)
+↓
+Core 1 reads X
+  → Core 0 must write back to 
+    memory (M → S)
+  → Core 1 reads from memory 
+    (I → S)
+  → High latency
+  → Wasted memory bandwidth</div>
+            </div>
+            <div class="example-card good">
+                <h4 style="color: #4caf50; margin-top: 0;">✅ CHI (With SD State)</h4>
+                <div class="code-example" style="background: #e8f5e9; color: #1b5e20; border-left-color: #4caf50;">Core 0 writes X = 5 (state UD)
+↓
+Core 1 reads X
+  → Core 0 transitions UD → SD 
+    (keeps dirty data)
+  → Core 0 sends data directly 
+    to Core 1 (cache-to-cache)
+  → Core 1: I → SC
+  → No memory access needed!</div>
+            </div>
+        </div>
+
+        <!-- Session 6 -->
+        <div id="session6"></div>
+        <div class="session-header">
+            <h2>🔹 Session 6: ReadShared Transaction — End-to-End Flow</h2>
+        </div>
+
+        <h3>Core Concept (45 min)</h3>
+        <p><strong>Scenario:</strong> Core A (RN-F) reads a cache line. Cache B (another RN-F) has it in <strong>UD</strong> state. HN-F (DDR controller + snoop filter) coordinates.</p>
+
+        <h4>Step-by-Step Flow</h4>
+        <div class="flow-diagram">
+            <div class="flow-step">
+                <div class="flow-step-num">1</div>
+                <div class="flow-step-content">
+                    <strong>Core A → HN-F: REQ channel</strong><br>
+                    <code>ReadShared(Addr, TxnID=0x123)</code><br>
+                    <span style="font-size: 0.9em; color: #666;">Opcode: ReadShared | SrcID: Core A node ID</span>
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">2</div>
+                <div class="flow-step-content">
+                    <strong>HN-F checks snoop filter</strong><br>
+                    Finds: Cache B owns line in <strong>UD</strong> state (unique dirty)
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">3</div>
+                <div class="flow-step-content">
+                    <strong>HN-F → Cache B: SNP channel</strong><br>
+                    <code>SnpShared(Addr, FwdTxnID=0x123)</code><br>
+                    <span style="font-size: 0.9em; color: #666;">Request data + transition to SD state</span>
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">4</div>
+                <div class="flow-step-content">
+                    <strong>Cache B processes snoop:</strong>
+                    <ul style="margin: 10px 0 0 0; font-size: 0.95em;">
+                        <li>Reads cache line from L1/L2</li>
+                        <li>Transitions: <strong>UD → SD</strong></li>
+                        <li>Cache B → Core A: <strong>SnpRespData (DAT channel)</strong> 🚀 <em>Direct to Core A!</em></li>
+                        <li>Cache B → HN-F: <strong>SnpResp (RSP channel)</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">5</div>
+                <div class="flow-step-content">
+                    <strong>HN-F → Core A: RSP channel</strong><br>
+                    <code>CompData_SD(TxnID=0x123)</code><br>
+                    <span style="font-size: 0.9em; color: #666;">Completion: "You now have line in SC state"</span>
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">6</div>
+                <div class="flow-step-content">
+                    <strong>Core A updates cache:</strong>
+                    <ul style="margin: 10px 0 0 0; font-size: 0.95em;">
+                        <li>Writes data to cache</li>
+                        <li>Sets state: <strong>I → SC</strong></li>
+                        <li>Sends CompAck to HN-F</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">7</div>
+                <div class="flow-step-content">
+                    <strong>HN-F updates snoop filter</strong><br>
+                    Cache A: <strong>SC</strong> | Cache B: <strong>SD</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="highlight-box info">
+            <strong>💡 Direct Data Forwarding (DDT):</strong> Cache B sends data directly to Core A (not through HN-F). This reduces latency by one hop while HN-F still maintains coherency via SnpResp tracking.
+        </div>
+
+        <div class="drill-section">
+            <div class="drill-title">📋 Key Optimizations</div>
+            <ul>
+                <li><strong>Direct Data Forwarding:</strong> Cache B sends data directly to Core A (not through HN-F)</li>
+                <li><strong>State Transitions:</strong> Cache B: UD → SD; Cache A: I → SC</li>
+                <li><strong>Memory Access:</strong> None needed (cache-to-cache transfer)</li>
+            </ul>
+        </div>
+
+        <!-- Session 7 -->
+        <div id="session7"></div>
+        <div class="session-header">
+            <h2>🔹 Session 7: WriteUnique Transaction — End-to-End Flow</h2>
+        </div>
+
+        <h3>Core Concept (45 min)</h3>
+        <p><strong>Scenario:</strong> Core A wants to write a full cache line (64 bytes). Other caches (B, C) may have the line in SC or SD. HN-F must invalidate sharers.</p>
+
+        <h4>WriteUniqueFull vs. WriteUniquePtl</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Opcode</th>
+                    <th>Meaning</th>
+                    <th>When to Use</th>
+                    <th>Memory Behavior</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>WriteUniqueFull</strong></td>
+                    <td>Write <strong>entire</strong> 64-byte cache line</td>
+                    <td>All 64 bytes are written</td>
+                    <td>No Read-Modify-Write needed</td>
+                </tr>
+                <tr>
+                    <td><strong>WriteUniquePtl</strong></td>
+                    <td>Write <strong>partial</strong> cache line (e.g., 8 bytes)</td>
+                    <td>Byte-level write (e.g., single word)</td>
+                    <td>May need to fetch line first, merge, then write</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Examples</h4>
+        <pre style="background: #f5f7fa; color: #333; border-left: 4px solid #667eea;">// WriteUniqueFull (memset entire line)
+memset(addr, 0, 64);  // Writes all 64 bytes → WriteUniqueFull
+
+// WriteUniquePtl (single word write)
+*(int*)addr = 42;  // Writes 4 bytes → WriteUniquePtl</pre>
+
+        <h4>WriteUnique Transaction Flow</h4>
+        <div class="flow-diagram">
+            <div class="flow-step">
+                <div class="flow-step-num">1</div>
+                <div class="flow-step-content">
+                    <strong>Core A → HN-F: REQ channel</strong><br>
+                    <code>WriteUniqueFull(Addr, TxnID=0x456)</code><br>
+                    <span style="font-size: 0.9em; color: #666;">Write entire line, invalidate sharers</span>
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">2</div>
+                <div class="flow-step-content">
+                    <strong>HN-F checks snoop filter</strong><br>
+                    Finds: Cache B, Cache C have line in <strong>SC</strong> state (shared clean)
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">3</div>
+                <div class="flow-step-content">
+                    <strong>HN-F → Cache B, Cache C: SNP channel</strong><br>
+                    <code>SnpCleanInvalid(Addr)</code><br>
+                    <span style="font-size: 0.9em; color: #666;">Invalidate your copies, no data needed</span>
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">4</div>
+                <div class="flow-step-content">
+                    <strong>Cache B, Cache C process snoop:</strong>
+                    <ul style="margin: 10px 0 0 0; font-size: 0.95em;">
+                        <li>Transition: <strong>SC → I</strong> (invalidate)</li>
+                        <li>Cache B → HN-F: <strong>SnpResp_I</strong></li>
+                        <li>Cache C → HN-F: <strong>SnpResp_I</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">5</div>
+                <div class="flow-step-content">
+                    <strong>HN-F collects all SnpResp</strong><br>
+                    Waits for responses from both Cache B and Cache C
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">6</div>
+                <div class="flow-step-content">
+                    <strong>HN-F → Core A: RSP channel</strong><br>
+                    <code>Comp_UC(TxnID=0x456)</code><br>
+                    <span style="font-size: 0.9em; color: #666;">Completion: You uniquely own the line</span>
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">7</div>
+                <div class="flow-step-content">
+                    <strong>Core A → HN-F: RSP</strong><br>
+                    <code>CompAck(TxnID=0x456)</code><br>
+                    <span style="font-size: 0.9em; color: #666;">Final acknowledgment</span>
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">8</div>
+                <div class="flow-step-content">
+                    <strong>HN-F updates snoop filter:</strong>
+                    <ul style="margin: 10px 0 0 0; font-size: 0.95em;">
+                        <li>Cache A: <strong>UC</strong> (sole owner)</li>
+                        <li>Cache B, C: Removed from filter</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            ✅ <strong>Best Practice:</strong> WriteUniqueFull for bulk writes (memset, DMA) — saves memory bandwidth and latency by avoiding Read-Modify-Write.
+        </div>
+
+        <!-- Session 8 -->
+        <div id="session8"></div>
+        <div class="session-header">
+            <h2>🔹 Session 8: Snoop Filter & Directory (HN-F Internals)</h2>
+        </div>
+
+        <h3>Core Concept (45 min)</h3>
+        <p><strong>The snoop filter at HN-F is a coherency directory tracking which caches hold which lines. It's the brain of the system.</strong></p>
+
+        <h4>Directory Data Structure (Conceptual)</h4>
+        <div class="directory-table">
+            <div class="directory-row">
+                <strong>Address Tag</strong>
+                <strong>Sharers Bitmap</strong>
+                <strong>State</strong>
+            </div>
+            <div class="directory-row">
+                <code>0x1000_0000</code>
+                <span>[RN0=<span style="color: #4caf50;">1</span>, RN1=<span style="color: #f44336;">0</span>, RN2=<span style="color: #f44336;">0</span>, …]</span>
+                <strong style="color: #2196f3;">SC</strong>
+            </div>
+            <div class="directory-row">
+                <code>0x2000_0000</code>
+                <span>[RN0=<span style="color: #f44336;">0</span>, RN1=<span style="color: #4caf50;">1</span>, RN2=<span style="color: #f44336;">0</span>, …]</span>
+                <strong style="color: #ff9800;">UD</strong>
+            </div>
+            <div class="directory-row">
+                <code>0x3000_0000</code>
+                <span>[RN0=<span style="color: #4caf50;">1</span>, RN1=<span style="color: #4caf50;">1</span>, RN2=<span style="color: #f44336;">0</span>, …]</span>
+                <strong style="color: #2196f3;">SC</strong>
+            </div>
+            <div class="directory-row">
+                <code>0x4000_0000</code>
+                <span>[RN0=<span style="color: #f44336;">0</span>, RN1=<span style="color: #4caf50;">1</span>, RN2=<span style="color: #f44336;">0</span>, …]</span>
+                <strong style="color: #9c27b0;">SD</strong>
+            </div>
+        </div>
+
+        <div class="key-insight">
+            🔑 <strong>Fields:</strong>
+            <ul style="margin: 10px 0;">
+                <li><strong>Address Tag:</strong> Cache line address (upper bits, e.g., bits [47:6] for 64-byte lines)</li>
+                <li><strong>Sharers Bitmap:</strong> One bit per RN-F (1 = this cache has the line)</li>
+                <li><strong>State:</strong> Aggregated state (SC = all sharers clean, UD/SD = one owner)</li>
+            </ul>
+        </div>
+
+        <h4>Snoop Filter Capacity & Over-Snooping</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Issue</th>
+                    <th>Description</th>
+                    <th>Impact</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Limited Size</strong></td>
+                    <td>Filter has finite size (e.g., 4MB coverage for 128MB aggregate cache)</td>
+                    <td>Can't track all cached lines</td>
+                </tr>
+                <tr>
+                    <td><strong>Over-Snooping</strong></td>
+                    <td>When filter is full or address not tracked, HN-F broadcasts snoop to <strong>all</strong> RN-Fs</td>
+                    <td>Wasteful, but correct (ensures coherency)</td>
+                </tr>
+                <tr>
+                    <td><strong>Trade-off</strong></td>
+                    <td>Larger filter = less over-snooping, but more area/power</td>
+                    <td>Design choice based on system requirements</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box warning">
+            ⚠️ <strong>Over-Snooping:</strong> When filter doesn't have an entry for an address, HN-F broadcasts snoop to ALL RN-Fs. This is pessimistic but maintains correctness.
+        </div>
+
+        <h4>ACE vs. CHI Comparison</h4>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>ACE</th>
+                    <th>CHI</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Directory</strong></td>
+                    <td>No formal directory (optional)</td>
+                    <td><span class="badge success">Mandatory</span> snoop filter at HN-F</td>
+                </tr>
+                <tr>
+                    <td><strong>Snooping</strong></td>
+                    <td>Broadcast to all masters</td>
+                    <td>Targeted snooping (based on directory)</td>
+                </tr>
+                <tr>
+                    <td><strong>Scalability</strong></td>
+                    <td>N² snoop traffic (N cores)</td>
+                    <td>O(sharers) snoop traffic</td>
+                </tr>
+                <tr>
+                    <td><strong>Complexity</strong></td>
+                    <td>Simpler (no directory state)</td>
+                    <td>More complex (directory management)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Session 9 -->
+        <div id="session9"></div>
+        <div class="session-header">
+            <h2>🔹 Session 9: CHI Issue F Additions — MTE, RME, Atomic Ops</h2>
+        </div>
+
+        <h3>Core Concept (45 min)</h3>
+        <p><strong>CHI Issue F (2021 spec) added support for ARMv8.5-A and ARMv9-A features.</strong></p>
+
+        <h4>1. Memory Tagging Extension (MTE)</h4>
+        <div class="session-box">
+            <p><strong>What is MTE?</strong> ARMv8.5-A Memory Tagging Extension:</p>
+            <ul>
+                <li>4-bit tag per 16-byte granule for memory safety</li>
+                <li>Detects: use-after-free, buffer overflows, temporal/spatial violations</li>
+                <li>Used in: Android, iOS, server security</li>
+            </ul>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>TagOp</th>
+                    <th>Behavior</th>
+                    <th>Use Case</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Match</strong></td>
+                    <td>Verify tag matches before data transfer (catch violations)</td>
+                    <td>Runtime tag check</td>
+                </tr>
+                <tr>
+                    <td><strong>Fetch</strong></td>
+                    <td>Retrieve tag without checking (for debug)</td>
+                    <td>Debug/monitoring</td>
+                </tr>
+                <tr>
+                    <td><strong>Update</strong></td>
+                    <td>Write new tag to memory (allocation time)</td>
+                    <td>Memory allocation</td>
+                </tr>
+                <tr>
+                    <td><strong>None</strong></td>
+                    <td>No tag operation (legacy mode)</td>
+                    <td>Backward compatibility</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>2. Realm Management Extension (RME)</h4>
+        <div class="session-box">
+            <p><strong>What is RME?</strong> ARMv9-A Realm Management Extension:</p>
+            <ul>
+                <li>Confidential computing for trusted VMs ("Realms")</li>
+                <li>Isolates Realms from hypervisor, secure OS, and each other</li>
+                <li>Four security states: <span class="badge">Root</span> <span class="badge">Secure</span> <span class="badge">Realm</span> <span class="badge">Non-Secure</span></li>
+            </ul>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Security State</th>
+                    <th>Purpose</th>
+                    <th>Can Access</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Root</strong></td>
+                    <td>Firmware, RMM (Realm Manager)</td>
+                    <td>All memory</td>
+                </tr>
+                <tr>
+                    <td><strong>Secure</strong></td>
+                    <td>Secure OS (e.g., OP-TEE)</td>
+                    <td>Secure + Non-Secure</td>
+                </tr>
+                <tr>
+                    <td><strong>Realm</strong></td>
+                    <td>Trusted VMs (confidential workloads)</td>
+                    <td>Realm only</td>
+                </tr>
+                <tr>
+                    <td><strong>Non-Secure</strong></td>
+                    <td>Normal OS (Linux, Android)</td>
+                    <td>Non-Secure only</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>3. Atomic Operations</h4>
+        <p><strong>Why Atomics in CHI?</strong> Lock-free algorithms need hardware atomics (fetch-and-add, compare-and-swap, exchange).</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Opcode</th>
+                    <th>Operation</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>AtomicStore_ADD</strong></td>
+                    <td>Atomic add</td>
+                    <td><code>atomic_fetch_add(&x, 1)</code></td>
+                </tr>
+                <tr>
+                    <td><strong>AtomicStore_CLR</strong></td>
+                    <td>Atomic clear bits</td>
+                    <td><code>atomic_fetch_and(&x, ~mask)</code></td>
+                </tr>
+                <tr>
+                    <td><strong>AtomicStore_SET</strong></td>
+                    <td>Atomic set bits</td>
+                    <td><code>atomic_fetch_or(&x, mask)</code></td>
+                </tr>
+                <tr>
+                    <td><strong>AtomicStore_SWAP</strong></td>
+                    <td>Atomic exchange</td>
+                    <td><code>atomic_exchange(&x, new_val)</code></td>
+                </tr>
+                <tr>
+                    <td><strong>AtomicCompare</strong></td>
+                    <td>Compare-and-swap</td>
+                    <td><code>atomic_compare_exchange(&x, &old, new)</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="key-insight">
+            🔑 <strong>Atomicity Guarantee:</strong> HN-F locks the address during operation. Other requests to same address queue. No interleaving (appears as single instruction).
+        </div>
+
+        <!-- Session 10 -->
+        <div id="session10"></div>
+        <div class="session-header">
+            <h2>🔹 Session 10: Interview Scenarios & Whiteboard Drills</h2>
+        </div>
+
+        <h3>Drill 1: Debug a Deadlock (15 min)</h3>
+        <div class="drill-section">
+            <div class="drill-title">🔍 Scenario</div>
+            <p>You have a 4-core SoC (4× RN-F, 1× HN-F). Under stress test, the system deadlocks. How do you debug?</p>
+        </div>
+
+        <div class="session-box">
+            <h4>Expected Answer:</h4>
+            <ol>
+                <li><strong>Check Credit Exhaustion:</strong> Are any REQ/RSP/SNP/DAT credits stuck at 0?</li>
+                <li><strong>Check for Cyclic Dependencies:</strong> REQ blocked on SNP, SNP blocked on DAT, DAT blocked on REQ → Deadlock!</li>
+                <li><strong>Verify Separate Credit Pools:</strong> REQ, RSP, SNP, DAT must each have own credit counter</li>
+                <li><strong>Trace TxnID Flow:</strong> Find stuck TxnID, trace through REQ → SNP → DAT → RSP</li>
+            </ol>
+
+            <h4>Common Root Causes:</h4>
+            <ul>
+                <li>❌ Shared credit pools (violates CHI spec)</li>
+                <li>❌ Insufficient buffer depth (credit starvation)</li>
+                <li>❌ HN-F response tracker overflow (too many in-flight TxnIDs)</li>
+                <li>❌ Snoop filter deadlock (filter lookup blocks REQ queue)</li>
+            </ul>
+        </div>
+
+        <h3>Drill 2: Cache State Corner Case (15 min)</h3>
+        <div class="drill-section">
+            <div class="drill-title">🔍 Scenario</div>
+            <p><strong>Race Condition:</strong> Core A has line in <strong>UD</strong>, Core B issues <strong>ReadShared</strong>. While snoop is in-flight, Core A issues <strong>WriteBackFull</strong> (evicting the line). What happens?</p>
+        </div>
+
+        <div class="session-box">
+            <h4>CHI Handling:</h4>
+            <pre>1. Core A's WriteBackFull arrives at HN-F:
+   - HN-F writes data to memory
+   - HN-F updates snoop filter (Core A no longer owns line)
+
+2. SnpShared arrives at Core A:
+   - Line already evicted
+   - Core A → HN-F: SnpResp_I (line not present)
+
+3. HN-F receives SnpResp_I:
+   - Knows line was evicted
+   - Retries: fetches from memory (has latest data from WriteBackFull)
+   - HN-F → Core B: CompData(Data from memory)
+
+4. Core B: I → SC (receives data from memory, not from Core A)</pre>
+
+            <div class="key-insight">
+                🔑 <strong>Key Insight:</strong> HN-F serializes conflicting transactions using TxnID tracking. WriteBackFull completes before SnpShared retry. Correctness maintained!
+            </div>
+        </div>
+
+        <h3>Drill 3: Design a Simple HN-F (20 min)</h3>
+        <div class="drill-section">
+            <div class="drill-title">🔍 Prompt</div>
+            <p>Whiteboard a block diagram of an HN-F that supports 4 RN-Fs and DDR. Include snoop filter, request queue, snoop queue.</p>
+        </div>
+
+        <div class="hn-f-block">
+            <h4 style="color: #ff9800; margin-top: 0;">🏗️ HN-F Block Diagram</h4>
+            
+            <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 15px; margin: 20px 0;">
+                <!-- Left Column: Inputs -->
+                <div>
+                    <div class="hn-f-component">
+                        <strong style="color: #ff9800;">📥 Inputs</strong>
+                        <ul style="margin: 10px 0; font-size: 0.9em;">
+                            <li>REQ (from RN-Fs)</li>
+                            <li>SNP Response (from RN-Fs)</li>
+                            <li>DAT (from DDR & RN-Fs)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Middle Column: Processing -->
+                <div>
+                    <div class="hn-f-component">
+                        <strong style="color: #ff9800; display: block; margin-bottom: 10px;">⚙️ Core Components</strong>
+                        <div style="background: #fff3e0; padding: 10px; border-radius: 4px; margin: 8px 0;">
+                            <strong style="font-size: 0.9em;">Request Queue</strong><br>
+                            <span style="font-size: 0.85em;">FIFO (16–32)</span>
+                        </div>
+                        <div style="background: #fff3e0; padding: 10px; border-radius: 4px; margin: 8px 0;">
+                            <strong style="font-size: 0.9em;">Snoop Filter</strong><br>
+                            <span style="font-size: 0.85em;">Address → Sharers</span>
+                        </div>
+                        <div style="background: #fff3e0; padding: 10px; border-radius: 4px; margin: 8px 0;">
+                            <strong style="font-size: 0.9em;">Response Tracker</strong><br>
+                            <span style="font-size: 0.85em;">Collects SnpResp</span>
+                        </div>
+                        <div style="background: #fff3e0; padding: 10px; border-radius: 4px; margin: 8px 0;">
+                            <strong style="font-size: 0.9em;">Snoop Queue</strong><br>
+                            <span style="font-size: 0.85em;">FIFO (8–16)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Outputs -->
+                <div>
+                    <div class="hn-f-component">
+                        <strong style="color: #ff9800;">📤 Outputs</strong>
+                        <ul style="margin: 10px 0; font-size: 0.9em;">
+                            <li>SNP (to RN-Fs)</li>
+                            <li>RSP (CompData, Comp)</li>
+                            <li>DDR AXI Master</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #ff9800; margin-top: 15px;">
+                <h4 style="margin-top: 0;">✅ Design Highlights:</h4>
+                <ul style="font-size: 0.95em;">
+                    <li>✓ <strong>Separate REQ and SNP queues</strong> (deadlock avoidance)</li>
+                    <li>✓ <strong>Snoop filter lookup before SNP queue</strong> (targeted snooping)</li>
+                    <li>✓ <strong>Response tracker collects all SnpResp</strong> (coherency guarantee)</li>
+                    <li>✓ <strong>Independent credit pools</strong> for REQ, RSP, SNP, DAT</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Quick Reference -->
+        <div id="quick-ref"></div>
+        <div class="session-header">
+            <h2>📚 Master Notes — Quick Reference</h2>
+        </div>
+
+        <h3>CHI Issue F Flit Opcodes (Most Common)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Opcode</th>
+                    <th>Direction</th>
+                    <th>Purpose</th>
+                    <th>State Transition</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>ReadShared</strong></td>
+                    <td>RN → HN</td>
+                    <td>Read with sharing</td>
+                    <td>I → SC</td>
+                </tr>
+                <tr>
+                    <td><strong>ReadUnique</strong></td>
+                    <td>RN → HN</td>
+                    <td>Read exclusive</td>
+                    <td>I → UC</td>
+                </tr>
+                <tr>
+                    <td><strong>WriteUniqueFull</strong></td>
+                    <td>RN → HN</td>
+                    <td>Write full line, invalidate sharers</td>
+                    <td>I → UC/UD</td>
+                </tr>
+                <tr>
+                    <td><strong>WriteBackFull</strong></td>
+                    <td>RN → HN</td>
+                    <td>Evict dirty line to memory</td>
+                    <td>UD/SD → I</td>
+                </tr>
+                <tr>
+                    <td><strong>SnpShared</strong></td>
+                    <td>HN → RN</td>
+                    <td>Snoop: provide data, transition to SD</td>
+                    <td>UD → SD</td>
+                </tr>
+                <tr>
+                    <td><strong>SnpCleanInvalid</strong></td>
+                    <td>HN → RN</td>
+                    <td>Snoop: invalidate (no data needed)</td>
+                    <td>SC/UC → I</td>
+                </tr>
+                <tr>
+                    <td><strong>CompData</strong></td>
+                    <td>HN → RN</td>
+                    <td>Completion + data transfer</td>
+                    <td>—</td>
+                </tr>
+                <tr>
+                    <td><strong>CompAck</strong></td>
+                    <td>RN → HN</td>
+                    <td>Acknowledge completion (final)</td>
+                    <td>—</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Cache State Quick Reference</h3>
+        <table class="metric-table">
+            <thead>
+                <tr>
+                    <th>State</th>
+                    <th>Meaning</th>
+                    <th>Can Write?</th>
+                    <th>Must Snoop?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>I</strong></td>
+                    <td>Invalid</td>
+                    <td>No</td>
+                    <td>No</td>
+                </tr>
+                <tr>
+                    <td><strong>UC</strong></td>
+                    <td>UniqueClean</td>
+                    <td><span style="color: #4caf50;">Yes</span></td>
+                    <td>No</td>
+                </tr>
+                <tr>
+                    <td><strong>UD</strong></td>
+                    <td>UniqueDirty</td>
+                    <td><span style="color: #4caf50;">Yes</span></td>
+                    <td>No</td>
+                </tr>
+                <tr>
+                    <td><strong>SC</strong></td>
+                    <td>SharedClean</td>
+                    <td>No</td>
+                    <td><span style="color: #f44336;">Yes</span></td>
+                </tr>
+                <tr>
+                    <td><strong>SD</strong></td>
+                    <td>SharedDirty</td>
+                    <td>No</td>
+                    <td><span style="color: #f44336;">Yes</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Interview Red Flags to Avoid</h3>
+        <div style="display: grid; gap: 10px;">
+            <div class="red-flag">
+                ❌ <strong>"CHI is just AXI with credits"</strong><br>
+                Wrong. CHI has native multi-hop, coherency directory, ordered/unordered separation.
+            </div>
+            <div class="red-flag">
+                ❌ <strong>"Snoop filter is optional"</strong><br>
+                Technically true, but without it you regress to broadcast snooping (terrible for scalability).
+            </div>
+            <div class="red-flag">
+                ❌ <strong>"CompAck is pointless"</strong><br>
+                Wrong. Without CompAck, HN-F can't safely reuse TxnID.
+            </div>
+            <div class="red-flag">
+                ❌ <strong>"All transactions are ordered"</strong><br>
+                Wrong. CHI separates ordered (device I/O) vs. unordered (normal CPU) for performance.
+            </div>
+        </div>
+
+        <!-- Final Exam -->
+        <div id="final-test"></div>
+        <div class="session-header">
+            <h2>🎓 Final Exam (Self-Test Before Interview)</h2>
+        </div>
+
+        <p><strong>Test yourself: Can you answer these in &lt;2 minutes each?</strong></p>
+
+        <div style="display: grid; gap: 15px;">
+            <div class="qa-block">
+                <strong>1. Draw a ReadShared flow</strong> with Cache B in UD state. Include all channels (REQ/SNP/DAT/RSP).
+            </div>
+            <div class="qa-block">
+                <strong>2. Explain why CHI needs separate credit pools</strong> for REQ/RSP/SNP/DAT. What happens if you share them?
+            </div>
+            <div class="qa-block">
+                <strong>3. What's the difference</strong> between WriteUniqueFull and WriteUniquePtl? When would you use each?
+            </div>
+            <div class="qa-block">
+                <strong>4. How does the snoop filter prevent over-snooping?</strong> What happens when the filter is full?
+            </div>
+            <div class="qa-block">
+                <strong>5. Why does SharedDirty (SD) state reduce memory traffic?</strong> Give a concrete example with two cores.
+            </div>
+            <div class="qa-block">
+                <strong>6. What are the four security states in RME?</strong> How does CHI enforce Realm isolation?
+            </div>
+            <div class="qa-block">
+                <strong>7. Walk through an AtomicStore_ADD transaction.</strong> How does HN-F guarantee atomicity?
+            </div>
+            <div class="qa-block">
+                <strong>8. Debug this: System deadlocks under stress.</strong> What's your systematic debug approach?
+            </div>
+            <div class="qa-block">
+                <strong>9. Why does CHI send data on a bidirectional DAT channel</strong> instead of separate read/write channels like AXI?
+            </div>
+            <div class="qa-block">
+                <strong>10. What's the purpose of CompAck?</strong> Why can't HN-F reuse TxnID without it?
+            </div>
+        </div>
+
+        <!-- Study Schedule -->
+        <div style="margin-top: 40px; padding: 20px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 5px; border-left: 4px solid #1976d2;">
+            <h3 style="color: #1565c0; margin-top: 0;">📅 Study Schedule Recommendation</h3>
+            <div class="grid-2col">
+                <div style="border: none;">
+                    <strong>Week 1 (May 1–7):</strong>
+                    <ul style="font-size: 0.95em;">
+                        <li>Sessions 1–3: Basics, nodes, flits (3 hours)</li>
+                        <li>Sessions 4–5: Credits, cache states (2 hours)</li>
+                    </ul>
+                </div>
+                <div style="border: none;">
+                    <strong>Week 2 (May 8–14):</strong>
+                    <ul style="font-size: 0.95em;">
+                        <li>Sessions 6–7: Transaction flows (2 hours)</li>
+                        <li>Session 8: Snoop filter (1 hour)</li>
+                    </ul>
+                </div>
+                <div style="border: none;">
+                    <strong>Week 3 (May 15–21):</strong>
+                    <ul style="font-size: 0.95em;">
+                        <li>Session 9: Issue F additions (1 hour)</li>
+                        <li>Session 10: Interview drills (1 hour)</li>
+                    </ul>
+                </div>
+                <div style="border: none;">
+                    <strong>Week 4 (May 22–28):</strong>
+                    <ul style="font-size: 0.95em;">
+                        <li>Review: Re-read quick reference</li>
+                        <li>Practice: Whiteboard drills</li>
+                        <li>Mock interview with peer (2 hours)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Resources -->
+        <div style="margin-top: 30px; padding: 20px; background: #f5f7fa; border-radius: 5px; border-left: 4px solid #667eea;">
+            <h3 style="color: #667eea; margin-top: 0;">📖 Additional Resources</h3>
+            <ul>
+                <li><strong>ARM Specification:</strong> AMBA CHI Issue F Specification (ARM IHI 0050F) - developer.arm.com</li>
+                <li><strong>Key Chapters:</strong> Protocol Layer (Ch. 2), Cache States (Ch. 3), Link Layer (Ch. 4), Issue F Additions (Ch. 12)</li>
+                <li><strong>Supplementary:</strong> ARM CMN-700 TRM, ARM Neoverse N2 Core TRM</li>
+            </ul>
+        </div>
+
+        <!-- Interview Tips -->
+        <div style="margin-top: 30px; padding: 20px; background: #f3e5f5; border-radius: 5px; border-left: 4px solid #9c27b0;">
+            <h3 style="color: #6a1b9a; margin-top: 0;">🎯 Interview Day Tips</h3>
+            <ol>
+                <li><strong>Draw waveforms</strong> — interviewers love seeing timing diagrams</li>
+                <li><strong>Use correct terminology</strong> — "flit" not "packet", "TxnID" not "transaction ID"</li>
+                <li><strong>Think out loud</strong> — explain your reasoning, don't just give answers</li>
+                <li><strong>Ask clarifying questions</strong> — "Should I assume the line is in UD or SC?"</li>
+                <li><strong>Know your CV</strong> — if you claimed "coherency experience", expect deep CHI questions</li>
+            </ol>
+        </div>
+
+        <!-- Closing -->
+        <div style="margin-top: 40px; padding: 20px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 5px;">
+            <h2 style="color: white; border: none; margin-top: 0;">Good luck with your interview! 🚀</h2>
+            <p style="font-size: 1.1em; margin-top: 15px;"><strong>Master CHI, ace the interview, land your Staff-level role.</strong></p>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>Document Version:</strong> 1.0 (HTML)</p>
+        <p><strong>Last Updated:</strong> May 2026</p>
+        <p><strong>Target:</strong> Senior Design Engineers transitioning to CHI-based SoC roles</p>
+        <p style="margin-top: 15px; font-size: 0.9em; color: #888;">
+            This HTML version includes enhanced formatting with colors, tables, waveforms, and visual elements for improved readability.
+        </p>
+    </div>
+
+</div>
+
+<!-- Back to top button -->
+<div class="back-to-top" id="backToTop">↑</div>
+
+<script>
+    // Back to top functionality
+    const backToTop = document.getElementById('backToTop');
+    
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+            backToTop.classList.add('show');
+        } else {
+            backToTop.classList.remove('show');
+        }
+    });
+    
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Smooth scrolling for TOC links
+    document.querySelectorAll('.toc-item a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            const element = document.querySelector(href);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
