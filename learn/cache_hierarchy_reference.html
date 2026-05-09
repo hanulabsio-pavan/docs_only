@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cache Hierarchy & Snoop Filter — Reference Document</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700;900&family=Nunito:wght@300;400;600;700;800&display=swap');
+
+:root {
+  /* Theme */
+  --bg:      #f4f1eb;
+  --s0:      #ede9e0;
+  --s1:      #e4dfd3;
+  --s2:      #d8d2c4;
+  --ink:     #1a1510;
+  --ink2:    #3d3628;
+  --ink3:    #6b5f4a;
+  --ink4:    #9a8e7a;
+  --border:  #c8bfae;
+  --border2: #b0a492;
+
+  /* Cache level colours */
+  --l1:  #c0392b;   /* warm red    */
+  --l2:  #e67e22;   /* orange      */
+  --l3:  #2980b9;   /* blue        */
+  --sf:  #27ae60;   /* green       */
+  --ram: #8e44ad;   /* purple      */
+
+  /* Accent */
+  --gold: #b8860b;
+  --teal: #0e7c7b;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Nunito',sans-serif;
+  line-height:1.65;
+  overflow-x:hidden;
+}
+
+/* ── COVER ─────────────────────────────── */
+.cover{
+  min-height:340px;
+  padding:70px 64px 60px;
+  background:var(--ink);
+  position:relative;
+  overflow:hidden;
+}
+.cover::before{
+  content:'';
+  position:absolute;inset:0;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,transparent 40px,
+      #ffffff04 40px,#ffffff04 41px
+    );
+}
+.cover::after{
+  content:'';
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 60% 80% at 5% 50%, #c0392b14,transparent 55%),
+    radial-gradient(ellipse 40% 60% at 95% 20%, #2980b910,transparent 55%),
+    radial-gradient(ellipse 30% 40% at 50% 100%,#27ae6010,transparent 55%);
+}
+.cover-inner{position:relative;z-index:1;}
+.doc-tag{
+  display:inline-block;
+  font-family:'Space Mono',monospace;
+  font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;
+  color:#6b5f4a;
+  border:1px solid #3d3628;
+  padding:4px 12px;border-radius:3px;
+  margin-bottom:20px;
+}
+.cover h1{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(2rem,5.5vw,4rem);
+  font-weight:900;
+  line-height:1.0;
+  color:#f4f1eb;
+  margin-bottom:12px;
+  letter-spacing:-.02em;
+}
+.cover h1 em{
+  font-style:normal;
+  color:var(--l1);
+}
+.cover-sub{
+  font-size:1rem;
+  color:#9a8e7a;
+  max-width:600px;
+  line-height:1.7;
+  margin-bottom:28px;
+}
+.cover-chips{display:flex;gap:8px;flex-wrap:wrap;}
+.cchip{
+  font-family:'Space Mono',monospace;
+  font-size:.6rem;letter-spacing:.06em;
+  padding:4px 12px;border-radius:2px;
+  border:1px solid;
+}
+.cc-l1{color:var(--l1);border-color:#c0392b50;background:#c0392b12;}
+.cc-l2{color:var(--l2);border-color:#e67e2250;background:#e67e2212;}
+.cc-l3{color:var(--l3);border-color:#2980b950;background:#2980b912;}
+.cc-sf{color:var(--sf);border-color:#27ae6050;background:#27ae6012;}
+.cc-ram{color:var(--ram);border-color:#8e44ad50;background:#8e44ad12;}
+
+/* ── NAV ────────────────────────────────── */
+nav{
+  display:flex;gap:0;
+  padding:0 64px;
+  background:var(--ink2);
+  overflow-x:auto;
+  position:sticky;top:0;z-index:100;
+  border-bottom:2px solid var(--l1);
+}
+nav a{
+  font-family:'Space Mono',monospace;
+  font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;
+  color:#9a8e7a;text-decoration:none;
+  padding:14px 16px;
+  border-bottom:2px solid transparent;
+  white-space:nowrap;
+  margin-bottom:-2px;
+  transition:color .15s,border-color .15s;
+}
+nav a:hover{color:#f4f1eb;border-bottom-color:#f4f1eb;}
+
+/* ── PAGE BODY ──────────────────────────── */
+.page{
+  display:grid;
+  grid-template-columns:220px 1fr;
+  max-width:1300px;
+  margin:0 auto;
+}
+
+/* ── TOC SIDEBAR ────────────────────────── */
+.toc{
+  padding:32px 24px;
+  border-right:1px solid var(--border);
+  position:sticky;top:46px;
+  height:calc(100vh - 46px);
+  overflow-y:auto;
+  background:var(--s0);
+}
+.toc-title{
+  font-family:'Space Mono',monospace;
+  font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink4);margin-bottom:16px;
+  padding-bottom:8px;border-bottom:1px solid var(--border);
+}
+.toc-section{margin-bottom:20px;}
+.toc-sec-label{
+  font-family:'Space Mono',monospace;
+  font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink4);margin-bottom:6px;
+}
+.toc a{
+  display:block;
+  font-size:.74rem;color:var(--ink3);
+  text-decoration:none;
+  padding:4px 8px;
+  border-left:2px solid transparent;
+  border-radius:0 3px 3px 0;
+  transition:all .12s;
+  line-height:1.3;
+  margin-bottom:2px;
+}
+.toc a:hover{
+  color:var(--ink);
+  border-left-color:var(--ink2);
+  background:var(--s1);
+}
+
+/* ── CONTENT ────────────────────────────── */
+.content{padding:48px 56px;}
+
+/* section */
+.sec{margin-bottom:56px;}
+.sec-eyebrow{
+  font-family:'Space Mono',monospace;
+  font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink4);margin-bottom:6px;
+  display:flex;align-items:center;gap:8px;
+}
+.sec-eyebrow::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+.sec-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(1.4rem,2.8vw,2rem);
+  font-weight:700;
+  line-height:1.1;
+  margin-bottom:10px;
+  letter-spacing:-.01em;
+}
+.sec-desc{
+  font-size:.88rem;color:var(--ink3);
+  max-width:720px;margin-bottom:28px;
+  line-height:1.72;
+}
+
+/* callout boxes */
+.callout{
+  padding:16px 20px;
+  border-radius:6px;
+  border-left:4px solid;
+  margin-bottom:20px;
+  font-size:.84rem;
+  line-height:1.65;
+}
+.callout strong{font-weight:700;}
+.co-info{background:#2980b910;border-color:var(--l3);color:var(--ink2);}
+.co-warn{background:#e67e2210;border-color:var(--l2);color:var(--ink2);}
+.co-key {background:#27ae6010;border-color:var(--sf);color:var(--ink2);}
+.co-crit{background:#c0392b10;border-color:var(--l1);color:var(--ink2);}
+
+/* ── HIERARCHY PYRAMID ─────────────────── */
+.pyramid-wrap{
+  background:var(--s0);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:28px;
+  margin-bottom:32px;
+  overflow-x:auto;
+}
+
+/* ── TABLES ─────────────────────────────── */
+.tbl-wrap{
+  overflow-x:auto;
+  border-radius:8px;
+  border:1px solid var(--border);
+  margin-bottom:28px;
+  box-shadow:0 2px 8px #00000008;
+}
+table{
+  width:100%;border-collapse:collapse;
+  font-size:.8rem;
+}
+thead th{
+  padding:11px 16px;
+  text-align:left;
+  font-family:'Space Mono',monospace;
+  font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink4);
+  background:var(--s1);
+  border-bottom:2px solid var(--border);
+  white-space:nowrap;
+}
+tbody td{
+  padding:10px 16px;
+  border-bottom:1px solid var(--border);
+  vertical-align:middle;
+}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--s0);}
+tbody tr:nth-child(even) td{background:#00000004;}
+
+/* level badges */
+.badge{
+  display:inline-block;
+  padding:2px 9px;border-radius:3px;
+  font-family:'Space Mono',monospace;
+  font-size:.65rem;font-weight:700;
+  border:1px solid;
+}
+.b-l1 {color:var(--l1);border-color:#c0392b40;background:#c0392b0e;}
+.b-l2 {color:var(--l2);border-color:#e67e2240;background:#e67e220e;}
+.b-l3 {color:var(--l3);border-color:#2980b940;background:#2980b90e;}
+.b-sf {color:var(--sf);border-color:#27ae6040;background:#27ae600e;}
+.b-ram{color:var(--ram);border-color:#8e44ad40;background:#8e44ad0e;}
+
+.tick {color:#27ae60;font-weight:700;}
+.cross{color:#c0392b;font-weight:700;}
+.part {color:#e67e22;font-weight:700;}
+
+/* ── TRANSISTOR DIAGRAMS ─────────────────── */
+.cell-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  margin-bottom:32px;
+}
+.cell-card{
+  background:var(--s0);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:20px;
+}
+.cell-title{
+  font-family:'Space Mono',monospace;
+  font-size:.7rem;font-weight:700;
+  letter-spacing:.06em;
+  margin-bottom:14px;
+}
+.cell-code{
+  font-family:'Space Mono',monospace;
+  font-size:.66rem;
+  background:#0d1117;
+  color:#a8d8a8;
+  padding:16px 18px;
+  border-radius:5px;
+  line-height:1.75;
+  overflow-x:auto;
+  margin-bottom:12px;
+  white-space:pre;
+  display:block;
+  border:1px solid #2a3a2a;
+}
+.cell-props{display:flex;flex-direction:column;gap:5px;}
+.cprop{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.74rem;padding:4px 0;
+  border-bottom:1px solid var(--border);
+}
+.cprop:last-child{border-bottom:none;}
+.cpk{color:var(--ink3);}
+.cpv{font-family:'Space Mono',monospace;font-size:.68rem;font-weight:700;}
+
+/* ── ACCESS PATTERN DIAGRAM ─────────────── */
+.access-wrap{
+  background:var(--s0);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:28px;
+  margin-bottom:32px;
+  overflow-x:auto;
+}
+
+/* ── LATENCY CHART ──────────────────────── */
+.lat-chart{
+  background:var(--s0);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:24px;
+  margin-bottom:28px;
+}
+.lat-row{
+  display:flex;align-items:center;gap:14px;
+  margin-bottom:12px;
+}
+.lat-label{
+  font-family:'Space Mono',monospace;
+  font-size:.65rem;
+  min-width:130px;text-align:right;
+  color:var(--ink3);
+}
+.lat-track{
+  flex:1;height:24px;
+  background:var(--s1);
+  border-radius:3px;
+  position:relative;overflow:hidden;
+  border:1px solid var(--border);
+}
+.lat-fill{
+  height:100%;
+  display:flex;align-items:center;padding-left:8px;
+  font-family:'Space Mono',monospace;
+  font-size:.62rem;font-weight:700;
+  color:#fff;
+  transition:width .4s ease;
+  white-space:nowrap;
+}
+.lat-cycles{
+  font-family:'Space Mono',monospace;
+  font-size:.65rem;
+  min-width:90px;color:var(--ink3);
+}
+
+/* ── SRAM STRUCTURE COMPARE ─────────────── */
+.struct-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  margin-bottom:32px;
+}
+.struct-card{
+  border-radius:8px;
+  border:1px solid var(--border);
+  overflow:hidden;
+}
+.struct-header{
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+}
+.struct-hname{
+  font-family:'Playfair Display',serif;
+  font-size:1rem;font-weight:700;
+  margin-bottom:3px;
+}
+.struct-hsub{
+  font-family:'Space Mono',monospace;
+  font-size:.62rem;color:var(--ink4);
+}
+.struct-body{padding:18px;}
+.struct-code{
+  font-family:'Space Mono',monospace;
+  font-size:.62rem;
+  background:#0d1117;
+  color:#c8e6c9;
+  padding:14px 16px;border-radius:4px;
+  line-height:1.72;
+  margin-bottom:12px;
+  overflow-x:auto;
+  white-space:pre;
+  display:block;
+  border:1px solid #2a3a2a;
+  tab-size:2;
+}
+.struct-steps{display:flex;flex-direction:column;gap:6px;}
+.sstep{
+  display:flex;gap:8px;align-items:flex-start;
+  font-size:.76rem;color:var(--ink2);
+}
+.sstep-n{
+  font-family:'Space Mono',monospace;
+  font-size:.62rem;
+  min-width:20px;
+  padding-top:2px;
+  color:var(--ink4);
+}
+
+/* ── COVERAGE VISUAL ─────────────────────── */
+.cov-visual{
+  background:var(--s0);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:24px;
+  margin-bottom:28px;
+}
+
+/* ── QUICK REF GRID ──────────────────────── */
+.qref-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:14px;
+  margin-bottom:28px;
+}
+.qref-card{
+  background:var(--s0);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:16px;
+  border-top:3px solid;
+  transition:transform .15s,box-shadow .15s;
+}
+.qref-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 4px 14px #00000010;
+}
+.qref-level{
+  font-family:'Space Mono',monospace;
+  font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:6px;
+}
+.qref-name{
+  font-family:'Playfair Display',serif;
+  font-size:1rem;font-weight:700;
+  margin-bottom:10px;
+}
+.qref-rows{display:flex;flex-direction:column;gap:4px;}
+.qref-row{
+  display:flex;justify-content:space-between;
+  font-size:.72rem;padding:3px 0;
+  border-bottom:1px dashed var(--border);
+}
+.qref-row:last-child{border-bottom:none;}
+.qrk{color:var(--ink3);}
+.qrv{font-family:'Space Mono',monospace;font-size:.66rem;font-weight:700;}
+
+/* ── DECISION FLOWCHART ─────────────────── */
+.flow-wrap{
+  background:var(--s0);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:28px;
+  margin-bottom:32px;
+  overflow-x:auto;
+}
+
+/* ── FOOTER ─────────────────────────────── */
+.page-footer{
+  background:var(--ink);
+  padding:28px 64px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;
+}
+.ft{
+  font-family:'Space Mono',monospace;
+  font-size:.58rem;color:#6b5f4a;
+}
+
+/* print */
+@media print{
+  .toc,.cover-chips,nav{display:none;}
+  .page{grid-template-columns:1fr;}
+  .content{padding:20px;}
+}
+
+@media(max-width:900px){
+  .page{grid-template-columns:1fr;}
+  .toc{display:none;}
+  .cover,.content,nav,.page-footer{padding-left:20px;padding-right:20px;}
+  .cell-grid,.struct-grid{grid-template-columns:1fr;}
+}
+
+svg{font-family:'Space Mono',monospace;}
+
+/* any inline dark mono boxes */
+.struct-body [style*="background:#"],
+.cell-card [style*="background:#0"],
+.cell-card [style*="background:var(--s3)"] {
+  font-family:'Space Mono',monospace;
+}
+/* syntax highlight colours inside code blocks */
+.cell-code .hl-key  { color:#79c0ff; }
+.cell-code .hl-val  { color:#a8d8a8; }
+.cell-code .hl-cmt  { color:#6a9955; }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Fix all code blocks — strip common leading whitespace (dedent)
+  document.querySelectorAll('.cell-code, .struct-code').forEach(function(el) {
+    var text = el.textContent;
+    // Split into lines
+    var lines = text.split('\n');
+    // Remove first and last line if empty
+    if (lines[0].trim() === '') lines.shift();
+    if (lines[lines.length-1].trim() === '') lines.pop();
+    // Find minimum indentation (ignore empty lines)
+    var minIndent = Infinity;
+    lines.forEach(function(line) {
+      if (line.trim().length > 0) {
+        var indent = line.match(/^(\s*)/)[1].length;
+        if (indent < minIndent) minIndent = indent;
+      }
+    });
+    if (minIndent === Infinity) minIndent = 0;
+    // Strip common indent
+    var dedented = lines.map(function(line) {
+      return line.slice(minIndent);
+    }).join('\n');
+    el.textContent = dedented;
+  });
+});
+</script>
+</head>
+<body>
+
+<!-- ══ COVER ═══════════════════════════════════════════════ -->
+<header class="cover">
+  <div class="cover-inner">
+    <div class="doc-tag">Reference Document · Rev 1.0 · AMBA 5 CHI</div>
+    <h1>Cache Hierarchy<br>&amp; <em>Snoop Filter</em><br>Architecture</h1>
+    <p class="cover-sub">
+      A complete reference covering L1, L2, L3 cache SRAM structures,
+      the CHI Snoop Filter CAM architecture, structural differences,
+      cost analysis, access patterns, and system-level design trade-offs.
+    </p>
+    <div class="cover-chips">
+      <span class="cchip cc-l1">L1 Cache · Private · 4–64KB</span>
+      <span class="cchip cc-l2">L2 Cache · Private · 128KB–4MB</span>
+      <span class="cchip cc-l3">L3 Cache · Shared · 4–256MB</span>
+      <span class="cchip cc-sf">Snoop Filter · CAM · 64KB–8MB</span>
+      <span class="cchip cc-ram">DRAM · Off-chip · GB range</span>
+    </div>
+  </div>
+</header>
+
+<!-- ══ NAV ══════════════════════════════════════════════════ -->
+<nav>
+  <a href="#hierarchy">Hierarchy</a>
+  <a href="#l1">L1 Cache</a>
+  <a href="#l2">L2 Cache</a>
+  <a href="#l3">L3 Cache</a>
+  <a href="#sf">Snoop Filter</a>
+  <a href="#sram">SRAM vs CAM</a>
+  <a href="#compare">Full Compare</a>
+  <a href="#latency">Latency</a>
+  <a href="#coverage">Coverage</a>
+  <a href="#quickref">Quick Ref</a>
+</nav>
+
+<div class="page">
+
+<!-- ══ TOC SIDEBAR ══════════════════════════════════════════ -->
+<aside class="toc">
+  <div class="toc-title">Contents</div>
+
+  <div class="toc-section">
+    <div class="toc-sec-label">Overview</div>
+    <a href="#hierarchy">Memory Hierarchy</a>
+    <a href="#pyramid">Hierarchy Pyramid</a>
+    <a href="#purpose">Why Multiple Levels</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-sec-label">Cache Levels</div>
+    <a href="#l1">L1 — Instruction &amp; Data</a>
+    <a href="#l2">L2 — Unified Private</a>
+    <a href="#l3">L3 — Shared Last Level</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-sec-label">Snoop Filter</div>
+    <a href="#sf">What It Is</a>
+    <a href="#sf-structure">Internal Structure</a>
+    <a href="#sf-cost">Why So Expensive</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-sec-label">Analysis</div>
+    <a href="#sram">SRAM vs CAM Deep Dive</a>
+    <a href="#compare">Full Comparison Table</a>
+    <a href="#latency">Access Latency Chart</a>
+    <a href="#coverage">Coverage Analysis</a>
+    <a href="#decision">Access Decision Flow</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-sec-label">Reference</div>
+    <a href="#quickref">Quick Reference Cards</a>
+    <a href="#glossary">Glossary</a>
+  </div>
+</aside>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════ -->
+<main class="content">
+
+<!-- ═══ SECTION: HIERARCHY ══════════════════════════════════ -->
+<div class="sec" id="hierarchy">
+  <div class="sec-eyebrow">Section 01</div>
+  <div class="sec-title" style="color:var(--ink)">Memory Hierarchy Overview</div>
+  <p class="sec-desc">
+    Modern processors bridge the gap between fast CPU execution (sub-nanosecond) and slow DRAM access
+    (60–100ns) using multiple levels of increasingly large, increasingly slow, increasingly shared caches.
+    Each level serves a different role in the memory subsystem.
+  </p>
+
+  <!-- Pyramid SVG -->
+  <div class="pyramid-wrap" id="pyramid">
+    <div style="font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink4);margin-bottom:16px;">// Memory Hierarchy Pyramid — Size vs Speed</div>
+    <svg viewBox="0 0 860 420" width="100%" style="max-height:440px;">
+
+      <!-- PYRAMID LAYERS -->
+      <!-- L1 (top, smallest, fastest) -->
+      <polygon points="430,30 530,100 330,100" fill="#c0392b18" stroke="#c0392b" stroke-width="2"/>
+      <text x="430" y="72" text-anchor="middle" fill="#c0392b" font-size="13" font-weight="700">L1</text>
+      <text x="430" y="88" text-anchor="middle" fill="#c0392b99" font-size="8">4–64 KB · 1–4 cycles</text>
+
+      <!-- L2 -->
+      <polygon points="330,100 530,100 590,180 270,180" fill="#e67e2214" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="430" y="144" text-anchor="middle" fill="#e67e22" font-size="13" font-weight="700">L2 Cache</text>
+      <text x="430" y="160" text-anchor="middle" fill="#e67e2299" font-size="8">128KB–4MB · 5–15 cycles</text>
+
+      <!-- L3 -->
+      <polygon points="270,180 590,180 670,280 190,280" fill="#2980b912" stroke="#2980b9" stroke-width="1.5"/>
+      <text x="430" y="232" text-anchor="middle" fill="#2980b9" font-size="14" font-weight="700">L3 Cache (LLC)</text>
+      <text x="430" y="250" text-anchor="middle" fill="#2980b999" font-size="8">4MB–256MB · 20–60 cycles · Shared</text>
+
+      <!-- Snoop Filter (alongside L3) -->
+      <rect x="680" y="205" width="160" height="60" rx="6" fill="#27ae6014" stroke="#27ae60" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="760" y="232" text-anchor="middle" fill="#27ae60" font-size="11" font-weight="700">Snoop Filter</text>
+      <text x="760" y="247" text-anchor="middle" fill="#27ae6099" font-size="8">64KB–8MB · CAM</text>
+      <line x1="680" y1="235" x2="670" y2="235" stroke="#27ae6060" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <text x="720" y="280" text-anchor="middle" fill="#27ae6066" font-size="7">Lives inside HN-F</text>
+
+      <!-- DRAM -->
+      <polygon points="190,280 670,280 760,380 100,380" fill="#8e44ad10" stroke="#8e44ad" stroke-width="1.5"/>
+      <text x="430" y="332" text-anchor="middle" fill="#8e44ad" font-size="14" font-weight="700">Main Memory (DRAM)</text>
+      <text x="430" y="350" text-anchor="middle" fill="#8e44ad99" font-size="8">GBs–TBs · 60–100ns · Off-chip</text>
+
+      <!-- LEFT AXIS: Speed -->
+      <line x1="80" y1="30" x2="80" y2="390" stroke="#c8bfae" stroke-width="1"/>
+      <text x="68" y="30" text-anchor="middle" fill="#9a8e7a" font-size="8">FAST</text>
+      <text x="68" y="390" text-anchor="middle" fill="#9a8e7a" font-size="8">SLOW</text>
+      <text x="40" y="210" text-anchor="middle" fill="#9a8e7a" font-size="8" transform="rotate(-90,40,210)">ACCESS SPEED</text>
+      <!-- arrow -->
+      <polygon points="78,35 80,28 82,35" fill="#9a8e7a"/>
+      <polygon points="78,385 80,392 82,385" fill="#9a8e7a"/>
+
+      <!-- RIGHT AXIS: Size -->
+      <line x1="800" y1="30" x2="800" y2="390" stroke="#c8bfae" stroke-width="1"/>
+      <text x="812" y="30" text-anchor="middle" fill="#9a8e7a" font-size="8">SMALL</text>
+      <text x="812" y="390" text-anchor="middle" fill="#9a8e7a" font-size="8">LARGE</text>
+      <text x="835" y="210" text-anchor="middle" fill="#9a8e7a" font-size="8" transform="rotate(90,835,210)">CAPACITY</text>
+      <polygon points="798,35 800,28 802,35" fill="#9a8e7a"/>
+      <polygon points="798,385 800,392 802,385" fill="#9a8e7a"/>
+
+      <!-- PER-CPU vs SHARED labels -->
+      <rect x="100" y="90" width="90" height="18" rx="3" fill="#c0392b18" stroke="#c0392b30" stroke-width="1"/>
+      <text x="145" y="103" text-anchor="middle" fill="#c0392b" font-size="7.5" font-weight="600">Per CPU core</text>
+
+      <rect x="100" y="170" width="90" height="18" rx="3" fill="#e67e2218" stroke="#e67e2230" stroke-width="1"/>
+      <text x="145" y="183" text-anchor="middle" fill="#e67e22" font-size="7.5" font-weight="600">Per CPU core</text>
+
+      <rect x="100" y="260" width="90" height="18" rx="3" fill="#2980b918" stroke="#2980b930" stroke-width="1"/>
+      <text x="145" y="273" text-anchor="middle" fill="#2980b9" font-size="7.5" font-weight="600">Shared cluster</text>
+
+      <!-- transistor cost annotation -->
+      <text x="430" y="408" text-anchor="middle" fill="#9a8e7a" font-size="8">★ Snoop Filter sits logically alongside L3 but uses CAM structure — 2–3× more expensive per bit than L3 SRAM</text>
+    </svg>
+  </div>
+
+  <div class="callout co-key" id="purpose">
+    <strong>Why multiple levels?</strong> A single cache large enough to hold the full working set would be too slow (large SRAM = long access paths). A single cache fast enough for 1-cycle access would be too small (SRAM area scales with size). Multiple levels give you speed where it matters most (L1 for hot data) and capacity where you need it (L3 for large working sets).
+  </div>
+</div>
+
+<!-- ═══ SECTION: L1 ═════════════════════════════════════════ -->
+<div class="sec" id="l1">
+  <div class="sec-eyebrow">Section 02</div>
+  <div class="sec-title" style="color:var(--l1)">L1 Cache — First Level, Fastest</div>
+  <p class="sec-desc">The closest memory to the CPU execution pipeline. Split into separate Instruction (L1-I) and Data (L1-D) caches to allow simultaneous fetch and load/store without structural hazards.</p>
+
+  <div class="cell-grid">
+    <div class="cell-card" style="border-top:3px solid var(--l1);">
+      <div class="cell-title" style="color:var(--l1)">L1-I — Instruction Cache</div>
+      <div class="cell-code">Tag[47:12] | Index[11:6] | Offset[5:0]
+─────────────────────────────────
+Set 0: [Way0: tag+32B] [Way1: tag+32B]
+Set 1: [Way0: tag+32B] [Way1: tag+32B]
+...
+Set N: [Way0: tag+32B] [Way1: tag+32B]
+
+Typical: 4-way set-associative
+         32KB, 64 sets × 4 ways × 128B
+Read-only (no dirty bits needed)</div>
+      <div class="cell-props">
+        <div class="cprop"><span class="cpk">Typical size</span><span class="cpv" style="color:var(--l1)">16–64 KB</span></div>
+        <div class="cprop"><span class="cpk">Associativity</span><span class="cpv">4-way</span></div>
+        <div class="cprop"><span class="cpk">Line size</span><span class="cpv">64 bytes</span></div>
+        <div class="cprop"><span class="cpk">Access latency</span><span class="cpv" style="color:var(--l1)">1–2 cycles</span></div>
+        <div class="cprop"><span class="cpk">Dirty bits</span><span class="cpv">None (RO)</span></div>
+        <div class="cprop"><span class="cpk">ECC</span><span class="cpv">Parity only</span></div>
+        <div class="cprop"><span class="cpk">Shared?</span><span class="cpv">No — per core</span></div>
+      </div>
+    </div>
+    <div class="cell-card" style="border-top:3px solid var(--l1);">
+      <div class="cell-title" style="color:var(--l1)">L1-D — Data Cache</div>
+      <div class="cell-code">Tag[47:12] | Index[11:6] | Offset[5:0]
+─────────────────────────────────
+Each way stores:
+  [Valid][Dirty][Tag][State][Data×64B]
+
+Write policy: Write-back
+Replacement:  PLRU (pseudo-LRU)
+Coherency:    MOESI / CHI states
+              UC, UD, SC, SD, I
+
+Must handle:  store-to-load forwarding
+              write buffer
+              load-store queue</div>
+      <div class="cell-props">
+        <div class="cprop"><span class="cpk">Typical size</span><span class="cpv" style="color:var(--l1)">16–64 KB</span></div>
+        <div class="cprop"><span class="cpk">Associativity</span><span class="cpv">4–8 way</span></div>
+        <div class="cprop"><span class="cpk">Line size</span><span class="cpv">64 bytes</span></div>
+        <div class="cprop"><span class="cpk">Access latency</span><span class="cpv" style="color:var(--l1)">3–5 cycles</span></div>
+        <div class="cprop"><span class="cpk">Dirty bits</span><span class="cpv" style="color:var(--l1)">Yes (write-back)</span></div>
+        <div class="cprop"><span class="cpk">Bandwidth</span><span class="cpv">Full pipeline width</span></div>
+        <div class="cprop"><span class="cpk">Shared?</span><span class="cpv">No — per core</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout co-info">
+    <strong>L1 Design Constraint:</strong> L1 must respond within 1–4 cycles to avoid pipeline stalls. This limits its size — larger SRAM = longer wire delays = more cycles. Most designs cap L1 at 64KB. Some use virtually-indexed physically-tagged (VIPT) to start lookups before TLB resolution completes.
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>L1-I (Instruction)</th>
+          <th>L1-D (Data)</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Size range</td><td>16–64 KB</td><td>16–64 KB</td><td>Limited by latency budget</td></tr>
+        <tr><td>Access latency</td><td style="color:var(--l1);font-weight:700">1–2 cycles</td><td style="color:var(--l1);font-weight:700">3–5 cycles</td><td>I-cache faster (simpler)</td></tr>
+        <tr><td>Associativity</td><td>4-way</td><td>4–8 way</td><td>D-cache needs higher assoc</td></tr>
+        <tr><td>Writeback</td><td><span class="cross">No (RO)</span></td><td><span class="tick">Yes</span></td><td>Instructions never written</td></tr>
+        <tr><td>Dirty bits</td><td><span class="cross">No</span></td><td><span class="tick">Yes</span></td><td>One per cache line</td></tr>
+        <tr><td>ECC / Parity</td><td>Parity</td><td>SECDED ECC</td><td>Data needs stronger protection</td></tr>
+        <tr><td>CHI state bits</td><td>Valid/Invalid only</td><td>UC/UD/SC/SD/I</td><td>Full MOESI on D-cache</td></tr>
+        <tr><td>Shared across cores</td><td><span class="cross">No</span></td><td><span class="cross">No</span></td><td>Strictly private</td></tr>
+        <tr><td>Bandwidth (read)</td><td>1–2 instr/cycle</td><td>2 loads/cycle</td><td>Dual-port data cache common</td></tr>
+        <tr><td>Transistors/bit</td><td colspan="2" style="text-align:center">6T SRAM</td><td>Standard bit cell</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ SECTION: L2 ═════════════════════════════════════════ -->
+<div class="sec" id="l2">
+  <div class="sec-eyebrow">Section 03</div>
+  <div class="sec-title" style="color:var(--l2)">L2 Cache — Unified Private Buffer</div>
+  <p class="sec-desc">The L2 acts as a combined instruction and data buffer, catching misses from both L1-I and L1-D. Still private to one CPU core (or a small cluster). Significantly larger than L1 but with higher latency.</p>
+
+  <div class="cell-card" style="border-top:3px solid var(--l2);margin-bottom:20px;">
+    <div class="cell-title" style="color:var(--l2)">L2 Cache Entry Structure</div>
+    <div class="cell-code">Per cache line entry (64B line):
+┌──────────────────────────────────────────────────┐
+│ Valid(1) │ Dirty(1) │ State(3) │ Tag(38b) │ Data(64B×8) │
+└──────────────────────────────────────────────────┘
+
+Tag comparison:
+  Address → Index[13:6] → jump to set (256 sets typical)
+  Compare tag against 8 ways simultaneously
+  8 comparators fire in parallel → hit or miss in 1 read
+
+Write-back policy: dirty lines written to L3 on eviction
+Victim cache: some L2s have a small fully-associative victim cache
+              to reduce conflict misses at set boundaries</div>
+    <div class="cell-props">
+      <div class="cprop"><span class="cpk">Typical size</span><span class="cpv" style="color:var(--l2)">256KB – 4MB</span></div>
+      <div class="cprop"><span class="cpk">Associativity</span><span class="cpv">8–16 way</span></div>
+      <div class="cprop"><span class="cpk">Line size</span><span class="cpv">64 bytes</span></div>
+      <div class="cprop"><span class="cpk">Access latency</span><span class="cpv" style="color:var(--l2)">5–15 cycles</span></div>
+      <div class="cprop"><span class="cpk">ECC</span><span class="cpv">SECDED (full)</span></div>
+      <div class="cprop"><span class="cpk">Shared?</span><span class="cpv">No — per core (or 2-core cluster)</span></div>
+      <div class="cprop"><span class="cpk">Inclusivity</span><span class="cpv">Inclusive or exclusive of L1</span></div>
+    </div>
+  </div>
+
+  <div class="callout co-warn">
+    <strong>L2 Inclusivity Policy:</strong> Some designs make L2 <em>inclusive</em> of L1 (every L1 line also exists in L2). This simplifies coherency snoop handling — an L2 hit means the line is definitely present. Other designs use <em>exclusive</em> L2 (L2 holds only lines NOT in L1), maximising effective capacity. CHI does not mandate either policy.
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr><th>Design Parameter</th><th>Small (Mobile efficiency core)</th><th>Medium (Mobile big core)</th><th>Large (Server core)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>L2 size</td><td>128–256 KB</td><td>512KB – 1MB</td><td>2–4 MB</td></tr>
+        <tr><td>Associativity</td><td>8-way</td><td>8-way</td><td>16-way</td></tr>
+        <tr><td>Sets</td><td>256–512</td><td>1K–2K</td><td>4K–8K</td></tr>
+        <tr><td>Access latency</td><td>5–8 cycles</td><td>8–12 cycles</td><td>12–18 cycles</td></tr>
+        <tr><td>Read bandwidth</td><td>32 B/cycle</td><td>64 B/cycle</td><td>64 B/cycle</td></tr>
+        <tr><td>Example device</td><td>Cortex-A510</td><td>Cortex-X3</td><td>Neoverse N2</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ SECTION: L3 ═════════════════════════════════════════ -->
+<div class="sec" id="l3">
+  <div class="sec-eyebrow">Section 04</div>
+  <div class="sec-title" style="color:var(--l3)">L3 Cache — Shared Last-Level Cache</div>
+  <p class="sec-desc">The Last Level Cache (LLC) is shared across all CPU cores in a cluster. It is the final line of defence before going off-chip to DRAM. Much larger but significantly slower than L1/L2. Connects directly to the CHI interconnect.</p>
+
+  <div class="cell-card" style="border-top:3px solid var(--l3);margin-bottom:20px;">
+    <div class="cell-title" style="color:var(--l3)">L3 Cache Entry Structure</div>
+    <div class="cell-code">Per cache line entry (more complex than L1/L2):
+┌─────────────────────────────────────────────────────────────────┐
+│ Valid │ Dirty │ State(3) │ Tag(38b) │ CoreID(4) │ ECC │ Data(64B) │
+└─────────────────────────────────────────────────────────────────┘
+
+Additional complexity vs L1/L2:
+  → CoreID: tracks which L1/L2 may have a copy (directory function)
+  → Wider ECC: stronger protection (SECDED per 64B + check bits)
+  → Snoop directory: some L3 designs embed limited directory tracking
+  → Banked SRAM: 8–32 banks to serve multiple cores simultaneously
+  → Hash-based interleaving: distribute hot addresses across banks
+
+Multi-bank design (16-core shared L3):
+  Bank 0: handles addr[5:4] = 00
+  Bank 1: handles addr[5:4] = 01
+  Bank 2: handles addr[5:4] = 10
+  Bank 3: handles addr[5:4] = 11
+  → 4 concurrent accesses from different cores possible</div>
+    <div class="cell-props">
+      <div class="cprop"><span class="cpk">Typical size</span><span class="cpv" style="color:var(--l3)">4MB – 256MB</span></div>
+      <div class="cprop"><span class="cpk">Associativity</span><span class="cpv">16–32 way</span></div>
+      <div class="cprop"><span class="cpk">Banks</span><span class="cpv">8–64 banks</span></div>
+      <div class="cprop"><span class="cpk">Access latency</span><span class="cpv" style="color:var(--l3)">20–60 cycles</span></div>
+      <div class="cprop"><span class="cpk">Shared?</span><span class="cpv" style="color:var(--l3)">Yes — all cores in cluster</span></div>
+      <div class="cprop"><span class="cpk">ECC</span><span class="cpv">SECDED per chunk</span></div>
+      <div class="cprop"><span class="cpk">Transistors/bit</span><span class="cpv">6T SRAM (standard)</span></div>
+    </div>
+  </div>
+
+  <div class="callout co-info">
+    <strong>L3 and CHI:</strong> The L3 cache sits at the boundary between the CPU cluster and the CHI mesh. When L3 misses, it issues a CHI REQ to the HN-F. When another CPU on a different cluster requests a line held here, the HN-F's Snoop Filter detects it and issues a CHI SNP back to this L3 (technically to the RN-F interface of this cluster). The L3 must respond with a SnpResp or SnpRespData on the DAT channel.
+  </div>
+</div>
+
+<!-- ═══ SECTION: SNOOP FILTER ═══════════════════════════════ -->
+<div class="sec" id="sf">
+  <div class="sec-eyebrow">Section 05</div>
+  <div class="sec-title" style="color:var(--sf)">Snoop Filter — The Coherency Tracker</div>
+  <p class="sec-desc">The Snoop Filter lives inside the HN-F node (not inside any CPU). It does NOT store actual data — it stores only the metadata needed to answer: "which CPU caches currently hold this cache line, and in what state?"</p>
+
+  <div class="callout co-crit">
+    <strong>Critical distinction:</strong> Caches store <em>data</em>. The Snoop Filter stores only <em>tracking metadata</em>. Yet it costs 2–3× more per bit than cache SRAM. This is the central paradox of snoop filter design — expensive hardware that holds no useful data, only bookkeeping.
+  </div>
+
+  <div class="cell-card" style="border-top:3px solid var(--sf);margin-bottom:20px;" id="sf-structure">
+    <div class="cell-title" style="color:var(--sf)">Snoop Filter Entry Structure (CAM-based)</div>
+    <div class="cell-code">Per entry — NO DATA PAYLOAD:
+┌─────────────────────────────────────────────────────────┐
+│ Valid(1) │ Tag(38b) │ Sharers(N bits) │ State(3) │ Dirty(1) │
+└─────────────────────────────────────────────────────────┘
+  N = number of RN-F nodes in system (e.g. 8 bits for 8 CPUs)
+
+Example with 8 CPUs, 44-bit PA:
+  Valid:   1 bit
+  Tag:     38 bits  (44 - 6 offset bits)
+  Sharers: 8 bits   (bitmap: bit0=CPU0, bit1=CPU1, ...)
+  State:   3 bits   (UC=001, SC=010, UD=011, SD=100)
+  Dirty:   1 bit    (PD flag pending)
+  ─────────────────
+  Total:  51 bits → padded to 64 bits (8 bytes) per entry
+
+  8K entries × 8 bytes = 64KB SRAM for metadata only
+  8K entries × 64 bytes of actual data = 512KB L3 coverage
+
+CAM search operation:
+  Incoming address → broadcast to ALL entries simultaneously
+  Each entry compares its tag in parallel
+  Match found → read sharer bitmap → target those CPUs only
+  No match → broadcast snoop to all CPUs</div>
+    <div class="cell-props">
+      <div class="cprop"><span class="cpk">Stores data?</span><span class="cpv" style="color:var(--l1)">NO — metadata only</span></div>
+      <div class="cprop"><span class="cpk">Lookup type</span><span class="cpv" style="color:var(--sf)">Content Addressable (CAM)</span></div>
+      <div class="cprop"><span class="cpk">Transistors/bit</span><span class="cpv" style="color:var(--l1)">12–16T (2–3× cache)</span></div>
+      <div class="cprop"><span class="cpk">Search scope</span><span class="cpv">ALL entries simultaneously</span></div>
+      <div class="cprop"><span class="cpk">Typical size</span><span class="cpv" style="color:var(--sf)">64KB – 8MB</span></div>
+      <div class="cprop"><span class="cpk">Entries</span><span class="cpv">1K – 262K</span></div>
+      <div class="cprop"><span class="cpk">Location</span><span class="cpv">Inside HN-F (not CPU)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION: SRAM vs CAM ════════════════════════════════ -->
+<div class="sec" id="sram">
+  <div class="sec-eyebrow">Section 06</div>
+  <div class="sec-title">SRAM vs CAM — Deep Dive</div>
+  <p class="sec-desc">The fundamental structural difference between cache SRAM (set-associative) and Snoop Filter CAM (fully-associative) explains why the filter is so much more expensive per bit.</p>
+
+  <div class="struct-grid">
+    <!-- SRAM -->
+    <div class="struct-card" style="border-top:3px solid var(--l3);">
+      <div class="struct-header" style="background:#2980b910;">
+        <div class="struct-hname" style="color:var(--l3)">6T SRAM Cell — Cache</div>
+        <div class="struct-hsub">Standard bit cell · Set-associative access</div>
+      </div>
+      <div class="struct-body">
+        <div class="struct-code">
+       VDD
+        │
+    ┌──[P1]──┬──[P2]──┐
+    │         │         │
+BL─[N3]──Q──Q̄──[N4]─BL̄
+    │         │         │
+    └──[N1]──┴──[N2]──┘
+        │
+       GND
+
+6 transistors: 2 PMOS (P1,P2)
+               4 NMOS (N1,N2,N3,N4)
+Q and Q̄ form cross-coupled latch</div>
+        <div class="struct-steps">
+          <div class="sstep"><div class="sstep-n">1.</div><span>Use <strong>INDEX bits</strong> of address to select one row (set)</span></div>
+          <div class="sstep"><div class="sstep-n">2.</div><span>Activate only that row's word-line</span></div>
+          <div class="sstep"><div class="sstep-n">3.</div><span>Read N tags (N = associativity, e.g. 8)</span></div>
+          <div class="sstep"><div class="sstep-n">4.</div><span>Compare 8 tags in parallel with 8 comparators</span></div>
+          <div class="sstep"><div class="sstep-n">5.</div><span>Hit → read data. Miss → next level</span></div>
+        </div>
+        <div style="margin-top:12px;padding:10px;background:var(--s1);border-radius:4px;font-family:'Space Mono',monospace;font-size:.65rem;line-height:1.6;">
+          <span style="color:var(--sf)">✓ Only 1 row activated per lookup</span><br>
+          <span style="color:var(--sf)">✓ Only N comparators (small N)</span><br>
+          <span style="color:var(--sf)">✓ Low power — most SRAM idle</span><br>
+          <span style="color:var(--sf)">✓ Scales well to 256MB+</span><br>
+          <span style="color:var(--l1)">✗ Cannot search by content</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAM -->
+    <div class="struct-card" style="border-top:3px solid var(--sf);">
+      <div class="struct-header" style="background:#27ae6010;">
+        <div class="struct-hname" style="color:var(--sf)">12–16T CAM Cell — Snoop Filter</div>
+        <div class="struct-hsub">Content Addressable Memory · Fully-associative</div>
+      </div>
+      <div class="struct-body">
+        <div class="struct-code">
+Standard 6T SRAM cell
+         +
+Match Line (ML) circuitry:
+
+       VDD
+        │
+    [Precharge]
+        │
+ML─────[N5]────── GND
+        │
+    [N6 gated by Q]
+        │
+    [N7 gated by search_data]
+
+12–16T total: 6T store + 6–10T match
+ML precharged HIGH each cycle
+Mismatch: one transistor pulls ML LOW
+Match: ML stays HIGH → row matched!</div>
+        <div class="struct-steps">
+          <div class="sstep"><div class="sstep-n">1.</div><span>Broadcast search address to ALL rows simultaneously</span></div>
+          <div class="sstep"><div class="sstep-n">2.</div><span>Every row's match circuit fires in parallel</span></div>
+          <div class="sstep"><div class="sstep-n">3.</div><span>Any mismatch pulls that row's Match Line low</span></div>
+          <div class="sstep"><div class="sstep-n">4.</div><span>Remaining HIGH match lines = address found</span></div>
+          <div class="sstep"><div class="sstep-n">5.</div><span>Read sharer bitmap from matching row</span></div>
+        </div>
+        <div style="margin-top:12px;padding:10px;background:var(--s1);border-radius:4px;font-family:'Space Mono',monospace;font-size:.65rem;line-height:1.6;">
+          <span style="color:var(--sf)">✓ Can search by content (address)</span><br>
+          <span style="color:var(--sf)">✓ Fully associative — no conflicts</span><br>
+          <span style="color:var(--l1)">✗ ALL rows activate every lookup</span><br>
+          <span style="color:var(--l1)">✗ 2–3× transistors per bit</span><br>
+          <span style="color:var(--l1)">✗ High power — match lines loaded</span><br>
+          <span style="color:var(--l1)">✗ Scales poorly beyond ~8MB</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Match line scaling problem -->
+  <div class="access-wrap" id="sf-cost">
+    <div style="font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink4);margin-bottom:14px;">// Match Line Scaling Problem</div>
+    <svg viewBox="0 0 820 220" width="100%" style="max-height:240px;">
+      <!-- Small CAM (fast) -->
+      <rect x="20" y="20" width="240" height="180" rx="6" fill="#27ae600a" stroke="#27ae6040" stroke-width="1"/>
+      <text x="140" y="40" text-anchor="middle" fill="#27ae60" font-size="10" font-weight="700">Small CAM (1K entries)</text>
+
+      <!-- Match line short -->
+      <line x1="60" y1="60" x2="60" y2="180" stroke="#27ae60" stroke-width="3"/>
+      <text x="68" y="75" fill="#27ae6088" font-size="7">ML</text>
+      <!-- Cells short -->
+      <rect x="80" y="65" width="50" height="14" rx="2" fill="#27ae6020" stroke="#27ae6040" stroke-width="1"/>
+      <line x1="80" y1="72" x2="60" y2="72" stroke="#27ae6060" stroke-width="1"/>
+      <rect x="80" y="85" width="50" height="14" rx="2" fill="#27ae6020" stroke="#27ae6040" stroke-width="1"/>
+      <line x1="80" y1="92" x2="60" y2="92" stroke="#27ae6060" stroke-width="1"/>
+      <rect x="80" y="105" width="50" height="14" rx="2" fill="#27ae6020" stroke="#27ae6040" stroke-width="1"/>
+      <line x1="80" y1="112" x2="60" y2="112" stroke="#27ae6060" stroke-width="1"/>
+      <text x="115" y="140" text-anchor="middle" fill="#27ae6066" font-size="8">· · ·</text>
+      <text x="140" y="165" text-anchor="middle" fill="#27ae60" font-size="9">Short ML = fast discharge</text>
+      <text x="140" y="178" text-anchor="middle" fill="#27ae60" font-size="9">Low capacitance ✓</text>
+
+      <!-- Large CAM (slow, high power) -->
+      <rect x="300" y="20" width="500" height="180" rx="6" fill="#c0392b0a" stroke="#c0392b40" stroke-width="1"/>
+      <text x="550" y="40" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700">Large CAM (64K entries) — Problem!</text>
+
+      <!-- Match line long -->
+      <line x1="340" y1="55" x2="340" y2="185" stroke="#c0392b" stroke-width="3"/>
+      <text x="350" y="65" fill="#c0392b88" font-size="7">ML (long)</text>
+      <!-- Many cells -->
+      <rect x="360" y="58" width="50" height="10" rx="2" fill="#c0392b18" stroke="#c0392b40" stroke-width="1"/>
+      <line x1="360" y1="63" x2="340" y2="63" stroke="#c0392b60" stroke-width="1"/>
+      <rect x="360" y="72" width="50" height="10" rx="2" fill="#c0392b18" stroke="#c0392b40" stroke-width="1"/>
+      <line x1="360" y1="77" x2="340" y2="77" stroke="#c0392b60" stroke-width="1"/>
+      <rect x="360" y="86" width="50" height="10" rx="2" fill="#c0392b18" stroke="#c0392b40" stroke-width="1"/>
+      <line x1="360" y1="91" x2="340" y2="91" stroke="#c0392b60" stroke-width="1"/>
+      <rect x="360" y="100" width="50" height="10" rx="2" fill="#c0392b18" stroke="#c0392b40" stroke-width="1"/>
+      <line x1="360" y1="105" x2="340" y2="105" stroke="#c0392b60" stroke-width="1"/>
+      <rect x="360" y="114" width="50" height="10" rx="2" fill="#c0392b18" stroke="#c0392b40" stroke-width="1"/>
+      <line x1="360" y1="119" x2="340" y2="119" stroke="#c0392b60" stroke-width="1"/>
+      <rect x="360" y="128" width="50" height="10" rx="2" fill="#c0392b18" stroke="#c0392b40" stroke-width="1"/>
+      <line x1="360" y1="133" x2="340" y2="133" stroke="#c0392b60" stroke-width="1"/>
+      <text x="390" y="152" text-anchor="middle" fill="#c0392b66" font-size="8">· · · · · ·</text>
+      <text x="390" y="163" text-anchor="middle" fill="#c0392b66" font-size="8">63,994 more cells</text>
+
+      <!-- Problem annotations -->
+      <rect x="440" y="55" width="340" height="140" rx="5" fill="#c0392b08" stroke="#c0392b25" stroke-width="1"/>
+      <text x="610" y="78" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700">Scaling Problems:</text>
+      <text x="460" y="98" fill="#c0392b99" font-size="8.5">⚡ High capacitance on match line</text>
+      <text x="460" y="114" fill="#c0392b99" font-size="8.5">⚡ Slow to discharge → more cycles</text>
+      <text x="460" y="130" fill="#c0392b99" font-size="8.5">⚡ All N cells load ML every lookup</text>
+      <text x="460" y="146" fill="#c0392b99" font-size="8.5">⚡ Leakage × 64K = high idle power</text>
+      <text x="460" y="162" fill="#c0392b99" font-size="8.5">⚡ Wire routing across 64K rows hard</text>
+      <text x="460" y="178" fill="#c0392b99" font-size="8.5">⚡ Area × 2–3× vs same-size SRAM</text>
+    </svg>
+    <div style="margin-top:12px;font-size:.78rem;color:var(--ink3);font-style:italic;">
+      Solution: Modern snoop filters use <strong>set-associative CAM</strong> — index bits select a subset of rows (e.g. 32 rows), then CAM-compare only those. This limits match line length while preserving content-addressable lookup within the set.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION: FULL COMPARE ══════════════════════════════ -->
+<div class="sec" id="compare">
+  <div class="sec-eyebrow">Section 07</div>
+  <div class="sec-title">Complete Comparison Table</div>
+  <p class="sec-desc">Every significant design parameter compared across all four memory structures.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Parameter</th>
+          <th style="color:var(--l1)">L1 Cache</th>
+          <th style="color:var(--l2)">L2 Cache</th>
+          <th style="color:var(--l3)">L3 Cache</th>
+          <th style="color:var(--sf)">Snoop Filter</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Purpose</strong></td>
+          <td>Hot data near pipeline</td>
+          <td>L1 miss buffer</td>
+          <td>Shared last level cache</td>
+          <td>Track who caches what</td>
+        </tr>
+        <tr>
+          <td><strong>Stores data?</strong></td>
+          <td><span class="tick">✔ Yes</span></td>
+          <td><span class="tick">✔ Yes</span></td>
+          <td><span class="tick">✔ Yes</span></td>
+          <td><span class="cross">✘ No — metadata only</span></td>
+        </tr>
+        <tr>
+          <td><strong>Typical size</strong></td>
+          <td>16–64 KB</td>
+          <td>128KB – 4MB</td>
+          <td>4MB – 256MB</td>
+          <td>64KB – 8MB</td>
+        </tr>
+        <tr>
+          <td><strong>Structure type</strong></td>
+          <td>Set-associative SRAM</td>
+          <td>Set-associative SRAM</td>
+          <td>Set-associative SRAM</td>
+          <td style="color:var(--sf);font-weight:700">CAM / Full-associative</td>
+        </tr>
+        <tr>
+          <td><strong>Transistors/bit</strong></td>
+          <td>6T</td>
+          <td>6T</td>
+          <td>6T</td>
+          <td style="color:var(--l1);font-weight:700">12–16T (2–3× more!)</td>
+        </tr>
+        <tr>
+          <td><strong>Lookup method</strong></td>
+          <td>Index → compare N tags</td>
+          <td>Index → compare N tags</td>
+          <td>Index → compare N tags</td>
+          <td style="color:var(--sf)">Broadcast → ALL rows search</td>
+        </tr>
+        <tr>
+          <td><strong>Comparators needed</strong></td>
+          <td>4–8</td>
+          <td>8–16</td>
+          <td>16–32</td>
+          <td style="color:var(--l1)">1 per row (thousands!)</td>
+        </tr>
+        <tr>
+          <td><strong>Access latency</strong></td>
+          <td style="color:var(--l1);font-weight:700">1–5 cycles</td>
+          <td style="color:var(--l2);font-weight:700">5–15 cycles</td>
+          <td style="color:var(--l3);font-weight:700">20–60 cycles</td>
+          <td style="color:var(--sf);font-weight:700">&lt;5 ns (target)</td>
+        </tr>
+        <tr>
+          <td><strong>Power per lookup</strong></td>
+          <td>Very Low</td>
+          <td>Low</td>
+          <td>Medium</td>
+          <td style="color:var(--l1)">High (all rows active)</td>
+        </tr>
+        <tr>
+          <td><strong>Shared across cores</strong></td>
+          <td><span class="cross">No — private</span></td>
+          <td><span class="cross">No — private</span></td>
+          <td><span class="tick">Yes — cluster shared</span></td>
+          <td><span class="tick">Yes — system-wide</span></td>
+        </tr>
+        <tr>
+          <td><strong>Associativity</strong></td>
+          <td>4–8 way</td>
+          <td>8–16 way</td>
+          <td>16–32 way</td>
+          <td>Full assoc (or set+CAM)</td>
+        </tr>
+        <tr>
+          <td><strong>Dirty bits</strong></td>
+          <td>Yes (D-cache)</td>
+          <td>Yes</td>
+          <td>Yes</td>
+          <td>Yes (PD flag)</td>
+        </tr>
+        <tr>
+          <td><strong>ECC type</strong></td>
+          <td>Parity / SECDED</td>
+          <td>SECDED</td>
+          <td>SECDED full</td>
+          <td>Parity (metadata)</td>
+        </tr>
+        <tr>
+          <td><strong>Location in SoC</strong></td>
+          <td>Inside CPU core</td>
+          <td>Inside CPU core</td>
+          <td>CPU cluster edge</td>
+          <td style="color:var(--sf)">Inside HN-F node</td>
+        </tr>
+        <tr>
+          <td><strong>Replacement policy</strong></td>
+          <td>PLRU</td>
+          <td>PLRU</td>
+          <td>PLRU / LRU-approx</td>
+          <td>PLRU</td>
+        </tr>
+        <tr>
+          <td><strong>On eviction cost</strong></td>
+          <td>Writeback to L2</td>
+          <td>Writeback to L3</td>
+          <td>Writeback to DRAM</td>
+          <td style="color:var(--l1)">Forced invalidation SNP!</td>
+        </tr>
+        <tr>
+          <td><strong>Cost per bit vs L3</strong></td>
+          <td>~1.2× (faster cell)</td>
+          <td>~1.0× (baseline)</td>
+          <td>1.0× (baseline)</td>
+          <td style="color:var(--l1);font-weight:700">2–3× (CAM overhead)</td>
+        </tr>
+        <tr>
+          <td><strong>Coverage of L3</strong></td>
+          <td>N/A</td>
+          <td>N/A</td>
+          <td>100% (is the cache)</td>
+          <td style="color:var(--l1)">Only 5–15% of all L3</td>
+        </tr>
+        <tr>
+          <td><strong>Miss consequence</strong></td>
+          <td>Go to L2</td>
+          <td>Go to L3</td>
+          <td>CHI REQ to DRAM</td>
+          <td style="color:var(--l1)">Broadcast snoop to all RN-Fs</td>
+        </tr>
+        <tr>
+          <td><strong>Scalability</strong></td>
+          <td>Easy to 64KB</td>
+          <td>Easy to 4MB</td>
+          <td>Manageable to 256MB</td>
+          <td style="color:var(--l1)">Hard beyond 8–16MB</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ SECTION: LATENCY ════════════════════════════════════ -->
+<div class="sec" id="latency">
+  <div class="sec-eyebrow">Section 08</div>
+  <div class="sec-title">Access Latency Comparison</div>
+  <p class="sec-desc">Latency values for a typical high-performance mobile SoC at 3GHz. All values are indicative — actual latency depends on frequency, process node, and microarchitecture.</p>
+
+  <div class="lat-chart">
+    <div style="font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink4);margin-bottom:18px;">// Memory Access Latency (cycles &amp; nanoseconds)</div>
+    <div class="lat-row">
+      <span class="lat-label">L1-I Cache</span>
+      <div class="lat-track">
+        <div class="lat-fill" style="width:1.5%;background:var(--l1)">1–2c</div>
+      </div>
+      <span class="lat-cycles" style="color:var(--l1)">1–2 cyc · &lt;1 ns</span>
+    </div>
+    <div class="lat-row">
+      <span class="lat-label">L1-D Cache</span>
+      <div class="lat-track">
+        <div class="lat-fill" style="width:3%;background:var(--l1)">3–5c</div>
+      </div>
+      <span class="lat-cycles" style="color:var(--l1)">3–5 cyc · 1–2 ns</span>
+    </div>
+    <div class="lat-row">
+      <span class="lat-label">L2 Cache</span>
+      <div class="lat-track">
+        <div class="lat-fill" style="width:8%;background:var(--l2)">8–15c</div>
+      </div>
+      <span class="lat-cycles" style="color:var(--l2)">8–15 cyc · 3–5 ns</span>
+    </div>
+    <div class="lat-row">
+      <span class="lat-label">Snoop Filter lookup</span>
+      <div class="lat-track">
+        <div class="lat-fill" style="width:5%;background:var(--sf);color:var(--ink)">~5c</div>
+      </div>
+      <span class="lat-cycles" style="color:var(--sf)">&lt;5 cyc · ~1–2 ns</span>
+    </div>
+    <div class="lat-row">
+      <span class="lat-label">L3 Cache (local)</span>
+      <div class="lat-track">
+        <div class="lat-fill" style="width:16%;background:var(--l3)">30–50c</div>
+      </div>
+      <span class="lat-cycles" style="color:var(--l3)">30–50 cyc · 10–17 ns</span>
+    </div>
+    <div class="lat-row">
+      <span class="lat-label">L3 + remote snoop (hit)</span>
+      <div class="lat-track">
+        <div class="lat-fill" style="width:24%;background:#1a5276">~80c</div>
+      </div>
+      <span class="lat-cycles">~80 cyc · 27 ns</span>
+    </div>
+    <div class="lat-row">
+      <span class="lat-label">L3 miss → DRAM</span>
+      <div class="lat-track">
+        <div class="lat-fill" style="width:50%;background:var(--ram)">150–250c</div>
+      </div>
+      <span class="lat-cycles" style="color:var(--ram)">150–250c · 50–83 ns</span>
+    </div>
+    <div class="lat-row">
+      <span class="lat-label">SF eviction + DRAM</span>
+      <div class="lat-track">
+        <div class="lat-fill" style="width:85%;background:#7b241c">~400c worst case</div>
+      </div>
+      <span class="lat-cycles" style="color:var(--l1)">~400c · 133 ns ⚠️</span>
+    </div>
+    <div style="margin-top:12px;font-size:.74rem;color:var(--ink4);font-style:italic;">
+      ★ Snoop Filter lookup happens in parallel with L3 access — it does not add to the critical path on a hit. It only adds latency on a miss (broadcast) or eviction.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION: COVERAGE ═══════════════════════════════════ -->
+<div class="sec" id="coverage">
+  <div class="sec-eyebrow">Section 09</div>
+  <div class="sec-title">Coverage &amp; The Cost Paradox</div>
+  <p class="sec-desc">The Snoop Filter costs 2–3× per bit more than L3 SRAM, yet can only track 5–15% of total cached data. This is the fundamental tension in coherency hardware design.</p>
+
+  <div class="cov-visual">
+    <div style="font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink4);margin-bottom:16px;">// Coverage Ratio by SoC Tier</div>
+    <svg viewBox="0 0 800 280" width="100%" style="max-height:300px;">
+
+      <!-- axes -->
+      <line x1="80" y1="20" x2="80" y2="240" stroke="#c8bfae" stroke-width="1"/>
+      <line x1="80" y1="240" x2="780" y2="240" stroke="#c8bfae" stroke-width="1"/>
+      <text x="430" y="270" text-anchor="middle" fill="#9a8e7a" font-size="9">SoC Tier</text>
+      <text x="30" y="130" text-anchor="middle" fill="#9a8e7a" font-size="9" transform="rotate(-90,30,130)">Filter Coverage %</text>
+
+      <!-- y-axis ticks -->
+      <line x1="76" y1="40" x2="80" y2="40" stroke="#c8bfae" stroke-width="1"/>
+      <text x="72" y="44" text-anchor="end" fill="#9a8e7a" font-size="8">25%</text>
+      <line x1="76" y1="90" x2="80" y2="90" stroke="#c8bfae" stroke-width="1"/>
+      <text x="72" y="94" text-anchor="end" fill="#9a8e7a" font-size="8">20%</text>
+      <line x1="76" y1="140" x2="80" y2="140" stroke="#c8bfae" stroke-width="1"/>
+      <text x="72" y="144" text-anchor="end" fill="#9a8e7a" font-size="8">15%</text>
+      <line x1="76" y1="190" x2="80" y2="190" stroke="#c8bfae" stroke-width="1"/>
+      <text x="72" y="194" text-anchor="end" fill="#9a8e7a" font-size="8">5%</text>
+
+      <!-- bars -->
+      <!-- Embedded -->
+      <rect x="110" y="224" width="80" height="16" rx="3" fill="#94a3b8"/>
+      <text x="150" y="236" text-anchor="middle" fill="#fff" font-size="7" font-weight="700">3%</text>
+      <text x="150" y="254" text-anchor="middle" fill="#9a8e7a" font-size="8">Embedded</text>
+      <text x="150" y="264" text-anchor="middle" fill="#9a8e7a" font-size="7">16KB / 2MB</text>
+
+      <!-- Mid Mobile -->
+      <rect x="220" y="214" width="80" height="26" rx="3" fill="#e67e22"/>
+      <text x="260" y="231" text-anchor="middle" fill="#fff" font-size="7" font-weight="700">6%</text>
+      <text x="260" y="254" text-anchor="middle" fill="#9a8e7a" font-size="8">Mid Mobile</text>
+      <text x="260" y="264" text-anchor="middle" fill="#9a8e7a" font-size="7">512KB / 8MB</text>
+
+      <!-- Flagship -->
+      <rect x="330" y="194" width="80" height="46" rx="3" fill="#2980b9"/>
+      <text x="370" y="221" text-anchor="middle" fill="#fff" font-size="7" font-weight="700">12%</text>
+      <text x="370" y="254" text-anchor="middle" fill="#9a8e7a" font-size="8">Flagship</text>
+      <text x="370" y="264" text-anchor="middle" fill="#9a8e7a" font-size="7">2MB / 16MB</text>
+
+      <!-- Server -->
+      <rect x="440" y="174" width="80" height="66" rx="3" fill="#8e44ad"/>
+      <text x="480" y="211" text-anchor="middle" fill="#fff" font-size="7" font-weight="700">12–25%</text>
+      <text x="480" y="254" text-anchor="middle" fill="#9a8e7a" font-size="8">Server</text>
+      <text x="480" y="264" text-anchor="middle" fill="#9a8e7a" font-size="7">8MB / 64MB</text>
+
+      <!-- Ideal line -->
+      <line x1="80" y1="40" x2="780" y2="40" stroke="#27ae6050" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="720" y="36" fill="#27ae6088" font-size="8">25%+ ideal</text>
+
+      <!-- cost overlay - second Y axis -->
+      <line x1="590" y1="60" x2="650" y2="60" stroke="#c0392b" stroke-width="2"/>
+      <text x="660" y="64" fill="#c0392b" font-size="8" font-weight="700">Per-bit cost</text>
+      <text x="594" y="80" fill="#c0392b88" font-size="8">2–3× SRAM</text>
+      <text x="594" y="93" fill="#c0392b88" font-size="8">regardless of size</text>
+
+      <!-- annotation -->
+      <rect x="590" y="110" width="180" height="80" rx="5" fill="#c0392b08" stroke="#c0392b30" stroke-width="1"/>
+      <text x="680" y="128" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="700">The Paradox</text>
+      <text x="680" y="144" text-anchor="middle" fill="#c0392b88" font-size="8">Costs 2–3× more/bit</text>
+      <text x="680" y="157" text-anchor="middle" fill="#c0392b88" font-size="8">than L3 SRAM...</text>
+      <text x="680" y="170" text-anchor="middle" fill="#c0392b88" font-size="8">but covers only 3–25%</text>
+      <text x="680" y="183" text-anchor="middle" fill="#c0392b88" font-size="8">of total cached data</text>
+    </svg>
+  </div>
+
+  <div class="callout co-crit">
+    <strong>Why can't we just make it bigger?</strong> Each doubling of snoop filter entries doubles die area (CAM SRAM at 2–3× per bit) AND doubles the Match Line capacitance (slower lookup) AND doubles leakage power. In 5nm technology, a 32MB snoop filter would consume ~10–15mm² of die area and significant leakage power — larger than many L3 caches at the same technology node, yet storing no actual data.
+  </div>
+</div>
+
+<!-- ═══ SECTION: DECISION FLOW ══════════════════════════════ -->
+<div class="sec" id="decision">
+  <div class="sec-eyebrow">Section 10</div>
+  <div class="sec-title">Memory Access Decision Flow</div>
+  <p class="sec-desc">What happens step-by-step when a CPU executes a load instruction, showing how all cache levels and the snoop filter interact.</p>
+
+  <div class="flow-wrap">
+    <div style="font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink4);margin-bottom:16px;">// CPU Load: Complete Decision Flow</div>
+    <svg viewBox="0 0 820 560" width="100%" style="max-height:590px;">
+
+      <!-- START -->
+      <rect x="310" y="10" width="200" height="36" rx="18" fill="#1a1510" stroke="#1a1510" stroke-width="1"/>
+      <text x="410" y="33" text-anchor="middle" fill="#f4f1eb" font-size="11" font-weight="700">CPU executes LDR instruction</text>
+
+      <!-- arrow down -->
+      <line x1="410" y1="46" x2="410" y2="68" stroke="#c8bfae" stroke-width="1.5"/>
+      <polygon points="406,66 410,74 414,66" fill="#c8bfae"/>
+
+      <!-- L1 check -->
+      <polygon points="410,74 560,110 410,146 260,110" fill="#c0392b18" stroke="#c0392b" stroke-width="1.5"/>
+      <text x="410" y="106" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700">L1-D Cache</text>
+      <text x="410" y="120" text-anchor="middle" fill="#c0392b88" font-size="8">Hit?</text>
+
+      <!-- L1 HIT path -->
+      <line x1="560" y1="110" x2="700" y2="110" stroke="#27ae60" stroke-width="1.5"/>
+      <polygon points="698,106 706,110 698,114" fill="#27ae60"/>
+      <rect x="706" y="92" width="100" height="36" rx="6" fill="#27ae6018" stroke="#27ae60" stroke-width="1"/>
+      <text x="756" y="107" text-anchor="middle" fill="#27ae60" font-size="9" font-weight="700">HIT ✓</text>
+      <text x="756" y="119" text-anchor="middle" fill="#27ae6088" font-size="7">1–5 cycles</text>
+      <text x="590" y="103" fill="#27ae60" font-size="8">HIT</text>
+
+      <!-- L1 MISS arrow -->
+      <line x1="410" y1="146" x2="410" y2="168" stroke="#c8bfae" stroke-width="1.5"/>
+      <polygon points="406,166 410,174 414,166" fill="#c8bfae"/>
+      <text x="420" y="162" fill="#9a8e7a" font-size="8">MISS</text>
+
+      <!-- L2 check -->
+      <polygon points="410,174 560,210 410,246 260,210" fill="#e67e2218" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="410" y="206" text-anchor="middle" fill="#e67e22" font-size="10" font-weight="700">L2 Cache</text>
+      <text x="410" y="220" text-anchor="middle" fill="#e67e2288" font-size="8">Hit?</text>
+
+      <!-- L2 HIT -->
+      <line x1="560" y1="210" x2="700" y2="210" stroke="#27ae60" stroke-width="1.5"/>
+      <polygon points="698,206 706,210 698,214" fill="#27ae60"/>
+      <rect x="706" y="192" width="100" height="36" rx="6" fill="#27ae6018" stroke="#27ae60" stroke-width="1"/>
+      <text x="756" y="207" text-anchor="middle" fill="#27ae60" font-size="9" font-weight="700">HIT ✓</text>
+      <text x="756" y="219" text-anchor="middle" fill="#27ae6088" font-size="7">5–15 cycles</text>
+      <text x="590" y="203" fill="#27ae60" font-size="8">HIT</text>
+
+      <!-- L2 MISS -->
+      <line x1="410" y1="246" x2="410" y2="268" stroke="#c8bfae" stroke-width="1.5"/>
+      <polygon points="406,266 410,274 414,266" fill="#c8bfae"/>
+      <text x="420" y="262" fill="#9a8e7a" font-size="8">MISS</text>
+
+      <!-- L3 check -->
+      <polygon points="410,274 560,310 410,346 260,310" fill="#2980b918" stroke="#2980b9" stroke-width="1.5"/>
+      <text x="410" y="306" text-anchor="middle" fill="#2980b9" font-size="10" font-weight="700">L3 Cache (LLC)</text>
+      <text x="410" y="320" text-anchor="middle" fill="#2980b988" font-size="8">Hit?</text>
+
+      <!-- L3 HIT -->
+      <line x1="560" y1="310" x2="700" y2="310" stroke="#27ae60" stroke-width="1.5"/>
+      <polygon points="698,306 706,310 698,314" fill="#27ae60"/>
+      <rect x="706" y="292" width="100" height="36" rx="6" fill="#27ae6018" stroke="#27ae60" stroke-width="1"/>
+      <text x="756" y="307" text-anchor="middle" fill="#27ae60" font-size="9" font-weight="700">HIT ✓</text>
+      <text x="756" y="319" text-anchor="middle" fill="#27ae6088" font-size="7">20–60 cycles</text>
+      <text x="590" y="303" fill="#27ae60" font-size="8">HIT</text>
+
+      <!-- L3 MISS → CHI REQ -->
+      <line x1="410" y1="346" x2="410" y2="368" stroke="#c8bfae" stroke-width="1.5"/>
+      <polygon points="406,366 410,374 414,366" fill="#c8bfae"/>
+      <text x="420" y="362" fill="#9a8e7a" font-size="8">MISS</text>
+
+      <!-- CHI REQ box -->
+      <rect x="295" y="374" width="230" height="40" rx="5" fill="#1a1510" stroke="#9a8e7a" stroke-width="1" stroke-dasharray="4,2"/>
+      <text x="410" y="392" text-anchor="middle" fill="#f4f1eb" font-size="9" font-weight="700">CHI REQ → HN-F</text>
+      <text x="410" y="406" text-anchor="middle" fill="#9a8e7a" font-size="8">ReadShared / ReadUnique issued</text>
+
+      <!-- HN-F snoop filter check -->
+      <line x1="410" y1="414" x2="410" y2="436" stroke="#c8bfae" stroke-width="1.5"/>
+      <polygon points="406,434 410,442 414,434" fill="#c8bfae"/>
+
+      <!-- SF diamond -->
+      <polygon points="410,442 540,475 410,508 280,475" fill="#27ae6018" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="410" y="470" text-anchor="middle" fill="#27ae60" font-size="9" font-weight="700">Snoop Filter</text>
+      <text x="410" y="483" text-anchor="middle" fill="#27ae6088" font-size="8">Entry found?</text>
+
+      <!-- SF HIT - targeted snoop -->
+      <line x1="540" y1="475" x2="640" y2="475" stroke="#27ae60" stroke-width="1.5"/>
+      <polygon points="638,471 646,475 638,479" fill="#27ae60"/>
+      <rect x="646" y="458" width="120" height="36" rx="5" fill="#27ae6014" stroke="#27ae60" stroke-width="1"/>
+      <text x="706" y="472" text-anchor="middle" fill="#27ae60" font-size="8" font-weight="700">Targeted SNP</text>
+      <text x="706" y="484" text-anchor="middle" fill="#27ae6088" font-size="7">Only 1–2 CPUs snooped</text>
+      <text x="562" y="468" fill="#27ae60" font-size="8">HIT</text>
+
+      <!-- SF MISS - broadcast -->
+      <line x1="280" y1="475" x2="180" y2="475" stroke="#c0392b" stroke-width="1.5"/>
+      <polygon points="182,471 174,475 182,479" fill="#c0392b"/>
+      <rect x="54" y="458" width="120" height="36" rx="5" fill="#c0392b14" stroke="#c0392b" stroke-width="1"/>
+      <text x="114" y="472" text-anchor="middle" fill="#c0392b" font-size="8" font-weight="700">Broadcast SNP</text>
+      <text x="114" y="484" text-anchor="middle" fill="#c0392b88" font-size="7">ALL CPUs snooped</text>
+      <text x="225" y="468" fill="#c0392b" font-size="8">MISS</text>
+
+      <!-- DRAM fallback -->
+      <line x1="410" y1="508" x2="410" y2="535" stroke="#c8bfae" stroke-width="1.5"/>
+      <polygon points="406,533 410,541 414,533" fill="#c8bfae"/>
+      <text x="420" y="525" fill="#9a8e7a" font-size="8">NO sharer</text>
+      <rect x="310" y="541" width="200" height="14" rx="7" fill="#8e44ad" stroke="#8e44ad" stroke-width="1"/>
+      <text x="410" y="552" text-anchor="middle" fill="#fff" font-size="8" font-weight="700">Fetch from DRAM via SN-F</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ═══ SECTION: QUICK REF ══════════════════════════════════ -->
+<div class="sec" id="quickref">
+  <div class="sec-eyebrow">Section 11</div>
+  <div class="sec-title">Quick Reference Cards</div>
+  <p class="sec-desc">At-a-glance summary of each memory structure. Suitable for printing or bookmarking.</p>
+
+  <div class="qref-grid">
+    <div class="qref-card" style="border-top-color:var(--l1);">
+      <div class="qref-level" style="color:var(--l1)">L1 — Level 1</div>
+      <div class="qref-name" style="color:var(--l1)">L1-I &amp; L1-D</div>
+      <div class="qref-rows">
+        <div class="qref-row"><span class="qrk">Size</span><span class="qrv" style="color:var(--l1)">16–64 KB</span></div>
+        <div class="qref-row"><span class="qrk">Latency</span><span class="qrv" style="color:var(--l1)">1–5 cycles</span></div>
+        <div class="qref-row"><span class="qrk">Structure</span><span class="qrv">6T SRAM</span></div>
+        <div class="qref-row"><span class="qrk">Assoc</span><span class="qrv">4–8 way</span></div>
+        <div class="qref-row"><span class="qrk">Shared</span><span class="qrv">No</span></div>
+        <div class="qref-row"><span class="qrk">Stores data</span><span class="qrv">Yes</span></div>
+        <div class="qref-row"><span class="qrk">Cost/bit</span><span class="qrv">1.2×</span></div>
+        <div class="qref-row"><span class="qrk">Miss → goes to</span><span class="qrv">L2</span></div>
+      </div>
+    </div>
+
+    <div class="qref-card" style="border-top-color:var(--l2);">
+      <div class="qref-level" style="color:var(--l2)">L2 — Level 2</div>
+      <div class="qref-name" style="color:var(--l2)">Unified Private</div>
+      <div class="qref-rows">
+        <div class="qref-row"><span class="qrk">Size</span><span class="qrv" style="color:var(--l2)">128KB–4MB</span></div>
+        <div class="qref-row"><span class="qrk">Latency</span><span class="qrv" style="color:var(--l2)">5–15 cycles</span></div>
+        <div class="qref-row"><span class="qrk">Structure</span><span class="qrv">6T SRAM</span></div>
+        <div class="qref-row"><span class="qrk">Assoc</span><span class="qrv">8–16 way</span></div>
+        <div class="qref-row"><span class="qrk">Shared</span><span class="qrv">No</span></div>
+        <div class="qref-row"><span class="qrk">Stores data</span><span class="qrv">Yes</span></div>
+        <div class="qref-row"><span class="qrk">Cost/bit</span><span class="qrv">1.0× (baseline)</span></div>
+        <div class="qref-row"><span class="qrk">Miss → goes to</span><span class="qrv">L3</span></div>
+      </div>
+    </div>
+
+    <div class="qref-card" style="border-top-color:var(--l3);">
+      <div class="qref-level" style="color:var(--l3)">L3 — Level 3 (LLC)</div>
+      <div class="qref-name" style="color:var(--l3)">Shared Last Level</div>
+      <div class="qref-rows">
+        <div class="qref-row"><span class="qrk">Size</span><span class="qrv" style="color:var(--l3)">4MB–256MB</span></div>
+        <div class="qref-row"><span class="qrk">Latency</span><span class="qrv" style="color:var(--l3)">20–60 cycles</span></div>
+        <div class="qref-row"><span class="qrk">Structure</span><span class="qrv">6T SRAM banked</span></div>
+        <div class="qref-row"><span class="qrk">Assoc</span><span class="qrv">16–32 way</span></div>
+        <div class="qref-row"><span class="qrk">Shared</span><span class="qrv" style="color:var(--l3)">Yes — cluster</span></div>
+        <div class="qref-row"><span class="qrk">Stores data</span><span class="qrv">Yes</span></div>
+        <div class="qref-row"><span class="qrk">Cost/bit</span><span class="qrv">1.0× (baseline)</span></div>
+        <div class="qref-row"><span class="qrk">Miss → goes to</span><span class="qrv">CHI → DRAM</span></div>
+      </div>
+    </div>
+
+    <div class="qref-card" style="border-top-color:var(--sf);">
+      <div class="qref-level" style="color:var(--sf)">SF — Snoop Filter</div>
+      <div class="qref-name" style="color:var(--sf)">CHI Coherency</div>
+      <div class="qref-rows">
+        <div class="qref-row"><span class="qrk">Size</span><span class="qrv" style="color:var(--sf)">64KB–8MB</span></div>
+        <div class="qref-row"><span class="qrk">Lookup</span><span class="qrv" style="color:var(--sf)">&lt;5ns target</span></div>
+        <div class="qref-row"><span class="qrk">Structure</span><span class="qrv" style="color:var(--l1)">CAM 12–16T</span></div>
+        <div class="qref-row"><span class="qrk">Assoc</span><span class="qrv">Full / set+CAM</span></div>
+        <div class="qref-row"><span class="qrk">Shared</span><span class="qrv" style="color:var(--sf)">Yes — system</span></div>
+        <div class="qref-row"><span class="qrk">Stores data</span><span class="qrv" style="color:var(--l1)">NO — tags only</span></div>
+        <div class="qref-row"><span class="qrk">Cost/bit</span><span class="qrv" style="color:var(--l1)">2–3× (expensive!)</span></div>
+        <div class="qref-row"><span class="qrk">Miss → action</span><span class="qrv" style="color:var(--l1)">Broadcast SNP</span></div>
+      </div>
+    </div>
+
+    <div class="qref-card" style="border-top-color:var(--ram);">
+      <div class="qref-level" style="color:var(--ram)">DRAM — Main Memory</div>
+      <div class="qref-name" style="color:var(--ram)">Off-chip Memory</div>
+      <div class="qref-rows">
+        <div class="qref-row"><span class="qrk">Size</span><span class="qrv" style="color:var(--ram)">4GB–TBs</span></div>
+        <div class="qref-row"><span class="qrk">Latency</span><span class="qrv" style="color:var(--ram)">60–100 ns</span></div>
+        <div class="qref-row"><span class="qrk">Structure</span><span class="qrv">1T1C DRAM cell</span></div>
+        <div class="qref-row"><span class="qrk">Interface</span><span class="qrv">DDR5 / LPDDR5</span></div>
+        <div class="qref-row"><span class="qrk">Bandwidth</span><span class="qrv">50–100 GB/s</span></div>
+        <div class="qref-row"><span class="qrk">Stores data</span><span class="qrv">Yes — persistent</span></div>
+        <div class="qref-row"><span class="qrk">Cost/bit</span><span class="qrv">0.1× (cheapest)</span></div>
+        <div class="qref-row"><span class="qrk">CHI node</span><span class="qrv">SN-F</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Glossary -->
+  <div class="sec" id="glossary">
+    <div class="sec-eyebrow">Appendix</div>
+    <div class="sec-title" style="font-size:1.3rem;">Glossary</div>
+    <div class="tbl-wrap" style="margin-top:14px;">
+      <table>
+        <thead>
+          <tr><th>Term</th><th>Definition</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>6T SRAM</strong></td><td>Standard 6-transistor SRAM bit cell. Cross-coupled inverters hold state. Used in all cache levels.</td></tr>
+          <tr><td><strong>12–16T CAM</strong></td><td>Content Addressable Memory cell. 6T SRAM plus 6–10 additional transistors for match-line comparison logic.</td></tr>
+          <tr><td><strong>Match Line (ML)</strong></td><td>Wire in a CAM that is precharged high each cycle. Any mismatching cell pulls it low. High = match found.</td></tr>
+          <tr><td><strong>Set-Associative</strong></td><td>Cache organisation where each address maps to a fixed set (via index bits) and can occupy any way within that set.</td></tr>
+          <tr><td><strong>Fully-Associative</strong></td><td>Cache/filter organisation where any entry can hold any address. Requires content-addressable lookup (CAM).</td></tr>
+          <tr><td><strong>PLRU</strong></td><td>Pseudo Least Recently Used. Approximates LRU replacement using a tree of 1-bit recency indicators per set.</td></tr>
+          <tr><td><strong>SECDED ECC</strong></td><td>Single Error Correct, Double Error Detect. ECC scheme protecting cache data from bit flips.</td></tr>
+          <tr><td><strong>Sharer Bitmap</strong></td><td>Bit vector in snoop filter with one bit per RN-F node. Set bits indicate which CPUs currently cache a line.</td></tr>
+          <tr><td><strong>Filter Eviction</strong></td><td>When snoop filter is full, an entry is removed — requiring forced invalidation snoops to all its sharers.</td></tr>
+          <tr><td><strong>Broadcast Snoop</strong></td><td>SNP sent to all RN-F nodes when filter has no entry for an address. Expensive — interrupts all CPUs.</td></tr>
+          <tr><td><strong>HN-F</strong></td><td>Home Node Full. CHI node that owns an address range, holds the Snoop Filter, and coordinates coherency.</td></tr>
+          <tr><td><strong>UC / UD / SC / SD</strong></td><td>CHI cache states: Unique Clean, Unique Dirty, Shared Clean, Shared Dirty. Determines snoop requirements.</td></tr>
+          <tr><td><strong>PD (Pass Dirty)</strong></td><td>Flag in CHI snoop response indicating the responder is handing dirty writeback responsibility to the HN-F.</td></tr>
+          <tr><td><strong>LLC</strong></td><td>Last Level Cache. The final cache level before DRAM. Usually L3 in modern SoCs.</td></tr>
+          <tr><td><strong>Working Set</strong></td><td>The set of memory addresses actively accessed by a running workload within a time window.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<footer class="page-footer">
+  <div class="ft">Cache Hierarchy &amp; Snoop Filter Reference · AMBA 5 CHI · ARM IHI 0050</div>
+  <div class="ft">L1/L2/L3 SRAM · CAM Architecture · CHI HN-F · CMN-700</div>
+</footer>
+
+</body>
+</html>

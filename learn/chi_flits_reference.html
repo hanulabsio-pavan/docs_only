@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHI Flit Reference — REQ · RSP · DAT · SNP</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne+Mono&family=Syne:wght@400;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap');
+
+:root {
+  --bg:    #07080d;
+  --s1:    #0b0d15;
+  --s2:    #0f1220;
+  --s3:    #131728;
+  --s4:    #181d32;
+  --b1:    #1a2038;
+  --b2:    #222840;
+  --text:  #d8e4f8;
+  --soft:  #6a80a8;
+  --muted: #2d3a58;
+
+  --req:  #38bdf8;
+  --rsp:  #c084fc;
+  --dat:  #34d399;
+  --snp:  #fb923c;
+
+  --req-bg:  #38bdf808;
+  --rsp-bg:  #c084fc08;
+  --dat-bg:  #34d39908;
+  --snp-bg:  #fb923c08;
+
+  --req-b:  #38bdf820;
+  --rsp-b:  #c084fc20;
+  --dat-b:  #34d39920;
+  --snp-b:  #fb923c20;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Syne',sans-serif;
+  overflow-x:hidden;
+}
+
+/* ── HERO ─── */
+.hero{
+  padding:64px 60px 52px;
+  position:relative;overflow:hidden;
+  border-bottom:1px solid var(--b1);
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 55% 80% at 0% 40%, #38bdf80c,transparent 60%),
+    radial-gradient(ellipse 35% 60% at 100% 10%,#c084fc08,transparent 55%),
+    radial-gradient(ellipse 40% 50% at 30% 100%,#34d39908,transparent 55%),
+    radial-gradient(ellipse 30% 40% at 80% 80%, #fb923c07,transparent 55%);
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(var(--b1) 1px,transparent 1px),linear-gradient(90deg,var(--b1) 1px,transparent 1px);
+  background-size:52px 52px;
+  opacity:.22;
+  mask-image:radial-gradient(ellipse 100% 100% at 50% 50%,black 20%,transparent 80%);
+}
+.hero-inner{position:relative;z-index:1;}
+.hero-eyebrow{
+  font-family:'Syne Mono',monospace;
+  font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:16px;
+}
+.hero h1{
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(2.2rem,6vw,4.4rem);
+  font-weight:400;line-height:.98;
+  letter-spacing:-.02em;margin-bottom:16px;
+}
+.h-chi{color:var(--text);}
+.h-flit{
+  font-style:italic;
+  background:linear-gradient(135deg,var(--req),var(--dat));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero-desc{
+  font-size:.9rem;color:var(--soft);
+  max-width:640px;line-height:1.72;
+  margin-bottom:24px;
+}
+.channel-pills{display:flex;gap:10px;flex-wrap:wrap;}
+.cpill{
+  display:flex;align-items:center;gap:7px;
+  padding:7px 14px;border-radius:6px;
+  font-family:'Syne Mono',monospace;
+  font-size:.68rem;font-weight:700;
+  letter-spacing:.06em;border:1px solid;
+  cursor:pointer;text-decoration:none;
+  transition:all .18s;
+}
+.cpill:hover{transform:translateY(-2px);}
+.cp-req{color:var(--req);border-color:var(--req-b);background:var(--req-bg);}
+.cp-rsp{color:var(--rsp);border-color:var(--rsp-b);background:var(--rsp-bg);}
+.cp-dat{color:var(--dat);border-color:var(--dat-b);background:var(--dat-bg);}
+.cp-snp{color:var(--snp);border-color:var(--snp-b);background:var(--snp-bg);}
+
+/* ── NAV ─── */
+.top-nav{
+  display:flex;gap:0;
+  padding:0 60px;
+  background:var(--s1);
+  border-bottom:1px solid var(--b1);
+  position:sticky;top:0;z-index:200;
+  overflow-x:auto;
+}
+.top-nav a{
+  font-family:'Syne Mono',monospace;
+  font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);text-decoration:none;
+  padding:13px 16px;
+  border-bottom:2px solid transparent;
+  white-space:nowrap;
+  transition:color .15s,border-color .15s;
+}
+.top-nav a:hover{color:var(--text);}
+.top-nav a.req{border-bottom-color:var(--req);color:var(--req);}
+.top-nav a.rsp{border-bottom-color:var(--rsp);color:var(--rsp);}
+.top-nav a.dat{border-bottom-color:var(--dat);color:var(--dat);}
+.top-nav a.snp{border-bottom-color:var(--snp);color:var(--snp);}
+
+/* ── SECTION ─── */
+.section{
+  padding:56px 60px 0;
+  max-width:1280px;margin:0 auto;
+}
+.section:last-of-type{padding-bottom:60px;}
+.sec-marker{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:8px;
+}
+.sec-tag{
+  font-family:'Syne Mono',monospace;
+  font-size:.72rem;font-weight:700;
+  padding:4px 12px;border-radius:4px;
+  letter-spacing:.08em;
+}
+.tag-req{color:var(--req);background:var(--req-bg);border:1px solid var(--req-b);}
+.tag-rsp{color:var(--rsp);background:var(--rsp-bg);border:1px solid var(--rsp-b);}
+.tag-dat{color:var(--dat);background:var(--dat-bg);border:1px solid var(--dat-b);}
+.tag-snp{color:var(--snp);background:var(--snp-bg);border:1px solid var(--snp-b);}
+.tag-all{color:var(--soft);background:var(--s2);border:1px solid var(--b1);}
+
+.sec-line{flex:1;height:1px;background:var(--b1);}
+.sec-title{
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(1.5rem,3vw,2.2rem);
+  font-weight:400;line-height:1.05;
+  margin-bottom:8px;letter-spacing:-.01em;
+}
+.sec-desc{
+  font-size:.86rem;color:var(--soft);
+  max-width:740px;margin-bottom:32px;
+  line-height:1.72;
+}
+
+/* ── FLIT LAYOUT DIAGRAM ─── */
+.flit-diagram{
+  background:var(--s2);
+  border:1px solid var(--b1);
+  border-radius:12px;
+  padding:28px;margin-bottom:32px;
+  overflow-x:auto;
+}
+.flit-d-label{
+  font-family:'Syne Mono',monospace;
+  font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:16px;
+}
+.flit-fields{
+  display:flex;align-items:stretch;
+  border-radius:6px;overflow:hidden;
+  border:1px solid var(--b2);
+  min-width:600px;
+}
+.ff{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:10px 4px;
+  border-right:1px solid var(--b2);
+  text-align:center;gap:3px;
+}
+.ff:last-child{border-right:none;}
+.ff-bits{font-family:'Syne Mono',monospace;font-size:.54rem;color:var(--muted);}
+.ff-name{font-family:'Syne Mono',monospace;font-size:.68rem;font-weight:700;}
+.ff-desc{font-size:.58rem;color:var(--soft);}
+
+/* field colour classes */
+.fc-route{background:#38bdf80c;} .fc-route .ff-name{color:var(--req);}
+.fc-ctrl {background:#c084fc0c;} .fc-ctrl  .ff-name{color:var(--rsp);}
+.fc-data {background:#34d3990c;} .fc-data  .ff-name{color:var(--dat);}
+.fc-coher{background:#fb923c0c;} .fc-coher .ff-name{color:var(--snp);}
+.fc-err  {background:#f871710c;} .fc-err   .ff-name{color:#f87171;}
+.fc-dbg  {background:#94a3b80c;} .fc-dbg   .ff-name{color:#94a3b8;}
+.fc-mem  {background:#a78bfa0c;} .fc-mem   .ff-name{color:#a78bfa;}
+
+/* ── OPCODE TABLES ─── */
+.op-table-wrap{
+  overflow-x:auto;
+  border-radius:10px;
+  border:1px solid var(--b1);
+  margin-bottom:28px;
+}
+.op-table{
+  width:100%;border-collapse:collapse;
+  font-size:.76rem;background:var(--s2);
+}
+.op-table thead th{
+  padding:10px 14px;
+  font-family:'Syne Mono',monospace;
+  font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--b1);
+  text-align:left;white-space:nowrap;
+  background:var(--s3);
+}
+.op-table tbody td{
+  padding:9px 14px;
+  border-bottom:1px solid #0f1220;
+  vertical-align:top;
+}
+.op-table tbody tr:last-child td{border-bottom:none;}
+.op-table tbody tr:hover td{background:var(--s3);}
+
+.op-code{
+  font-family:'Syne Mono',monospace;
+  font-size:.72rem;font-weight:700;
+  white-space:nowrap;
+}
+.op-hex{
+  font-family:'Syne Mono',monospace;
+  font-size:.66rem;color:var(--muted);
+  white-space:nowrap;
+}
+.op-cat{
+  font-family:'Syne Mono',monospace;
+  font-size:.58rem;padding:2px 6px;
+  border-radius:3px;white-space:nowrap;
+  display:inline-block;
+}
+.cat-read   {background:#38bdf810;color:var(--req);border:1px solid var(--req-b);}
+.cat-write  {background:#34d39910;color:var(--dat);border:1px solid var(--dat-b);}
+.cat-snoop  {background:#fb923c10;color:var(--snp);border:1px solid var(--snp-b);}
+.cat-comp   {background:#c084fc10;color:var(--rsp);border:1px solid var(--rsp-b);}
+.cat-atomic {background:#f8717110;color:#f87171;border:1px solid #f8717130;}
+.cat-cmo    {background:#a78bfa10;color:#a78bfa;border:1px solid #a78bfa30;}
+.cat-dvm    {background:#fcd34d10;color:#fcd34d;border:1px solid #fcd34d30;}
+.cat-misc   {background:#94a3b810;color:#94a3b8;border:1px solid #94a3b830;}
+
+.op-desc{font-size:.76rem;color:var(--soft);line-height:1.5;}
+.op-note{
+  font-family:'Syne Mono',monospace;
+  font-size:.62rem;color:var(--muted);
+  font-style:italic;
+}
+
+/* ── EXAMPLE FLIT BOXES ─── */
+.example-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:18px;margin-bottom:32px;
+}
+.ex-card{
+  background:var(--s2);
+  border:1px solid var(--b1);
+  border-radius:10px;overflow:hidden;
+}
+.ex-header{
+  padding:14px 18px;
+  border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;gap:10px;
+}
+.ex-title{
+  font-family:'Syne',sans-serif;
+  font-size:.82rem;font-weight:700;
+}
+.ex-body{padding:0;}
+.flit-rows{display:flex;flex-direction:column;}
+.fr{
+  display:flex;align-items:center;
+  border-bottom:1px solid #0d1020;
+  font-family:'Syne Mono',monospace;
+  font-size:.68rem;
+}
+.fr:last-child{border-bottom:none;}
+.fr:hover{background:var(--s3);}
+.fr-field{
+  padding:7px 12px;
+  min-width:120px;color:var(--muted);
+  border-right:1px solid #0d1020;
+  flex-shrink:0;
+}
+.fr-val{padding:7px 12px;font-weight:600;flex:1;}
+.fr-note{
+  padding:7px 12px;
+  color:var(--muted);font-size:.6rem;
+  font-style:italic;border-left:1px solid #0d1020;
+  min-width:140px;
+}
+
+/* row colour classes */
+.fr.route .fr-val{color:var(--req);}
+.fr.ctrl  .fr-val{color:var(--rsp);}
+.fr.data  .fr-val{color:var(--dat);}
+.fr.coher .fr-val{color:var(--snp);}
+.fr.err   .fr-val{color:#f87171;}
+.fr.dbg   .fr-val{color:#94a3b8;}
+.fr.mem   .fr-val{color:#a78bfa;}
+
+/* ── TRANSACTION FLOW DIAGRAMS ─── */
+.flow-wrap{
+  background:var(--s2);
+  border:1px solid var(--b1);
+  border-radius:12px;
+  padding:28px;margin-bottom:32px;
+  overflow-x:auto;
+}
+.flow-title{
+  font-family:'Syne Mono',monospace;
+  font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:18px;
+}
+
+/* ── CALLOUTS ─── */
+.callout{
+  padding:14px 18px;
+  border-radius:6px;
+  border-left:3px solid;
+  margin-bottom:18px;
+  font-size:.82rem;line-height:1.65;
+  color:var(--text);
+}
+.callout strong{color:#fff;}
+.co-req{background:#38bdf808;border-color:var(--req);}
+.co-rsp{background:#c084fc08;border-color:var(--rsp);}
+.co-dat{background:#34d39908;border-color:var(--dat);}
+.co-snp{background:#fb923c08;border-color:var(--snp);}
+.co-info{background:#60a5fa08;border-color:#60a5fa;}
+.co-warn{background:#fcd34d08;border-color:#fcd34d;}
+
+/* ── LEGEND ─── */
+.legend{
+  display:flex;gap:20px;flex-wrap:wrap;
+  padding:14px 20px;
+  background:var(--s2);
+  border:1px solid var(--b1);
+  border-radius:8px;margin-bottom:28px;
+}
+.leg-item{
+  display:flex;align-items:center;gap:6px;
+  font-family:'Syne Mono',monospace;font-size:.62rem;
+}
+.leg-dot{width:8px;height:8px;border-radius:2px;}
+
+/* ── STATE BADGE ─── */
+.state{
+  display:inline-block;
+  font-family:'Syne Mono',monospace;
+  font-size:.6rem;padding:2px 6px;border-radius:3px;
+  margin:1px;
+}
+.st-uc{background:#38bdf812;color:var(--req);border:1px solid var(--req-b);}
+.st-ud{background:#f8717112;color:#f87171;border:1px solid #f8717130;}
+.st-sc{background:#34d39912;color:var(--dat);border:1px solid var(--dat-b);}
+.st-sd{background:#fb923c12;color:var(--snp);border:1px solid var(--snp-b);}
+.st-i {background:#94a3b812;color:#94a3b8;border:1px solid #94a3b830;}
+
+/* ── DIVIDER ─── */
+.divider{
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--b2),transparent);
+  margin:48px 0;
+}
+
+/* ── FOOTER ─── */
+footer{
+  padding:22px 60px;
+  border-top:1px solid var(--b1);
+  background:var(--s1);
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:10px;
+}
+.ft{font-family:'Syne Mono',monospace;font-size:.58rem;color:var(--muted);}
+
+@keyframes flow-anim{from{stroke-dashoffset:20;}to{stroke-dashoffset:0;}}
+.flow-line{animation:flow-anim .9s linear infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.pulse{animation:pulse 2s ease-in-out infinite;}
+
+svg{font-family:'Syne Mono',monospace;}
+
+@media(max-width:768px){
+  .hero,.section,.top-nav,footer{padding-left:18px;padding-right:18px;}
+  .example-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+<div class="hero-bg"></div>
+<div class="hero-grid"></div>
+<div class="hero-inner">
+  <div class="hero-eyebrow">AMBA 5 CHI · ARM IHI 0050 · Flit Reference</div>
+  <h1>
+    <span class="h-chi">CHI </span>
+    <span class="h-flit">Flit</span>
+    <span class="h-chi"> Reference</span>
+  </h1>
+  <p class="hero-desc">
+    Complete field-level reference for all four CHI channels — REQ, RSP, DAT, SNP.
+    Every opcode explained, flit layouts illustrated, and example transactions
+    shown with real field values.
+  </p>
+  <div class="channel-pills">
+    <a href="#req" class="cpill cp-req">● REQ · Request</a>
+    <a href="#rsp" class="cpill cp-rsp">● RSP · Response</a>
+    <a href="#dat" class="cpill cp-dat">● DAT · Data</a>
+    <a href="#snp" class="cpill cp-snp">● SNP · Snoop</a>
+  </div>
+</div>
+</header>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <a href="#overview">Overview</a>
+  <a href="#req" class="req">REQ Channel</a>
+  <a href="#req-opcodes">REQ Opcodes</a>
+  <a href="#rsp" class="rsp">RSP Channel</a>
+  <a href="#rsp-opcodes">RSP Opcodes</a>
+  <a href="#dat" class="dat">DAT Channel</a>
+  <a href="#dat-opcodes">DAT Opcodes</a>
+  <a href="#snp" class="snp">SNP Channel</a>
+  <a href="#snp-opcodes">SNP Opcodes</a>
+  <a href="#examples">Examples</a>
+</nav>
+
+
+<!-- ═══ OVERVIEW ═══════════════════════════════════════════ -->
+<div class="section" id="overview">
+  <div class="sec-marker"><span class="sec-tag tag-all">Overview</span><div class="sec-line"></div></div>
+  <div class="sec-title">CHI Channel Architecture</div>
+  <p class="sec-desc">CHI (Coherent Hub Interface) defines four independent channels. Each carries a <strong>flit</strong> — the atomic unit of transfer. A flit is not a packet; it is a single indivisible message with specific fields for routing, control, and payload. Each channel has its own credit-based flow control at the Link Layer.</p>
+
+  <!-- Overview flow SVG -->
+  <div class="flow-wrap">
+    <div class="flow-title">// CHI Channel Overview — Who sends what to whom</div>
+    <svg viewBox="0 0 860 200" width="100%" style="max-height:220px;">
+      <!-- RN-F -->
+      <rect x="20" y="60" width="120" height="80" rx="8" fill="#38bdf80a" stroke="#38bdf840" stroke-width="1.5"/>
+      <text x="80" y="97" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="700">RN-F</text>
+      <text x="80" y="113" text-anchor="middle" fill="#38bdf899" font-size="8">CPU / GPU</text>
+      <text x="80" y="126" text-anchor="middle" fill="#38bdf866" font-size="7">Requester Node</text>
+
+      <!-- HN-F -->
+      <rect x="360" y="40" width="140" height="120" rx="8" fill="#f59e0b0a" stroke="#f59e0b40" stroke-width="1.5"/>
+      <text x="430" y="88" text-anchor="middle" fill="#f59e0b" font-size="13" font-weight="700">HN-F</text>
+      <text x="430" y="104" text-anchor="middle" fill="#f59e0b99" font-size="8">Home Node</text>
+      <text x="430" y="118" text-anchor="middle" fill="#f59e0b66" font-size="7">Snoop Filter</text>
+      <text x="430" y="131" text-anchor="middle" fill="#f59e0b55" font-size="7">Coherency Hub</text>
+
+      <!-- SN-F -->
+      <rect x="720" y="60" width="120" height="80" rx="8" fill="#4ade800a" stroke="#4ade8040" stroke-width="1.5"/>
+      <text x="780" y="97" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="700">SN-F</text>
+      <text x="780" y="113" text-anchor="middle" fill="#4ade8099" font-size="8">DDR Memory</text>
+      <text x="780" y="126" text-anchor="middle" fill="#4ade8066" font-size="7">Slave Node</text>
+
+      <!-- REQ: RN-F → HN-F -->
+      <line x1="140" y1="90" x2="360" y2="90" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="357,86 365,90 357,94" fill="#38bdf8"/>
+      <text x="248" y="82" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="700">REQ</text>
+      <text x="248" y="94" text-anchor="middle" fill="#38bdf888" font-size="7">ReadShared, WriteBack…</text>
+
+      <!-- RSP: HN-F → RN-F -->
+      <line x1="360" y1="110" x2="140" y2="110" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="143,106 135,110 143,114" fill="#c084fc"/>
+      <text x="248" y="123" text-anchor="middle" fill="#c084fc" font-size="9" font-weight="700">RSP</text>
+      <text x="248" y="135" text-anchor="middle" fill="#c084fc88" font-size="7">Comp, CompAck, RetryAck…</text>
+
+      <!-- SNP: HN-F → RN-F (snoop) -->
+      <line x1="360" y1="70" x2="140" y2="70" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="143,66 135,70 143,74" fill="#fb923c"/>
+      <text x="248" y="62" text-anchor="middle" fill="#fb923c" font-size="9" font-weight="700">SNP</text>
+      <text x="248" y="52" text-anchor="middle" fill="#fb923c88" font-size="7">SnpShared, SnpUnique…</text>
+
+      <!-- REQ: HN-F → SN-F -->
+      <line x1="500" y1="90" x2="720" y2="90" stroke="#38bdf870" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="717,86 725,90 717,94" fill="#38bdf870"/>
+      <text x="612" y="82" text-anchor="middle" fill="#38bdf888" font-size="9">REQ</text>
+      <text x="612" y="94" text-anchor="middle" fill="#38bdf855" font-size="7">ReadNoSnp, WriteNoSnp…</text>
+
+      <!-- DAT: SN-F → HN-F → RN-F -->
+      <line x1="720" y1="110" x2="500" y2="110" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="503,106 495,110 503,114" fill="#34d399"/>
+      <line x1="360" y1="110" x2="140" y2="130" stroke="#34d39970" stroke-width="1" stroke-dasharray="4,3"/>
+      <polygon points="143,126 135,130 143,134" fill="#34d39970"/>
+      <text x="612" y="123" text-anchor="middle" fill="#34d399" font-size="9" font-weight="700">DAT</text>
+      <text x="612" y="135" text-anchor="middle" fill="#34d39988" font-size="7">CompData, CopyBackWrData…</text>
+    </svg>
+  </div>
+
+  <!-- Channel legend -->
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot" style="background:var(--req)"></div><span style="color:var(--req)">REQ</span><span style="color:var(--muted);margin-left:4px">Request — initiates all transactions</span></div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--rsp)"></div><span style="color:var(--rsp)">RSP</span><span style="color:var(--muted);margin-left:4px">Response — completions, credits, acks</span></div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--dat)"></div><span style="color:var(--dat)">DAT</span><span style="color:var(--muted);margin-left:4px">Data — actual cache line payload</span></div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--snp)"></div><span style="color:var(--snp)">SNP</span><span style="color:var(--muted);margin-left:4px">Snoop — cache state interrogation</span></div>
+  </div>
+</div>
+
+<!-- ═══ REQ CHANNEL ════════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="req">
+  <div class="sec-marker"><span class="sec-tag tag-req">REQ Channel</span><div class="sec-line"></div></div>
+  <div class="sec-title" style="color:var(--req)">Request Channel</div>
+  <p class="sec-desc">The REQ channel initiates all transactions. Sent by RN (Requester Node) to HN (Home Node), or by HN to SN for memory operations. Contains address, opcode, routing IDs, and memory attributes. Carries no data payload.</p>
+
+  <!-- REQ flit layout -->
+  <div class="flit-diagram">
+    <div class="flit-d-label">// REQ Flit Field Layout — All fields present in a single flit</div>
+    <div class="flit-fields">
+      <div class="ff fc-route" style="flex:1"><div class="ff-bits">4b</div><div class="ff-name">QoS</div><div class="ff-desc">Priority</div></div>
+      <div class="ff fc-route" style="flex:2"><div class="ff-bits">11b</div><div class="ff-name">TgtID</div><div class="ff-desc">Target node</div></div>
+      <div class="ff fc-route" style="flex:2"><div class="ff-bits">11b</div><div class="ff-name">SrcID</div><div class="ff-desc">Source node</div></div>
+      <div class="ff fc-route" style="flex:1.5"><div class="ff-bits">8b</div><div class="ff-name">TxnID</div><div class="ff-desc">Txn ID</div></div>
+      <div class="ff fc-route" style="flex:2"><div class="ff-bits">11b</div><div class="ff-name">ReturnNID</div><div class="ff-desc">Fwd return</div></div>
+      <div class="ff fc-ctrl" style="flex:2"><div class="ff-bits">6b</div><div class="ff-name">Opcode</div><div class="ff-desc">Txn type</div></div>
+      <div class="ff fc-route" style="flex:3"><div class="ff-bits">44–52b</div><div class="ff-name">Addr</div><div class="ff-desc">Physical addr</div></div>
+      <div class="ff fc-ctrl" style="flex:1"><div class="ff-bits">3b</div><div class="ff-name">Size</div><div class="ff-desc">Bytes</div></div>
+      <div class="ff fc-mem"  style="flex:1"><div class="ff-bits">1b</div><div class="ff-name">NS</div><div class="ff-desc">Non-Secure</div></div>
+      <div class="ff fc-ctrl" style="flex:1"><div class="ff-bits">1b</div><div class="ff-name">AllowRetry</div><div class="ff-desc">Can retry</div></div>
+      <div class="ff fc-ctrl" style="flex:1.5"><div class="ff-bits">4b</div><div class="ff-name">PCrdType</div><div class="ff-desc">Credit type</div></div>
+      <div class="ff fc-coher" style="flex:1"><div class="ff-bits">1b</div><div class="ff-name">ExpCompAck</div><div class="ff-desc">Expect ack</div></div>
+      <div class="ff fc-mem"  style="flex:1.5"><div class="ff-bits">4b</div><div class="ff-name">MemAttr</div><div class="ff-desc">Mem type</div></div>
+      <div class="ff fc-coher" style="flex:1"><div class="ff-bits">1b</div><div class="ff-name">SnpAttr</div><div class="ff-desc">Snoopable</div></div>
+      <div class="ff fc-dbg"  style="flex:1"><div class="ff-bits">1b</div><div class="ff-name">TraceTag</div><div class="ff-desc">Debug</div></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;">
+      <span style="font-family:'Syne Mono',monospace;font-size:.6rem;padding:3px 8px;border-radius:3px;background:#38bdf810;color:var(--req);border:1px solid var(--req-b)">Routing</span>
+      <span style="font-family:'Syne Mono',monospace;font-size:.6rem;padding:3px 8px;border-radius:3px;background:#c084fc10;color:var(--rsp);border:1px solid var(--rsp-b)">Control</span>
+      <span style="font-family:'Syne Mono',monospace;font-size:.6rem;padding:3px 8px;border-radius:3px;background:#fb923c10;color:var(--snp);border:1px solid var(--snp-b)">Coherency</span>
+      <span style="font-family:'Syne Mono',monospace;font-size:.6rem;padding:3px 8px;border-radius:3px;background:#a78bfa10;color:#a78bfa;border:1px solid #a78bfa30)">Memory Attr</span>
+      <span style="font-family:'Syne Mono',monospace;font-size:.6rem;padding:3px 8px;border-radius:3px;background:#94a3b810;color:#94a3b8;border:1px solid #94a3b830">Debug</span>
+    </div>
+  </div>
+
+  <!-- REQ Example flits -->
+  <div style="font-family:'Syne Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">// Example REQ Flits</div>
+  <div class="example-grid">
+    <!-- ReadShared example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:var(--req-bg);border-bottom-color:var(--req-b);">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:var(--req-bg);color:var(--req);border:1px solid var(--req-b)">ReadShared</span>
+        <span class="ex-title" style="color:var(--req)">Cache miss — want shared copy</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">QoS</div><div class="fr-val">0x4</div><div class="fr-note">medium priority</div></div>
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x10</div><div class="fr-note">→ HN-F</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x01</div><div class="fr-note">from CPU0</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x07</div><div class="fr-note">unique per src</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">ReadShared (0x01)</div><div class="fr-note">read, allow sharing</div></div>
+        <div class="fr route"><div class="fr-field">Addr</div><div class="fr-val">0xBEEF_0040</div><div class="fr-note">64B aligned</div></div>
+        <div class="fr ctrl"><div class="fr-field">Size</div><div class="fr-val">0b110</div><div class="fr-note">64 bytes</div></div>
+        <div class="fr mem"><div class="fr-field">NS</div><div class="fr-val">1</div><div class="fr-note">Non-Secure</div></div>
+        <div class="fr ctrl"><div class="fr-field">AllowRetry</div><div class="fr-val">1</div><div class="fr-note">ok to retry</div></div>
+        <div class="fr coher"><div class="fr-field">ExpCompAck</div><div class="fr-val">1</div><div class="fr-note">will send CompAck</div></div>
+        <div class="fr mem"><div class="fr-field">MemAttr</div><div class="fr-val">0b0011</div><div class="fr-note">cacheable+alloc</div></div>
+        <div class="fr coher"><div class="fr-field">SnpAttr</div><div class="fr-val">1</div><div class="fr-note">snoopable</div></div>
+      </div></div>
+    </div>
+    <!-- WriteBack example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:var(--dat-bg);border-bottom-color:var(--dat-b);">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:var(--dat-bg);color:var(--dat);border:1px solid var(--dat-b)">WriteBack</span>
+        <span class="ex-title" style="color:var(--dat)">Evict dirty line from L3</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">QoS</div><div class="fr-val">0x2</div><div class="fr-note">low priority</div></div>
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x10</div><div class="fr-note">→ HN-F</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x01</div><div class="fr-note">from CPU0</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x08</div><div class="fr-note">eviction txn</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">WriteBack (0x03)</div><div class="fr-note">dirty eviction</div></div>
+        <div class="fr route"><div class="fr-field">Addr</div><div class="fr-val">0xDEAD_C080</div><div class="fr-note">evicting this line</div></div>
+        <div class="fr ctrl"><div class="fr-field">Size</div><div class="fr-val">0b110</div><div class="fr-note">64 bytes</div></div>
+        <div class="fr mem"><div class="fr-field">NS</div><div class="fr-val">1</div><div class="fr-note">Non-Secure</div></div>
+        <div class="fr ctrl"><div class="fr-field">AllowRetry</div><div class="fr-val">0</div><div class="fr-note">no retry allowed</div></div>
+        <div class="fr coher"><div class="fr-field">ExpCompAck</div><div class="fr-val">0</div><div class="fr-note">no ack needed</div></div>
+        <div class="fr mem"><div class="fr-field">MemAttr</div><div class="fr-val">0b0011</div><div class="fr-note">write-back mem</div></div>
+        <div class="fr coher"><div class="fr-field">SnpAttr</div><div class="fr-val">1</div><div class="fr-note">was snoopable</div></div>
+      </div></div>
+    </div>
+    <!-- ReadUnique -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:#f8717108;border-bottom-color:#f8717120;">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:#f8717110;color:#f87171;border:1px solid #f8717130">ReadUnique</span>
+        <span class="ex-title" style="color:#f87171">Want exclusive write access</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x10</div><div class="fr-note">→ HN-F</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x02</div><div class="fr-note">from CPU1</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x12</div><div class="fr-note">unique ID</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">ReadUnique (0x02)</div><div class="fr-note">need exclusive</div></div>
+        <div class="fr route"><div class="fr-field">Addr</div><div class="fr-val">0xA000_0000</div><div class="fr-note">target line</div></div>
+        <div class="fr coher"><div class="fr-field">ExpCompAck</div><div class="fr-val">1</div><div class="fr-note">must ack</div></div>
+        <div class="fr mem"><div class="fr-field">MemAttr</div><div class="fr-val">0b0011</div><div class="fr-note">WB cacheable</div></div>
+        <div class="fr coher"><div class="fr-field">SnpAttr</div><div class="fr-val">1</div><div class="fr-note">snoopable</div></div>
+        <div class="fr route"><div class="fr-field">ReturnNID</div><div class="fr-val">0x02</div><div class="fr-note">data comes to me</div></div>
+      </div></div>
+    </div>
+    <!-- AtomicStore -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:#a78bfa08;border-bottom-color:#a78bfa20;">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:#a78bfa10;color:#a78bfa;border:1px solid #a78bfa30">AtomicStore</span>
+        <span class="ex-title" style="color:#a78bfa">Atomic add to memory</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x10</div><div class="fr-note">→ HN-F</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x03</div><div class="fr-note">from CPU2</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x1A</div><div class="fr-note">atomic txn</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">AtomicStore (0x34)</div><div class="fr-note">AMO add</div></div>
+        <div class="fr route"><div class="fr-field">Addr</div><div class="fr-val">0xF000_0010</div><div class="fr-note">8B aligned</div></div>
+        <div class="fr ctrl"><div class="fr-field">Size</div><div class="fr-val">0b011</div><div class="fr-note">8 bytes</div></div>
+        <div class="fr mem"><div class="fr-field">MemAttr</div><div class="fr-val">0b0010</div><div class="fr-note">device/ordered</div></div>
+        <div class="fr coher"><div class="fr-field">SnpAttr</div><div class="fr-val">0</div><div class="fr-note">non-snoopable</div></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- REQ OPCODES TABLE -->
+<div class="section" id="req-opcodes">
+  <div style="font-family:'Syne Mono',monospace;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--req);margin-bottom:16px;">// REQ Channel — Complete Opcode Reference</div>
+
+  <div class="op-table-wrap">
+    <table class="op-table">
+      <thead>
+        <tr>
+          <th style="color:var(--req)">Opcode Name</th>
+          <th>Hex</th>
+          <th>Category</th>
+          <th>Initiator → Target</th>
+          <th>Description</th>
+          <th>Resp State</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="op-code" style="color:var(--req)">ReadShared</td><td class="op-hex">0x01</td><td><span class="op-cat cat-read">Read</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Read cache line, accept Shared Clean state. Other nodes may also hold it. Most common cache miss opcode.</td><td><span class="state st-sc">SC</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">ReadClean</td><td class="op-hex">0x02</td><td><span class="op-cat cat-read">Read</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Read cache line, must receive it in Clean state (not dirty). Useful when requester doesn't want dirty responsibility.</td><td><span class="state st-sc">SC</span><span class="state st-uc">UC</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">ReadNotSharedDirty</td><td class="op-hex">0x03</td><td><span class="op-cat cat-read">Read</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Read line — prefer not to receive SharedDirty state. HN attempts to satisfy from clean memory or clean sharer.</td><td><span class="state st-sc">SC</span><span class="state st-uc">UC</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">ReadUnique</td><td class="op-hex">0x04</td><td><span class="op-cat cat-read">Read</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Read line and obtain exclusive ownership. All other copies must be invalidated. Required before writing a line not already uniquely owned.</td><td><span class="state st-uc">UC</span><span class="state st-ud">UD</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">ReadPreferUnique</td><td class="op-hex">0x1C</td><td><span class="op-cat cat-read">Read</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Preference for Unique state but accepts Shared. Used as optimistic exclusive-read hint when contention is unlikely.</td><td><span class="state st-uc">UC</span><span class="state st-sc">SC</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">ReadNoSnp</td><td class="op-hex">0x07</td><td><span class="op-cat cat-read">Read</span></td><td class="op-note">HN-F → SN-F</td><td class="op-desc">Non-coherent read from memory. Used by HN-F to fetch data from Slave Node (DDR). Bypasses coherency — no snoops involved.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">ReadOnce</td><td class="op-hex">0x00</td><td><span class="op-cat cat-read">Read</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Read line once — does not intend to cache long-term. Returns data without granting a persistent coherent state. Used for streaming/non-temporal reads.</td><td><span class="state st-sc">SC</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">ReadOnceMakeInvalid</td><td class="op-hex">0x08</td><td><span class="op-cat cat-read">Read</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Read once and immediately invalidate the line everywhere after reading. Used for destructive reads / consume semantics.</td><td><span class="state st-i">I</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">CleanUnique</td><td class="op-hex">0x11</td><td><span class="op-cat cat-cmo">CMO</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Upgrade from SC to UC without fetching data. Requester already has the data clean. Forces invalidation of all other sharers. No data transfer.</td><td><span class="state st-uc">UC</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">MakeUnique</td><td class="op-hex">0x12</td><td><span class="op-cat cat-cmo">CMO</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Invalidate all other copies without providing data. Requester will overwrite entire cache line. Most efficient upgrade when writing full line.</td><td><span class="state st-uc">UC</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">MakeReadUnique</td><td class="op-hex">0x18</td><td><span class="op-cat cat-cmo">CMO</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Read and upgrade — combines ReadUnique and MakeUnique semantics in a single transaction for efficiency.</td><td><span class="state st-uc">UC</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">WriteBack</td><td class="op-hex">0x22</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Write dirty cache line back to memory on eviction. Requester had UD state. Data follows on DAT channel as CopyBackWrData.</td><td><span class="state st-i">I</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">WriteClean</td><td class="op-hex">0x23</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Write back a line that is clean in memory but dirty in cache. Requester transitions to UC or I after write. Used when memory needs updating.</td><td><span class="state st-uc">UC</span><span class="state st-i">I</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">WriteEvictFull</td><td class="op-hex">0x15</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Evict a clean unique line. No data write needed if HN chooses not to accept. HN may discard or accept data.</td><td><span class="state st-i">I</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">WriteNoSnpFull</td><td class="op-hex">0x30</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">HN-F → SN-F</td><td class="op-desc">Non-coherent write to memory. Used by HN-F to write dirty data to Slave Node. No snoops involved.</td><td>—</td></div></tr>
+        <tr><td class="op-code" style="color:var(--req)">WriteNoSnpPtl</td><td class="op-hex">0x31</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">HN-F → SN-F</td><td class="op-desc">Non-coherent partial write — only some bytes valid (indicated by BE field). Updates subset of a cache line in memory.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">WriteUniqueFullStash</td><td class="op-hex">0x35</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Write full line and stash (prefetch) a copy to a specific target cache identified by StashNID. Combines write + hint.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">StashOnceShared</td><td class="op-hex">0x28</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Prefetch hint — stash a Shared copy to target node specified by StashNID. No data transfer, purely a hint. HN may ignore.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">StashOnceUnique</td><td class="op-hex">0x29</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Prefetch hint — stash a Unique copy to target node. Hint only. Used for producer-consumer latency hiding.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">AtomicStore</td><td class="op-hex">0x34</td><td><span class="op-cat cat-atomic">Atomic</span></td><td class="op-note">RN → HN</td><td class="op-desc">Atomic Store (write) to memory. Data carried in extended REQ flit. No return data. Operations: ADD, CLR, EOR, SET, SMAX, SMIN, UMAX, UMIN.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">AtomicLoad</td><td class="op-hex">0x35</td><td><span class="op-cat cat-atomic">Atomic</span></td><td class="op-note">RN → HN</td><td class="op-desc">Atomic Load — read-modify-write returning original value. Same operations as AtomicStore. Returns old value on DAT channel.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">AtomicSwap</td><td class="op-hex">0x36</td><td><span class="op-cat cat-atomic">Atomic</span></td><td class="op-note">RN → HN</td><td class="op-desc">Atomic Swap — unconditionally exchange memory value with provided value. Returns old value. Used for lock implementation.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">AtomicCompare</td><td class="op-hex">0x37</td><td><span class="op-cat cat-atomic">Atomic</span></td><td class="op-note">RN → HN</td><td class="op-desc">Atomic Compare-and-Swap (CAS). Compares memory value with compare operand; if equal, swaps with swap operand. Foundation of lock-free algorithms.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">CleanShared</td><td class="op-hex">0x13</td><td><span class="op-cat cat-cmo">CMO</span></td><td class="op-note">RN → HN</td><td class="op-desc">Cache Maintenance Op — clean (write back) all dirty copies of this line without invalidating. Used before DMA reads.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">CleanSharedPersist</td><td class="op-hex">0x24</td><td><span class="op-cat cat-cmo">CMO</span></td><td class="op-note">RN → HN</td><td class="op-desc">Clean to persistent memory (PMem). Ensures data reaches persistent storage domain. Used in NVM-aware software.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">CleanInvalid</td><td class="op-hex">0x14</td><td><span class="op-cat cat-cmo">CMO</span></td><td class="op-note">RN → HN</td><td class="op-desc">Clean and invalidate — write back dirty data then invalidate all copies. Used before DMA writes to ensure memory coherency.</td><td><span class="state st-i">I</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">MakeInvalid</td><td class="op-hex">0x09</td><td><span class="op-cat cat-cmo">CMO</span></td><td class="op-note">RN → HN</td><td class="op-desc">Invalidate all copies without writeback (discards dirty data). Use only when data is known to be replaceable.</td><td><span class="state st-i">I</span></td></tr>
+        <tr><td class="op-code" style="color:var(--req)">DVMOp</td><td class="op-hex">0x14</td><td><span class="op-cat cat-dvm">DVM</span></td><td class="op-note">RN → MN</td><td class="op-desc">Distributed Virtual Memory operation — TLB invalidate, branch predictor invalidate, instruction cache sync. Coordinated via MN (Misc Node).</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">PCrdReturn</td><td class="op-hex">0x05</td><td><span class="op-cat cat-misc">Misc</span></td><td class="op-note">RN → HN</td><td class="op-desc">Return a protocol credit previously granted by PCrdGrant. Credits returned when no longer needed for pending retried requests.</td><td>—</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">SnpReq</td><td class="op-hex">0x06</td><td><span class="op-cat cat-snoop">Snoop</span></td><td class="op-note">RN → HN</td><td class="op-desc">Request HN to perform a directed snoop to a specific node. Rarely used directly; usually HN decides who to snoop via filter.</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ RSP CHANNEL ════════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="rsp">
+  <div class="sec-marker"><span class="sec-tag tag-rsp">RSP Channel</span><div class="sec-line"></div></div>
+  <div class="sec-title" style="color:var(--rsp)">Response Channel</div>
+  <p class="sec-desc">The RSP channel carries completion signals, acknowledgements, credits, and error responses. No data payload. Used bidirectionally between HN↔RN and RN↔HN. The lightest channel — small flit, high frequency.</p>
+
+  <!-- RSP flit layout -->
+  <div class="flit-diagram">
+    <div class="flit-d-label">// RSP Flit Field Layout</div>
+    <div class="flit-fields">
+      <div class="ff fc-route" style="flex:1"><div class="ff-bits">4b</div><div class="ff-name">QoS</div><div class="ff-desc">Priority</div></div>
+      <div class="ff fc-route" style="flex:2"><div class="ff-bits">11b</div><div class="ff-name">TgtID</div><div class="ff-desc">Target</div></div>
+      <div class="ff fc-route" style="flex:2"><div class="ff-bits">11b</div><div class="ff-name">SrcID</div><div class="ff-desc">Source</div></div>
+      <div class="ff fc-route" style="flex:1.5"><div class="ff-bits">8b</div><div class="ff-name">TxnID</div><div class="ff-desc">Txn ID</div></div>
+      <div class="ff fc-ctrl" style="flex:1.5"><div class="ff-bits">4b</div><div class="ff-name">Opcode</div><div class="ff-desc">Resp type</div></div>
+      <div class="ff fc-err"  style="flex:1"><div class="ff-bits">2b</div><div class="ff-name">RespErr</div><div class="ff-desc">Error</div></div>
+      <div class="ff fc-coher" style="flex:1.5"><div class="ff-bits">3b</div><div class="ff-name">Resp</div><div class="ff-desc">Cache state</div></div>
+      <div class="ff fc-coher" style="flex:1.5"><div class="ff-bits">3b</div><div class="ff-name">FwdState</div><div class="ff-desc">Fwd state</div></div>
+      <div class="ff fc-route" style="flex:1.5"><div class="ff-bits">8b</div><div class="ff-name">DBID</div><div class="ff-desc">Data buf ID</div></div>
+      <div class="ff fc-ctrl" style="flex:1.5"><div class="ff-bits">4b</div><div class="ff-name">PCrdType</div><div class="ff-desc">Credit type</div></div>
+      <div class="ff fc-dbg"  style="flex:1"><div class="ff-bits">1b</div><div class="ff-name">TraceTag</div><div class="ff-desc">Debug</div></div>
+    </div>
+  </div>
+
+  <div class="example-grid">
+    <!-- Comp example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:var(--rsp-bg);border-bottom-color:var(--rsp-b);">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:var(--rsp-bg);color:var(--rsp);border:1px solid var(--rsp-b)">Comp</span>
+        <span class="ex-title" style="color:var(--rsp)">Transaction completion</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x01</div><div class="fr-note">→ CPU0 (requester)</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x10</div><div class="fr-note">from HN-F</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x07</div><div class="fr-note">echo requester TxnID</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">Comp (0x04)</div><div class="fr-note">transaction complete</div></div>
+        <div class="fr err"><div class="fr-field">RespErr</div><div class="fr-val">OK (0b00)</div><div class="fr-note">no error</div></div>
+        <div class="fr coher"><div class="fr-field">Resp</div><div class="fr-val">UC (0b010)</div><div class="fr-note">granted Unique Clean</div></div>
+        <div class="fr route"><div class="fr-field">DBID</div><div class="fr-val">0x07</div><div class="fr-note">data buf to use</div></div>
+      </div></div>
+    </div>
+    <!-- RetryAck example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:#f8717108;border-bottom-color:#f8717120;">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:#f8717110;color:#f87171;border:1px solid #f8717130">RetryAck</span>
+        <span class="ex-title" style="color:#f87171">HN resource busy — retry</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x01</div><div class="fr-note">→ CPU0</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x10</div><div class="fr-note">from HN-F</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x07</div><div class="fr-note">original TxnID</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">RetryAck (0x0B)</div><div class="fr-note">no tracker slots free</div></div>
+        <div class="fr ctrl"><div class="fr-field">PCrdType</div><div class="fr-val">0x1</div><div class="fr-note">credit type for retry</div></div>
+        <div class="fr err"><div class="fr-field">RespErr</div><div class="fr-val">OK (0b00)</div><div class="fr-note">not an error condition</div></div>
+      </div></div>
+    </div>
+    <!-- CompAck example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:var(--dat-bg);border-bottom-color:var(--dat-b);">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:var(--dat-bg);color:var(--dat);border:1px solid var(--dat-b)">CompAck</span>
+        <span class="ex-title" style="color:var(--dat)">CPU confirms data received</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x10</div><div class="fr-note">→ HN-F (HomeNID)</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x01</div><div class="fr-note">from CPU0</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x07</div><div class="fr-note">closes transaction</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">CompAck (0x05)</div><div class="fr-note">data installed in cache</div></div>
+        <div class="fr err"><div class="fr-field">RespErr</div><div class="fr-val">OK (0b00)</div><div class="fr-note">clean receipt</div></div>
+      </div></div>
+    </div>
+    <!-- PCrdGrant example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:#fcd34d08;border-bottom-color:#fcd34d20;">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:#fcd34d10;color:#fcd34d;border:1px solid #fcd34d30">PCrdGrant</span>
+        <span class="ex-title" style="color:#fcd34d">Credit granted — resend REQ</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x01</div><div class="fr-note">→ CPU0 (retrier)</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x10</div><div class="fr-note">from HN-F</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x00</div><div class="fr-note">not used in PCrdGrant</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">PCrdGrant (0x0C)</div><div class="fr-note">tracker slot now free</div></div>
+        <div class="fr ctrl"><div class="fr-field">PCrdType</div><div class="fr-val">0x1</div><div class="fr-note">matches RetryAck type</div></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- RSP OPCODES -->
+<div class="section" id="rsp-opcodes">
+  <div style="font-family:'Syne Mono',monospace;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--rsp);margin-bottom:16px;">// RSP Channel — Complete Opcode Reference</div>
+  <div class="op-table-wrap">
+    <table class="op-table">
+      <thead>
+        <tr>
+          <th style="color:var(--rsp)">Opcode Name</th>
+          <th>Hex</th>
+          <th>Category</th>
+          <th>Sender → Receiver</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="op-code" style="color:var(--rsp)">RespLCrdReturn</td><td class="op-hex">0x00</td><td><span class="op-cat cat-misc">Credit</span></td><td class="op-note">Any → Any</td><td class="op-desc">Return a link-layer credit (L-credit) to the sender. Restores flow-control budget so sender can send more flits on this channel.</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">SnpResp</td><td class="op-hex">0x01</td><td><span class="op-cat cat-snoop">Snoop</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Response to a snoop that did not involve data (line was Invalid or clean). Carries final cache state. No DAT flit needed.</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">SnpRespFwded</td><td class="op-hex">0x02</td><td><span class="op-cat cat-snoop">Snoop</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Response to a snoop where data was forwarded directly to another RN-F (DCT — Direct Cache Transfer). Tells HN data was sent, includes FwdState.</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">CompAck</td><td class="op-hex">0x05</td><td><span class="op-cat cat-comp">Comp</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Final handshake after receiving CompData. Confirms requester has installed the cache line. Allows HN to free its tracker entry.</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">RetryAck</td><td class="op-hex">0x0B</td><td><span class="op-cat cat-misc">Flow</span></td><td class="op-note">HN → RN</td><td class="op-desc">HN has no tracker slots available. Requester must wait for PCrdGrant, then re-issue the REQ with AllowRetry=0. Includes credit type.</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">PCrdGrant</td><td class="op-hex">0x0C</td><td><span class="op-cat cat-misc">Credit</span></td><td class="op-note">HN → RN</td><td class="op-desc">HN now has a free tracker slot. Requester may re-issue the previously retried REQ. PCrdType must match the RetryAck's type.</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">ReadReceipt</td><td class="op-hex">0x0D</td><td><span class="op-cat cat-comp">Comp</span></td><td class="op-note">HN → RN</td><td class="op-desc">HN acknowledges receipt of a REQ and allocated a tracker entry. Allows requester to release protocol credits and issue more transactions.</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">Comp</td><td class="op-hex">0x04</td><td><span class="op-cat cat-comp">Comp</span></td><td class="op-note">HN → RN</td><td class="op-desc">Transaction complete — combined completion and data buffer ID assignment. Used when no separate CompData is needed (e.g., write completions).</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">CompDBIDResp</td><td class="op-hex">0x07</td><td><span class="op-cat cat-comp">Comp</span></td><td class="op-note">HN → RN</td><td class="op-desc">Combined Comp + DBIDResp in a single RSP flit. Used for write transactions — tells requester it's complete AND provides the data buffer ID.</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">DBIDResp</td><td class="op-hex">0x06</td><td><span class="op-cat cat-comp">Comp</span></td><td class="op-note">HN → RN / SN → HN</td><td class="op-desc">Data Buffer ID response — allocates a write data buffer slot. Requester must send write data using this DBID as the TxnID in DAT flits.</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">DBIDRespOrd</td><td class="op-hex">0x14</td><td><span class="op-cat cat-comp">Comp</span></td><td class="op-note">HN → RN</td><td class="op-desc">Ordered DBIDResp — includes ordering guarantee. Requester may not send write data until this is received, ensuring ordering with prior transactions.</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">TagMatch</td><td class="op-hex">0x09</td><td><span class="op-cat cat-misc">Misc</span></td><td class="op-note">HN → RN</td><td class="op-desc">Memory Tag match result for MTE (Memory Tagging Extension) operations. Reports whether tag check passed or failed for the accessed location.</td></tr>
+        <tr><td class="op-code" style="color:var(--rsp)">SnpRespData</td><td class="op-hex">0x03</td><td><span class="op-cat cat-snoop">Snoop</span></td><td class="op-note">(→ DAT)</td><td class="op-desc">Snoop response that includes data (not a pure RSP — the data portion goes on DAT channel). The RSP portion conveys state; data on DAT.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- RespErr explanation -->
+  <div style="font-family:'Syne Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;margin-top:28px;">// RespErr Field Values (present in RSP and DAT)</div>
+  <div class="op-table-wrap">
+    <table class="op-table">
+      <thead>
+        <tr><th>Value</th><th>Name</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="op-code" style="color:var(--dat)">0b00</td><td class="op-code" style="color:var(--dat)">OK</td><td class="op-desc">Normal successful response. No error. Transaction completed as requested.</td></tr>
+        <tr><td class="op-code" style="color:var(--req)">0b01</td><td class="op-code" style="color:var(--req)">ExOK</td><td class="op-desc">Exclusive OK — the exclusive access reservation (LDXR/STXR) succeeded. Store can proceed without retry.</td></tr>
+        <tr><td class="op-code" style="color:#f87171">0b10</td><td class="op-code" style="color:#f87171">DataError</td><td class="op-desc">Error in the data payload (ECC/parity failure). Data may be corrupted. Software must handle.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">0b11</td><td class="op-code" style="color:var(--snp)">NonDataError</td><td class="op-desc">Error unrelated to data (access permission violation, slave error, unsupported transaction). Transaction failed.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ DAT CHANNEL ════════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="dat">
+  <div class="sec-marker"><span class="sec-tag tag-dat">DAT Channel</span><div class="sec-line"></div></div>
+  <div class="sec-title" style="color:var(--dat)">Data Channel</div>
+  <p class="sec-desc">The DAT channel carries actual cache line data — the widest, heaviest channel. A 64-byte cache line may require multiple DAT flits (e.g., 2 flits on a 256-bit bus). Each flit includes routing, state, integrity fields, and the data payload itself.</p>
+
+  <div class="callout co-dat">
+    <strong>DataID and CCID:</strong> On a 256-bit (32-byte) data bus, one 64-byte cache line = 2 DAT flits. DataID identifies which 32-byte chunk (0x0 = bytes 0–31, 0x1 = bytes 32–63). CCID (Critical Chunk ID) identifies the 16-byte sub-chunk the CPU needs most urgently — it is returned first to minimise pipeline stall.
+  </div>
+
+  <!-- DAT flit layout -->
+  <div class="flit-diagram">
+    <div class="flit-d-label">// DAT Flit Field Layout — Widest flit in CHI</div>
+    <div class="flit-fields">
+      <div class="ff fc-route" style="flex:1"><div class="ff-bits">4b</div><div class="ff-name">QoS</div></div>
+      <div class="ff fc-route" style="flex:2"><div class="ff-bits">11b</div><div class="ff-name">TgtID</div></div>
+      <div class="ff fc-route" style="flex:2"><div class="ff-bits">11b</div><div class="ff-name">SrcID</div></div>
+      <div class="ff fc-route" style="flex:1.5"><div class="ff-bits">8b</div><div class="ff-name">TxnID</div></div>
+      <div class="ff fc-route" style="flex:2"><div class="ff-bits">11b</div><div class="ff-name">HomeNID</div><div class="ff-desc">CompAck dest</div></div>
+      <div class="ff fc-ctrl"  style="flex:1.5"><div class="ff-bits">3b</div><div class="ff-name">Opcode</div></div>
+      <div class="ff fc-err"   style="flex:1"><div class="ff-bits">2b</div><div class="ff-name">RespErr</div></div>
+      <div class="ff fc-coher" style="flex:1.5"><div class="ff-bits">3b</div><div class="ff-name">Resp</div><div class="ff-desc">Cache state</div></div>
+      <div class="ff fc-coher" style="flex:1.5"><div class="ff-bits">3b</div><div class="ff-name">FwdState</div></div>
+      <div class="ff fc-route" style="flex:1.5"><div class="ff-bits">8b</div><div class="ff-name">DBID</div></div>
+      <div class="ff fc-ctrl"  style="flex:1"><div class="ff-bits">2b</div><div class="ff-name">CCID</div><div class="ff-desc">Critical chunk</div></div>
+      <div class="ff fc-ctrl"  style="flex:1"><div class="ff-bits">2b</div><div class="ff-name">DataID</div><div class="ff-desc">Chunk index</div></div>
+      <div class="ff fc-data"  style="flex:8"><div class="ff-bits">128–512b</div><div class="ff-name">Data</div><div class="ff-desc">Cache line payload</div></div>
+      <div class="ff fc-data"  style="flex:2"><div class="ff-bits">16–64b</div><div class="ff-name">BE</div><div class="ff-desc">Byte Enable</div></div>
+      <div class="ff fc-err"   style="flex:2"><div class="ff-bits">8–32b</div><div class="ff-name">DataCheck</div><div class="ff-desc">ECC / parity</div></div>
+      <div class="ff fc-err"   style="flex:1"><div class="ff-bits">2–8b</div><div class="ff-name">Poison</div><div class="ff-desc">Corrupted</div></div>
+      <div class="ff fc-dbg"   style="flex:1"><div class="ff-bits">1b</div><div class="ff-name">TraceTag</div></div>
+    </div>
+  </div>
+
+  <div class="example-grid">
+    <!-- CompData example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:var(--dat-bg);border-bottom-color:var(--dat-b);">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:var(--dat-bg);color:var(--dat);border:1px solid var(--dat-b)">CompData</span>
+        <span class="ex-title" style="color:var(--dat)">HN delivers data + completion</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x01</div><div class="fr-note">→ CPU0</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x10</div><div class="fr-note">from HN-F</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x07</div><div class="fr-note">CPU0's TxnID</div></div>
+        <div class="fr route"><div class="fr-field">HomeNID</div><div class="fr-val">0x10</div><div class="fr-note">send CompAck here</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">CompData (0x04)</div><div class="fr-note">data + completion</div></div>
+        <div class="fr coher"><div class="fr-field">Resp</div><div class="fr-val">SC (0b001)</div><div class="fr-note">Shared Clean state</div></div>
+        <div class="fr err"><div class="fr-field">RespErr</div><div class="fr-val">OK (0b00)</div><div class="fr-note">clean transfer</div></div>
+        <div class="fr ctrl"><div class="fr-field">CCID</div><div class="fr-val">0x0</div><div class="fr-note">critical chunk first</div></div>
+        <div class="fr ctrl"><div class="fr-field">DataID</div><div class="fr-val">0x0</div><div class="fr-note">flit 1 of 2 (B0-31)</div></div>
+        <div class="fr data"><div class="fr-field">Data</div><div class="fr-val">256 bits payload</div><div class="fr-note">bytes [0..31]</div></div>
+        <div class="fr data"><div class="fr-field">BE</div><div class="fr-val">0xFFFF_FFFF</div><div class="fr-note">all bytes valid</div></div>
+        <div class="fr err"><div class="fr-field">DataCheck</div><div class="fr-val">ECC[31:0]</div><div class="fr-note">integrity check</div></div>
+      </div></div>
+    </div>
+    <!-- SnpRespData example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:var(--snp-bg);border-bottom-color:var(--snp-b);">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:var(--snp-bg);color:var(--snp);border:1px solid var(--snp-b)">SnpRespData</span>
+        <span class="ex-title" style="color:var(--snp)">CPU1 returns dirty line to HN</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x10</div><div class="fr-note">→ HN-F</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x02</div><div class="fr-note">from CPU1 (snoopee)</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x07</div><div class="fr-note">HN's snoop TxnID</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">SnpRespData (0x06)</div><div class="fr-note">snoop + dirty data</div></div>
+        <div class="fr coher"><div class="fr-field">Resp</div><div class="fr-val">SC_PD (0b011)</div><div class="fr-note">SC + Pass Dirty!</div></div>
+        <div class="fr err"><div class="fr-field">RespErr</div><div class="fr-val">OK (0b00)</div><div class="fr-note">valid data</div></div>
+        <div class="fr ctrl"><div class="fr-field">DataID</div><div class="fr-val">0x0</div><div class="fr-note">bytes 0–31</div></div>
+        <div class="fr data"><div class="fr-field">Data</div><div class="fr-val">256 bits DIRTY</div><div class="fr-note">modified by CPU1</div></div>
+        <div class="fr data"><div class="fr-field">BE</div><div class="fr-val">0xFFFF_FFFF</div><div class="fr-note">all valid</div></div>
+        <div class="fr err"><div class="fr-field">DataCheck</div><div class="fr-val">ECC[31:0]</div><div class="fr-note">integrity</div></div>
+      </div></div>
+    </div>
+    <!-- CopyBackWrData -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:var(--dat-bg);border-bottom-color:var(--dat-b);">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:var(--dat-bg);color:var(--dat);border:1px solid var(--dat-b)">CopyBackWrData</span>
+        <span class="ex-title" style="color:var(--dat)">Dirty writeback from cache</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x10</div><div class="fr-note">→ HN-F</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x01</div><div class="fr-note">from CPU0</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x08</div><div class="fr-note">DBID from HN</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">CopyBackWrData (0x02)</div><div class="fr-note">write-back data</div></div>
+        <div class="fr coher"><div class="fr-field">Resp</div><div class="fr-val">UD (0b101)</div><div class="fr-note">was Unique Dirty</div></div>
+        <div class="fr ctrl"><div class="fr-field">DataID</div><div class="fr-val">0x0</div><div class="fr-note">chunk 0</div></div>
+        <div class="fr data"><div class="fr-field">Data</div><div class="fr-val">256 bits dirty</div><div class="fr-note">modified data</div></div>
+        <div class="fr data"><div class="fr-field">BE</div><div class="fr-val">0xFFFF_FFFF</div><div class="fr-note">full line</div></div>
+      </div></div>
+    </div>
+    <!-- NonCopyBackWrData partial write -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:#a78bfa08;border-bottom-color:#a78bfa20;">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:#a78bfa10;color:#a78bfa;border:1px solid #a78bfa30">NonCopyBackWrData</span>
+        <span class="ex-title" style="color:#a78bfa">Partial write (BE masked)</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">TgtID</div><div class="fr-val">0x10</div><div class="fr-note">→ HN-F</div></div>
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x01</div><div class="fr-note">from CPU0</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x09</div><div class="fr-note">DBID from HN</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">NCBWrData (0x03)</div><div class="fr-note">non-copyback write</div></div>
+        <div class="fr ctrl"><div class="fr-field">DataID</div><div class="fr-val">0x0</div><div class="fr-note">first chunk</div></div>
+        <div class="fr data"><div class="fr-field">Data</div><div class="fr-val">256 bits</div><div class="fr-note">partial content</div></div>
+        <div class="fr data"><div class="fr-field">BE</div><div class="fr-val">0x00FF_0000</div><div class="fr-note">only bytes 16-23 valid</div></div>
+        <div class="fr err"><div class="fr-field">Poison</div><div class="fr-val">0b00</div><div class="fr-note">data not poisoned</div></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DAT OPCODES -->
+<div class="section" id="dat-opcodes">
+  <div style="font-family:'Syne Mono',monospace;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dat);margin-bottom:16px;">// DAT Channel — Complete Opcode Reference</div>
+  <div class="op-table-wrap">
+    <table class="op-table">
+      <thead>
+        <tr>
+          <th style="color:var(--dat)">Opcode Name</th>
+          <th>Hex</th>
+          <th>Category</th>
+          <th>Direction</th>
+          <th>Description</th>
+          <th>Carries Data?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="op-code" style="color:var(--dat)">DataLCrdReturn</td><td class="op-hex">0x00</td><td><span class="op-cat cat-misc">Credit</span></td><td class="op-note">Any → Any</td><td class="op-desc">Return a link-layer credit for the DAT channel. Restores the sender's ability to transmit more DAT flits.</td><td style="color:var(--muted)">No</td></tr>
+        <tr><td class="op-code" style="color:var(--dat)">SnpRespData</td><td class="op-hex">0x01</td><td><span class="op-cat cat-snoop">Snoop</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Snoop response with dirty data. Snoopee had a dirty line and is returning it. Resp field carries the new state (e.g. SC_PD = Shared Clean + Pass Dirty).</td><td style="color:var(--dat)">Yes</td></tr>
+        <tr><td class="op-code" style="color:var(--dat)">CopyBackWrData</td><td class="op-hex">0x02</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Data for WriteBack/WriteClean/WriteEvict transactions. Requester had UD state, writes back dirty data as part of eviction. TxnID = DBID from HN.</td><td style="color:var(--dat)">Yes</td></tr>
+        <tr><td class="op-code" style="color:var(--dat)">NonCopyBackWrData</td><td class="op-hex">0x03</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Data for non-copyback writes (WriteUniqueFull, WriteUniquePtl). Used for stores that don't involve cache eviction. BE indicates which bytes are valid.</td><td style="color:var(--dat)">Yes</td></tr>
+        <tr><td class="op-code" style="color:var(--dat)">CompData</td><td class="op-hex">0x04</td><td><span class="op-cat cat-comp">Comp</span></td><td class="op-note">HN → RN-F or SN → HN</td><td class="op-desc">Combined completion + data. The most common DAT opcode. Carries the requested cache line and signals transaction completion. Includes HomeNID for CompAck routing.</td><td style="color:var(--dat)">Yes</td></tr>
+        <tr><td class="op-code" style="color:var(--dat)">SnpRespDataPtl</td><td class="op-hex">0x05</td><td><span class="op-cat cat-snoop">Snoop</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Partial snoop response with data. Snoopee returns only a portion of the line (indicated by BE). Used when only certain bytes were modified.</td><td style="color:var(--dat)">Partial</td></tr>
+        <tr><td class="op-code" style="color:var(--dat)">SnpRespDataFwded</td><td class="op-hex">0x06</td><td><span class="op-cat cat-snoop">Snoop</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Snoop response where data was forwarded to the requesting RN-F (DCT). Snoopee sends this copy to HN for memory update; requester gets data via separate path.</td><td style="color:var(--dat)">Yes</td></tr>
+        <tr><td class="op-code" style="color:var(--dat)">WriteDataCancel</td><td class="op-hex">0x07</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Cancel a pending write. Instead of sending data, requester indicates the write is cancelled. HN frees the data buffer. Data field is empty/ignored.</td><td style="color:var(--muted)">No</td></tr>
+        <tr><td class="op-code" style="color:var(--dat)">NCBWrDataCompAck</td><td class="op-hex">0x0C</td><td><span class="op-cat cat-write">Write</span></td><td class="op-note">RN-F → HN-F</td><td class="op-desc">Combined NonCopyBackWrData + CompAck in a single DAT flit. Saves one RSP flit round-trip for write transactions that require CompAck.</td><td style="color:var(--dat)">Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Resp field encoding for DAT -->
+  <div style="font-family:'Syne Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;margin-top:24px;">// DAT Resp Field — Cache State Encoding</div>
+  <div class="op-table-wrap">
+    <table class="op-table">
+      <thead>
+        <tr><th>Value</th><th>State Name</th><th>Meaning</th><th>Memory Valid?</th><th>Other Sharers?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="op-hex">0b000</td><td><span class="state st-i">I</span></td><td class="op-desc">Invalid — line not cached by responder</td><td style="color:var(--dat)">Yes</td><td style="color:var(--muted)">Unknown</td></tr>
+        <tr><td class="op-hex">0b001</td><td><span class="state st-sc">SC</span></td><td class="op-desc">Shared Clean — line shared, memory is valid</td><td style="color:var(--dat)">Yes</td><td style="color:var(--dat)">Maybe</td></tr>
+        <tr><td class="op-hex">0b010</td><td><span class="state st-uc">UC</span></td><td class="op-desc">Unique Clean — exclusive, memory is valid</td><td style="color:var(--dat)">Yes</td><td style="color:var(--muted)">No</td></tr>
+        <tr><td class="op-hex">0b011</td><td><span class="state st-sc">SC</span>+PD</td><td class="op-desc">Shared Clean + Pass Dirty — data is correct but memory is stale. Recipient inherits dirty responsibility.</td><td style="color:#f87171">Stale</td><td style="color:var(--dat)">Maybe</td></tr>
+        <tr><td class="op-hex">0b100</td><td><span class="state st-sd">SD</span></td><td class="op-desc">Shared Dirty — data shared but dirty in one node. Memory stale.</td><td style="color:#f87171">Stale</td><td style="color:var(--dat)">Yes</td></tr>
+        <tr><td class="op-hex">0b101</td><td><span class="state st-ud">UD</span></td><td class="op-desc">Unique Dirty — exclusive ownership, data modified. Memory stale. Must write back on eviction.</td><td style="color:#f87171">Stale</td><td style="color:var(--muted)">No</td></tr>
+        <tr><td class="op-hex">0b110</td><td><span class="state st-ud">UD</span>+PD</td><td class="op-desc">Unique Dirty + Pass Dirty — requester receives Unique Dirty state and inherits writeback obligation.</td><td style="color:#f87171">Stale</td><td style="color:var(--muted)">No</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ SNP CHANNEL ════════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="snp">
+  <div class="sec-marker"><span class="sec-tag tag-snp">SNP Channel</span><div class="sec-line"></div></div>
+  <div class="sec-title" style="color:var(--snp)">Snoop Channel</div>
+  <p class="sec-desc">The SNP channel is used exclusively by HN-F to interrogate the caches of RN-F nodes. It has no TgtID field — the target is implicit from the physical link used. Snoops trigger state changes and optionally data returns. This channel is the mechanism of cache coherency.</p>
+
+  <div class="callout co-snp">
+    <strong>No TgtID in SNP:</strong> Unlike REQ, RSP, and DAT which all carry TgtID for mesh routing, the SNP channel has no TgtID field. The target is determined by which physical port on the HN-F the flit is dispatched on. This saves bits and is possible because snoops are always point-to-point from HN to a specific RN-F determined by the Snoop Filter.
+  </div>
+
+  <!-- SNP flit layout -->
+  <div class="flit-diagram">
+    <div class="flit-d-label">// SNP Flit Field Layout — No TgtID! Target is implicit from link</div>
+    <div class="flit-fields">
+      <div class="ff fc-route" style="flex:1"><div class="ff-bits">4b</div><div class="ff-name">QoS</div></div>
+      <div class="ff fc-route" style="flex:2"><div class="ff-bits">11b</div><div class="ff-name">SrcID</div><div class="ff-desc">From HN-F</div></div>
+      <div class="ff fc-route" style="flex:1.5"><div class="ff-bits">8b</div><div class="ff-name">TxnID</div></div>
+      <div class="ff fc-route" style="flex:2"><div class="ff-bits">11b</div><div class="ff-name">FwdNID</div><div class="ff-desc">Fwd target</div></div>
+      <div class="ff fc-route" style="flex:1.5"><div class="ff-bits">8b</div><div class="ff-name">FwdTxnID</div><div class="ff-desc">Fwd ID</div></div>
+      <div class="ff fc-ctrl"  style="flex:2"><div class="ff-bits">5b</div><div class="ff-name">Opcode</div></div>
+      <div class="ff fc-route" style="flex:3"><div class="ff-bits">44–52b</div><div class="ff-name">Addr</div></div>
+      <div class="ff fc-mem"   style="flex:1"><div class="ff-bits">1b</div><div class="ff-name">NS</div></div>
+      <div class="ff fc-coher" style="flex:1.5"><div class="ff-bits">1b</div><div class="ff-name">DoNotGoToSD</div><div class="ff-desc">No SD</div></div>
+      <div class="ff fc-coher" style="flex:1.5"><div class="ff-bits">1b</div><div class="ff-name">RetToSrc</div><div class="ff-desc">Return data</div></div>
+      <div class="ff fc-dbg"   style="flex:1"><div class="ff-bits">1b</div><div class="ff-name">TraceTag</div></div>
+    </div>
+  </div>
+
+  <div class="example-grid">
+    <!-- SnpShared example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:var(--snp-bg);border-bottom-color:var(--snp-b);">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:var(--snp-bg);color:var(--snp);border:1px solid var(--snp-b)">SnpShared</span>
+        <span class="ex-title" style="color:var(--snp)">Downgrade to shared state</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x10</div><div class="fr-note">from HN-F</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x07</div><div class="fr-note">HN's snoop ID</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">SnpShared (0x01)</div><div class="fr-note">allow shared remain</div></div>
+        <div class="fr route"><div class="fr-field">Addr</div><div class="fr-val">0xDEAD_C080</div><div class="fr-note">target cache line</div></div>
+        <div class="fr mem"><div class="fr-field">NS</div><div class="fr-val">1</div><div class="fr-note">Non-Secure</div></div>
+        <div class="fr coher"><div class="fr-field">DoNotGoToSD</div><div class="fr-val">0</div><div class="fr-note">SD allowed</div></div>
+        <div class="fr coher"><div class="fr-field">RetToSrc</div><div class="fr-val">1</div><div class="fr-note">return data even if clean</div></div>
+      </div></div>
+    </div>
+    <!-- SnpUnique example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:#f8717108;border-bottom-color:#f8717120;">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:#f8717110;color:#f87171;border:1px solid #f8717130">SnpUnique</span>
+        <span class="ex-title" style="color:#f87171">Invalidate — give up cache line</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x10</div><div class="fr-note">from HN-F</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x12</div><div class="fr-note">snoop ID</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">SnpUnique (0x07)</div><div class="fr-note">must invalidate</div></div>
+        <div class="fr route"><div class="fr-field">Addr</div><div class="fr-val">0xA000_0000</div><div class="fr-note">line to invalidate</div></div>
+        <div class="fr mem"><div class="fr-field">NS</div><div class="fr-val">1</div><div class="fr-note">Non-Secure</div></div>
+        <div class="fr coher"><div class="fr-field">DoNotGoToSD</div><div class="fr-val">1</div><div class="fr-note">must become I or SC</div></div>
+        <div class="fr coher"><div class="fr-field">RetToSrc</div><div class="fr-val">0</div><div class="fr-note">no data needed if clean</div></div>
+      </div></div>
+    </div>
+    <!-- SnpUniqueFwd example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:var(--req-bg);border-bottom-color:var(--req-b);">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:var(--req-bg);color:var(--req);border:1px solid var(--req-b)">SnpUniqueFwd</span>
+        <span class="ex-title" style="color:var(--req)">Invalidate + forward to CPU0</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x10</div><div class="fr-note">from HN-F</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x15</div><div class="fr-note">snoop ID</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">SnpUniqueFwd (0x0B)</div><div class="fr-note">DCT — fwd to requester</div></div>
+        <div class="fr route"><div class="fr-field">Addr</div><div class="fr-val">0xC000_0040</div><div class="fr-note">forwarding this line</div></div>
+        <div class="fr route"><div class="fr-field">FwdNID</div><div class="fr-val">0x01</div><div class="fr-note">forward data → CPU0</div></div>
+        <div class="fr route"><div class="fr-field">FwdTxnID</div><div class="fr-val">0x12</div><div class="fr-note">CPU0's TxnID</div></div>
+        <div class="fr coher"><div class="fr-field">RetToSrc</div><div class="fr-val">0</div><div class="fr-note">fwd handles it</div></div>
+      </div></div>
+    </div>
+    <!-- SnpCleanInvalid example -->
+    <div class="ex-card">
+      <div class="ex-header" style="background:#a78bfa08;border-bottom-color:#a78bfa20;">
+        <span style="font-family:'Syne Mono',monospace;font-size:.64rem;font-weight:700;padding:3px 8px;border-radius:3px;background:#a78bfa10;color:#a78bfa;border:1px solid #a78bfa30">SnpCleanInvalid</span>
+        <span class="ex-title" style="color:#a78bfa">CMO snoop — clean then invalidate</span>
+      </div>
+      <div class="ex-body"><div class="flit-rows">
+        <div class="fr route"><div class="fr-field">SrcID</div><div class="fr-val">0x10</div><div class="fr-note">from HN-F</div></div>
+        <div class="fr route"><div class="fr-field">TxnID</div><div class="fr-val">0x20</div><div class="fr-note">CMO snoop ID</div></div>
+        <div class="fr ctrl"><div class="fr-field">Opcode</div><div class="fr-val">SnpCleanInvalid (0x09)</div><div class="fr-note">DMA prep: write + inval</div></div>
+        <div class="fr route"><div class="fr-field">Addr</div><div class="fr-val">0xE000_1000</div><div class="fr-note">DMA buffer addr</div></div>
+        <div class="fr coher"><div class="fr-field">RetToSrc</div><div class="fr-val">1</div><div class="fr-note">need dirty data back</div></div>
+        <div class="fr mem"><div class="fr-field">NS</div><div class="fr-val">1</div><div class="fr-note">Non-Secure</div></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SNP OPCODES -->
+<div class="section" id="snp-opcodes">
+  <div style="font-family:'Syne Mono',monospace;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--snp);margin-bottom:16px;">// SNP Channel — Complete Opcode Reference</div>
+  <div class="op-table-wrap">
+    <table class="op-table">
+      <thead>
+        <tr>
+          <th style="color:var(--snp)">Opcode Name</th>
+          <th>Hex</th>
+          <th>Category</th>
+          <th>Data Returned?</th>
+          <th>Final State</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="op-code" style="color:var(--snp)">SnpLCrdReturn</td><td class="op-hex">0x00</td><td><span class="op-cat cat-misc">Credit</span></td><td style="color:var(--muted)">No</td><td>—</td><td class="op-desc">Return link-layer credit for the SNP channel. Restores HN-F's ability to issue more snoop flits.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpShared</td><td class="op-hex">0x01</td><td><span class="op-cat cat-snoop">Snoop</span></td><td style="color:var(--dat)">If dirty</td><td><span class="state st-sc">SC</span><span class="state st-sd">SD</span></td><td class="op-desc">Request snoopee to downgrade to Shared state. If line is UC → SC. If UD → SD or SC_PD (if RetToSrc=1). Other sharers can coexist.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpClean</td><td class="op-hex">0x02</td><td><span class="op-cat cat-snoop">Snoop</span></td><td style="color:var(--dat)">If dirty</td><td><span class="state st-sc">SC</span><span class="state st-uc">UC</span></td><td class="op-desc">Ensure the line is clean in memory without necessarily invalidating. If dirty, snoopee writes back and can stay Shared. DoNotGoToSD=1 implied.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpOnce</td><td class="op-hex">0x03</td><td><span class="op-cat cat-snoop">Snoop</span></td><td style="color:var(--dat)">Optional</td><td>Unchanged</td><td class="op-desc">Snapshot snoop — peek at the current state without changing it. Used by ReadOnce. Snoopee can keep its current state; returns data/state info only.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpNotSharedDirty</td><td class="op-hex">0x04</td><td><span class="op-cat cat-snoop">Snoop</span></td><td style="color:var(--dat)">If dirty</td><td><span class="state st-sc">SC</span><span class="state st-uc">UC</span></td><td class="op-desc">Ensure line is not in SharedDirty state. Snoopee must transition out of SD to either SC, UC, or I. Used with ReadNotSharedDirty.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpPreferUnique</td><td class="op-hex">0x05</td><td><span class="op-cat cat-snoop">Snoop</span></td><td style="color:var(--dat)">If dirty</td><td><span class="state st-i">I</span><span class="state st-sc">SC</span></td><td class="op-desc">Prefer Unique — hint to snoopee to give up the line if possible. Not mandatory; used with ReadPreferUnique for optimistic upgrade.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpPreferUniqueFwd</td><td class="op-hex">0x06</td><td><span class="op-cat cat-snoop">Snoop</span></td><td style="color:var(--dat)">If dirty</td><td><span class="state st-i">I</span><span class="state st-sc">SC</span></td><td class="op-desc">Same as SnpPreferUnique but with forwarding — snoopee forwards data directly to requester if it has a valid copy.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpUnique</td><td class="op-hex">0x07</td><td><span class="op-cat cat-snoop">Snoop</span></td><td style="color:var(--dat)">If dirty</td><td><span class="state st-i">I</span></td><td class="op-desc">Mandatory invalidation — snoopee must give up the line. Used for ReadUnique, MakeUnique. Returns data if dirty. Line becomes Invalid at snoopee.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpUniqueFwd</td><td class="op-hex">0x0B</td><td><span class="op-cat cat-snoop">Snoop</span></td><td style="color:var(--dat)">Yes (fwd)</td><td><span class="state st-i">I</span></td><td class="op-desc">Invalidate + forward data directly to requesting RN-F (DCT). FwdNID/FwdTxnID specify the target. Reduces HN-F involvement in data path.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpSharedFwd</td><td class="op-hex">0x0C</td><td><span class="op-cat cat-snoop">Snoop</span></td><td style="color:var(--dat)">Yes (fwd)</td><td><span class="state st-sc">SC</span></td><td class="op-desc">Downgrade to Shared + forward data to requester. Both snoopee and requester end up in SC. Uses DCT path for lower latency.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpCleanFwd</td><td class="op-hex">0x0D</td><td><span class="op-cat cat-snoop">Snoop</span></td><td style="color:var(--dat)">Yes (fwd)</td><td><span class="state st-sc">SC</span><span class="state st-uc">UC</span></td><td class="op-desc">Clean snoop with forwarding. Forward clean data to requester. Snoopee may retain a shared copy.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpOnceFwd</td><td class="op-hex">0x0E</td><td><span class="op-cat cat-snoop">Snoop</span></td><td style="color:var(--dat)">Yes (fwd)</td><td>Unchanged</td><td class="op-desc">Snapshot snoop with forwarding. Forward data without changing state. Used with ReadOnce for non-caching reads.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpCleanInvalid</td><td class="op-hex">0x09</td><td><span class="op-cat cat-cmo">CMO</span></td><td style="color:var(--dat)">Yes</td><td><span class="state st-i">I</span></td><td class="op-desc">Clean maintenance snoop — snoopee must write back dirty data to memory, then invalidate. Used before DMA writes to ensure memory is updated before DMA proceeds.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpMakeInvalid</td><td class="op-hex">0x0D</td><td><span class="op-cat cat-cmo">CMO</span></td><td style="color:var(--muted)">No</td><td><span class="state st-i">I</span></td><td class="op-desc">Invalidate without writeback — snoopee discards the line immediately. Only valid when data can be safely discarded. Used for scrub operations.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpMakeInvalidStash</td><td class="op-hex">0x0F</td><td><span class="op-cat cat-cmo">CMO</span></td><td style="color:var(--muted)">No</td><td><span class="state st-i">I</span></td><td class="op-desc">Invalidate + stash hint. Used to free up a cache entry for anticipated new data. Combines invalidation with stash target information.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpStashShared</td><td class="op-hex">0x10</td><td><span class="op-cat cat-write">Stash</span></td><td style="color:var(--muted)">No</td><td>Unchanged</td><td class="op-desc">Hint to snoopee to fetch and cache a Shared copy of the target line. Purely advisory — snoopee may ignore. Used for prefetch hinting via stash flows.</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpStashUnique</td><td class="op-hex">0x11</td><td><span class="op-cat cat-write">Stash</span></td><td style="color:var(--muted)">No</td><td>Unchanged</td><td class="op-desc">Hint to snoopee to fetch and cache a Unique copy. Advisory only. Used when producer knows consumer will write to the line soon (write-intent prefetch).</td></tr>
+        <tr><td class="op-code" style="color:var(--snp)">SnpDVMOp</td><td class="op-hex">0x14</td><td><span class="op-cat cat-dvm">DVM</span></td><td style="color:var(--muted)">No</td><td>—</td><td class="op-desc">Distributed Virtual Memory operation delivery — delivers a TLB invalidate, instruction cache sync, or branch predictor invalidate to a specific RN-F via the SNP channel.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ EXAMPLES ════════════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="examples">
+  <div class="sec-marker"><span class="sec-tag tag-all">Transaction Examples</span><div class="sec-line"></div></div>
+  <div class="sec-title">End-to-End Transaction Flows</div>
+  <p class="sec-desc">Complete transaction flows showing all flits on all channels for common scenarios. Each numbered step shows the channel, opcode, and key field values.</p>
+
+  <!-- Example 1: ReadShared clean miss -->
+  <div class="flow-wrap">
+    <div class="flow-title">// Example 1 — ReadShared: Cache miss, no sharers, clean memory fetch</div>
+    <svg viewBox="0 0 860 320" width="100%" style="max-height:340px;">
+      <!-- Nodes -->
+      <rect x="10" y="20" width="110" height="50" rx="6" fill="#38bdf80a" stroke="#38bdf840" stroke-width="1.5"/>
+      <text x="65" y="43" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="700">CPU0 · RN-F</text>
+      <text x="65" y="58" text-anchor="middle" fill="#38bdf866" font-size="8">NodeID=0x01</text>
+
+      <rect x="360" y="10" width="140" height="70" rx="6" fill="#f59e0b0a" stroke="#f59e0b40" stroke-width="1.5"/>
+      <text x="430" y="37" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="700">HN-F</text>
+      <text x="430" y="52" text-anchor="middle" fill="#f59e0b88" font-size="8">NodeID=0x10</text>
+      <text x="430" y="65" text-anchor="middle" fill="#f59e0b55" font-size="7">Snoop Filter</text>
+
+      <rect x="720" y="20" width="120" height="50" rx="6" fill="#4ade800a" stroke="#4ade8040" stroke-width="1.5"/>
+      <text x="780" y="43" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="700">SN-F · DDR</text>
+      <text x="780" y="58" text-anchor="middle" fill="#4ade8066" font-size="8">NodeID=0x20</text>
+
+      <!-- Step 1: REQ CPU0→HN -->
+      <line x1="120" y1="100" x2="360" y2="100" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="357,96 365,100 357,104" fill="#38bdf8"/>
+      <text x="240" y="92" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="700">① REQ</text>
+      <text x="240" y="104" text-anchor="middle" fill="#38bdf888" font-size="7">ReadShared · Addr=0xBEEF_0040 · TxnID=7</text>
+
+      <!-- Step 2: RSP HN→CPU0 ReadReceipt -->
+      <line x1="360" y1="125" x2="120" y2="125" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="123,121 115,125 123,129" fill="#c084fc"/>
+      <text x="240" y="118" text-anchor="middle" fill="#c084fc" font-size="9" font-weight="700">② RSP</text>
+      <text x="240" y="132" text-anchor="middle" fill="#c084fc88" font-size="7">ReadReceipt · TxnID=7</text>
+
+      <!-- Step 3: REQ HN→SN -->
+      <line x1="500" y1="152" x2="720" y2="152" stroke="#38bdf870" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="717,148 725,152 717,156" fill="#38bdf870"/>
+      <text x="612" y="144" text-anchor="middle" fill="#38bdf888" font-size="9" font-weight="700">③ REQ</text>
+      <text x="612" y="156" text-anchor="middle" fill="#38bdf866" font-size="7">ReadNoSnp · Addr=0xBEEF_0040</text>
+
+      <!-- Step 4: DAT SN→HN -->
+      <line x1="720" y1="180" x2="500" y2="180" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="503,176 495,180 503,184" fill="#34d399"/>
+      <text x="612" y="173" text-anchor="middle" fill="#34d399" font-size="9" font-weight="700">④ DAT ×2</text>
+      <text x="612" y="185" text-anchor="middle" fill="#34d39988" font-size="7">CompData · 64B · DataID=0,1</text>
+
+      <!-- Step 5: DAT HN→CPU0 -->
+      <line x1="360" y1="212" x2="120" y2="212" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="123,208 115,212 123,216" fill="#34d399"/>
+      <text x="240" y="204" text-anchor="middle" fill="#34d399" font-size="9" font-weight="700">⑤ DAT ×2</text>
+      <text x="240" y="216" text-anchor="middle" fill="#34d39988" font-size="7">CompData · Resp=SC · HomeNID=0x10</text>
+
+      <!-- Step 6: RSP CPU0→HN CompAck -->
+      <line x1="120" y1="245" x2="360" y2="245" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="357,241 365,245 357,249" fill="#c084fc"/>
+      <text x="240" y="237" text-anchor="middle" fill="#c084fc" font-size="9" font-weight="700">⑥ RSP</text>
+      <text x="240" y="249" text-anchor="middle" fill="#c084fc88" font-size="7">CompAck · TxnID=7 → HN tracker freed</text>
+
+      <!-- Final state -->
+      <rect x="10" y="275" width="110" height="28" rx="4" fill="#34d39912" stroke="#34d39940" stroke-width="1"/>
+      <text x="65" y="293" text-anchor="middle" fill="#34d399" font-size="8" font-weight="700">CPU0: SC ✓</text>
+      <rect x="720" y="275" width="120" height="28" rx="4" fill="#4ade8012" stroke="#4ade8040" stroke-width="1"/>
+      <text x="780" y="293" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="700">Memory: clean ✓</text>
+
+      <!-- flit count -->
+      <text x="430" y="295" text-anchor="middle" fill="#2d3a58" font-size="8">Total: 1 REQ + 1 RSP→ + 2 DAT + 1 RSP← + (HN→SN: 1 REQ + 2 DAT) = 8 flits</text>
+    </svg>
+  </div>
+
+  <!-- Example 2: ReadUnique with dirty sharer + snoop -->
+  <div class="flow-wrap">
+    <div class="flow-title">// Example 2 — ReadUnique: CPU1 wants exclusive write; CPU2 holds Unique Dirty</div>
+    <svg viewBox="0 0 860 380" width="100%" style="max-height:400px;">
+      <rect x="10" y="15" width="110" height="50" rx="6" fill="#38bdf80a" stroke="#38bdf840" stroke-width="1.5"/>
+      <text x="65" y="38" text-anchor="middle" fill="#38bdf8" font-size="10" font-weight="700">CPU1 · RN-F</text>
+      <text x="65" y="52" text-anchor="middle" fill="#38bdf866" font-size="7">REQUESTER</text>
+
+      <rect x="360" y="5" width="140" height="70" rx="6" fill="#f59e0b0a" stroke="#f59e0b40" stroke-width="1.5"/>
+      <text x="430" y="32" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="700">HN-F</text>
+      <text x="430" y="48" text-anchor="middle" fill="#f59e0b66" font-size="7">Filter: CPU2→UD</text>
+      <text x="430" y="60" text-anchor="middle" fill="#f59e0b55" font-size="7">Memory: STALE</text>
+
+      <rect x="720" y="15" width="120" height="50" rx="6" fill="#fb923c0a" stroke="#fb923c40" stroke-width="1.5"/>
+      <text x="780" y="38" text-anchor="middle" fill="#fb923c" font-size="10" font-weight="700">CPU2 · RN-F</text>
+      <text x="780" y="52" text-anchor="middle" fill="#fb923c66" font-size="7">holds UD ⚡</text>
+
+      <!-- 1 REQ CPU1→HN -->
+      <line x1="120" y1="90" x2="360" y2="90" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="357,86 365,90 357,94" fill="#38bdf8"/>
+      <text x="240" y="82" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="700">① REQ</text>
+      <text x="240" y="94" text-anchor="middle" fill="#38bdf888" font-size="7">ReadUnique · ExpCompAck=1 · TxnID=12</text>
+
+      <!-- 2 RSP ReadReceipt -->
+      <line x1="360" y1="115" x2="120" y2="115" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="123,111 115,115 123,119" fill="#c084fc"/>
+      <text x="240" y="128" text-anchor="middle" fill="#c084fc88" font-size="7">② RSP: ReadReceipt</text>
+
+      <!-- 3 SNP HN→CPU2 -->
+      <line x1="500" y1="148" x2="720" y2="148" stroke="#fb923c" stroke-width="2" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="717,144 725,148 717,152" fill="#fb923c"/>
+      <text x="612" y="140" text-anchor="middle" fill="#fb923c" font-size="9" font-weight="700">③ SNP ⚡</text>
+      <text x="612" y="152" text-anchor="middle" fill="#fb923c88" font-size="7">SnpUnique · RetToSrc=0</text>
+
+      <!-- 4 DAT CPU2→HN dirty data -->
+      <line x1="720" y1="180" x2="500" y2="180" stroke="#34d399" stroke-width="2" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="503,176 495,180 503,184" fill="#34d399"/>
+      <text x="612" y="172" text-anchor="middle" fill="#34d399" font-size="9" font-weight="700">④ DAT ×2 ⚡</text>
+      <text x="612" y="184" text-anchor="middle" fill="#34d39988" font-size="7">SnpRespData · Resp=I (evicted dirty)</text>
+
+      <!-- 5 DAT HN→CPU1 -->
+      <line x1="360" y1="218" x2="120" y2="218" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="123,214 115,218 123,222" fill="#34d399"/>
+      <text x="240" y="210" text-anchor="middle" fill="#34d399" font-size="9" font-weight="700">⑤ DAT ×2</text>
+      <text x="240" y="222" text-anchor="middle" fill="#34d39988" font-size="7">CompData · Resp=UD · HomeNID=0x10</text>
+
+      <!-- 6 DAT HN→SN writeback (parallel) -->
+      <line x1="500" y1="248" x2="720" y2="248" stroke="#4ade8088" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <polygon points="717,244 725,248 717,252" fill="#4ade8088"/>
+      <text x="612" y="240" text-anchor="middle" fill="#4ade8088" font-size="9">⑥ DAT ×2</text>
+      <text x="612" y="254" text-anchor="middle" fill="#4ade8066" font-size="7">CopyBackWrData → DDR (parallel)</text>
+
+      <!-- 7 RSP CompAck CPU1→HN -->
+      <line x1="120" y1="278" x2="360" y2="278" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="357,274 365,278 357,282" fill="#c084fc"/>
+      <text x="240" y="270" text-anchor="middle" fill="#c084fc" font-size="9" font-weight="700">⑦ RSP</text>
+      <text x="240" y="282" text-anchor="middle" fill="#c084fc88" font-size="7">CompAck · TxnID=12 · txn closed</text>
+
+      <!-- Final states -->
+      <rect x="10" y="308" width="110" height="24" rx="4" fill="#34d39912" stroke="#34d39940" stroke-width="1"/>
+      <text x="65" y="324" text-anchor="middle" fill="#34d399" font-size="7.5" font-weight="700">CPU1: UD ✓ (write!)</text>
+      <rect x="720" y="308" width="120" height="24" rx="4" fill="#4ade8012" stroke="#4ade8040" stroke-width="1"/>
+      <text x="780" y="324" text-anchor="middle" fill="#4ade80" font-size="7.5" font-weight="700">CPU2: I · Memory: ✓</text>
+      <rect x="360" y="308" width="140" height="24" rx="4" fill="#f59e0b0c" stroke="#f59e0b30" stroke-width="1"/>
+      <text x="430" y="324" text-anchor="middle" fill="#f59e0b" font-size="7.5" font-weight="700">HN: tracker freed ✓</text>
+    </svg>
+  </div>
+
+  <!-- Example 3: WriteBack flow -->
+  <div class="flow-wrap">
+    <div class="flow-title">// Example 3 — WriteBack: CPU0 evicts a dirty (UD) line from L3</div>
+    <svg viewBox="0 0 860 240" width="100%" style="max-height:260px;">
+      <rect x="10" y="15" width="110" height="50" rx="6" fill="#38bdf80a" stroke="#38bdf840" stroke-width="1.5"/>
+      <text x="65" y="38" text-anchor="middle" fill="#38bdf8" font-size="10" font-weight="700">CPU0 · RN-F</text>
+      <text x="65" y="52" text-anchor="middle" fill="#38bdf866" font-size="7">evicting UD line</text>
+
+      <rect x="360" y="10" width="140" height="60" rx="6" fill="#f59e0b0a" stroke="#f59e0b40" stroke-width="1.5"/>
+      <text x="430" y="35" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="700">HN-F</text>
+      <text x="430" y="52" text-anchor="middle" fill="#f59e0b66" font-size="7">NodeID=0x10</text>
+
+      <rect x="720" y="15" width="120" height="50" rx="6" fill="#4ade800a" stroke="#4ade8040" stroke-width="1.5"/>
+      <text x="780" y="38" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700">SN-F · DDR</text>
+
+      <!-- 1 REQ WriteBack -->
+      <line x1="120" y1="90" x2="360" y2="90" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="357,86 365,90 357,94" fill="#38bdf8"/>
+      <text x="240" y="82" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="700">① REQ</text>
+      <text x="240" y="96" text-anchor="middle" fill="#38bdf888" font-size="7">WriteBack · Addr=0xDEAD_C080</text>
+
+      <!-- 2 RSP CompDBIDResp from HN -->
+      <line x1="360" y1="118" x2="120" y2="118" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="123,114 115,118 123,122" fill="#c084fc"/>
+      <text x="240" y="110" text-anchor="middle" fill="#c084fc" font-size="9" font-weight="700">② RSP</text>
+      <text x="240" y="124" text-anchor="middle" fill="#c084fc88" font-size="7">CompDBIDResp · DBID=0x08</text>
+
+      <!-- 3 DAT CPU0→HN CopyBackWrData -->
+      <line x1="120" y1="152" x2="360" y2="152" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="357,148 365,152 357,156" fill="#34d399"/>
+      <text x="240" y="144" text-anchor="middle" fill="#34d399" font-size="9" font-weight="700">③ DAT ×2</text>
+      <text x="240" y="158" text-anchor="middle" fill="#34d39988" font-size="7">CopyBackWrData · TxnID=DBID=0x08 · Resp=UD</text>
+
+      <!-- 4 DAT HN→SN WriteNoSnp -->
+      <line x1="500" y1="180" x2="720" y2="180" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="717,176 725,180 717,184" fill="#4ade80"/>
+      <text x="612" y="172" text-anchor="middle" fill="#4ade80" font-size="9" font-weight="700">④ DAT ×2</text>
+      <text x="612" y="186" text-anchor="middle" fill="#4ade8088" font-size="7">WriteNoSnpFull → updates memory</text>
+
+      <!-- Final state -->
+      <rect x="10" y="212" width="110" height="22" rx="4" fill="#94a3b812" stroke="#94a3b840" stroke-width="1"/>
+      <text x="65" y="226" text-anchor="middle" fill="#94a3b8" font-size="7.5" font-weight="700">CPU0: I (evicted) ✓</text>
+      <rect x="720" y="212" width="120" height="22" rx="4" fill="#4ade8012" stroke="#4ade8040" stroke-width="1"/>
+      <text x="780" y="226" text-anchor="middle" fill="#4ade80" font-size="7.5" font-weight="700">Memory: updated ✓</text>
+    </svg>
+  </div>
+
+  <!-- Example 4: RetryAck + PCrdGrant -->
+  <div class="flow-wrap">
+    <div class="flow-title">// Example 4 — RetryAck flow: HN tracker full, requester must wait for credit</div>
+    <svg viewBox="0 0 600 230" width="100%" style="max-height:250px;">
+      <rect x="10" y="15" width="110" height="50" rx="6" fill="#38bdf80a" stroke="#38bdf840" stroke-width="1.5"/>
+      <text x="65" y="38" text-anchor="middle" fill="#38bdf8" font-size="10" font-weight="700">CPU0 · RN-F</text>
+
+      <rect x="250" y="10" width="140" height="70" rx="6" fill="#f59e0b0a" stroke="#f59e0b40" stroke-width="1.5"/>
+      <text x="320" y="35" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="700">HN-F</text>
+      <text x="320" y="52" text-anchor="middle" fill="#f87171" font-size="8">TRACKER FULL</text>
+      <text x="320" y="65" text-anchor="middle" fill="#f59e0b55" font-size="7">all slots busy</text>
+
+      <!-- 1 REQ AllowRetry=1 -->
+      <line x1="120" y1="88" x2="250" y2="88" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="247,84 255,88 247,92" fill="#38bdf8"/>
+      <text x="185" y="80" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="700">① REQ</text>
+      <text x="185" y="92" text-anchor="middle" fill="#38bdf888" font-size="7">ReadShared · AllowRetry=1</text>
+
+      <!-- 2 RSP RetryAck -->
+      <line x1="250" y1="115" x2="120" y2="115" stroke="#f87171" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="123,111 115,115 123,119" fill="#f87171"/>
+      <text x="185" y="107" text-anchor="middle" fill="#f87171" font-size="9" font-weight="700">② RSP</text>
+      <text x="185" y="121" text-anchor="middle" fill="#f8717188" font-size="7">RetryAck · PCrdType=0x1 (wait!)</text>
+
+      <!-- CPU0 waits -->
+      <text x="65" y="148" text-anchor="middle" fill="#38bdf866" font-size="8" font-style="italic">CPU0 waits…</text>
+
+      <!-- 3 PCrdGrant when slot frees -->
+      <line x1="250" y1="162" x2="120" y2="162" stroke="#fcd34d" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="123,158 115,162 123,166" fill="#fcd34d"/>
+      <text x="185" y="154" text-anchor="middle" fill="#fcd34d" font-size="9" font-weight="700">③ RSP</text>
+      <text x="185" y="168" text-anchor="middle" fill="#fcd34d88" font-size="7">PCrdGrant · PCrdType=0x1 (slot free!)</text>
+
+      <!-- 4 REQ retry AllowRetry=0 -->
+      <line x1="120" y1="195" x2="250" y2="195" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5,3" class="flow-line"/>
+      <polygon points="247,191 255,195 247,199" fill="#38bdf8"/>
+      <text x="185" y="187" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="700">④ REQ</text>
+      <text x="185" y="201" text-anchor="middle" fill="#38bdf888" font-size="7">ReadShared · AllowRetry=0 (retry!)</text>
+
+      <text x="350" y="205" fill="#34d39988" font-size="7">→ proceeds normally from here</text>
+    </svg>
+  </div>
+</div>
+
+<!-- QUICK REFERENCE SUMMARY -->
+<div class="divider"></div>
+<div class="section" id="summary">
+  <div class="sec-marker"><span class="sec-tag tag-all">Summary</span><div class="sec-line"></div></div>
+  <div class="sec-title">Channel Quick Reference</div>
+  <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--b1);margin-bottom:48px;">
+    <table style="width:100%;border-collapse:collapse;font-size:.78rem;background:var(--s2);">
+      <thead>
+        <tr>
+          <th style="padding:11px 16px;font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--b1);text-align:left;background:var(--s3);">Property</th>
+          <th style="padding:11px 16px;font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--req);border-bottom:1px solid var(--b1);text-align:left;background:var(--s3);">REQ</th>
+          <th style="padding:11px 16px;font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--rsp);border-bottom:1px solid var(--b1);text-align:left;background:var(--s3);">RSP</th>
+          <th style="padding:11px 16px;font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dat);border-bottom:1px solid var(--b1);text-align:left;background:var(--s3);">DAT</th>
+          <th style="padding:11px 16px;font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--snp);border-bottom:1px solid var(--b1);text-align:left;background:var(--s3);">SNP</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #0d1020;"><td style="padding:9px 16px;color:var(--soft)">Primary sender</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;color:var(--req)">RN → HN</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;color:var(--rsp)">HN ↔ RN</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;color:var(--dat)">HN↔RN↔SN</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;color:var(--snp)">HN → RN-F</td></tr>
+        <tr style="border-bottom:1px solid #0d1020;background:var(--s3);"><td style="padding:9px 16px;color:var(--soft)">Carries data?</td><td style="padding:9px 16px;color:#f87171;font-family:'Syne Mono',monospace;font-size:.7rem;">No</td><td style="padding:9px 16px;color:#f87171;font-family:'Syne Mono',monospace;font-size:.7rem;">No</td><td style="padding:9px 16px;color:var(--dat);font-family:'Syne Mono',monospace;font-size:.7rem;">Yes ✓</td><td style="padding:9px 16px;color:#f87171;font-family:'Syne Mono',monospace;font-size:.7rem;">No</td></tr>
+        <tr style="border-bottom:1px solid #0d1020;"><td style="padding:9px 16px;color:var(--soft)">Has TgtID?</td><td style="padding:9px 16px;color:var(--dat);font-family:'Syne Mono',monospace;font-size:.7rem;">Yes</td><td style="padding:9px 16px;color:var(--dat);font-family:'Syne Mono',monospace;font-size:.7rem;">Yes</td><td style="padding:9px 16px;color:var(--dat);font-family:'Syne Mono',monospace;font-size:.7rem;">Yes</td><td style="padding:9px 16px;color:#f87171;font-family:'Syne Mono',monospace;font-size:.7rem;">No ✗</td></tr>
+        <tr style="border-bottom:1px solid #0d1020;background:var(--s3);"><td style="padding:9px 16px;color:var(--soft)">Has Addr?</td><td style="padding:9px 16px;color:var(--dat);font-family:'Syne Mono',monospace;font-size:.7rem;">Yes</td><td style="padding:9px 16px;color:#f87171;font-family:'Syne Mono',monospace;font-size:.7rem;">No</td><td style="padding:9px 16px;color:#f87171;font-family:'Syne Mono',monospace;font-size:.7rem;">No</td><td style="padding:9px 16px;color:var(--dat);font-family:'Syne Mono',monospace;font-size:.7rem;">Yes</td></tr>
+        <tr style="border-bottom:1px solid #0d1020;"><td style="padding:9px 16px;color:var(--soft)">Opcode bits</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;">6b</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;">4b</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;">3b</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;">5b</td></tr>
+        <tr style="border-bottom:1px solid #0d1020;background:var(--s3);"><td style="padding:9px 16px;color:var(--soft)">Flit count/line</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;">1 per txn</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;">1 per event</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;">1–4 per 64B</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;">1 per snoop</td></tr>
+        <tr style="border-bottom:1px solid #0d1020;"><td style="padding:9px 16px;color:var(--soft)">Total opcodes</td><td style="padding:9px 16px;color:var(--req);font-family:'Syne Mono',monospace;font-size:.7rem;font-weight:700;">28+</td><td style="padding:9px 16px;color:var(--rsp);font-family:'Syne Mono',monospace;font-size:.7rem;font-weight:700;">12</td><td style="padding:9px 16px;color:var(--dat);font-family:'Syne Mono',monospace;font-size:.7rem;font-weight:700;">9</td><td style="padding:9px 16px;color:var(--snp);font-family:'Syne Mono',monospace;font-size:.7rem;font-weight:700;">18</td></tr>
+        <tr style="background:var(--s3);"><td style="padding:9px 16px;color:var(--soft)">Key unique field</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;color:var(--req)">Addr+MemAttr</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;color:var(--rsp)">DBID+PCrdType</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;color:var(--dat)">Data+BE+ECC</td><td style="padding:9px 16px;font-family:'Syne Mono',monospace;font-size:.7rem;color:var(--snp)">FwdNID+RetToSrc</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  <div class="ft">AMBA 5 CHI Flit Reference · ARM IHI 0050 · REQ · RSP · DAT · SNP</div>
+  <div class="ft">All opcodes, field definitions, and transaction examples</div>
+</footer>
+
+</body>
+</html>

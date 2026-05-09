@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHI — Node Types & System Topology</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500;600&family=Literata:ital,wght@0,300;0,400;0,600;1,300&display=swap');
+
+:root {
+  --bg:      #05080f;
+  --s0:      #080c16;
+  --s1:      #0c1120;
+  --s2:      #101628;
+  --border:  #151f35;
+  --border2: #1e2f4a;
+
+  /* node colours */
+  --rnf: #22d3ee;   /* cyan    - RN-F */
+  --rnd: #a78bfa;   /* violet  - RN-D */
+  --rni: #fb7185;   /* rose    - RN-I */
+  --hnf: #f59e0b;   /* amber   - HN-F */
+  --hni: #f97316;   /* orange  - HN-I */
+  --snf: #4ade80;   /* green   - SN-F */
+  --sni: #94a3b8;   /* slate   - SN-I */
+
+  /* channel colours */
+  --req: #60a5fa;
+  --rsp: #c084fc;
+  --dat: #34d399;
+  --snp: #fb923c;
+
+  --text:  #ccdaf0;
+  --soft:  #6a84a8;
+  --muted: #334560;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Literata', Georgia, serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+.hero {
+  min-height: 260px;
+  padding: 60px 56px 50px;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 0% 40%,  #22d3ee0d 0%, transparent 55%),
+    radial-gradient(ellipse 40% 60% at 100% 10%, #f59e0b0b 0%, transparent 50%),
+    radial-gradient(ellipse 30% 50% at 50% 100%, #4ade800a 0%, transparent 55%);
+}
+/* grid lines background */
+.hero::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.25;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+.hero-inner { position: relative; z-index: 1; }
+.eyebrow {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.hero h1 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: 0.02em;
+  margin-bottom: 18px;
+}
+.h-chi  { color: var(--hnf); }
+.h-node { color: var(--rnf); }
+.h-topo { color: var(--text); opacity: 0.85; }
+
+.hero-desc {
+  font-size: 0.95rem;
+  color: var(--soft);
+  max-width: 680px;
+  line-height: 1.75;
+  font-style: italic;
+}
+.hero-chips {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px;
+}
+.hchip {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.6rem;
+  padding: 4px 12px;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  border: 1px solid;
+}
+.hchip.rn  { color: var(--rnf); border-color: #22d3ee30; background: #22d3ee0a; }
+.hchip.hn  { color: var(--hnf); border-color: #f59e0b30; background: #f59e0b0a; }
+.hchip.sn  { color: var(--snf); border-color: #4ade8030; background: #4ade800a; }
+.hchip.mesh{ color: var(--rsp); border-color: #c084fc30; background: #c084fc0a; }
+
+/* ══════════════════════════════════════════
+   NAV
+══════════════════════════════════════════ */
+.nav {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--s0);
+  padding: 0 56px;
+  overflow-x: auto;
+}
+.nav a {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 14px 20px;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.nav a:hover { color: var(--text); border-bottom-color: var(--border2); }
+
+/* ══════════════════════════════════════════
+   SECTION WRAPPER
+══════════════════════════════════════════ */
+section {
+  padding: 56px 56px 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+section:last-of-type { padding-bottom: 56px; }
+
+.sec-label {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.sec-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-bottom: 12px;
+  line-height: 1.1;
+}
+.sec-desc {
+  font-size: 0.88rem;
+  color: var(--soft);
+  max-width: 700px;
+  margin-bottom: 36px;
+  line-height: 1.72;
+}
+
+/* ══════════════════════════════════════════
+   NODE TYPE CARDS
+══════════════════════════════════════════ */
+.node-group {
+  margin-bottom: 40px;
+}
+.group-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gl-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.node-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.ncard {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--s1);
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.ncard:hover { transform: translateY(-2px); }
+
+.ncard-top {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.ncard-icon {
+  width: 44px; height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  border: 1.5px solid;
+}
+.ncard-meta { flex: 1; }
+.ncard-type {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.ncard-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.ncard-body { padding: 14px 20px; }
+.ncard-desc {
+  font-size: 0.78rem;
+  color: var(--soft);
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+.ncard-props {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.nprop {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.65rem;
+}
+.nprop-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.nprop-k { color: var(--muted); min-width: 100px; }
+.nprop-v { color: var(--text); }
+
+/* colours per node type */
+.rnf .ncard-top    { background: #22d3ee0a; }
+.rnf .ncard-icon   { color: var(--rnf); border-color: #22d3ee40; background: #22d3ee10; }
+.rnf .ncard-name   { color: var(--rnf); }
+.rnf:hover         { border-color: #22d3ee40; }
+.rnf .nprop-dot    { background: var(--rnf); }
+
+.rnd .ncard-top    { background: #a78bfa0a; }
+.rnd .ncard-icon   { color: var(--rnd); border-color: #a78bfa40; background: #a78bfa10; }
+.rnd .ncard-name   { color: var(--rnd); }
+.rnd:hover         { border-color: #a78bfa40; }
+.rnd .nprop-dot    { background: var(--rnd); }
+
+.rni .ncard-top    { background: #fb71850a; }
+.rni .ncard-icon   { color: var(--rni); border-color: #fb718540; background: #fb718510; }
+.rni .ncard-name   { color: var(--rni); }
+.rni:hover         { border-color: #fb718540; }
+.rni .nprop-dot    { background: var(--rni); }
+
+.hnf .ncard-top    { background: #f59e0b0a; }
+.hnf .ncard-icon   { color: var(--hnf); border-color: #f59e0b40; background: #f59e0b10; }
+.hnf .ncard-name   { color: var(--hnf); }
+.hnf:hover         { border-color: #f59e0b40; }
+.hnf .nprop-dot    { background: var(--hnf); }
+
+.hni .ncard-top    { background: #f973160a; }
+.hni .ncard-icon   { color: var(--hni); border-color: #f9731640; background: #f9731610; }
+.hni .ncard-name   { color: var(--hni); }
+.hni:hover         { border-color: #f9731640; }
+.hni .nprop-dot    { background: var(--hni); }
+
+.snf .ncard-top    { background: #4ade800a; }
+.snf .ncard-icon   { color: var(--snf); border-color: #4ade8040; background: #4ade8010; }
+.snf .ncard-name   { color: var(--snf); }
+.snf:hover         { border-color: #4ade8040; }
+.snf .nprop-dot    { background: var(--snf); }
+
+.sni .ncard-top    { background: #94a3b80a; }
+.sni .ncard-icon   { color: var(--sni); border-color: #94a3b840; background: #94a3b810; }
+.sni .ncard-name   { color: var(--sni); }
+.sni:hover         { border-color: #94a3b840; }
+.sni .nprop-dot    { background: var(--sni); }
+
+/* ══════════════════════════════════════════
+   CHANNEL CAPABILITY TABLE
+══════════════════════════════════════════ */
+.cap-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-bottom: 48px;
+}
+.cap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.72rem;
+  background: var(--s1);
+}
+.cap-table th {
+  padding: 12px 16px;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+.cap-table th:last-child { border-right: none; }
+.cap-table th:first-child { text-align: left; background: var(--s2); }
+.cap-table td {
+  padding: 10px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  vertical-align: middle;
+}
+.cap-table td:last-child { border-right: none; }
+.cap-table td:first-child { text-align: left; background: var(--s2); }
+.cap-table tr:last-child td { border-bottom: none; }
+.cap-table tr:hover td { background: #ffffff03; }
+.cap-table tr:hover td:first-child { background: var(--s2); }
+
+.node-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 1px solid;
+}
+.nb-rnf { color: var(--rnf); border-color: #22d3ee30; background: #22d3ee0d; }
+.nb-rnd { color: var(--rnd); border-color: #a78bfa30; background: #a78bfa0d; }
+.nb-rni { color: var(--rni); border-color: #fb718530; background: #fb71850d; }
+.nb-hnf { color: var(--hnf); border-color: #f59e0b30; background: #f59e0b0d; }
+.nb-hni { color: var(--hni); border-color: #f9731630; background: #f973160d; }
+.nb-snf { color: var(--snf); border-color: #4ade8030; background: #4ade800d; }
+.nb-sni { color: var(--sni); border-color: #94a3b830; background: #94a3b80d; }
+
+.tick  { color: #4ade80; font-size: 1rem; }
+.cross { color: #334560; font-size: 0.9rem; }
+.part  { color: #f59e0b; font-size: 0.9rem; }
+
+/* ══════════════════════════════════════════
+   SVG TOPOLOGY DIAGRAMS
+══════════════════════════════════════════ */
+.diag-section {
+  margin-bottom: 48px;
+}
+.diag-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.diag-sub {
+  font-size: 0.8rem;
+  color: var(--soft);
+  margin-bottom: 16px;
+  font-style: italic;
+}
+.diag-wrap {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  overflow-x: auto;
+}
+
+svg { font-family: 'Source Code Pro', monospace; }
+
+/* node boxes in SVG */
+.svgnode { transition: filter 0.2s; }
+.svgnode:hover { filter: brightness(1.3); cursor: default; }
+
+/* ══════════════════════════════════════════
+   ADDRESS MAP TABLE
+══════════════════════════════════════════ */
+.addr-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-bottom: 48px;
+}
+.addr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.74rem;
+  background: var(--s1);
+}
+.addr-table th {
+  padding: 11px 18px;
+  text-align: left;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  font-size: 0.62rem;
+}
+.addr-table td {
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.addr-table tr:last-child td { border-bottom: none; }
+.addr-table tr:hover td { background: #ffffff03; }
+.addr-bar {
+  height: 6px;
+  border-radius: 3px;
+  margin-top: 5px;
+}
+
+/* ══════════════════════════════════════════
+   INTERACTION MATRIX
+══════════════════════════════════════════ */
+.matrix-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-bottom: 48px;
+}
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.7rem;
+  background: var(--s1);
+}
+.matrix-table th, .matrix-table td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  text-align: center;
+  white-space: nowrap;
+}
+.matrix-table th { background: var(--s2); font-weight: 600; }
+.cell-yes  { background: #4ade8012; color: #4ade80; }
+.cell-no   { background: transparent; color: var(--muted); }
+.cell-part { background: #f59e0b10; color: #fcd34d; }
+.cell-ch {
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  border-radius: 2px;
+  margin: 1px;
+  display: inline-block;
+}
+.cc-req { background: #60a5fa18; color: var(--req); }
+.cc-rsp { background: #c084fc18; color: var(--rsp); }
+.cc-dat { background: #34d39918; color: var(--dat); }
+.cc-snp { background: #fb923c18; color: var(--snp); }
+
+/* ══════════════════════════════════════════
+   REAL WORLD EXAMPLE
+══════════════════════════════════════════ */
+.rw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 48px;
+}
+.rw-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+.rw-card:hover { border-color: var(--border2); }
+.rw-chip {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.58rem;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  display: inline-block;
+  font-weight: 600;
+}
+.rw-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.rw-count {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+.page-footer {
+  margin-top: 0;
+  padding: 24px 56px;
+  border-top: 1px solid var(--border);
+  background: var(--s0);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.foot-txt {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+}
+
+@keyframes pulse-glow {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+.pulse { animation: pulse-glow 2.5s ease-in-out infinite; }
+
+@keyframes flow-dash {
+  from { stroke-dashoffset: 24; }
+  to   { stroke-dashoffset: 0; }
+}
+.flow { animation: flow-dash 1s linear infinite; }
+
+@media(max-width:768px){
+  .hero,.nav,section,.page-footer{ padding-left:20px; padding-right:20px; }
+  .node-cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ════════════════════════════════════════════════ -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">AMBA 5 CHI Architecture · ARM IHI 0050</div>
+    <h1>
+      <span class="h-chi">CHI </span>
+      <span class="h-node">Node Types </span><br>
+      <span class="h-topo">&amp; System Topology</span>
+    </h1>
+    <p class="hero-desc">
+      Every component in a CHI system is one of three fundamental node families —
+      Requester (RN), Home (HN), or Slave (SN). Understanding their roles, capabilities,
+      and how they connect in a mesh topology is the foundation of CHI system design.
+    </p>
+    <div class="hero-chips">
+      <span class="hchip rn">RN · Requester Node</span>
+      <span class="hchip hn">HN · Home Node</span>
+      <span class="hchip sn">SN · Slave Node</span>
+      <span class="hchip mesh">Mesh NoC Topology</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══ NAV ═════════════════════════════════════════════════ -->
+<nav class="nav">
+  <a href="#node-types">Node Types</a>
+  <a href="#capabilities">Capabilities</a>
+  <a href="#topology">Topology</a>
+  <a href="#address-map">Address Map</a>
+  <a href="#interaction">Interaction Matrix</a>
+  <a href="#realworld">Real-World SoC</a>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 1 — NODE TYPES
+════════════════════════════════════════════════════════════ -->
+<section id="node-types">
+  <div class="sec-label">// Section 01</div>
+  <div class="sec-title" style="color:var(--rnf)">Node Type Definitions</div>
+  <p class="sec-desc">
+    CHI defines three node families. Every silicon block in the SoC — CPU core, GPU, DMA engine,
+    memory controller, peripheral — is classified as one of these. The subtype determines
+    which channels it uses, whether it can cache, and what coherency obligations it carries.
+  </p>
+
+  <!-- RN GROUP -->
+  <div class="node-group">
+    <div class="group-label">
+      <div class="gl-dot" style="background:var(--rnf)"></div>
+      <span style="color:var(--rnf)">RN — Requester Node</span>
+      <span style="color:var(--muted);font-size:0.75rem;font-weight:400;margin-left:8px">Initiates transactions · Issues REQ flits</span>
+    </div>
+    <div class="node-cards">
+
+      <div class="ncard rnf">
+        <div class="ncard-top">
+          <div class="ncard-icon">RN-F</div>
+          <div class="ncard-meta">
+            <div class="ncard-type">Requester Node · Full</div>
+            <div class="ncard-name">Fully Coherent Cache Agent</div>
+          </div>
+        </div>
+        <div class="ncard-body">
+          <p class="ncard-desc">The most capable node. CPU cores and GPU clusters. Maintains a fully coherent cache and participates in all coherency protocols. Can hold lines in any cache state (UC, UD, SC, SD, I). Receives snoops from HN-F.</p>
+          <div class="ncard-props">
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Has cache</span><span class="nprop-v" style="color:#4ade80">Yes — fully coherent</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Receives snoops</span><span class="nprop-v" style="color:#4ade80">Yes — SNP channel</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Cache states</span><span class="nprop-v">UC, UD, SC, SD, I</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Channels used</span><span class="nprop-v">REQ, RSP, DAT, SNP</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Typical devices</span><span class="nprop-v">CPU cores, GPU clusters</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">LPID tracking</span><span class="nprop-v" style="color:#4ade80">Yes — exclusives</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ncard rnd">
+        <div class="ncard-top">
+          <div class="ncard-icon">RN-D</div>
+          <div class="ncard-meta">
+            <div class="ncard-type">Requester Node · DMA</div>
+            <div class="ncard-name">DMA / Non-Caching Requester</div>
+          </div>
+        </div>
+        <div class="ncard-body">
+          <p class="ncard-desc">DMA engines and similar masters that issue memory transactions but hold no cache. Issues REQ flits for data movement but never caches the data. No snoops are ever directed at RN-D nodes.</p>
+          <div class="ncard-props">
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Has cache</span><span class="nprop-v" style="color:#f87171">No</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Receives snoops</span><span class="nprop-v" style="color:#f87171">No</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Cache states</span><span class="nprop-v" style="color:var(--muted)">N/A</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Channels used</span><span class="nprop-v">REQ, RSP, DAT</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Typical devices</span><span class="nprop-v">DMA engines, ETH DMA</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">LPID tracking</span><span class="nprop-v" style="color:#f87171">No</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ncard rni">
+        <div class="ncard-top">
+          <div class="ncard-icon">RN-I</div>
+          <div class="ncard-meta">
+            <div class="ncard-type">Requester Node · I/O</div>
+            <div class="ncard-name">I/O Non-Coherent Requester</div>
+          </div>
+        </div>
+        <div class="ncard-body">
+          <p class="ncard-desc">PCIe controllers, USB, display engines. Issues memory-mapped I/O transactions. Non-cacheable. Routes transactions through an HN-I. Never participates in cache coherency protocol. Simplest requester type.</p>
+          <div class="ncard-props">
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Has cache</span><span class="nprop-v" style="color:#f87171">No</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Receives snoops</span><span class="nprop-v" style="color:#f87171">No</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Cache states</span><span class="nprop-v" style="color:var(--muted)">N/A</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Channels used</span><span class="nprop-v">REQ, RSP, DAT</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Typical devices</span><span class="nprop-v">PCIe, USB, display</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Routes via</span><span class="nprop-v">HN-I only</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HN GROUP -->
+  <div class="node-group">
+    <div class="group-label">
+      <div class="gl-dot" style="background:var(--hnf)"></div>
+      <span style="color:var(--hnf)">HN — Home Node</span>
+      <span style="color:var(--muted);font-size:0.75rem;font-weight:400;margin-left:8px">Coordinates coherency · Owns address ranges</span>
+    </div>
+    <div class="node-cards">
+
+      <div class="ncard hnf">
+        <div class="ncard-top">
+          <div class="ncard-icon">HN-F</div>
+          <div class="ncard-meta">
+            <div class="ncard-type">Home Node · Full</div>
+            <div class="ncard-name">Coherent Home Node</div>
+          </div>
+        </div>
+        <div class="ncard-body">
+          <p class="ncard-desc">The brain of CHI coherency. Owns a range of physical addresses. Maintains a Snoop Filter tracking which RN-Fs hold which lines. Issues snoops, coordinates writebacks, and serialises conflicting requests to the same address.</p>
+          <div class="ncard-props">
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Snoop Filter</span><span class="nprop-v" style="color:#4ade80">Yes — per cache line</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Issues snoops</span><span class="nprop-v" style="color:#4ade80">Yes — to RN-Fs</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Address ownership</span><span class="nprop-v">Coherent DRAM range</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Channels used</span><span class="nprop-v">REQ, RSP, DAT, SNP</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Typical impl</span><span class="nprop-v">CMN-700 crosspoint</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Talks to</span><span class="nprop-v">RN-F, RN-D, SN-F</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ncard hni">
+        <div class="ncard-top">
+          <div class="ncard-icon">HN-I</div>
+          <div class="ncard-meta">
+            <div class="ncard-type">Home Node · I/O</div>
+            <div class="ncard-name">Non-Coherent Home Node</div>
+          </div>
+        </div>
+        <div class="ncard-body">
+          <p class="ncard-desc">Manages non-coherent address space — device registers, ROM, peripheral MMIO. No snoop filter, no coherency tracking. Simply routes non-coherent REQ from RN-I/RN-D to the appropriate SN-I. Much simpler than HN-F.</p>
+          <div class="ncard-props">
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Snoop Filter</span><span class="nprop-v" style="color:#f87171">No</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Issues snoops</span><span class="nprop-v" style="color:#f87171">No</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Address ownership</span><span class="nprop-v">I/O, MMIO, ROM</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Channels used</span><span class="nprop-v">REQ, RSP, DAT</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Typical impl</span><span class="nprop-v">Peripheral bridge</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Talks to</span><span class="nprop-v">RN-I, RN-D, SN-I</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SN GROUP -->
+  <div class="node-group">
+    <div class="group-label">
+      <div class="gl-dot" style="background:var(--snf)"></div>
+      <span style="color:var(--snf)">SN — Slave Node</span>
+      <span style="color:var(--muted);font-size:0.75rem;font-weight:400;margin-left:8px">Responds to requests · Holds data</span>
+    </div>
+    <div class="node-cards">
+
+      <div class="ncard snf">
+        <div class="ncard-top">
+          <div class="ncard-icon">SN-F</div>
+          <div class="ncard-meta">
+            <div class="ncard-type">Slave Node · Full</div>
+            <div class="ncard-name">Memory Controller Slave</div>
+          </div>
+        </div>
+        <div class="ncard-body">
+          <p class="ncard-desc">DDR5, LPDDR5, HBM memory controllers. Receives ReadNoSnp and WriteNoSnp from HN-F. Responds with data on the DAT channel. Only communicates with HN-F — never with RN-F directly. No coherency logic needed.</p>
+          <div class="ncard-props">
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Coherency logic</span><span class="nprop-v" style="color:#f87171">None</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Talks to</span><span class="nprop-v">HN-F only</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Channels used</span><span class="nprop-v">REQ, RSP, DAT</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Typical devices</span><span class="nprop-v">DDR5, LPDDR5, HBM</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Issues snoops</span><span class="nprop-v" style="color:#f87171">No</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Receives snoops</span><span class="nprop-v" style="color:#f87171">No</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ncard sni">
+        <div class="ncard-top">
+          <div class="ncard-icon">SN-I</div>
+          <div class="ncard-meta">
+            <div class="ncard-type">Slave Node · I/O</div>
+            <div class="ncard-name">Peripheral / I/O Slave</div>
+          </div>
+        </div>
+        <div class="ncard-body">
+          <p class="ncard-desc">ROM, flash, peripheral register banks, on-chip SRAM. Responds to non-coherent reads and writes routed via HN-I. The simplest node type — just returns data or accepts writes with no protocol complexity.</p>
+          <div class="ncard-props">
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Coherency logic</span><span class="nprop-v" style="color:#f87171">None</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Talks to</span><span class="nprop-v">HN-I only</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Channels used</span><span class="nprop-v">REQ, RSP, DAT</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Typical devices</span><span class="nprop-v">ROM, SRAM, GPIO</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Issues snoops</span><span class="nprop-v" style="color:#f87171">No</span></div>
+            <div class="nprop"><div class="nprop-dot"></div><span class="nprop-k">Receives snoops</span><span class="nprop-v" style="color:#f87171">No</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 2 — CAPABILITIES TABLE
+════════════════════════════════════════════════════════════ -->
+<section id="capabilities">
+  <div class="sec-label">// Section 02</div>
+  <div class="sec-title" style="color:var(--hnf)">Node Capability Comparison</div>
+  <p class="sec-desc">Feature matrix across all seven CHI node subtypes — cache, coherency, channel usage, and typical implementation.</p>
+
+  <div class="cap-table-wrap">
+    <table class="cap-table">
+      <thead>
+        <tr>
+          <th>Node Type</th>
+          <th>Has Cache</th>
+          <th>Issues REQ</th>
+          <th>Issues SNP</th>
+          <th>Receives SNP</th>
+          <th>Snoop Filter</th>
+          <th>Channels</th>
+          <th>Talks To</th>
+          <th>Typical Device</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="node-badge nb-rnf">RN-F</span></td>
+          <td><span class="tick">✔</span> Full</td>
+          <td><span class="tick">✔</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="tick">✔</span></td>
+          <td><span class="cross">—</span></td>
+          <td>REQ RSP DAT SNP</td>
+          <td>HN-F</td>
+          <td>CPU core, GPU cluster</td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-rnd">RN-D</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="tick">✔</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td>REQ RSP DAT</td>
+          <td>HN-F / HN-I</td>
+          <td>DMA engine</td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-rni">RN-I</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="tick">✔</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td>REQ RSP DAT</td>
+          <td>HN-I</td>
+          <td>PCIe, USB, display</td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-hnf">HN-F</span></td>
+          <td><span class="part">◆</span> Snoop Filter</td>
+          <td><span class="tick">✔</span> to SN</td>
+          <td><span class="tick">✔</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="tick">✔</span></td>
+          <td>REQ RSP DAT SNP</td>
+          <td>RN-F, RN-D, SN-F</td>
+          <td>CMN-700 crosspoint</td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-hni">HN-I</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="tick">✔</span> to SN</td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td>REQ RSP DAT</td>
+          <td>RN-I, RN-D, SN-I</td>
+          <td>Peripheral bridge</td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-snf">SN-F</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td>REQ RSP DAT</td>
+          <td>HN-F only</td>
+          <td>DDR5, LPDDR5, HBM</td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-sni">SN-I</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td><span class="cross">—</span></td>
+          <td>REQ RSP DAT</td>
+          <td>HN-I only</td>
+          <td>ROM, SRAM, GPIO</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 3 — TOPOLOGY DIAGRAMS
+════════════════════════════════════════════════════════════ -->
+<section id="topology">
+  <div class="sec-label">// Section 03</div>
+  <div class="sec-title" style="color:var(--snf)">System Topology</div>
+  <p class="sec-desc">CHI is designed for ring and mesh Network-on-Chip topologies where multiple nodes communicate via routed flits. Each diagram below shows a different topology variant.</p>
+
+  <!-- DIAGRAM 1: Simple Linear -->
+  <div class="diag-section">
+    <div class="diag-title">Diagram 1 — Simple Three-Node Chain</div>
+    <div class="diag-sub">The fundamental RN-F → HN-F → SN-F relationship for a single coherent address range.</div>
+    <div class="diag-wrap">
+      <svg viewBox="0 0 820 180" width="100%" style="max-height:180px">
+
+        <!-- RN-F -->
+        <g class="svgnode">
+          <rect x="20" y="55" width="160" height="70" rx="8" fill="#22d3ee0d" stroke="#22d3ee40" stroke-width="1.5"/>
+          <text x="100" y="82" text-anchor="middle" fill="#22d3ee" font-size="14" font-weight="600" font-family="Rajdhani,sans-serif">RN-F</text>
+          <text x="100" y="98" text-anchor="middle" fill="#22d3ee99" font-size="9">CPU Core</text>
+          <text x="100" y="112" text-anchor="middle" fill="#22d3ee66" font-size="8">NodeID = 0x01</text>
+        </g>
+
+        <!-- arrow RN-F → HN-F: REQ -->
+        <line x1="180" y1="78" x2="310" y2="78" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="6,3" class="flow"/>
+        <polygon points="310,73 320,78 310,83" fill="#60a5fa"/>
+        <text x="250" y="70" text-anchor="middle" fill="#60a5fa" font-size="9">REQ / DAT</text>
+
+        <!-- arrow HN-F → RN-F: RSP/SNP -->
+        <line x1="320" y1="102" x2="190" y2="102" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="6,3" class="flow"/>
+        <polygon points="190,97 180,102 190,107" fill="#fb923c"/>
+        <text x="250" y="117" text-anchor="middle" fill="#fb923c" font-size="9">RSP / SNP</text>
+
+        <!-- HN-F -->
+        <g class="svgnode">
+          <rect x="320" y="40" width="180" height="100" rx="8" fill="#f59e0b0d" stroke="#f59e0b40" stroke-width="1.5"/>
+          <text x="410" y="72" text-anchor="middle" fill="#f59e0b" font-size="14" font-weight="600" font-family="Rajdhani,sans-serif">HN-F</text>
+          <text x="410" y="89" text-anchor="middle" fill="#f59e0b99" font-size="9">Home Node · Full</text>
+          <text x="410" y="104" text-anchor="middle" fill="#f59e0b66" font-size="8">Snoop Filter</text>
+          <text x="410" y="118" text-anchor="middle" fill="#f59e0b55" font-size="8">NodeID = 0x10</text>
+        </g>
+
+        <!-- arrow HN-F → SN-F: ReadNoSnp -->
+        <line x1="500" y1="78" x2="630" y2="78" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="6,3" class="flow"/>
+        <polygon points="630,73 640,78 630,83" fill="#4ade80"/>
+        <text x="565" y="70" text-anchor="middle" fill="#4ade80" font-size="9">ReadNoSnp</text>
+
+        <!-- arrow SN-F → HN-F: CompData -->
+        <line x1="640" y1="102" x2="510" y2="102" stroke="#34d399" stroke-width="1.5" stroke-dasharray="6,3" class="flow"/>
+        <polygon points="510,97 500,102 510,107" fill="#34d399"/>
+        <text x="565" y="117" text-anchor="middle" fill="#34d399" font-size="9">CompData</text>
+
+        <!-- SN-F -->
+        <g class="svgnode">
+          <rect x="640" y="55" width="160" height="70" rx="8" fill="#4ade800d" stroke="#4ade8040" stroke-width="1.5"/>
+          <text x="720" y="82" text-anchor="middle" fill="#4ade80" font-size="14" font-weight="600" font-family="Rajdhani,sans-serif">SN-F</text>
+          <text x="720" y="98" text-anchor="middle" fill="#4ade8099" font-size="9">DDR Memory</text>
+          <text x="720" y="112" text-anchor="middle" fill="#4ade8066" font-size="8">NodeID = 0x20</text>
+        </g>
+
+        <!-- labels -->
+        <text x="100" y="20" text-anchor="middle" fill="#22d3ee66" font-size="8">COHERENT ZONE</text>
+        <text x="720" y="20" text-anchor="middle" fill="#4ade8066" font-size="8">MEMORY</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- DIAGRAM 2: 4-CPU Mesh -->
+  <div class="diag-section">
+    <div class="diag-title">Diagram 2 — 4-CPU Coherent Cluster with Snoop</div>
+    <div class="diag-sub">One HN-F coordinating four RN-F nodes. Shows snoop broadcast path when CPU0 requests a line held by CPU2.</div>
+    <div class="diag-wrap">
+      <svg viewBox="0 0 820 340" width="100%" style="max-height:360px">
+
+        <!-- CPU0 top-left -->
+        <g class="svgnode">
+          <rect x="30" y="30" width="130" height="60" rx="7" fill="#22d3ee0d" stroke="#22d3ee40" stroke-width="1.5"/>
+          <text x="95" y="55" text-anchor="middle" fill="#22d3ee" font-size="13" font-weight="600" font-family="Rajdhani,sans-serif">CPU0 · RN-F</text>
+          <text x="95" y="71" text-anchor="middle" fill="#22d3ee66" font-size="8">NodeID=0x01 · MISS</text>
+        </g>
+
+        <!-- CPU1 top-right -->
+        <g class="svgnode">
+          <rect x="660" y="30" width="130" height="60" rx="7" fill="#22d3ee0d" stroke="#22d3ee30" stroke-width="1"/>
+          <text x="725" y="55" text-anchor="middle" fill="#22d3ee88" font-size="13" font-weight="600" font-family="Rajdhani,sans-serif">CPU1 · RN-F</text>
+          <text x="725" y="71" text-anchor="middle" fill="#22d3ee44" font-size="8">NodeID=0x02 · SC</text>
+        </g>
+
+        <!-- CPU2 bottom-left (has dirty line) -->
+        <g class="svgnode">
+          <rect x="30" y="250" width="130" height="60" rx="7" fill="#f9731614" stroke="#f9731650" stroke-width="1.5"/>
+          <text x="95" y="275" text-anchor="middle" fill="#fb923c" font-size="13" font-weight="600" font-family="Rajdhani,sans-serif">CPU2 · RN-F</text>
+          <text x="95" y="291" text-anchor="middle" fill="#fb923c88" font-size="8">NodeID=0x03 · UD ⚡</text>
+        </g>
+
+        <!-- CPU3 bottom-right -->
+        <g class="svgnode">
+          <rect x="660" y="250" width="130" height="60" rx="7" fill="#22d3ee0d" stroke="#22d3ee30" stroke-width="1"/>
+          <text x="725" y="275" text-anchor="middle" fill="#22d3ee88" font-size="13" font-weight="600" font-family="Rajdhani,sans-serif">CPU3 · RN-F</text>
+          <text x="725" y="291" text-anchor="middle" fill="#22d3ee44" font-size="8">NodeID=0x04 · I</text>
+        </g>
+
+        <!-- HN-F center -->
+        <g class="svgnode">
+          <rect x="300" y="120" width="220" height="100" rx="8" fill="#f59e0b10" stroke="#f59e0b50" stroke-width="2"/>
+          <text x="410" y="150" text-anchor="middle" fill="#f59e0b" font-size="15" font-weight="700" font-family="Rajdhani,sans-serif">HN-F</text>
+          <text x="410" y="168" text-anchor="middle" fill="#f59e0b99" font-size="9">Home Node · Coherency Hub</text>
+          <text x="410" y="183" text-anchor="middle" fill="#f59e0b66" font-size="8">Snoop Filter · NodeID=0x10</text>
+          <text x="410" y="198" text-anchor="middle" fill="#f59e0b50" font-size="8">Addr: 0x0000_0000 – 0xFFFF_FFFF</text>
+        </g>
+
+        <!-- SN-F right -->
+        <g class="svgnode">
+          <rect x="660" y="145" width="130" height="50" rx="7" fill="#4ade800d" stroke="#4ade8040" stroke-width="1.5"/>
+          <text x="725" y="168" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="600" font-family="Rajdhani,sans-serif">SN-F · DDR</text>
+          <text x="725" y="182" text-anchor="middle" fill="#4ade8066" font-size="8">NodeID=0x20</text>
+        </g>
+
+        <!-- REQ: CPU0 → HN-F -->
+        <line x1="160" y1="60" x2="300" y2="150" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5,3" class="flow"/>
+        <polygon points="296,148 305,155 300,144" fill="#60a5fa"/>
+        <text x="205" y="95" fill="#60a5fa" font-size="8" transform="rotate(-30,205,95)">① REQ·ReadShared</text>
+
+        <!-- RSP: HN-F → CPU0 -->
+        <line x1="300" y1="160" x2="160" y2="70" stroke="#c084fc" stroke-width="1" stroke-dasharray="4,3"/>
+        <polygon points="164,68 155,64 162,75" fill="#c084fc"/>
+        <text x="190" y="120" fill="#c084fc" font-size="8" transform="rotate(-30,190,120)">② RSP·ReadReceipt</text>
+
+        <!-- SNP: HN-F → CPU2 (snoop) -->
+        <line x1="300" y1="200" x2="160" y2="258" stroke="#fb923c" stroke-width="2" stroke-dasharray="5,3" class="flow"/>
+        <polygon points="161,254 153,262 162,265" fill="#fb923c"/>
+        <text x="195" y="240" fill="#fb923c" font-size="9" font-weight="600" transform="rotate(30,195,240)">③ SNP·SnpShared ⚡</text>
+
+        <!-- DAT: CPU2 → HN-F (dirty data) -->
+        <line x1="160" y1="265" x2="300" y2="210" stroke="#34d399" stroke-width="2" stroke-dasharray="5,3" class="flow"/>
+        <polygon points="300,212 308,205 306,216" fill="#34d399"/>
+        <text x="255" y="255" fill="#34d399" font-size="9" font-weight="600" transform="rotate(-30,255,255)">④ DAT·SnpRespData</text>
+
+        <!-- DAT: HN-F → CPU0 -->
+        <line x1="300" y1="155" x2="160" y2="80" stroke="#34d399" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <polygon points="163,78 153,73 162,85" fill="#34d399"/>
+        <text x="170" y="148" fill="#34d399" font-size="8" transform="rotate(-30,170,148)">⑤ DAT·CompData</text>
+
+        <!-- HN-F → SN-F (writeback) -->
+        <line x1="520" y1="175" x2="660" y2="172" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="4,3" class="flow"/>
+        <polygon points="658,168 668,172 658,176" fill="#4ade80"/>
+        <text x="580" y="165" fill="#4ade80" font-size="8">⑥ DAT·Writeback</text>
+
+        <!-- RSP: CPU0 → HN-F -->
+        <line x1="155" y1="68" x2="302" y2="140" stroke="#c084fc" stroke-width="1" stroke-dasharray="4,3"/>
+        <polygon points="299,142 305,133 308,143" fill="#c084fc"/>
+        <text x="210" y="78" fill="#c084fc" font-size="8" transform="rotate(-30,210,78)">⑦ RSP·CompAck</text>
+
+        <!-- CPU1 dim lines -->
+        <line x1="660" y1="60" x2="520" y2="140" stroke="#22d3ee20" stroke-width="1"/>
+        <line x1="660" y1="250" x2="520" y2="210" stroke="#22d3ee20" stroke-width="1"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- DIAGRAM 3: Full SoC Mesh -->
+  <div class="diag-section">
+    <div class="diag-title">Diagram 3 — Full SoC Mesh Topology (4×3 Grid)</div>
+    <div class="diag-sub">A realistic large SoC mesh: 8 CPU RN-F nodes, 3 HN-F nodes (each owning a DRAM range), 1 HN-I node (peripherals), 3 SN-F (DDR), 1 SN-I (I/O), 1 RN-I (PCIe). Each intersection is a router node.</div>
+    <div class="diag-wrap">
+      <svg viewBox="0 0 900 520" width="100%">
+
+        <!-- ── ROW 0: CPU clusters ── -->
+        <!-- CPU Cluster 0 -->
+        <g class="svgnode">
+          <rect x="20" y="20" width="130" height="56" rx="6" fill="#22d3ee0d" stroke="#22d3ee40" stroke-width="1.5"/>
+          <text x="85" y="44" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600" font-family="Rajdhani,sans-serif">CPU Cluster 0</text>
+          <text x="85" y="58" text-anchor="middle" fill="#22d3ee99" font-size="8">RN-F × 4 · NodeID 01–04</text>
+          <text x="85" y="69" text-anchor="middle" fill="#22d3ee55" font-size="7">A78 cores · L3 shared</text>
+        </g>
+
+        <!-- CPU Cluster 1 -->
+        <g class="svgnode">
+          <rect x="250" y="20" width="130" height="56" rx="6" fill="#22d3ee0d" stroke="#22d3ee40" stroke-width="1.5"/>
+          <text x="315" y="44" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600" font-family="Rajdhani,sans-serif">CPU Cluster 1</text>
+          <text x="315" y="58" text-anchor="middle" fill="#22d3ee99" font-size="8">RN-F × 4 · NodeID 05–08</text>
+          <text x="315" y="69" text-anchor="middle" fill="#22d3ee55" font-size="7">A78 cores · L3 shared</text>
+        </g>
+
+        <!-- GPU -->
+        <g class="svgnode">
+          <rect x="480" y="20" width="130" height="56" rx="6" fill="#a78bfa0d" stroke="#a78bfa40" stroke-width="1.5"/>
+          <text x="545" y="44" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600" font-family="Rajdhani,sans-serif">GPU Cluster</text>
+          <text x="545" y="58" text-anchor="middle" fill="#a78bfa99" font-size="8">RN-F · NodeID 0x09</text>
+          <text x="545" y="69" text-anchor="middle" fill="#a78bfa55" font-size="7">Mali G710 · shader cache</text>
+        </g>
+
+        <!-- PCIe / RN-I -->
+        <g class="svgnode">
+          <rect x="720" y="20" width="130" height="56" rx="6" fill="#fb71850d" stroke="#fb718540" stroke-width="1.5"/>
+          <text x="785" y="44" text-anchor="middle" fill="#fb7185" font-size="11" font-weight="600" font-family="Rajdhani,sans-serif">PCIe · RN-I</text>
+          <text x="785" y="58" text-anchor="middle" fill="#fb718599" font-size="8">NodeID 0x0A</text>
+          <text x="785" y="69" text-anchor="middle" fill="#fb718555" font-size="7">Gen5 × 16 · non-coherent</text>
+        </g>
+
+        <!-- ── ROW 1: HN-F nodes ── -->
+        <!-- HN-F 0 -->
+        <g class="svgnode">
+          <rect x="20" y="220" width="150" height="70" rx="7" fill="#f59e0b10" stroke="#f59e0b50" stroke-width="2"/>
+          <text x="95" y="246" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="700" font-family="Rajdhani,sans-serif">HN-F  #0</text>
+          <text x="95" y="261" text-anchor="middle" fill="#f59e0b99" font-size="8">Addr: 0x0 – 0x1FFF_FFFF</text>
+          <text x="95" y="274" text-anchor="middle" fill="#f59e0b66" font-size="7">Snoop Filter · 512 entries</text>
+          <text x="95" y="284" text-anchor="middle" fill="#f59e0b44" font-size="7">NodeID = 0x10</text>
+        </g>
+
+        <!-- HN-F 1 -->
+        <g class="svgnode">
+          <rect x="270" y="220" width="150" height="70" rx="7" fill="#f59e0b10" stroke="#f59e0b50" stroke-width="2"/>
+          <text x="345" y="246" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="700" font-family="Rajdhani,sans-serif">HN-F  #1</text>
+          <text x="345" y="261" text-anchor="middle" fill="#f59e0b99" font-size="8">Addr: 0x2000_0000 – 0x3FFF_FFFF</text>
+          <text x="345" y="274" text-anchor="middle" fill="#f59e0b66" font-size="7">Snoop Filter · 512 entries</text>
+          <text x="345" y="284" text-anchor="middle" fill="#f59e0b44" font-size="7">NodeID = 0x11</text>
+        </g>
+
+        <!-- HN-F 2 -->
+        <g class="svgnode">
+          <rect x="490" y="220" width="150" height="70" rx="7" fill="#f59e0b10" stroke="#f59e0b50" stroke-width="2"/>
+          <text x="565" y="246" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="700" font-family="Rajdhani,sans-serif">HN-F  #2</text>
+          <text x="565" y="261" text-anchor="middle" fill="#f59e0b99" font-size="8">Addr: 0x4000_0000 – 0x5FFF_FFFF</text>
+          <text x="565" y="274" text-anchor="middle" fill="#f59e0b66" font-size="7">Snoop Filter · 512 entries</text>
+          <text x="565" y="284" text-anchor="middle" fill="#f59e0b44" font-size="7">NodeID = 0x12</text>
+        </g>
+
+        <!-- HN-I -->
+        <g class="svgnode">
+          <rect x="720" y="220" width="130" height="70" rx="7" fill="#f973160d" stroke="#f9731640" stroke-width="1.5"/>
+          <text x="785" y="246" text-anchor="middle" fill="#f97316" font-size="12" font-weight="700" font-family="Rajdhani,sans-serif">HN-I</text>
+          <text x="785" y="261" text-anchor="middle" fill="#f9731699" font-size="8">Addr: MMIO / I/O space</text>
+          <text x="785" y="274" text-anchor="middle" fill="#f9731666" font-size="7">No snoop filter</text>
+          <text x="785" y="284" text-anchor="middle" fill="#f9731644" font-size="7">NodeID = 0x18</text>
+        </g>
+
+        <!-- ── ROW 2: SN nodes ── -->
+        <!-- SN-F 0 -->
+        <g class="svgnode">
+          <rect x="20" y="420" width="150" height="56" rx="6" fill="#4ade800d" stroke="#4ade8040" stroke-width="1.5"/>
+          <text x="95" y="445" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="600" font-family="Rajdhani,sans-serif">SN-F · DDR Ch0</text>
+          <text x="95" y="460" text-anchor="middle" fill="#4ade8099" font-size="8">LPDDR5 · NodeID=0x20</text>
+          <text x="95" y="471" text-anchor="middle" fill="#4ade8055" font-size="7">64-bit · 8533 Mbps</text>
+        </g>
+
+        <!-- SN-F 1 -->
+        <g class="svgnode">
+          <rect x="270" y="420" width="150" height="56" rx="6" fill="#4ade800d" stroke="#4ade8040" stroke-width="1.5"/>
+          <text x="345" y="445" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="600" font-family="Rajdhani,sans-serif">SN-F · DDR Ch1</text>
+          <text x="345" y="460" text-anchor="middle" fill="#4ade8099" font-size="8">LPDDR5 · NodeID=0x21</text>
+          <text x="345" y="471" text-anchor="middle" fill="#4ade8055" font-size="7">64-bit · 8533 Mbps</text>
+        </g>
+
+        <!-- SN-F 2 -->
+        <g class="svgnode">
+          <rect x="490" y="420" width="150" height="56" rx="6" fill="#4ade800d" stroke="#4ade8040" stroke-width="1.5"/>
+          <text x="565" y="445" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="600" font-family="Rajdhani,sans-serif">SN-F · DDR Ch2</text>
+          <text x="565" y="460" text-anchor="middle" fill="#4ade8099" font-size="8">LPDDR5 · NodeID=0x22</text>
+          <text x="565" y="471" text-anchor="middle" fill="#4ade8055" font-size="7">64-bit · 8533 Mbps</text>
+        </g>
+
+        <!-- SN-I -->
+        <g class="svgnode">
+          <rect x="720" y="420" width="130" height="56" rx="6" fill="#94a3b80d" stroke="#94a3b840" stroke-width="1.5"/>
+          <text x="785" y="445" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600" font-family="Rajdhani,sans-serif">SN-I · Periph</text>
+          <text x="785" y="460" text-anchor="middle" fill="#94a3b899" font-size="8">ROM·SRAM·GPIO</text>
+          <text x="785" y="471" text-anchor="middle" fill="#94a3b855" font-size="7">NodeID=0x28</text>
+        </g>
+
+        <!-- ── MESH HORIZONTAL LINES ── -->
+        <!-- Row 0 -->
+        <line x1="150" y1="48" x2="250" y2="48" stroke="#1e2f4a" stroke-width="2"/>
+        <line x1="380" y1="48" x2="480" y2="48" stroke="#1e2f4a" stroke-width="2"/>
+        <line x1="610" y1="48" x2="720" y2="48" stroke="#1e2f4a" stroke-width="2"/>
+        <!-- Row 1 -->
+        <line x1="170" y1="255" x2="270" y2="255" stroke="#f59e0b30" stroke-width="2"/>
+        <line x1="420" y1="255" x2="490" y2="255" stroke="#f59e0b30" stroke-width="2"/>
+        <line x1="640" y1="255" x2="720" y2="255" stroke="#f59e0b30" stroke-width="2"/>
+        <!-- Row 2 -->
+        <line x1="170" y1="448" x2="270" y2="448" stroke="#4ade8030" stroke-width="2"/>
+        <line x1="420" y1="448" x2="490" y2="448" stroke="#4ade8030" stroke-width="2"/>
+        <line x1="640" y1="448" x2="720" y2="448" stroke="#94a3b830" stroke-width="2"/>
+
+        <!-- ── MESH VERTICAL LINES ── -->
+        <!-- Col 0 -->
+        <line x1="85" y1="76" x2="85" y2="220" stroke="#22d3ee25" stroke-width="2"/>
+        <line x1="95" y1="290" x2="95" y2="420" stroke="#f59e0b25" stroke-width="2"/>
+        <!-- Col 1 -->
+        <line x1="315" y1="76" x2="315" y2="220" stroke="#22d3ee25" stroke-width="2"/>
+        <line x1="345" y1="290" x2="345" y2="420" stroke="#f59e0b25" stroke-width="2"/>
+        <!-- Col 2 -->
+        <line x1="545" y1="76" x2="545" y2="220" stroke="#a78bfa25" stroke-width="2"/>
+        <line x1="565" y1="290" x2="565" y2="420" stroke="#f59e0b25" stroke-width="2"/>
+        <!-- Col 3 -->
+        <line x1="785" y1="76" x2="785" y2="220" stroke="#fb718525" stroke-width="2"/>
+        <line x1="785" y1="290" x2="785" y2="420" stroke="#f9731625" stroke-width="2"/>
+
+        <!-- ── ANIMATED PACKET examples ── -->
+        <!-- Packet: CPU0 → HN-F0 -->
+        <circle r="4" fill="#60a5fa" opacity="0.9">
+          <animateMotion dur="2s" repeatCount="indefinite" begin="0s"
+            path="M85,76 L95,220"/>
+        </circle>
+        <!-- Packet: HN-F1 → DDR1 -->
+        <circle r="4" fill="#4ade80" opacity="0.9">
+          <animateMotion dur="2.5s" repeatCount="indefinite" begin="0.8s"
+            path="M345,290 L345,420"/>
+        </circle>
+        <!-- Packet: GPU → HN-F2 -->
+        <circle r="4" fill="#a78bfa" opacity="0.8">
+          <animateMotion dur="1.8s" repeatCount="indefinite" begin="0.4s"
+            path="M545,76 L565,220"/>
+        </circle>
+        <!-- SNP: HN-F0 → CPU1 -->
+        <circle r="3" fill="#fb923c" opacity="0.9">
+          <animateMotion dur="2.2s" repeatCount="indefinite" begin="1s"
+            path="M170,255 L270,255 L315,220 L315,76"/>
+        </circle>
+
+        <!-- ── NODE TYPE LEGEND overlay ── -->
+        <rect x="20" y="140" width="8" height="8" rx="2" fill="#22d3ee"/>
+        <text x="33" y="149" fill="#22d3ee88" font-size="8">RN-F</text>
+        <rect x="90" y="140" width="8" height="8" rx="2" fill="#f59e0b"/>
+        <text x="103" y="149" fill="#f59e0b88" font-size="8">HN-F</text>
+        <rect x="155" y="140" width="8" height="8" rx="2" fill="#4ade80"/>
+        <text x="168" y="149" fill="#4ade8088" font-size="8">SN-F</text>
+        <rect x="215" y="140" width="8" height="8" rx="2" fill="#f97316"/>
+        <text x="228" y="149" fill="#f9731688" font-size="8">HN-I/SN-I</text>
+        <rect x="295" y="140" width="8" height="8" rx="2" fill="#fb7185"/>
+        <text x="308" y="149" fill="#fb718588" font-size="8">RN-I</text>
+
+        <!-- animated flow dots label -->
+        <circle cx="430" cy="144" r="4" fill="#60a5fa"/>
+        <text x="439" y="149" fill="#60a5fa88" font-size="8">REQ packet</text>
+        <circle cx="510" cy="144" r="4" fill="#4ade80"/>
+        <text x="519" y="149" fill="#4ade8088" font-size="8">DAT packet</text>
+        <circle cx="583" cy="144" r="3" fill="#fb923c"/>
+        <text x="591" y="149" fill="#fb923c88" font-size="8">SNP packet</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 4 — ADDRESS MAP
+════════════════════════════════════════════════════════════ -->
+<section id="address-map">
+  <div class="sec-label">// Section 04</div>
+  <div class="sec-title" style="color:var(--hnf)">Address Space Partitioning</div>
+  <p class="sec-desc">Every physical address maps to exactly one Home Node. This mapping is fixed at chip design time and encoded in every node's routing table. The TgtID in every REQ flit is derived from this map.</p>
+
+  <div class="addr-table-wrap">
+    <table class="addr-table">
+      <thead>
+        <tr>
+          <th>Address Range</th>
+          <th>Size</th>
+          <th>Home Node</th>
+          <th>Slave Node</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Visual</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-family:'Source Code Pro',monospace;color:#22d3ee">0x0000_0000 – 0x1FFF_FFFF</td>
+          <td>512 MB</td>
+          <td><span class="node-badge nb-hnf">HN-F #0</span></td>
+          <td><span class="node-badge nb-snf">SN-F DDR0</span></td>
+          <td style="color:#4ade80">Coherent</td>
+          <td style="color:var(--soft);font-size:0.78rem">Kernel + user heap, fully coherent DRAM</td>
+          <td><div class="addr-bar" style="background:var(--rnf);width:100%"></div></td>
+        </tr>
+        <tr>
+          <td style="font-family:'Source Code Pro',monospace;color:#22d3ee">0x2000_0000 – 0x3FFF_FFFF</td>
+          <td>512 MB</td>
+          <td><span class="node-badge nb-hnf">HN-F #1</span></td>
+          <td><span class="node-badge nb-snf">SN-F DDR1</span></td>
+          <td style="color:#4ade80">Coherent</td>
+          <td style="color:var(--soft);font-size:0.78rem">User space, GPU buffers, cacheable</td>
+          <td><div class="addr-bar" style="background:var(--rnf);width:100%"></div></td>
+        </tr>
+        <tr>
+          <td style="font-family:'Source Code Pro',monospace;color:#22d3ee">0x4000_0000 – 0x5FFF_FFFF</td>
+          <td>512 MB</td>
+          <td><span class="node-badge nb-hnf">HN-F #2</span></td>
+          <td><span class="node-badge nb-snf">SN-F DDR2</span></td>
+          <td style="color:#4ade80">Coherent</td>
+          <td style="color:var(--soft);font-size:0.78rem">Framebuffer + shared memory pools</td>
+          <td><div class="addr-bar" style="background:var(--rnf);width:80%"></div></td>
+        </tr>
+        <tr>
+          <td style="font-family:'Source Code Pro',monospace;color:#a78bfa">0x6000_0000 – 0x7FFF_FFFF</td>
+          <td>512 MB</td>
+          <td><span class="node-badge nb-hnf">HN-F #2</span></td>
+          <td><span class="node-badge nb-snf">SN-F DDR2</span></td>
+          <td style="color:#a78bfa">Non-cacheable</td>
+          <td style="color:var(--soft);font-size:0.78rem">DMA bounce buffers, device-mapped mem</td>
+          <td><div class="addr-bar" style="background:var(--rnd);width:80%"></div></td>
+        </tr>
+        <tr>
+          <td style="font-family:'Source Code Pro',monospace;color:#f97316">0x8000_0000 – 0xBFFF_FFFF</td>
+          <td>1 GB</td>
+          <td><span class="node-badge nb-hni">HN-I</span></td>
+          <td><span class="node-badge nb-sni">SN-I MMIO</span></td>
+          <td style="color:#f97316">Device / MMIO</td>
+          <td style="color:var(--soft);font-size:0.78rem">Peripheral register banks, GIC, timers</td>
+          <td><div class="addr-bar" style="background:var(--hni);width:60%"></div></td>
+        </tr>
+        <tr>
+          <td style="font-family:'Source Code Pro',monospace;color:#94a3b8">0xC000_0000 – 0xCFFF_FFFF</td>
+          <td>256 MB</td>
+          <td><span class="node-badge nb-hni">HN-I</span></td>
+          <td><span class="node-badge nb-sni">SN-I ROM</span></td>
+          <td style="color:#94a3b8">ROM / Static</td>
+          <td style="color:var(--soft);font-size:0.78rem">Boot ROM, on-chip SRAM, OTP</td>
+          <td><div class="addr-bar" style="background:var(--sni);width:40%"></div></td>
+        </tr>
+        <tr>
+          <td style="font-family:'Source Code Pro',monospace;color:#fb7185">0xD000_0000 – 0xFFFF_FFFF</td>
+          <td>768 MB</td>
+          <td><span class="node-badge nb-hni">HN-I</span></td>
+          <td><span class="node-badge nb-sni">SN-I PCIe</span></td>
+          <td style="color:#fb7185">PCIe / RN-I</td>
+          <td style="color:var(--soft);font-size:0.78rem">PCIe config space, BAR regions</td>
+          <td><div class="addr-bar" style="background:var(--rni);width:50%"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 5 — INTERACTION MATRIX
+════════════════════════════════════════════════════════════ -->
+<section id="interaction">
+  <div class="sec-label">// Section 05</div>
+  <div class="sec-title" style="color:var(--rsp)">Node Interaction Matrix</div>
+  <p class="sec-desc">Which node types communicate directly, and which channels they use. Blank cells mean the two node types never communicate directly in a CHI system.</p>
+
+  <div class="matrix-wrap">
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th>From ↓ / To →</th>
+          <th><span class="node-badge nb-rnf">RN-F</span></th>
+          <th><span class="node-badge nb-rnd">RN-D</span></th>
+          <th><span class="node-badge nb-rni">RN-I</span></th>
+          <th><span class="node-badge nb-hnf">HN-F</span></th>
+          <th><span class="node-badge nb-hni">HN-I</span></th>
+          <th><span class="node-badge nb-snf">SN-F</span></th>
+          <th><span class="node-badge nb-sni">SN-I</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="node-badge nb-rnf">RN-F</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-yes"><span class="cell-ch cc-req">REQ</span><span class="cell-ch cc-rsp">RSP</span><span class="cell-ch cc-dat">DAT</span><span class="cell-ch cc-snp">SNP</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-rnd">RN-D</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-yes"><span class="cell-ch cc-req">REQ</span><span class="cell-ch cc-rsp">RSP</span><span class="cell-ch cc-dat">DAT</span></td>
+          <td class="cell-part"><span class="cell-ch cc-req">REQ</span><span class="cell-ch cc-rsp">RSP</span><span class="cell-ch cc-dat">DAT</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-rni">RN-I</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-yes"><span class="cell-ch cc-req">REQ</span><span class="cell-ch cc-rsp">RSP</span><span class="cell-ch cc-dat">DAT</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-hnf">HN-F</span></td>
+          <td class="cell-yes"><span class="cell-ch cc-rsp">RSP</span><span class="cell-ch cc-dat">DAT</span><span class="cell-ch cc-snp">SNP</span></td>
+          <td class="cell-yes"><span class="cell-ch cc-rsp">RSP</span><span class="cell-ch cc-dat">DAT</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-yes"><span class="cell-ch cc-req">REQ</span><span class="cell-ch cc-dat">DAT</span></td>
+          <td class="cell-no">—</td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-hni">HN-I</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-yes"><span class="cell-ch cc-rsp">RSP</span><span class="cell-ch cc-dat">DAT</span></td>
+          <td class="cell-yes"><span class="cell-ch cc-rsp">RSP</span><span class="cell-ch cc-dat">DAT</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-yes"><span class="cell-ch cc-req">REQ</span><span class="cell-ch cc-dat">DAT</span></td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-snf">SN-F</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-yes"><span class="cell-ch cc-rsp">RSP</span><span class="cell-ch cc-dat">DAT</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+        </tr>
+        <tr>
+          <td><span class="node-badge nb-sni">SN-I</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+          <td class="cell-yes"><span class="cell-ch cc-rsp">RSP</span><span class="cell-ch cc-dat">DAT</span></td>
+          <td class="cell-no">—</td>
+          <td class="cell-no">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 6 — REAL WORLD
+════════════════════════════════════════════════════════════ -->
+<section id="realworld">
+  <div class="sec-label">// Section 06</div>
+  <div class="sec-title" style="color:var(--snf)">Real-World SoC Example</div>
+  <p class="sec-desc">A typical high-performance mobile/server SoC based on ARM Neoverse N2 / Cortex-X3 platform using CMN-700 as the CHI interconnect fabric.</p>
+
+  <div class="rw-grid">
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#22d3ee12;border:1px solid #22d3ee28;color:var(--rnf)">RN-F</div>
+      <div class="rw-name" style="color:var(--rnf)">Cortex-X3 Cores</div>
+      <div class="rw-count">4 big cores · 4MB L2 each · 16MB shared L3</div>
+    </div>
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#22d3ee12;border:1px solid #22d3ee28;color:var(--rnf)">RN-F</div>
+      <div class="rw-name" style="color:var(--rnf)">Cortex-A715 Cores</div>
+      <div class="rw-count">4 mid cores · 512KB L2 each · shared L3</div>
+    </div>
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#22d3ee12;border:1px solid #22d3ee28;color:var(--rnf)">RN-F</div>
+      <div class="rw-name" style="color:var(--rnf)">Cortex-A510 Cores</div>
+      <div class="rw-count">4 efficiency cores · 256KB L2 shared</div>
+    </div>
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#a78bfa12;border:1px solid #a78bfa28;color:var(--rnd)">RN-F</div>
+      <div class="rw-name" style="color:var(--rnd)">Mali G715 GPU</div>
+      <div class="rw-count">10 shader cores · coherent GPU cache</div>
+    </div>
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#f59e0b12;border:1px solid #f59e0b28;color:var(--hnf)">HN-F ×4</div>
+      <div class="rw-name" style="color:var(--hnf)">CMN-700 Crosspoints</div>
+      <div class="rw-count">4 HN-F nodes · Snoop Filter · mesh routing</div>
+    </div>
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#f9731612;border:1px solid #f9731628;color:var(--hni)">HN-I ×2</div>
+      <div class="rw-name" style="color:var(--hni)">CMN-700 I/O Bridge</div>
+      <div class="rw-count">2 HN-I nodes · MMIO, peripheral space</div>
+    </div>
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#4ade8012;border:1px solid #4ade8028;color:var(--snf)">SN-F ×4</div>
+      <div class="rw-name" style="color:var(--snf)">LPDDR5X Controllers</div>
+      <div class="rw-count">4× 16-bit channels · 8533 Mbps · 34 GB/s total</div>
+    </div>
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#fb718512;border:1px solid #fb718528;color:var(--rni)">RN-I</div>
+      <div class="rw-name" style="color:var(--rni)">PCIe 5.0 × 16</div>
+      <div class="rw-count">Non-coherent · 64 GB/s peak · NVMe SSD</div>
+    </div>
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#a78bfa12;border:1px solid #a78bfa28;color:var(--rnd)">RN-D</div>
+      <div class="rw-name" style="color:var(--rnd)">DMA-350 Engine</div>
+      <div class="rw-count">8-channel DMA · non-caching requester</div>
+    </div>
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#94a3b812;border:1px solid #94a3b828;color:var(--sni)">SN-I</div>
+      <div class="rw-name" style="color:var(--sni)">Peripheral Slaves</div>
+      <div class="rw-count">ROM · SRAM · GIC · Timers · GPIO</div>
+    </div>
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#fb718512;border:1px solid #fb718528;color:var(--rni)">RN-I</div>
+      <div class="rw-name" style="color:var(--rni)">USB 3.2 / Display</div>
+      <div class="rw-count">I/O non-coherent · display engine DMA</div>
+    </div>
+    <div class="rw-card">
+      <div class="rw-chip" style="background:#22d3ee12;border:1px solid #22d3ee28;color:var(--rnf)">RN-F</div>
+      <div class="rw-name" style="color:var(--rnf)">NPU / DSP</div>
+      <div class="rw-count">Neural engine · coherent weight cache</div>
+    </div>
+  </div>
+
+  <!-- topology summary row -->
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:56px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:20px;">
+    <div style="text-align:center;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;color:var(--rnf)">12</div>
+      <div style="font-size:0.72rem;color:var(--muted);font-family:'Source Code Pro',monospace">Total RN nodes</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;color:var(--hnf)">6</div>
+      <div style="font-size:0.72rem;color:var(--muted);font-family:'Source Code Pro',monospace">HN nodes (4F + 2I)</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;color:var(--snf)">5</div>
+      <div style="font-size:0.72rem;color:var(--muted);font-family:'Source Code Pro',monospace">SN nodes (4F + 1I)</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;color:var(--text)">4×3</div>
+      <div style="font-size:0.72rem;color:var(--muted);font-family:'Source Code Pro',monospace">Mesh grid size</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;color:var(--dat)">34</div>
+      <div style="font-size:0.72rem;color:var(--muted);font-family:'Source Code Pro',monospace">GB/s peak memory BW</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="page-footer">
+  <div class="foot-txt">AMBA 5 CHI · Node Types &amp; System Topology · ARM IHI 0050</div>
+  <div class="foot-txt">RN = Requester · HN = Home · SN = Slave · CMN-700 = Coherent Mesh Network</div>
+</footer>
+
+</body>
+</html>
