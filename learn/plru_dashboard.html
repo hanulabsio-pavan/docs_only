@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLRU — Pseudo-LRU Cache Replacement</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f172a; --bg1: #1e293b; --bg2: #162032;
+    --border: #334155; --border2: #475569;
+    --text: #f8fafc; --muted: #94a3b8; --dim: #64748b;
+    --accent: #38bdf8; --gold: #f59e0b;
+    --green: #22c55e; --red: #ef4444; --purple: #a78bfa;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6; overflow-x: hidden;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .section { padding: 48px 0 0; }
+  .card {
+    background: var(--bg1); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--border2); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* ── HEADER ── */
+  .hero {
+    padding: 56px 24px 40px;
+    position: relative; overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 50% 80% at 5% 40%, rgba(56,189,248,.07), transparent 55%),
+      radial-gradient(ellipse 35% 60% at 95% 20%, rgba(167,139,250,.05), transparent 55%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 10px;
+  }
+  .hero h1 {
+    font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 700;
+    line-height: 1.08; letter-spacing: -.02em; margin-bottom: 14px;
+  }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero-sub { font-size: .9rem; color: var(--muted); max-width: 640px; }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-flex; align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; font-weight: 600;
+    padding: 2px 8px; border-radius: 999px; letter-spacing: .05em;
+  }
+  .b-blue   { background:#0c2a3f; color:var(--accent);  border:1px solid rgba(56,189,248,.3); }
+  .b-gold   { background:#2a1f0c; color:var(--gold);    border:1px solid rgba(245,158,11,.3); }
+  .b-green  { background:#0c2a1a; color:var(--green);   border:1px solid rgba(34,197,94,.3); }
+  .b-red    { background:#2a0c0c; color:var(--red);     border:1px solid rgba(239,68,68,.3); }
+  .b-purple { background:#1a0c2a; color:var(--purple);  border:1px solid rgba(167,139,250,.3); }
+
+  /* ── SECTION HEADERS ── */
+  .sec-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 6px;
+  }
+  .sec-title {
+    font-size: 1.35rem; font-weight: 700;
+    letter-spacing: -.01em; margin-bottom: 10px;
+  }
+  .sec-desc { font-size: .84rem; color: var(--muted); margin-bottom: 24px; line-height: 1.7; }
+
+  /* ── FORMULA BLOCK ── */
+  .formula {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 12px 16px;
+    font-size: .82rem; color: var(--accent);
+    margin: 12px 0;
+  }
+
+  /* ── TABLES ── */
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: var(--bg2); font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); padding: 10px 14px;
+    border-bottom: 1px solid var(--border); text-align: left;
+  }
+  tbody td { padding: 9px 14px; border-bottom: 1px solid #1a2740; font-size: .8rem; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(56,189,248,.04); }
+
+  /* ── SIMULATOR ── */
+  .sim-btn {
+    background: var(--accent); color: #000; font-weight: 700;
+    font-size: .8rem; padding: 9px 22px; border-radius: 7px;
+    border: none; cursor: pointer; font-family: 'JetBrains Mono', monospace;
+    letter-spacing: .04em; transition: all .2s;
+  }
+  .sim-btn:hover { background: #7dd3fc; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(56,189,248,.3); }
+  .sim-btn:disabled { background: var(--border); color: var(--dim); cursor: not-allowed; transform: none; box-shadow: none; }
+  .sim-btn-ghost {
+    background: transparent; color: var(--muted); font-weight: 600;
+    font-size: .8rem; padding: 9px 18px; border-radius: 7px;
+    border: 1px solid var(--border); cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; transition: all .2s;
+  }
+  .sim-btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+
+  /* ── BIT NODE ── */
+  .bit-node {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem;
+    border: 2px solid; transition: all .4s cubic-bezier(.34,1.56,.64,1);
+    position: relative; z-index: 1;
+  }
+  .bit-0 { background: #0c2a3f; color: var(--accent); border-color: rgba(56,189,248,.5); }
+  .bit-1 { background: #2a1f0c; color: var(--gold);   border-color: rgba(245,158,11,.5); }
+  .bit-flip {
+    animation: flipAnim .5s ease-out;
+  }
+  @keyframes flipAnim {
+    0%   { transform: scale(1) rotate(0deg); }
+    30%  { transform: scale(1.4) rotate(10deg); filter: brightness(2); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  /* ── TREE SVG ── */
+  #tree-svg text { font-family: 'JetBrains Mono', monospace; }
+
+  /* ── WAY BOXES ── */
+  .way-box {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px; text-align: center;
+    transition: all .35s ease; position: relative;
+    background: var(--bg2);
+  }
+  .way-box.accessed {
+    border-color: var(--green);
+    box-shadow: 0 0 14px rgba(34,197,94,.3);
+    background: rgba(34,197,94,.06);
+  }
+  .way-box.evict {
+    border-color: var(--red);
+    box-shadow: 0 0 14px rgba(239,68,68,.3);
+    background: rgba(239,68,68,.06);
+  }
+  .way-box .way-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .7rem; color: var(--muted); margin-bottom: 4px;
+  }
+  .way-box .way-data {
+    font-size: .95rem; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .way-box .evict-badge {
+    position: absolute; top: -8px; right: -8px;
+    background: var(--red); color: #fff;
+    font-size: .56rem; font-weight: 700;
+    padding: 1px 5px; border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .way-box .access-badge {
+    position: absolute; top: -8px; right: -8px;
+    background: var(--green); color: #000;
+    font-size: .56rem; font-weight: 700;
+    padding: 1px 5px; border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── STEP TABLE ROW ── */
+  .step-row { transition: background .25s; }
+  .step-active { background: rgba(56,189,248,.07); }
+  .step-done   { opacity: .55; }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-radius: 8px; padding: 12px 16px;
+    font-size: .8rem; line-height: 1.6; border-left: 3px solid;
+  }
+  .callout strong { font-weight: 600; }
+  .co-blue   { background: rgba(56,189,248,.06);   border-color: var(--accent);  color: #bae6fd; }
+  .co-gold   { background: rgba(245,158,11,.06);   border-color: var(--gold);    color: #fde68a; }
+  .co-green  { background: rgba(34,197,94,.06);    border-color: var(--green);   color: #bbf7d0; }
+  .co-red    { background: rgba(239,68,68,.06);    border-color: var(--red);     color: #fecaca; }
+  .co-purple { background: rgba(167,139,250,.06);  border-color: var(--purple);  color: #ddd6fe; }
+
+  /* ── STATUS LOG ── */
+  .log-entry {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .72rem; padding: 5px 10px; border-radius: 4px;
+    border-left: 2px solid; margin-bottom: 4px;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; } }
+
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 48px 0 0; }
+
+  @media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══ -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">Cache Architecture · Replacement Policy Reference</div>
+    <h1>Pseudo-LRU<br><em>(PLRU)</em></h1>
+    <p class="hero-sub">
+      Near-perfect eviction accuracy at a fraction of the hardware cost. The dominant replacement algorithm in modern L1/L2 caches. Trades ≈5% accuracy for 90% less storage overhead.
+    </p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
+      <span class="badge b-blue">N−1 bits for N ways</span>
+      <span class="badge b-gold">Binary tree pointer</span>
+      <span class="badge b-green">O(1) lookup</span>
+      <span class="badge b-purple">Used in ARM Cortex-A, x86 L1</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ══ WHY PLRU ══ -->
+<div class="section">
+  <div class="sec-label">// 01 — Motivation</div>
+  <div class="sec-title">Why Not True LRU?</div>
+  <p class="sec-desc">True LRU tracks the exact access order of every cache way. That precision is expensive. PLRU approximates it with a minimal bit-vector and a binary decision tree.</p>
+
+  <div class="grid-3" style="margin-bottom:16px;">
+    <div class="card">
+      <div style="font-size:1.4rem;margin-bottom:8px;">⏱️</div>
+      <div style="font-weight:600;margin-bottom:4px;font-size:.9rem;">Latency</div>
+      <p style="font-size:.78rem;color:var(--muted);">True LRU needs a priority encoder over all N ways. PLRU walks a 3-level tree — <strong style="color:var(--accent);">3 bit-reads, done.</strong></p>
+    </div>
+    <div class="card">
+      <div style="font-size:1.4rem;margin-bottom:8px;">💾</div>
+      <div style="font-weight:600;margin-bottom:4px;font-size:.9rem;">Storage</div>
+      <p style="font-size:.78rem;color:var(--muted);">8-way set: true LRU needs <strong style="color:var(--red);">log₂(8!) = 16 bits</strong>. PLRU needs <strong style="color:var(--green);">7 bits</strong>. Savings scale with ways.</p>
+    </div>
+    <div class="card">
+      <div style="font-size:1.4rem;margin-bottom:8px;">🎯</div>
+      <div style="font-weight:600;margin-bottom:4px;font-size:.9rem;">Accuracy</div>
+      <p style="font-size:.78rem;color:var(--muted);">PLRU hits ≈<strong style="color:var(--gold);">95–98%</strong> of true LRU accuracy in real workloads. The 2–5% gap is negligible vs. the hardware savings.</p>
+    </div>
+  </div>
+
+  <div class="formula">
+    Storage: True LRU = ⌈log₂(N!)⌉ bits &nbsp;|&nbsp; PLRU = (N − 1) bits
+    <br>
+    Example (8-way): True LRU = 16 bits &nbsp;→&nbsp; PLRU = 7 bits &nbsp;(56% reduction)
+  </div>
+</div>
+
+<!-- ══ THE ALGORITHM ══ -->
+<div class="divider"></div>
+<div class="section">
+  <div class="sec-label">// 02 — The Algorithm</div>
+  <div class="sec-title">Tree-Based PLRU — How It Works</div>
+  <p class="sec-desc">PLRU stores <strong>N−1 pointer bits</strong> arranged as a binary tree. Each bit points left (0) or right (1) — toward the "older" subtree. The leaf at the end of the path from root is the eviction candidate.</p>
+
+  <div class="grid-2" style="align-items:start;">
+    <!-- Tree diagram -->
+    <div class="card" style="padding:20px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">// 4-Way PLRU Tree (3 bits: B0, B1, B2)</div>
+
+      <svg id="tree-svg" viewBox="0 0 340 200" width="100%" style="max-height:200px;display:block;">
+        <!-- connectors -->
+        <line id="line-b0-b1" x1="170" y1="44" x2="90"  y2="104" stroke="#334155" stroke-width="1.5"/>
+        <line id="line-b0-b2" x1="170" y1="44" x2="250" y2="104" stroke="#334155" stroke-width="1.5"/>
+        <line id="line-b1-w0" x1="90"  y1="124" x2="42"  y2="165" stroke="#334155" stroke-width="1.5"/>
+        <line id="line-b1-w1" x1="90"  y1="124" x2="138" y2="165" stroke="#334155" stroke-width="1.5"/>
+        <line id="line-b2-w2" x1="250" y1="124" x2="202" y2="165" stroke="#334155" stroke-width="1.5"/>
+        <line id="line-b2-w3" x1="250" y1="124" x2="298" y2="165" stroke="#334155" stroke-width="1.5"/>
+
+        <!-- direction labels -->
+        <text x="120" y="78" fill="#475569" font-size="10" text-anchor="middle">0 (L)</text>
+        <text x="220" y="78" fill="#475569" font-size="10" text-anchor="middle">1 (R)</text>
+        <text x="60"  y="150" fill="#475569" font-size="9"  text-anchor="middle">0</text>
+        <text x="120" y="150" fill="#475569" font-size="9"  text-anchor="middle">1</text>
+        <text x="222" y="150" fill="#475569" font-size="9"  text-anchor="middle">0</text>
+        <text x="278" y="150" fill="#475569" font-size="9"  text-anchor="middle">1</text>
+
+        <!-- B0 root -->
+        <circle id="node-b0" cx="170" cy="28" r="20" fill="#0c2a3f" stroke="rgba(56,189,248,.5)" stroke-width="2"/>
+        <text id="text-b0" x="170" y="24" fill="#38bdf8" font-size="11" font-weight="600" text-anchor="middle" dominant-baseline="middle">B0</text>
+        <text id="val-b0"  x="170" y="37" fill="#38bdf8" font-size="11" font-weight="700" text-anchor="middle" dominant-baseline="middle">0</text>
+
+        <!-- B1 left -->
+        <circle id="node-b1" cx="90" cy="114" r="18" fill="#0c2a3f" stroke="rgba(56,189,248,.5)" stroke-width="2"/>
+        <text id="text-b1" x="90" y="110" fill="#38bdf8" font-size="10" font-weight="600" text-anchor="middle" dominant-baseline="middle">B1</text>
+        <text id="val-b1"  x="90" y="121" fill="#38bdf8" font-size="11" font-weight="700" text-anchor="middle" dominant-baseline="middle">0</text>
+
+        <!-- B2 right -->
+        <circle id="node-b2" cx="250" cy="114" r="18" fill="#0c2a3f" stroke="rgba(56,189,248,.5)" stroke-width="2"/>
+        <text id="text-b2" x="250" y="110" fill="#38bdf8" font-size="10" font-weight="600" text-anchor="middle" dominant-baseline="middle">B2</text>
+        <text id="val-b2"  x="250" y="121" fill="#38bdf8" font-size="11" font-weight="700" text-anchor="middle" dominant-baseline="middle">0</text>
+
+        <!-- Way leaves -->
+        <rect id="leaf-w0" x="22"  y="170" width="40" height="26" rx="5" fill="#162032" stroke="#334155" stroke-width="1.5"/>
+        <text x="42"  y="187" fill="#94a3b8" font-size="10" font-weight="600" text-anchor="middle">W0</text>
+
+        <rect id="leaf-w1" x="118" y="170" width="40" height="26" rx="5" fill="#162032" stroke="#334155" stroke-width="1.5"/>
+        <text x="138" y="187" fill="#94a3b8" font-size="10" font-weight="600" text-anchor="middle">W1</text>
+
+        <rect id="leaf-w2" x="182" y="170" width="40" height="26" rx="5" fill="#162032" stroke="#334155" stroke-width="1.5"/>
+        <text x="202" y="187" fill="#94a3b8" font-size="10" font-weight="600" text-anchor="middle">W2</text>
+
+        <rect id="leaf-w3" x="278" y="170" width="40" height="26" rx="5" fill="#162032" stroke="#334155" stroke-width="1.5"/>
+        <text x="298" y="187" fill="#94a3b8" font-size="10" font-weight="600" text-anchor="middle">W3</text>
+
+        <!-- Eviction path indicator (hidden by default) -->
+        <g id="evict-path" opacity="0">
+          <circle cx="170" cy="28" r="22" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2"/>
+        </g>
+      </svg>
+
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+        <span class="badge b-blue">B0=0 → left branch</span>
+        <span class="badge b-gold">B0=1 → right branch</span>
+      </div>
+    </div>
+
+    <!-- Rules -->
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card" style="border-left:3px solid var(--accent);">
+        <div style="font-weight:600;font-size:.88rem;margin-bottom:6px;color:var(--accent);">📌 On Access (Cache Hit or Fill)</div>
+        <p style="font-size:.78rem;color:var(--muted);line-height:1.65;">Walk from root → accessed way. At each node, <strong style="color:var(--text);">flip the bit to point AWAY</strong> from the just-accessed way. This marks that subtree as "recently used."</p>
+      </div>
+      <div class="card" style="border-left:3px solid var(--gold);">
+        <div style="font-weight:600;font-size:.88rem;margin-bottom:6px;color:var(--gold);">🗑️ On Eviction (Cache Miss)</div>
+        <p style="font-size:.78rem;color:var(--muted);line-height:1.65;">Follow bits from root → leaf. Each bit value steers the path. The leaf you land on is the <strong style="color:var(--text);">victim (approximate LRU)</strong>.</p>
+      </div>
+      <div class="card" style="border-left:3px solid var(--green);">
+        <div style="font-weight:600;font-size:.88rem;margin-bottom:6px;color:var(--green);">⚡ Complexity</div>
+        <p style="font-size:.78rem;color:var(--muted);line-height:1.65;">Both update and lookup are <strong style="color:var(--text);">O(log₂ N)</strong> bit reads/writes. For 8-way: 3 operations. No counters, no sorting.</p>
+      </div>
+
+      <!-- Bit decode table -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);">// 4-Way Eviction Decode</div>
+        <table>
+          <thead>
+            <tr><th>B0</th><th>B1</th><th>B2</th><th>Victim</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono" style="color:var(--accent)">0</td><td class="mono" style="color:var(--accent)">0</td><td class="mono" style="color:var(--dim)">—</td><td><span class="badge b-blue">Way 0</span></td></tr>
+            <tr><td class="mono" style="color:var(--accent)">0</td><td class="mono" style="color:var(--gold)">1</td><td class="mono" style="color:var(--dim)">—</td><td><span class="badge b-gold">Way 1</span></td></tr>
+            <tr><td class="mono" style="color:var(--gold)">1</td><td class="mono" style="color:var(--dim)">—</td><td class="mono" style="color:var(--accent)">0</td><td><span class="badge b-green">Way 2</span></td></tr>
+            <tr><td class="mono" style="color:var(--gold)">1</td><td class="mono" style="color:var(--dim)">—</td><td class="mono" style="color:var(--gold)">1</td><td><span class="badge b-red">Way 3</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ INTERACTIVE SIMULATOR ══ -->
+<div class="divider"></div>
+<div class="section">
+  <div class="sec-label">// 03 — Interactive Simulator</div>
+  <div class="sec-title">4-Way PLRU — Step-by-Step</div>
+  <p class="sec-desc">Access sequence: <span class="mono" style="color:var(--accent);">A → B → C → D → A (hit) → E (miss, evict)</span>. Click Simulate Step to advance.</p>
+
+  <!-- Controls -->
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px;">
+    <button id="btn-step"  class="sim-btn" onclick="simStep()">▶ Simulate Step</button>
+    <button id="btn-reset" onclick="simReset()" style="background:transparent;color:var(--muted);font-weight:600;font-size:.8rem;padding:9px 18px;border-radius:7px;border:1px solid var(--border);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s;" onmouseover="this.style.color='#f8fafc'" onmouseout="this.style.color='var(--muted)'">↺ Reset</button>
+    <div id="sim-status" style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;min-width:200px;">
+      Step 0 / 6 — Press ▶ to start
+    </div>
+  </div>
+
+  <!-- Main sim layout -->
+  <div class="grid-2" style="gap:20px;align-items:start;">
+    <!-- Left: tree + way boxes -->
+    <div>
+      <!-- Bits display -->
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--dim);min-width:70px;">PLRU Bits:</span>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="text-align:center;">
+            <div id="sim-b0" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1rem;background:#0c2a3f;color:var(--accent);border:2px solid rgba(56,189,248,.5);transition:all .4s cubic-bezier(.34,1.56,.64,1);">0</div>
+            <div style="font-size:.6rem;color:var(--dim);margin-top:3px;font-family:'JetBrains Mono',monospace;">B0</div>
+          </div>
+          <div style="text-align:center;">
+            <div id="sim-b1" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1rem;background:#0c2a3f;color:var(--accent);border:2px solid rgba(56,189,248,.5);transition:all .4s cubic-bezier(.34,1.56,.64,1);">0</div>
+            <div style="font-size:.6rem;color:var(--dim);margin-top:3px;font-family:'JetBrains Mono',monospace;">B1</div>
+          </div>
+          <div style="text-align:center;">
+            <div id="sim-b2" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1rem;background:#0c2a3f;color:var(--accent);border:2px solid rgba(56,189,248,.5);transition:all .4s cubic-bezier(.34,1.56,.64,1);">0</div>
+            <div style="font-size:.6rem;color:var(--dim);margin-top:3px;font-family:'JetBrains Mono',monospace;">B2</div>
+          </div>
+        </div>
+        <div id="bits-hint" style="font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--dim);margin-left:8px;line-height:1.5;"></div>
+      </div>
+
+      <!-- Way boxes -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div id="way0" class="way-box">
+          <div class="way-label">Way 0</div>
+          <div id="way0-data" class="way-data" style="color:var(--dim);">—</div>
+        </div>
+        <div id="way1" class="way-box">
+          <div class="way-label">Way 1</div>
+          <div id="way1-data" class="way-data" style="color:var(--dim);">—</div>
+        </div>
+        <div id="way2" class="way-box">
+          <div class="way-label">Way 2</div>
+          <div id="way2-data" class="way-data" style="color:var(--dim);">—</div>
+        </div>
+        <div id="way3" class="way-box">
+          <div class="way-label">Way 3</div>
+          <div id="way3-data" class="way-data" style="color:var(--dim);">—</div>
+        </div>
+      </div>
+
+      <!-- Log -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;min-height:100px;max-height:160px;overflow-y:auto;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">// Activity Log</div>
+        <div id="sim-log"></div>
+      </div>
+    </div>
+
+    <!-- Right: step table -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);">// Bit-State Transition Table</div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Access</th><th>Type</th>
+              <th>B0</th><th>B1</th><th>B2</th>
+              <th>Way</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="step-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BIT-FLIPPING MECHANISM ══ -->
+<div class="divider"></div>
+<div class="section">
+  <div class="sec-label">// 04 — Mechanism</div>
+  <div class="sec-title">The Bit-Flipping Rule</div>
+  <p class="sec-desc">One rule governs both reads and evictions. Simple, hardware-friendly, no counters.</p>
+
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="card">
+      <div style="font-weight:700;font-size:.88rem;margin-bottom:10px;color:var(--green);">✦ ON CACHE ACCESS (hit or fill)</div>
+      <ol style="font-size:.8rem;color:var(--muted);line-height:2;padding-left:1.2rem;">
+        <li>Find which way was accessed.</li>
+        <li>Walk tree from root → that way's leaf.</li>
+        <li>At each internal node, <strong style="color:var(--text);">flip its bit to point AWAY</strong> from the accessed subtree.</li>
+        <li>Result: bits now point toward the <em>other</em> side (the older one).</li>
+      </ol>
+      <div class="callout co-green" style="margin-top:10px;">
+        <strong>Example:</strong> Access Way 0 (left-left path). Flip B0: 0→1. Flip B1: 0→1. Now B0=1 and B1=1 point right — away from Way 0.
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;font-size:.88rem;margin-bottom:10px;color:var(--red);">✦ ON CACHE MISS (eviction needed)</div>
+      <ol style="font-size:.8rem;color:var(--muted);line-height:2;padding-left:1.2rem;">
+        <li>Start at root (B0).</li>
+        <li>Follow each bit's value: 0 → go left, 1 → go right.</li>
+        <li>Reach a leaf — that way is the <strong style="color:var(--text);">victim</strong>.</li>
+        <li>Evict it, load new data, then update bits (step above).</li>
+      </ol>
+      <div class="callout co-red" style="margin-top:10px;">
+        <strong>Example:</strong> Bits B0=1, B2=0. Follow: 1→right branch, 0→left of right branch → <strong>Way 2</strong> is evicted.
+      </div>
+    </div>
+  </div>
+
+  <!-- Hover demo -->
+  <div class="card" style="border-color:rgba(56,189,248,.2);">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">// Hover a Way to see which bits flip</div>
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;">
+        <div id="hover-way0" onmouseover="hoverWay(0)" onmouseout="hoverReset()" style="cursor:pointer;padding:10px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;font-family:'JetBrains Mono',monospace;font-size:.8rem;transition:all .2s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';hoverWay(0)" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)';hoverReset()">Way 0</div>
+        <div onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';hoverWay(1)" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)';hoverReset()" style="cursor:pointer;padding:10px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;font-family:'JetBrains Mono',monospace;font-size:.8rem;transition:all .2s;">Way 1</div>
+        <div onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';hoverWay(2)" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)';hoverReset()" style="cursor:pointer;padding:10px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;font-family:'JetBrains Mono',monospace;font-size:.8rem;transition:all .2s;">Way 2</div>
+        <div onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';hoverWay(3)" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)';hoverReset()" style="cursor:pointer;padding:10px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;font-family:'JetBrains Mono',monospace;font-size:.8rem;transition:all .2s;">Way 3</div>
+      </div>
+      <div id="hover-desc" style="font-size:.78rem;color:var(--muted);font-family:'JetBrains Mono',monospace;line-height:1.6;">
+        ← hover a way to see which bits flip
+      </div>
+    </div>
+    <!-- Static hover tree -->
+    <svg id="hover-svg" viewBox="0 0 340 160" width="100%" style="max-height:160px;display:block;margin-top:12px;">
+      <line x1="170" y1="44" x2="90"  y2="104" id="hl-00" stroke="#334155" stroke-width="1.5"/>
+      <line x1="170" y1="44" x2="250" y2="104" id="hl-01" stroke="#334155" stroke-width="1.5"/>
+      <line x1="90"  y1="116" x2="42"  y2="148" id="hl-10" stroke="#334155" stroke-width="1.5"/>
+      <line x1="90"  y1="116" x2="138" y2="148" id="hl-11" stroke="#334155" stroke-width="1.5"/>
+      <line x1="250" y1="116" x2="202" y2="148" id="hl-20" stroke="#334155" stroke-width="1.5"/>
+      <line x1="250" y1="116" x2="298" y2="148" id="hl-21" stroke="#334155" stroke-width="1.5"/>
+
+      <circle id="h-b0" cx="170" cy="30" r="18" fill="#0c2a3f" stroke="rgba(56,189,248,.4)" stroke-width="1.5"/>
+      <text x="170" y="30" fill="#38bdf8" font-size="10" font-weight="600" text-anchor="middle" dominant-baseline="middle">B0</text>
+      <circle id="h-b1" cx="90" cy="112" r="16" fill="#0c2a3f" stroke="rgba(56,189,248,.4)" stroke-width="1.5"/>
+      <text x="90" y="112" fill="#38bdf8" font-size="10" font-weight="600" text-anchor="middle" dominant-baseline="middle">B1</text>
+      <circle id="h-b2" cx="250" cy="112" r="16" fill="#0c2a3f" stroke="rgba(56,189,248,.4)" stroke-width="1.5"/>
+      <text x="250" y="112" fill="#38bdf8" font-size="10" font-weight="600" text-anchor="middle" dominant-baseline="middle">B2</text>
+
+      <rect x="22"  y="148" width="40" height="24" rx="4" fill="#162032" stroke="#334155" stroke-width="1" id="h-w0"/>
+      <text x="42"  y="163" fill="#94a3b8" font-size="9" font-weight="600" text-anchor="middle" id="ht-w0">W0</text>
+      <rect x="118" y="148" width="40" height="24" rx="4" fill="#162032" stroke="#334155" stroke-width="1" id="h-w1"/>
+      <text x="138" y="163" fill="#94a3b8" font-size="9" font-weight="600" text-anchor="middle" id="ht-w1">W1</text>
+      <rect x="182" y="148" width="40" height="24" rx="4" fill="#162032" stroke="#334155" stroke-width="1" id="h-w2"/>
+      <text x="202" y="163" fill="#94a3b8" font-size="9" font-weight="600" text-anchor="middle" id="ht-w2">W2</text>
+      <rect x="278" y="148" width="40" height="24" rx="4" fill="#162032" stroke="#334155" stroke-width="1" id="h-w3"/>
+      <text x="298" y="163" fill="#94a3b8" font-size="9" font-weight="600" text-anchor="middle" id="ht-w3">W3</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ══ COMPARISON TABLE ══ -->
+<div class="divider"></div>
+<div class="section">
+  <div class="sec-label">// 05 — Comparison</div>
+  <div class="sec-title">LRU vs PLRU vs Others</div>
+  <p class="sec-desc">Choose your replacement policy based on the cache level, way count, and performance sensitivity.</p>
+
+  <div style="border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:24px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th style="color:#ef4444;">True LRU</th>
+          <th style="color:#38bdf8;">Tree PLRU ★</th>
+          <th style="color:#a78bfa;">Random</th>
+          <th style="color:#f59e0b;">FIFO</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--muted);font-weight:500;">Storage (8-way)</td>
+          <td><span class="badge b-red">16 bits</span></td>
+          <td><span class="badge b-blue">7 bits ★</span></td>
+          <td><span class="badge b-green">0 bits</span></td>
+          <td><span class="badge b-gold">3 bits</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);font-weight:500;">Update Complexity</td>
+          <td style="color:#f87171;">O(N) — sort N entries</td>
+          <td style="color:#38bdf8;">O(log₂ N) — flip 3 bits</td>
+          <td style="color:#22c55e;">O(1) — none</td>
+          <td style="color:#f59e0b;">O(1) — pointer++</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);font-weight:500;">Eviction Accuracy</td>
+          <td style="color:#22c55e;">100% (exact)</td>
+          <td style="color:#38bdf8;">~95–98%</td>
+          <td style="color:#f87171;">~80% (workload dependent)</td>
+          <td style="color:#f87171;">~85%</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);font-weight:500;">Hardware Cost</td>
+          <td><span class="badge b-red">High</span></td>
+          <td><span class="badge b-green">Low</span></td>
+          <td><span class="badge b-green">Minimal</span></td>
+          <td><span class="badge b-green">Low</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);font-weight:500;">Scan Resistance</td>
+          <td style="color:#22c55e;">Yes</td>
+          <td style="color:#22c55e;">Partial</td>
+          <td style="color:#f87171;">No</td>
+          <td style="color:#f87171;">No</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);font-weight:500;">Used in</td>
+          <td style="color:var(--muted);font-size:.75rem;">TLBs (small)</td>
+          <td style="color:var(--accent);font-size:.75rem;font-weight:600;">L1/L2 CPU cache</td>
+          <td style="color:var(--muted);font-size:.75rem;">LLC (some designs)</td>
+          <td style="color:var(--muted);font-size:.75rem;">Simple controllers</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout co-blue">
+    <strong>★ Why PLRU dominates CPU caches:</strong> At 8-way associativity, PLRU uses 56% less storage than true LRU, adds zero pipeline latency (3-bit XOR chain), and achieves 95%+ accuracy. ARM Cortex-A series, Intel Core L1, and AMD Zen all use tree-PLRU variants.
+  </div>
+</div>
+
+<!-- ══ INTERVIEW CHEATSHEET ══ -->
+<div class="divider"></div>
+<div class="section" style="padding-bottom:56px;">
+  <div class="sec-label">// 06 — Interview Cheatsheet</div>
+  <div class="sec-title">Key Facts to Memorise</div>
+
+  <div class="grid-3" style="margin-bottom:16px;">
+    <div class="card" style="border-left:3px solid var(--accent);">
+      <div class="mono" style="color:var(--accent);font-size:.7rem;margin-bottom:6px;">STORAGE FORMULA</div>
+      <div class="formula" style="margin:0;font-size:.76rem;">N−1 bits for N ways<br>4-way → 3 bits<br>8-way → 7 bits<br>16-way → 15 bits</div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--gold);">
+      <div class="mono" style="color:var(--gold);font-size:.7rem;margin-bottom:6px;">THE ONE RULE</div>
+      <p style="font-size:.78rem;color:var(--muted);line-height:1.65;">"On access, flip bits on the path from root to way — pointing <strong style="color:var(--text);">away</strong> from what you just used."</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--green);">
+      <div class="mono" style="color:var(--green);font-size:.7rem;margin-bottom:6px;">TRADE-OFF PITCH</div>
+      <p style="font-size:.78rem;color:var(--muted);line-height:1.65;">"Sacrifices 2–5% accuracy for 50%+ storage savings and O(log N) vs O(N) update time. Worth it at scale."</p>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="mono" style="color:var(--purple);font-size:.7rem;margin-bottom:10px;">COMMON INTERVIEW Qs</div>
+      <ul style="font-size:.8rem;color:var(--muted);line-height:2.2;list-style:none;padding:0;">
+        <li>❓ <strong style="color:var(--text);">Why not true LRU in L1?</strong> → Hardware cost: O(N) comparators.</li>
+        <li>❓ <strong style="color:var(--text);">How many bits for 8-way?</strong> → 7 bits (N−1).</li>
+        <li>❓ <strong style="color:var(--text);">What gets evicted?</strong> → Leaf at root-to-leaf path following bit values.</li>
+        <li>❓ <strong style="color:var(--text);">What happens on a hit?</strong> → Bits on path flip to point away from hit way.</li>
+        <li>❓ <strong style="color:var(--text);">Is PLRU optimal?</strong> → No. Belady's MIN is optimal but requires future knowledge.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="mono" style="color:var(--red);font-size:.7rem;margin-bottom:10px;">PLRU WEAKNESSES</div>
+      <ul style="font-size:.8rem;color:var(--muted);line-height:2.2;list-style:none;padding:0;">
+        <li>⚠️ <strong style="color:var(--text);">Streaming access:</strong> Sequential scan thrashes PLRU like LRU.</li>
+        <li>⚠️ <strong style="color:var(--text);">Working set &gt; N:</strong> All policies degrade equally. Increase associativity.</li>
+        <li>⚠️ <strong style="color:var(--text);">Asymmetric access:</strong> Hot/cold imbalance degrades approximation quality.</li>
+        <li>⚠️ <strong style="color:var(--text);">Security:</strong> Predictable eviction enables Flush+Reload cache side-channel attacks.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<footer style="border-top:1px solid var(--border);padding:20px 24px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--dim);">
+  PLRU Reference · Tree-Based Pseudo-LRU · 4-Way, N−1 Bit Algorithm · Cache Architecture
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  SIMULATOR
+// ═══════════════════════════════════════════════════════
+
+// bits[0]=B0, bits[1]=B1, bits[2]=B2
+let bits = [0, 0, 0];
+let ways = ['—', '—', '—', '—'];   // content of each way
+let stepIdx = 0;
+
+const steps = [
+  { access: 'A', type: 'MISS', way: 0, desc: 'Cold miss → load A into Way 0. Flip B0→1 (away from left), B1→1 (away from W0).' },
+  { access: 'B', type: 'MISS', way: 1, desc: 'Cold miss → load B into Way 1. Flip B0→1 (still left side used), B1→0 (away from W1).' },
+  { access: 'C', type: 'MISS', way: 2, desc: 'Cold miss → load C into Way 2. Flip B0→0 (away from right), B2→1 (away from W2).' },
+  { access: 'D', type: 'MISS', way: 3, desc: 'Cold miss → load D into Way 3. Flip B0→0, B2→0 (away from W3). Cache is now full.' },
+  { access: 'A', type: 'HIT',  way: 0, desc: 'Cache hit on A (Way 0). Update bits: B0→1, B1→1 (away from left-left path).' },
+  { access: 'E', type: 'MISS', way: -1, desc: 'Miss on E. Follow bits → evict victim. Fill E into evicted way, update bits.' },
+];
+
+// Bit transition table: what bits look like AFTER each step
+const bitStates = [
+  [1, 1, 0],  // after A (Way 0 accessed: B0 flips away from left→1, B1 flips away from W0→1)
+  [1, 0, 0],  // after B (Way 1 accessed: B0 still 1, B1 flips away from W1→0)
+  [0, 0, 1],  // after C (Way 2 accessed: B0 flips away from right→0, B2 flips away from W2→1)
+  [0, 0, 0],  // after D (Way 3 accessed: B0 stays 0, B2 flips away from W3→0)
+  [1, 1, 0],  // after A-hit (Way 0 accessed again: B0→1, B1→1)
+  [0, 0, 1],  // after E (victim=Way2 since B0=1→right, B2=1→right=W3... wait recalc below)
+];
+
+// Eviction lookup: given [B0,B1,B2], find victim way
+function getVictim(b) {
+  if (b[0] === 0) return b[1] === 0 ? 0 : 1;
+  else             return b[2] === 0 ? 2 : 3;
+}
+
+// Bits to flip when accessing a way
+// Returns array of bit indices to flip
+function bitsToFlip(way) {
+  // Path: W0→B0(left),B1(left) W1→B0(left),B1(right) W2→B0(right),B2(left) W3→B0(right),B2(right)
+  // On access, flip so they point AWAY
+  if (way === 0) return [0, 1]; // B0 points left→flip to 1, B1 points left→flip to 1
+  if (way === 1) return [0, 1]; // B0 flip to 1, B1 flip to 0
+  if (way === 2) return [0, 2]; // B0 flip to 0, B2 flip to 1
+  if (way === 3) return [0, 2]; // B0 flip to 0, B2 flip to 0
+}
+function newBitsAfterAccess(oldBits, way) {
+  let b = [...oldBits];
+  if (way === 0) { b[0]=1; b[1]=1; }
+  if (way === 1) { b[0]=1; b[1]=0; }
+  if (way === 2) { b[0]=0; b[2]=1; }
+  if (way === 3) { b[0]=0; b[2]=0; }
+  return b;
+}
+
+function renderBit(elId, val, flip) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.textContent = val;
+  if (val === 0) {
+    el.style.background='#0c2a3f'; el.style.color='#38bdf8';
+    el.style.border='2px solid rgba(56,189,248,.5)';
+  } else {
+    el.style.background='#2a1f0c'; el.style.color='#f59e0b';
+    el.style.border='2px solid rgba(245,158,11,.5)';
+  }
+  if (flip) {
+    el.style.animation='none';
+    el.offsetHeight; // reflow
+    el.style.animation='bitFlipAnim .5s ease-out';
+  }
+}
+
+function addLog(msg, color='#38bdf8') {
+  const log = document.getElementById('sim-log');
+  const div = document.createElement('div');
+  div.style.cssText = `font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:4px 8px;border-radius:4px;border-left:2px solid ${color};margin-bottom:4px;animation:fadeIn .3s ease;color:${color};background:${color}10;`;
+  div.textContent = msg;
+  log.prepend(div);
+}
+
+function updateWayBox(wayIdx, data, state) {
+  const box = document.getElementById(`way${wayIdx}`);
+  const dataEl = document.getElementById(`way${wayIdx}-data`);
+  // Remove all state classes
+  box.classList.remove('accessed','evict');
+  // Remove badges
+  box.querySelectorAll('.evict-badge,.access-badge').forEach(b=>b.remove());
+  if (data !== undefined) dataEl.textContent = data;
+  if (state === 'accessed') {
+    box.classList.add('accessed');
+    dataEl.style.color = '#22c55e';
+    const badge = document.createElement('div');
+    badge.className='access-badge'; badge.textContent='HIT';
+    box.appendChild(badge);
+  } else if (state === 'evict') {
+    box.classList.add('evict');
+    dataEl.style.color = '#ef4444';
+    const badge = document.createElement('div');
+    badge.className='evict-badge'; badge.textContent='EVICT';
+    box.appendChild(badge);
+  } else if (data !== '—') {
+    dataEl.style.color = '#f8fafc';
+  } else {
+    dataEl.style.color = '#475569';
+  }
+}
+
+function renderStepTable() {
+  const tbody = document.getElementById('step-table-body');
+  tbody.innerHTML = '';
+  steps.forEach((s, i) => {
+    const afterBits = bitStates[i];
+    const victimWay = i === 5 ? getVictim(bitStates[4]) : s.way;
+    const row = document.createElement('tr');
+    row.id = `step-row-${i}`;
+    row.className = 'step-row';
+    const typeColor = s.type === 'HIT' ? '#22c55e' : (i===5?'#ef4444':'#f59e0b');
+    const wayLabel = i === 5 ? `W${victimWay}(ev)` : (s.way>=0 ? `W${s.way}` : '?');
+    row.innerHTML = `
+      <td class="mono" style="color:var(--dim)">${i+1}</td>
+      <td><span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.85rem;color:#f8fafc;">${s.access}</span></td>
+      <td><span style="font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:2px 6px;border-radius:3px;color:${typeColor};background:${typeColor}15;border:1px solid ${typeColor}40;">${s.type}</span></td>
+      <td class="mono" style="color:${afterBits[0]?'#f59e0b':'#38bdf8'}">${afterBits[0]}</td>
+      <td class="mono" style="color:${afterBits[1]?'#f59e0b':'#38bdf8'}">${afterBits[1]}</td>
+      <td class="mono" style="color:${afterBits[2]?'#f59e0b':'#38bdf8'}">${afterBits[2]}</td>
+      <td class="mono" style="font-size:.72rem;color:var(--muted);">${wayLabel}</td>
+      <td style="font-size:.72rem;color:var(--muted);max-width:180px;">${i < stepIdx ? (i === 5 ? 'Evict W'+victimWay+', load E' : 'Bits updated') : '—'}</td>
+    `;
+    if (i === stepIdx - 1) row.classList.add('step-active');
+    if (i < stepIdx - 1)   row.classList.add('step-done');
+    tbody.appendChild(row);
+  });
+}
+
+function simStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx];
+
+  // Reset previous way highlights
+  for(let i=0;i<4;i++) {
+    const box = document.getElementById(`way${i}`);
+    box.classList.remove('accessed','evict');
+    box.querySelectorAll('.evict-badge,.access-badge').forEach(b=>b.remove());
+  }
+
+  const prevBits = [...bits];
+  let accessedWay = s.way;
+
+  if (stepIdx === 5) {
+    // Eviction step
+    const victim = getVictim(bits);
+    accessedWay = victim;
+    ways[victim] = 'E';
+    updateWayBox(victim, 'E', 'evict');
+    bits = newBitsAfterAccess(bits, victim);
+
+    // Flash then show as accessed
+    setTimeout(() => {
+      const box = document.getElementById(`way${victim}`);
+      box.classList.remove('evict');
+      box.querySelectorAll('.evict-badge,.access-badge').forEach(b=>b.remove());
+      updateWayBox(victim, 'E', 'accessed');
+      const badge = document.createElement('div');
+      badge.className='access-badge'; badge.textContent='NEW';
+      box.appendChild(badge);
+    }, 400);
+
+    addLog(`Miss → Victim: Way ${victim} (B${bits[0]}B${bits[1]}B${bits[2]}). Load E. Bits updated.`, '#ef4444');
+  } else {
+    // Normal access
+    if (s.way >= 0) {
+      if (ways[s.way] === '—') ways[s.way] = s.access;
+      updateWayBox(s.way, ways[s.way], 'accessed');
+      bits = newBitsAfterAccess(bits, s.way);
+      const color = s.type === 'HIT' ? '#22c55e' : '#38bdf8';
+      addLog(`${s.type}: ${s.access} → Way ${s.way}. Bits: [${prevBits}] → [${bits}]`, color);
+    }
+  }
+
+  // Update bit displays with flip animation
+  for (let i=0;i<3;i++) {
+    renderBit(`sim-b${i}`, bits[i], bits[i] !== prevBits[i]);
+  }
+
+  // Update hint
+  document.getElementById('bits-hint').innerHTML =
+    `B0=${bits[0]}: ${bits[0]===0?'→ left branch':'→ right branch'}<br>` +
+    `B1=${bits[1]}: ${bits[1]===0?'→ Way 0':'→ Way 1'} (if left)<br>` +
+    `B2=${bits[2]}: ${bits[2]===0?'→ Way 2':'→ Way 3'} (if right)<br>` +
+    `<span style="color:#ef4444;">Victim → Way ${getVictim(bits)}</span>`;
+
+  stepIdx++;
+
+  // Update status
+  const statusMsgs = [
+    'Step 1/6 — A: cold miss, loaded into Way 0',
+    'Step 2/6 — B: cold miss, loaded into Way 1',
+    'Step 3/6 — C: cold miss, loaded into Way 2',
+    'Step 4/6 — D: cold miss, cache is now full',
+    'Step 5/6 — A: cache HIT, bits updated',
+    'Step 6/6 — E: miss, victim evicted ✓',
+  ];
+  document.getElementById('sim-status').textContent = statusMsgs[stepIdx-1] || 'Complete';
+
+  if (stepIdx >= steps.length) {
+    document.getElementById('btn-step').disabled = true;
+    addLog('Simulation complete. Click ↺ to reset.', '#a78bfa');
+  }
+
+  renderStepTable();
+}
+
+function simReset() {
+  bits = [0, 0, 0];
+  ways = ['—', '—', '—', '—'];
+  stepIdx = 0;
+  for(let i=0;i<3;i++) renderBit(`sim-b${i}`, 0, false);
+  for(let i=0;i<4;i++) {
+    const box = document.getElementById(`way${i}`);
+    box.classList.remove('accessed','evict');
+    box.querySelectorAll('.evict-badge,.access-badge').forEach(b=>b.remove());
+    updateWayBox(i, '—');
+  }
+  document.getElementById('sim-log').innerHTML = '';
+  document.getElementById('bits-hint').innerHTML = '';
+  document.getElementById('sim-status').textContent = 'Step 0 / 6 — Press ▶ to start';
+  document.getElementById('btn-step').disabled = false;
+  renderStepTable();
+}
+
+// Hover effects for bit-flipping demo
+function hoverWay(way) {
+  const newBits = newBitsAfterAccess([0,0,0], way);
+  // Highlight path and flipped bits
+  const hDesc = {
+    0: 'Access Way 0 (left→left path). B0: 0→<b style="color:#f59e0b">1</b>, B1: 0→<b style="color:#f59e0b">1</b>. B2 unchanged.',
+    1: 'Access Way 1 (left→right path). B0: 0→<b style="color:#f59e0b">1</b>, B1: 0→<b style="color:#94a3b8">0</b> (flip away). B2 unchanged.',
+    2: 'Access Way 2 (right→left path). B0: 0→<b style="color:#94a3b8">0</b>, B2: 0→<b style="color:#f59e0b">1</b>. B1 unchanged.',
+    3: 'Access Way 3 (right→right path). B0: 0→<b style="color:#94a3b8">0</b>, B2: 0→<b style="color:#94a3b8">0</b>. B1 unchanged.',
+  };
+  document.getElementById('hover-desc').innerHTML = hDesc[way];
+
+  // Highlight active path
+  const activeLines = { 0:['hl-00','hl-10'], 1:['hl-00','hl-11'], 2:['hl-01','hl-20'], 3:['hl-01','hl-21'] };
+  ['hl-00','hl-01','hl-10','hl-11','hl-20','hl-21'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.setAttribute('stroke', '#334155'); el.setAttribute('stroke-width','1.5'); }
+  });
+  (activeLines[way]||[]).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.setAttribute('stroke','#38bdf8'); el.setAttribute('stroke-width','2.5'); }
+  });
+  // Highlight leaves
+  ['h-w0','h-w1','h-w2','h-w3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('stroke','#334155');
+  });
+  const activeLeaf = document.getElementById(`h-w${way}`);
+  if (activeLeaf) activeLeaf.setAttribute('stroke','#22c55e');
+}
+
+function hoverReset() {
+  document.getElementById('hover-desc').innerHTML = '← hover a way to see which bits flip';
+  ['hl-00','hl-01','hl-10','hl-11','hl-20','hl-21'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.setAttribute('stroke','#334155'); el.setAttribute('stroke-width','1.5'); }
+  });
+  ['h-w0','h-w1','h-w2','h-w3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('stroke','#334155');
+  });
+}
+
+// Add CSS keyframe via JS for bit flip
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes bitFlipAnim {
+    0%   { transform:scale(1); }
+    35%  { transform:scale(1.5); filter:brightness(2.2); }
+    100% { transform:scale(1); filter:brightness(1); }
+  }
+  @keyframes fadeIn {
+    from { opacity:0; transform:translateX(-6px); }
+    to   { opacity:1; transform:translateX(0); }
+  }
+`;
+document.head.appendChild(style);
+
+// Init
+renderStepTable();
+</script>
+</body>
+</html>
