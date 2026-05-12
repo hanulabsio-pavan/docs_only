@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHI-Based NoC — Micro-Architecture Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&family=Share+Tech+Mono&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #060810;
+  --bg1:    #090d18;
+  --bg2:    #0d1220;
+  --bg3:    #111828;
+  --bg4:    #151e30;
+  --b1:     #182030;
+  --b2:     #1e2a40;
+  --b3:     #263348;
+
+  /* Node type colours */
+  --rnf:  #22d3ee;   /* cyan    RN-F */
+  --hnf:  #f59e0b;   /* amber   HN-F */
+  --snf:  #4ade80;   /* green   SN-F */
+  --rni:  #f472b6;   /* pink    RN-I */
+  --hni:  #fb923c;   /* orange  HN-I */
+  --sni:  #94a3b8;   /* slate   SN-I */
+  --rtr:  #a78bfa;   /* purple  Router */
+  --lnk:  #fbbf24;   /* amber   Link */
+
+  /* Channel colours */
+  --req:  #38bdf8;
+  --rsp:  #c084fc;
+  --dat:  #34d399;
+  --snp:  #f97316;
+
+  --text: #e2eaf8;
+  --soft: #6880a8;
+  --dim:  #344060;
+  --muted:#4a5e80;
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Crimson Pro',Georgia,serif;
+  overflow-x:hidden;
+  line-height:1.6;
+}
+.mono { font-family:'Share Tech Mono',monospace; }
+.display { font-family:'Oxanium',sans-serif; }
+
+/* scrollbar */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:var(--bg1); }
+::-webkit-scrollbar-thumb { background:var(--b3); border-radius:2px; }
+
+/* ── HERO ── */
+.hero {
+  padding:64px 60px 52px;
+  position:relative; overflow:hidden;
+  border-bottom:1px solid var(--b1);
+  min-height:300px;
+}
+.hero-bg {
+  position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse 55% 80% at 0% 50%,  rgba(34,211,238,.07), transparent 55%),
+    radial-gradient(ellipse 40% 60% at 100% 10%, rgba(245,158,11,.06), transparent 55%),
+    radial-gradient(ellipse 35% 55% at 50% 100%, rgba(74,222,128,.05), transparent 55%);
+}
+.hero-dots {
+  position:absolute; inset:0;
+  background-image: radial-gradient(circle, var(--b2) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity:.4;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 15%, transparent 80%);
+}
+.hero-inner { position:relative; z-index:1; }
+.hero-eyebrow {
+  font-family:'Share Tech Mono',monospace;
+  font-size:.58rem; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--dim); margin-bottom:14px;
+  display:flex; align-items:center; gap:10px;
+}
+.hero-eyebrow::after { content:''; flex:1; height:1px; background:var(--b2); max-width:300px; }
+.hero h1 {
+  font-family:'Oxanium',sans-serif;
+  font-size:clamp(2rem,5.5vw,3.8rem);
+  font-weight:800; line-height:1.0;
+  letter-spacing:.02em; margin-bottom:14px;
+}
+.h1-chi  { color:var(--rnf); }
+.h1-noc  { color:var(--hnf); }
+.h1-arch { color:var(--text); opacity:.85; }
+.hero-desc { font-size:.95rem; color:var(--soft); max-width:660px; line-height:1.72; margin-bottom:22px; font-style:italic; }
+.hero-chips { display:flex; gap:8px; flex-wrap:wrap; }
+.hchip {
+  font-family:'Share Tech Mono',monospace; font-size:.58rem; font-weight:600;
+  padding:3px 10px; border-radius:3px; border:1px solid; letter-spacing:.05em;
+}
+.hc-rnf { color:var(--rnf); border-color:rgba(34,211,238,.3); background:rgba(34,211,238,.06); }
+.hc-hnf { color:var(--hnf); border-color:rgba(245,158,11,.3); background:rgba(245,158,11,.06); }
+.hc-snf { color:var(--snf); border-color:rgba(74,222,128,.3); background:rgba(74,222,128,.06); }
+.hc-rtr { color:var(--rtr); border-color:rgba(167,139,250,.3); background:rgba(167,139,250,.06); }
+
+/* ── NAV ── */
+.top-nav {
+  display:flex; gap:0; padding:0 60px;
+  background:var(--bg1); border-bottom:1px solid var(--b1);
+  position:sticky; top:0; z-index:200; overflow-x:auto;
+}
+.top-nav a {
+  font-family:'Share Tech Mono',monospace; font-size:.6rem;
+  letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); text-decoration:none;
+  padding:13px 16px; border-bottom:2px solid transparent;
+  white-space:nowrap; transition:all .15s;
+}
+.top-nav a:hover { color:var(--text); }
+.top-nav a.nav-active { color:var(--hnf); border-bottom-color:var(--hnf); }
+
+/* ── CONTENT ── */
+.wrap { max-width:1240px; margin:0 auto; padding:0 60px; }
+.section { padding:56px 0 0; }
+.section:last-of-type { padding-bottom:64px; }
+
+.sec-eyebrow {
+  font-family:'Share Tech Mono',monospace;
+  font-size:.58rem; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--dim); margin-bottom:6px;
+  display:flex; align-items:center; gap:10px;
+}
+.sec-eyebrow::after { content:''; flex:1; height:1px; background:var(--b1); }
+.sec-title {
+  font-family:'Oxanium',sans-serif;
+  font-size:clamp(1.4rem,3vw,2rem); font-weight:700;
+  letter-spacing:.02em; margin-bottom:8px; line-height:1.05;
+}
+.sec-desc { font-size:.86rem; color:var(--soft); max-width:740px; margin-bottom:28px; line-height:1.72; font-style:italic; }
+
+/* ── CARDS ── */
+.card {
+  background:var(--bg2); border:1px solid var(--b1);
+  border-radius:10px; padding:22px; transition:border-color .2s;
+}
+.card:hover { border-color:var(--b2); }
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+.g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+
+/* ── TABLES ── */
+.tbl-wrap { overflow-x:auto; border-radius:8px; border:1px solid var(--b1); margin-bottom:20px; }
+table { width:100%; border-collapse:collapse; font-size:.8rem; }
+thead th {
+  padding:10px 14px; font-family:'Share Tech Mono',monospace;
+  font-size:.58rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); background:var(--bg3);
+  border-bottom:1px solid var(--b1); text-align:left; white-space:nowrap;
+}
+tbody td { padding:9px 14px; border-bottom:1px solid var(--bg3); vertical-align:middle; }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover td { background:rgba(255,255,255,.02); }
+
+/* ── NODE BADGE ── */
+.nb {
+  display:inline-block; font-family:'Share Tech Mono',monospace;
+  font-size:.62rem; font-weight:600; padding:2px 8px;
+  border-radius:3px; border:1px solid; letter-spacing:.05em;
+}
+.nb-rnf { color:var(--rnf); border-color:rgba(34,211,238,.35); background:rgba(34,211,238,.07); }
+.nb-hnf { color:var(--hnf); border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.07); }
+.nb-snf { color:var(--snf); border-color:rgba(74,222,128,.35); background:rgba(74,222,128,.07); }
+.nb-rni { color:var(--rni); border-color:rgba(244,114,182,.35); background:rgba(244,114,182,.07); }
+.nb-hni { color:var(--hni); border-color:rgba(251,146,60,.35); background:rgba(251,146,60,.07); }
+.nb-sni { color:var(--sni); border-color:rgba(148,163,184,.35); background:rgba(148,163,184,.07); }
+.nb-rtr { color:var(--rtr); border-color:rgba(167,139,250,.35); background:rgba(167,139,250,.07); }
+
+/* ── CHANNEL PILL ── */
+.ch {
+  display:inline-block; font-family:'Share Tech Mono',monospace;
+  font-size:.58rem; font-weight:700; padding:1px 6px;
+  border-radius:2px; border:1px solid;
+}
+.ch-req { color:var(--req); border-color:rgba(56,189,248,.3); background:rgba(56,189,248,.07); }
+.ch-rsp { color:var(--rsp); border-color:rgba(192,132,252,.3); background:rgba(192,132,252,.07); }
+.ch-dat { color:var(--dat); border-color:rgba(52,211,153,.3); background:rgba(52,211,153,.07); }
+.ch-snp { color:var(--snp); border-color:rgba(249,115,22,.3); background:rgba(249,115,22,.07); }
+
+/* ── CALLOUTS ── */
+.callout {
+  padding:12px 16px; border-radius:6px; border-left:3px solid;
+  font-size:.82rem; line-height:1.65; margin-bottom:14px;
+}
+.co-rnf { background:rgba(34,211,238,.05); border-color:var(--rnf); color:#a5f3fc; }
+.co-hnf { background:rgba(245,158,11,.05); border-color:var(--hnf); color:#fde68a; }
+.co-snf { background:rgba(74,222,128,.05); border-color:var(--snf); color:#bbf7d0; }
+.co-rtr { background:rgba(167,139,250,.05); border-color:var(--rtr); color:#ddd6fe; }
+.co-info{ background:rgba(56,189,248,.05); border-color:var(--req); color:#bae6fd; }
+
+/* ── DIVIDER ── */
+.divider { height:1px; background:linear-gradient(90deg,transparent,var(--b2),transparent); margin:52px 0 0; }
+
+/* ── FORMULA ── */
+.formula {
+  font-family:'Share Tech Mono',monospace; font-size:.72rem;
+  background:var(--bg3); border:1px solid var(--b1);
+  border-left:3px solid var(--hnf);
+  border-radius:5px; padding:12px 16px;
+  line-height:1.8; color:var(--text);
+  overflow-x:auto; white-space:pre; margin:12px 0;
+}
+
+/* ── INTERACTIVE TOOLTIP ── */
+.has-tip { position:relative; cursor:pointer; }
+.has-tip .tip-box {
+  position:absolute; bottom:calc(100%+8px); left:50%;
+  transform:translateX(-50%); z-index:100;
+  background:var(--bg3); border:1px solid var(--b2);
+  border-radius:7px; padding:10px 14px; min-width:240px; max-width:320px;
+  font-size:.76rem; color:var(--text); line-height:1.6;
+  opacity:0; pointer-events:none; transition:opacity .18s;
+  font-family:'Crimson Pro',serif; font-style:normal;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.has-tip:hover .tip-box { opacity:1; }
+
+/* ── SVG STYLES ── */
+svg { font-family:'Share Tech Mono',monospace; }
+.node-glow { filter:drop-shadow(0 0 8px currentColor); }
+@keyframes pulseGlow {
+  0%,100% { opacity:1; }
+  50% { opacity:.5; }
+}
+.pulse { animation:pulseGlow 2.5s ease-in-out infinite; }
+
+@keyframes flowAnim {
+  from { stroke-dashoffset:24; }
+  to   { stroke-dashoffset:0; }
+}
+.flow-anim { animation:flowAnim .8s linear infinite; }
+
+/* ── SUBUNIT CARDS ── */
+.su-card {
+  background:var(--bg2); border:1px solid var(--b1);
+  border-radius:9px; overflow:hidden;
+  transition:transform .2s, border-color .2s;
+  cursor:pointer;
+}
+.su-card:hover { transform:translateY(-3px); border-color:var(--b3); }
+.su-card .su-head {
+  padding:12px 16px; border-bottom:1px solid var(--b1);
+  display:flex; align-items:center; gap:10px;
+}
+.su-card .su-icon { font-size:1.1rem; }
+.su-card .su-name {
+  font-family:'Oxanium',sans-serif;
+  font-size:.85rem; font-weight:700;
+}
+.su-card .su-body { padding:12px 16px; }
+.su-card .su-body ul {
+  list-style:none; padding:0;
+  display:flex; flex-direction:column; gap:4px;
+}
+.su-card .su-body li {
+  font-size:.74rem; color:var(--soft);
+  display:flex; align-items:flex-start; gap:6px; line-height:1.4;
+}
+.su-card .su-body li::before {
+  content:'→'; color:var(--b3); flex-shrink:0; margin-top:1px;
+}
+.su-card .su-body li strong { color:var(--text); font-weight:600; }
+
+/* ── DETAIL PANEL ── */
+.detail-panel {
+  background:var(--bg2); border:1px solid var(--b2);
+  border-radius:10px; padding:0; overflow:hidden;
+  margin-top:20px; display:none;
+}
+.detail-panel.open { display:block; }
+.dp-header {
+  padding:14px 20px; border-bottom:1px solid var(--b1);
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--bg3);
+}
+.dp-content { padding:20px; }
+.dp-close {
+  font-family:'Share Tech Mono',monospace; font-size:.7rem;
+  color:var(--muted); cursor:pointer; padding:3px 8px;
+  border:1px solid var(--b2); border-radius:3px;
+  background:transparent; transition:all .15s;
+}
+.dp-close:hover { color:var(--text); border-color:var(--b3); }
+
+/* ── FLOW ANIMATION TOGGLE ── */
+.toggle-btn {
+  font-family:'Share Tech Mono',monospace; font-size:.68rem; font-weight:600;
+  padding:7px 16px; border-radius:5px; border:1px solid;
+  cursor:pointer; transition:all .2s; letter-spacing:.04em;
+}
+.tb-on  { color:var(--hnf); border-color:rgba(245,158,11,.4); background:rgba(245,158,11,.07); }
+.tb-on:hover { background:rgba(245,158,11,.15); }
+.tb-off { color:var(--muted); border-color:var(--b2); background:transparent; }
+.tb-off:hover { color:var(--text); border-color:var(--b3); }
+
+footer {
+  border-top:1px solid var(--b1); padding:20px 60px;
+  display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:8px; background:var(--bg1);
+}
+.ft { font-family:'Share Tech Mono',monospace; font-size:.56rem; color:var(--dim); }
+
+@media(max-width:768px){
+  .hero,.wrap,.top-nav,footer { padding-left:18px; padding-right:18px; }
+  .g2,.g3,.g4 { grid-template-columns:1fr; }
+  .hero h1 { font-size:2rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+<div class="hero-bg"></div>
+<div class="hero-dots"></div>
+<div class="hero-inner wrap">
+  <div class="hero-eyebrow">Micro-Architecture Reference · AMBA 5 CHI · ARM IHI 0050</div>
+  <h1>
+    <span class="h1-chi">CHI</span>
+    <span class="h1-arch">-Based </span>
+    <span class="h1-noc">NoC</span><br>
+    <span class="h1-arch" style="font-size:.7em;font-weight:300;">Sub-Unit Block Diagram</span>
+  </h1>
+  <p class="hero-desc">
+    Complete micro-architectural breakdown of every sub-unit inside each CHI node type.
+    Click any block to expand its internal components. Interactive mesh topology with
+    animated transaction flows.
+  </p>
+  <div class="hero-chips">
+    <span class="hchip hc-rnf">RN-F — Requester</span>
+    <span class="hchip hc-hnf">HN-F — Home Node</span>
+    <span class="hchip hc-snf">SN-F — Slave Node</span>
+    <span class="hchip hc-rtr">Router — Mesh</span>
+  </div>
+</div>
+</header>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <a href="#overview">Overview</a>
+  <a href="#rnf">RN-F</a>
+  <a href="#hnf">HN-F</a>
+  <a href="#snf">SN-F</a>
+  <a href="#router">Router</a>
+  <a href="#link">Link Layer</a>
+  <a href="#mesh">Mesh Topology</a>
+  <a href="#subunits">Sub-Unit Table</a>
+</nav>
+
+<div class="wrap">
+
+<!-- ══ SECTION 1: OVERVIEW SVG ══════════════════════════════ -->
+<div class="section" id="overview">
+  <div class="sec-eyebrow">Section 01</div>
+  <div class="sec-title" style="color:var(--hnf)">System-Level Block Diagram</div>
+  <p class="sec-desc">Full CHI-based SoC showing all node types, their interconnections via the mesh NoC, and the four virtual channels carried on each link.</p>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+    <button class="toggle-btn tb-on" id="flow-btn" onclick="toggleFlow()">⏸ Pause Animations</button>
+    <button class="toggle-btn tb-off" id="highlight-btn" onclick="highlightChannels()">Show Channel Flow</button>
+  </div>
+
+  <div class="card" style="padding:20px;overflow-x:auto;">
+    <svg id="overview-svg" viewBox="0 0 1100 640" width="100%" style="max-height:660px;display:block;">
+
+      <!-- ── Background grid ── -->
+      <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#182030" stroke-width=".5"/>
+        </pattern>
+        <marker id="arr-req" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#38bdf8"/>
+        </marker>
+        <marker id="arr-rsp" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#c084fc"/>
+        </marker>
+        <marker id="arr-dat" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#34d399"/>
+        </marker>
+        <marker id="arr-snp" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#f97316"/>
+        </marker>
+        <filter id="glow-hnf">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+      </defs>
+      <rect width="1100" height="640" fill="url(#grid)"/>
+
+      <!-- ══ CPU CLUSTER 0 (top-left) ══ -->
+      <g id="cluster0">
+        <rect x="20" y="20" width="220" height="180" rx="10" fill="rgba(34,211,238,.04)" stroke="rgba(34,211,238,.25)" stroke-width="1.5" stroke-dasharray="6,3"/>
+        <text x="130" y="14" fill="rgba(34,211,238,.5)" font-size="9" text-anchor="middle" font-family="Share Tech Mono,monospace">CPU CLUSTER 0</text>
+        <!-- CPU cores -->
+        <rect x="32" y="30" width="90" height="48" rx="6" fill="rgba(34,211,238,.08)" stroke="rgba(34,211,238,.5)" stroke-width="1.5"/>
+        <text x="77" y="51" fill="#22d3ee" font-size="10" font-weight="700" text-anchor="middle">CPU0</text>
+        <text x="77" y="64" fill="rgba(34,211,238,.6)" font-size="8" text-anchor="middle">RN-F · 0x01</text>
+        <rect x="32" y="88" width="90" height="48" rx="6" fill="rgba(34,211,238,.08)" stroke="rgba(34,211,238,.5)" stroke-width="1.5"/>
+        <text x="77" y="109" fill="#22d3ee" font-size="10" font-weight="700" text-anchor="middle">CPU1</text>
+        <text x="77" y="122" fill="rgba(34,211,238,.6)" font-size="8" text-anchor="middle">RN-F · 0x02</text>
+        <!-- L3 shared -->
+        <rect x="140" y="30" width="88" height="106" rx="6" fill="rgba(34,211,238,.05)" stroke="rgba(34,211,238,.3)" stroke-width="1"/>
+        <text x="184" y="55" fill="rgba(34,211,238,.8)" font-size="9" font-weight="600" text-anchor="middle">L3 Cache</text>
+        <text x="184" y="70" fill="rgba(34,211,238,.5)" font-size="7.5" text-anchor="middle">16MB shared</text>
+        <text x="184" y="100" fill="rgba(34,211,238,.4)" font-size="7" text-anchor="middle">LLC boundary</text>
+        <text x="184" y="113" fill="rgba(34,211,238,.4)" font-size="7" text-anchor="middle">→ CHI interface</text>
+        <!-- CHI port label -->
+        <rect x="40" y="150" width="178" height="40" rx="5" fill="rgba(34,211,238,.05)" stroke="rgba(34,211,238,.2)" stroke-width="1"/>
+        <text x="129" y="166" fill="rgba(34,211,238,.6)" font-size="8" text-anchor="middle">CHI RN-F Interface</text>
+        <text x="129" y="179" fill="rgba(34,211,238,.4)" font-size="7" text-anchor="middle">REQ↑ RSP↕ DAT↕ SNP↓</text>
+      </g>
+
+      <!-- ══ CPU CLUSTER 1 (top-right) ══ -->
+      <g id="cluster1">
+        <rect x="860" y="20" width="220" height="180" rx="10" fill="rgba(34,211,238,.04)" stroke="rgba(34,211,238,.25)" stroke-width="1.5" stroke-dasharray="6,3"/>
+        <text x="970" y="14" fill="rgba(34,211,238,.5)" font-size="9" text-anchor="middle" font-family="Share Tech Mono,monospace">CPU CLUSTER 1</text>
+        <rect x="872" y="30" width="90" height="48" rx="6" fill="rgba(34,211,238,.08)" stroke="rgba(34,211,238,.5)" stroke-width="1.5"/>
+        <text x="917" y="51" fill="#22d3ee" font-size="10" font-weight="700" text-anchor="middle">CPU2</text>
+        <text x="917" y="64" fill="rgba(34,211,238,.6)" font-size="8" text-anchor="middle">RN-F · 0x03</text>
+        <rect x="872" y="88" width="90" height="48" rx="6" fill="rgba(34,211,238,.08)" stroke="rgba(34,211,238,.5)" stroke-width="1.5"/>
+        <text x="917" y="109" fill="#22d3ee" font-size="10" font-weight="700" text-anchor="middle">CPU3</text>
+        <text x="917" y="122" fill="rgba(34,211,238,.6)" font-size="8" text-anchor="middle">RN-F · 0x04</text>
+        <rect x="972" y="30" width="96" height="106" rx="6" fill="rgba(34,211,238,.05)" stroke="rgba(34,211,238,.3)" stroke-width="1"/>
+        <text x="1020" y="55" fill="rgba(34,211,238,.8)" font-size="9" font-weight="600" text-anchor="middle">L3 Cache</text>
+        <text x="1020" y="70" fill="rgba(34,211,238,.5)" font-size="7.5" text-anchor="middle">16MB shared</text>
+        <rect x="876" y="150" width="188" height="40" rx="5" fill="rgba(34,211,238,.05)" stroke="rgba(34,211,238,.2)" stroke-width="1"/>
+        <text x="970" y="166" fill="rgba(34,211,238,.6)" font-size="8" text-anchor="middle">CHI RN-F Interface</text>
+        <text x="970" y="179" fill="rgba(34,211,238,.4)" font-size="7" text-anchor="middle">REQ↑ RSP↕ DAT↕ SNP↓</text>
+      </g>
+
+      <!-- ══ ROUTER 0 (top-left mesh) ══ -->
+      <rect id="rtr0" x="305" y="60" width="80" height="60" rx="7" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.5)" stroke-width="1.5"/>
+      <text x="345" y="84" fill="#a78bfa" font-size="10" font-weight="700" text-anchor="middle">RTR0</text>
+      <text x="345" y="97" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">Mesh Router</text>
+      <text x="345" y="108" fill="rgba(167,139,250,.4)" font-size="7" text-anchor="middle">NodeID=0x20</text>
+
+      <!-- ══ ROUTER 1 (top-right mesh) ══ -->
+      <rect id="rtr1" x="715" y="60" width="80" height="60" rx="7" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.5)" stroke-width="1.5"/>
+      <text x="755" y="84" fill="#a78bfa" font-size="10" font-weight="700" text-anchor="middle">RTR1</text>
+      <text x="755" y="97" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">Mesh Router</text>
+      <text x="755" y="108" fill="rgba(167,139,250,.4)" font-size="7" text-anchor="middle">NodeID=0x21</text>
+
+      <!-- ══ HN-F 0 (center-left) ══ -->
+      <g id="hnf0-group">
+        <rect x="180" y="280" width="230" height="170" rx="10" fill="rgba(245,158,11,.06)" stroke="rgba(245,158,11,.5)" stroke-width="2"/>
+        <text x="295" y="274" fill="rgba(245,158,11,.7)" font-size="9" text-anchor="middle" font-family="Share Tech Mono,monospace">HOME NODE</text>
+        <text x="295" y="300" fill="#f59e0b" font-size="13" font-weight="700" text-anchor="middle" font-family="Oxanium,sans-serif">HN-F #0</text>
+        <text x="295" y="314" fill="rgba(245,158,11,.6)" font-size="7.5" text-anchor="middle">0x00_0000 – 0x1FFF_FFFF</text>
+        <!-- sub units inside HN-F -->
+        <rect x="192" y="322" width="98" height="28" rx="4" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.3)" stroke-width="1"/>
+        <text x="241" y="338" fill="#f59e0b" font-size="8" text-anchor="middle">Snoop Filter</text>
+        <rect x="300" y="322" width="98" height="28" rx="4" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.3)" stroke-width="1"/>
+        <text x="349" y="338" fill="#f59e0b" font-size="8" text-anchor="middle">Txn Tracker</text>
+        <rect x="192" y="358" width="98" height="28" rx="4" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.3)" stroke-width="1"/>
+        <text x="241" y="374" fill="#f59e0b" font-size="8" text-anchor="middle">Req Arbiter</text>
+        <rect x="300" y="358" width="98" height="28" rx="4" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.3)" stroke-width="1"/>
+        <text x="349" y="374" fill="#f59e0b" font-size="8" text-anchor="middle">Addr Decoder</text>
+        <rect x="192" y="394" width="206" height="28" rx="4" fill="rgba(245,158,11,.06)" stroke="rgba(245,158,11,.25)" stroke-width="1"/>
+        <text x="295" y="413" fill="rgba(245,158,11,.7)" font-size="8" text-anchor="middle">CHI Protocol Engine (REQ·RSP·DAT·SNP)</text>
+      </g>
+
+      <!-- ══ HN-F 1 (center-right) ══ -->
+      <g id="hnf1-group">
+        <rect x="690" y="280" width="230" height="170" rx="10" fill="rgba(245,158,11,.06)" stroke="rgba(245,158,11,.5)" stroke-width="2"/>
+        <text x="805" y="274" fill="rgba(245,158,11,.7)" font-size="9" text-anchor="middle" font-family="Share Tech Mono,monospace">HOME NODE</text>
+        <text x="805" y="300" fill="#f59e0b" font-size="13" font-weight="700" text-anchor="middle" font-family="Oxanium,sans-serif">HN-F #1</text>
+        <text x="805" y="314" fill="rgba(245,158,11,.6)" font-size="7.5" text-anchor="middle">0x2000_0000 – 0x3FFF_FFFF</text>
+        <rect x="702" y="322" width="98" height="28" rx="4" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.3)" stroke-width="1"/>
+        <text x="751" y="338" fill="#f59e0b" font-size="8" text-anchor="middle">Snoop Filter</text>
+        <rect x="810" y="322" width="98" height="28" rx="4" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.3)" stroke-width="1"/>
+        <text x="859" y="338" fill="#f59e0b" font-size="8" text-anchor="middle">Txn Tracker</text>
+        <rect x="702" y="358" width="98" height="28" rx="4" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.3)" stroke-width="1"/>
+        <text x="751" y="374" fill="#f59e0b" font-size="8" text-anchor="middle">Req Arbiter</text>
+        <rect x="810" y="358" width="98" height="28" rx="4" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.3)" stroke-width="1"/>
+        <text x="859" y="374" fill="#f59e0b" font-size="8" text-anchor="middle">Addr Decoder</text>
+        <rect x="702" y="394" width="206" height="28" rx="4" fill="rgba(245,158,11,.06)" stroke="rgba(245,158,11,.25)" stroke-width="1"/>
+        <text x="805" y="413" fill="rgba(245,158,11,.7)" font-size="8" text-anchor="middle">CHI Protocol Engine (REQ·RSP·DAT·SNP)</text>
+      </g>
+
+      <!-- ══ ROUTER 2 (center mesh) ══ -->
+      <rect id="rtr2" x="495" y="270" width="110" height="70" rx="7" fill="rgba(167,139,250,.08)" stroke="rgba(167,139,250,.6)" stroke-width="1.5"/>
+      <text x="550" y="296" fill="#a78bfa" font-size="11" font-weight="700" text-anchor="middle">RTR2</text>
+      <text x="550" y="310" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">Central Mesh Router</text>
+      <text x="550" y="323" fill="rgba(167,139,250,.5)" font-size="7" text-anchor="middle">XBar + Vc Arbiter</text>
+
+      <!-- ══ SN-F 0 (bottom-left) ══ -->
+      <g id="snf0-group">
+        <rect x="120" y="510" width="210" height="100" rx="9" fill="rgba(74,222,128,.05)" stroke="rgba(74,222,128,.45)" stroke-width="1.5"/>
+        <text x="225" y="504" fill="rgba(74,222,128,.6)" font-size="9" text-anchor="middle" font-family="Share Tech Mono,monospace">SLAVE NODE</text>
+        <text x="225" y="534" fill="#4ade80" font-size="12" font-weight="700" text-anchor="middle" font-family="Oxanium,sans-serif">SN-F #0 · DDR Ch0</text>
+        <text x="225" y="548" fill="rgba(74,222,128,.5)" font-size="7.5" text-anchor="middle">LPDDR5 · NodeID=0x30</text>
+        <rect x="132" y="556" width="88" height="24" rx="3" fill="rgba(74,222,128,.07)" stroke="rgba(74,222,128,.25)" stroke-width="1"/>
+        <text x="176" y="572" fill="#4ade80" font-size="7.5" text-anchor="middle">MC Interface</text>
+        <rect x="230" y="556" width="88" height="24" rx="3" fill="rgba(74,222,128,.07)" stroke="rgba(74,222,128,.25)" stroke-width="1"/>
+        <text x="274" y="572" fill="#4ade80" font-size="7.5" text-anchor="middle">Write Buffer</text>
+        <rect x="132" y="585" width="186" height="18" rx="3" fill="rgba(74,222,128,.05)" stroke="rgba(74,222,128,.15)" stroke-width="1"/>
+        <text x="225" y="597" fill="rgba(74,222,128,.6)" font-size="7" text-anchor="middle">CHI SN Interface (REQ↓ · DAT↕ · RSP↑)</text>
+      </g>
+
+      <!-- ══ SN-F 1 (bottom-right) ══ -->
+      <g id="snf1-group">
+        <rect x="770" y="510" width="210" height="100" rx="9" fill="rgba(74,222,128,.05)" stroke="rgba(74,222,128,.45)" stroke-width="1.5"/>
+        <text x="875" y="504" fill="rgba(74,222,128,.6)" font-size="9" text-anchor="middle" font-family="Share Tech Mono,monospace">SLAVE NODE</text>
+        <text x="875" y="534" fill="#4ade80" font-size="12" font-weight="700" text-anchor="middle" font-family="Oxanium,sans-serif">SN-F #1 · DDR Ch1</text>
+        <text x="875" y="548" fill="rgba(74,222,128,.5)" font-size="7.5" text-anchor="middle">LPDDR5 · NodeID=0x31</text>
+        <rect x="782" y="556" width="88" height="24" rx="3" fill="rgba(74,222,128,.07)" stroke="rgba(74,222,128,.25)" stroke-width="1"/>
+        <text x="826" y="572" fill="#4ade80" font-size="7.5" text-anchor="middle">MC Interface</text>
+        <rect x="880" y="556" width="88" height="24" rx="3" fill="rgba(74,222,128,.07)" stroke="rgba(74,222,128,.25)" stroke-width="1"/>
+        <text x="924" y="572" fill="#4ade80" font-size="7.5" text-anchor="middle">Write Buffer</text>
+        <rect x="782" y="585" width="186" height="18" rx="3" fill="rgba(74,222,128,.05)" stroke="rgba(74,222,128,.15)" stroke-width="1"/>
+        <text x="875" y="597" fill="rgba(74,222,128,.6)" font-size="7" text-anchor="middle">CHI SN Interface (REQ↓ · DAT↕ · RSP↑)</text>
+      </g>
+
+      <!-- ══ PCIe RN-I ══ -->
+      <rect x="455" y="510" width="190" height="50" rx="7" fill="rgba(244,114,182,.05)" stroke="rgba(244,114,182,.35)" stroke-width="1"/>
+      <text x="550" y="531" fill="#f472b6" font-size="10" font-weight="600" text-anchor="middle">PCIe · RN-I · 0x0A</text>
+      <text x="550" y="547" fill="rgba(244,114,182,.5)" font-size="7.5" text-anchor="middle">Non-coherent · REQ/RSP/DAT only</text>
+
+      <!-- HN-I -->
+      <rect x="455" y="575" width="190" height="45" rx="7" fill="rgba(251,146,60,.05)" stroke="rgba(251,146,60,.35)" stroke-width="1"/>
+      <text x="550" y="596" fill="#fb923c" font-size="10" font-weight="600" text-anchor="middle">HN-I · 0x18 · MMIO</text>
+      <text x="550" y="610" fill="rgba(251,146,60,.5)" font-size="7.5" text-anchor="middle">I/O space · no snoop filter</text>
+
+      <!-- ══ MESH INTERCONNECT LINKS ══ -->
+      <!-- Cluster0 → RTR0 -->
+      <line x1="240" y1="190" x2="310" y2="120" stroke="#334155" stroke-width="2"/>
+      <line id="fl-c0-r0" x1="240" y1="190" x2="310" y2="120" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="6,4" class="flow-anim" opacity=".7"/>
+
+      <!-- Cluster1 → RTR1 -->
+      <line x1="860" y1="190" x2="795" y2="120" stroke="#334155" stroke-width="2"/>
+      <line id="fl-c1-r1" x1="860" y1="190" x2="795" y2="120" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="6,4" class="flow-anim" opacity=".7"/>
+
+      <!-- RTR0 → RTR2 -->
+      <line x1="385" y1="90" x2="495" y2="295" stroke="#334155" stroke-width="2"/>
+      <line id="fl-r0-r2" x1="385" y1="90" x2="495" y2="295" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="6,4" class="flow-anim" opacity=".6"/>
+
+      <!-- RTR1 → RTR2 -->
+      <line x1="715" y1="90" x2="605" y2="295" stroke="#334155" stroke-width="2"/>
+      <line id="fl-r1-r2" x1="715" y1="90" x2="605" y2="295" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="6,4" class="flow-anim" opacity=".6"/>
+
+      <!-- RTR2 → HN-F0 -->
+      <line x1="495" y1="305" x2="410" y2="330" stroke="#334155" stroke-width="2"/>
+      <line id="fl-r2-h0" x1="495" y1="305" x2="410" y2="330" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,4" class="flow-anim" opacity=".7"/>
+
+      <!-- RTR2 → HN-F1 -->
+      <line x1="605" y1="305" x2="690" y2="330" stroke="#334155" stroke-width="2"/>
+      <line id="fl-r2-h1" x1="605" y1="305" x2="690" y2="330" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,4" class="flow-anim" opacity=".7"/>
+
+      <!-- HN-F0 → SN-F0 -->
+      <line x1="260" y1="450" x2="230" y2="510" stroke="#334155" stroke-width="2"/>
+      <line id="fl-h0-s0" x1="260" y1="450" x2="230" y2="510" stroke="#34d399" stroke-width="1.5" stroke-dasharray="6,4" class="flow-anim" opacity=".6"/>
+
+      <!-- HN-F1 → SN-F1 -->
+      <line x1="840" y1="450" x2="870" y2="510" stroke="#334155" stroke-width="2"/>
+      <line id="fl-h1-s1" x1="840" y1="450" x2="870" y2="510" stroke="#34d399" stroke-width="1.5" stroke-dasharray="6,4" class="flow-anim" opacity=".6"/>
+
+      <!-- RTR2 → RN-I -->
+      <line x1="550" y1="340" x2="550" y2="510" stroke="#334155" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line id="fl-r2-rni" x1="550" y1="340" x2="550" y2="510" stroke="#f472b6" stroke-width="1" stroke-dasharray="5,4" class="flow-anim" opacity=".5"/>
+
+      <!-- RN-I → HN-I -->
+      <line x1="550" y1="560" x2="550" y2="575" stroke="#334155" stroke-width="1.5"/>
+
+      <!-- ══ CHANNEL LEGEND ══ -->
+      <rect x="20" y="590" width="380" height="45" rx="6" fill="rgba(0,0,0,.4)" stroke="#182030" stroke-width="1"/>
+      <text x="32" y="607" fill="#4a5e80" font-size="8" font-family="Share Tech Mono,monospace">CHANNEL LEGEND:</text>
+      <circle cx="120" cy="604" r="4" fill="#38bdf8"/>
+      <text x="128" y="608" fill="#38bdf8" font-size="8">REQ</text>
+      <circle cx="168" cy="604" r="4" fill="#c084fc"/>
+      <text x="176" y="608" fill="#c084fc" font-size="8">RSP</text>
+      <circle cx="216" cy="604" r="4" fill="#34d399"/>
+      <text x="224" y="608" fill="#34d399" font-size="8">DAT</text>
+      <circle cx="264" cy="604" r="4" fill="#f97316"/>
+      <text x="272" y="608" fill="#f97316" font-size="8">SNP</text>
+      <circle cx="312" cy="604" r="4" fill="#a78bfa"/>
+      <text x="320" y="608" fill="#a78bfa" font-size="8">Router</text>
+      <text x="32" y="624" fill="#4a5e80" font-size="7" font-family="Share Tech Mono,monospace">All links carry REQ+RSP+DAT+SNP virtual channels on shared physical wires</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ══ SECTION 2: RN-F SUB-UNITS ══════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="rnf">
+  <div class="sec-eyebrow">Section 02</div>
+  <div class="sec-title" style="color:var(--rnf)">RN-F — Requester Node (Full)</div>
+  <p class="sec-desc">The most complex CHI node. Contains cache, coherency state machine, transaction trackers, and the full CHI interface with all four channels. Click any sub-unit for details.</p>
+
+  <div class="card" style="padding:24px;margin-bottom:20px;overflow-x:auto;">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">// RN-F Internal Block Diagram</div>
+    <svg viewBox="0 0 900 420" width="100%" style="max-height:430px;display:block;">
+      <rect width="900" height="420" fill="url(#grid)" opacity=".5"/>
+
+      <!-- CPU Pipeline -->
+      <rect x="20" y="20" width="140" height="120" rx="8" fill="rgba(34,211,238,.06)" stroke="rgba(34,211,238,.4)" stroke-width="1.5"/>
+      <text x="90" y="42" fill="#22d3ee" font-size="10" font-weight="700" text-anchor="middle">CPU Pipeline</text>
+      <rect x="30" y="50" width="120" height="20" rx="3" fill="rgba(34,211,238,.08)" stroke="rgba(34,211,238,.2)" stroke-width="1"/>
+      <text x="90" y="64" fill="rgba(34,211,238,.7)" font-size="8" text-anchor="middle">Exec Units + ROB</text>
+      <rect x="30" y="75" width="120" height="20" rx="3" fill="rgba(34,211,238,.08)" stroke="rgba(34,211,238,.2)" stroke-width="1"/>
+      <text x="90" y="89" fill="rgba(34,211,238,.7)" font-size="8" text-anchor="middle">Load/Store Queue</text>
+      <rect x="30" y="100" width="120" height="20" rx="3" fill="rgba(34,211,238,.08)" stroke="rgba(34,211,238,.2)" stroke-width="1"/>
+      <text x="90" y="114" fill="rgba(34,211,238,.7)" font-size="8" text-anchor="middle">TLB (VIPT addr)</text>
+
+      <!-- L1 I-Cache -->
+      <rect x="20" y="160" width="66" height="70" rx="7" fill="rgba(34,211,238,.05)" stroke="rgba(34,211,238,.3)" stroke-width="1.5"/>
+      <text x="53" y="183" fill="#22d3ee" font-size="9" font-weight="700" text-anchor="middle">L1-I</text>
+      <text x="53" y="196" fill="rgba(34,211,238,.5)" font-size="7" text-anchor="middle">32KB 4-way</text>
+      <text x="53" y="208" fill="rgba(34,211,238,.4)" font-size="7" text-anchor="middle">PLRU · parity</text>
+      <text x="53" y="220" fill="rgba(34,211,238,.4)" font-size="7" text-anchor="middle">1-cycle hit</text>
+
+      <!-- L1 D-Cache -->
+      <rect x="94" y="160" width="66" height="70" rx="7" fill="rgba(34,211,238,.06)" stroke="rgba(34,211,238,.4)" stroke-width="1.5"/>
+      <text x="127" y="183" fill="#22d3ee" font-size="9" font-weight="700" text-anchor="middle">L1-D</text>
+      <text x="127" y="196" fill="rgba(34,211,238,.5)" font-size="7" text-anchor="middle">32KB 8-way</text>
+      <text x="127" y="208" fill="rgba(34,211,238,.4)" font-size="7" text-anchor="middle">PLRU · ECC</text>
+      <text x="127" y="220" fill="rgba(34,211,238,.4)" font-size="7" text-anchor="middle">4-cycle hit</text>
+
+      <!-- L2 Cache -->
+      <rect x="20" y="245" width="140" height="80" rx="8" fill="rgba(34,211,238,.05)" stroke="rgba(34,211,238,.3)" stroke-width="1.5"/>
+      <text x="90" y="265" fill="#22d3ee" font-size="10" font-weight="700" text-anchor="middle">L2 Cache</text>
+      <text x="90" y="279" fill="rgba(34,211,238,.5)" font-size="7.5" text-anchor="middle">512KB–4MB · 16-way</text>
+      <text x="90" y="292" fill="rgba(34,211,238,.4)" font-size="7" text-anchor="middle">Write-back · PLRU</text>
+      <text x="90" y="305" fill="rgba(34,211,238,.4)" font-size="7" text-anchor="middle">Victim cache option</text>
+      <text x="90" y="318" fill="rgba(34,211,238,.4)" font-size="7" text-anchor="middle">8–15 cycle hit</text>
+
+      <!-- Miss Status Holding Registers -->
+      <rect x="185" y="20" width="150" height="90" rx="8" fill="rgba(245,158,11,.05)" stroke="rgba(245,158,11,.35)" stroke-width="1.5"/>
+      <text x="260" y="40" fill="#f59e0b" font-size="9" font-weight="700" text-anchor="middle">MSHR</text>
+      <text x="260" y="53" fill="rgba(245,158,11,.6)" font-size="7.5" text-anchor="middle">Miss Status Hold Regs</text>
+      <rect x="193" y="60" width="66" height="18" rx="3" fill="rgba(245,158,11,.06)" stroke="rgba(245,158,11,.2)" stroke-width="1"/>
+      <text x="226" y="72" fill="rgba(245,158,11,.7)" font-size="7" text-anchor="middle">L1 MSHR ×8</text>
+      <rect x="265" y="60" width="66" height="18" rx="3" fill="rgba(245,158,11,.06)" stroke="rgba(245,158,11,.2)" stroke-width="1"/>
+      <text x="298" y="72" fill="rgba(245,158,11,.7)" font-size="7" text-anchor="middle">L2 MSHR ×16</text>
+      <rect x="193" y="82" width="138" height="18" rx="3" fill="rgba(245,158,11,.06)" stroke="rgba(245,158,11,.2)" stroke-width="1"/>
+      <text x="262" y="94" fill="rgba(245,158,11,.6)" font-size="7" text-anchor="middle">Outstanding txn tracking</text>
+
+      <!-- CHI Txn Tracker (RN side) -->
+      <rect x="185" y="125" width="150" height="80" rx="8" fill="rgba(245,158,11,.05)" stroke="rgba(245,158,11,.35)" stroke-width="1.5"/>
+      <text x="260" y="145" fill="#f59e0b" font-size="9" font-weight="700" text-anchor="middle">CHI Txn Tracker</text>
+      <text x="260" y="158" fill="rgba(245,158,11,.6)" font-size="7.5" text-anchor="middle">RN-side state machine</text>
+      <rect x="193" y="163" width="66" height="16" rx="3" fill="rgba(245,158,11,.06)" stroke="rgba(245,158,11,.2)" stroke-width="1"/>
+      <text x="226" y="174" fill="rgba(245,158,11,.7)" font-size="7" text-anchor="middle">TxnID pool</text>
+      <rect x="265" y="163" width="66" height="16" rx="3" fill="rgba(245,158,11,.06)" stroke="rgba(245,158,11,.2)" stroke-width="1"/>
+      <text x="298" y="174" fill="rgba(245,158,11,.7)" font-size="7" text-anchor="middle">State FSM</text>
+      <rect x="193" y="183" width="66" height="16" rx="3" fill="rgba(245,158,11,.06)" stroke="rgba(245,158,11,.2)" stroke-width="1"/>
+      <text x="226" y="194" fill="rgba(245,158,11,.7)" font-size="7" text-anchor="middle">RetryAck</text>
+      <rect x="265" y="183" width="66" height="16" rx="3" fill="rgba(245,158,11,.06)" stroke="rgba(245,158,11,.2)" stroke-width="1"/>
+      <text x="298" y="194" fill="rgba(245,158,11,.7)" font-size="7" text-anchor="middle">PCrd Mgr</text>
+
+      <!-- Snoop Handler -->
+      <rect x="185" y="220" width="150" height="80" rx="8" fill="rgba(249,115,22,.05)" stroke="rgba(249,115,22,.4)" stroke-width="1.5"/>
+      <text x="260" y="240" fill="#f97316" font-size="9" font-weight="700" text-anchor="middle">Snoop Handler</text>
+      <text x="260" y="253" fill="rgba(249,115,22,.6)" font-size="7.5" text-anchor="middle">Process SNP channel</text>
+      <rect x="193" y="258" width="66" height="16" rx="3" fill="rgba(249,115,22,.06)" stroke="rgba(249,115,22,.25)" stroke-width="1"/>
+      <text x="226" y="269" fill="rgba(249,115,22,.8)" font-size="7" text-anchor="middle">Snp state FSM</text>
+      <rect x="265" y="258" width="66" height="16" rx="3" fill="rgba(249,115,22,.06)" stroke="rgba(249,115,22,.25)" stroke-width="1"/>
+      <text x="298" y="269" fill="rgba(249,115,22,.8)" font-size="7" text-anchor="middle">Data forward</text>
+      <rect x="193" y="278" width="138" height="16" rx="3" fill="rgba(249,115,22,.05)" stroke="rgba(249,115,22,.2)" stroke-width="1"/>
+      <text x="262" y="289" fill="rgba(249,115,22,.7)" font-size="7" text-anchor="middle">SnpResp / SnpRespData gen</text>
+
+      <!-- Write Buffer -->
+      <rect x="185" y="315" width="150" height="55" rx="8" fill="rgba(52,211,153,.05)" stroke="rgba(52,211,153,.35)" stroke-width="1.5"/>
+      <text x="260" y="335" fill="#34d399" font-size="9" font-weight="700" text-anchor="middle">Write Buffer</text>
+      <text x="260" y="348" fill="rgba(52,211,153,.6)" font-size="7.5" text-anchor="middle">Non-cacheable writes</text>
+      <text x="260" y="361" fill="rgba(52,211,153,.5)" font-size="7" text-anchor="middle">Merge + drain to DAT channel</text>
+
+      <!-- CHI Interface block -->
+      <rect x="360" y="20" width="520" height="340" rx="10" fill="rgba(56,189,248,.03)" stroke="rgba(56,189,248,.3)" stroke-width="1.5"/>
+      <text x="620" y="14" fill="rgba(56,189,248,.6)" font-size="9" text-anchor="middle" font-family="Share Tech Mono,monospace">CHI INTERFACE BLOCK</text>
+
+      <!-- REQ channel -->
+      <rect x="375" y="35" width="110" height="70" rx="7" fill="rgba(56,189,248,.07)" stroke="rgba(56,189,248,.4)" stroke-width="1.5"/>
+      <text x="430" y="56" fill="#38bdf8" font-size="10" font-weight="700" text-anchor="middle">REQ</text>
+      <text x="430" y="70" fill="rgba(56,189,248,.6)" font-size="7.5" text-anchor="middle">TX Queue</text>
+      <text x="430" y="83" fill="rgba(56,189,248,.5)" font-size="7" text-anchor="middle">Flit gen + arbiter</text>
+      <text x="430" y="96" fill="rgba(56,189,248,.4)" font-size="7" text-anchor="middle">Addr mapping → TgtID</text>
+
+      <!-- RSP channel -->
+      <rect x="375" y="120" width="110" height="70" rx="7" fill="rgba(192,132,252,.07)" stroke="rgba(192,132,252,.4)" stroke-width="1.5"/>
+      <text x="430" y="141" fill="#c084fc" font-size="10" font-weight="700" text-anchor="middle">RSP</text>
+      <text x="430" y="155" fill="rgba(192,132,252,.6)" font-size="7.5" text-anchor="middle">TX/RX Queue</text>
+      <text x="430" y="168" fill="rgba(192,132,252,.5)" font-size="7" text-anchor="middle">CompAck gen</text>
+      <text x="430" y="181" fill="rgba(192,132,252,.4)" font-size="7" text-anchor="middle">PCrdGrant handler</text>
+
+      <!-- DAT channel -->
+      <rect x="375" y="205" width="110" height="80" rx="7" fill="rgba(52,211,153,.07)" stroke="rgba(52,211,153,.4)" stroke-width="1.5"/>
+      <text x="430" y="226" fill="#34d399" font-size="10" font-weight="700" text-anchor="middle">DAT</text>
+      <text x="430" y="240" fill="rgba(52,211,153,.6)" font-size="7.5" text-anchor="middle">TX/RX Queue</text>
+      <text x="430" y="253" fill="rgba(52,211,153,.5)" font-size="7" text-anchor="middle">DataID/CCID handle</text>
+      <text x="430" y="266" fill="rgba(52,211,153,.5)" font-size="7" text-anchor="middle">ECC check (RX)</text>
+      <text x="430" y="278" fill="rgba(52,211,153,.4)" font-size="7" text-anchor="middle">Flit reassembly</text>
+
+      <!-- SNP channel -->
+      <rect x="375" y="300" width="110" height="50" rx="7" fill="rgba(249,115,22,.07)" stroke="rgba(249,115,22,.4)" stroke-width="1.5"/>
+      <text x="430" y="321" fill="#f97316" font-size="10" font-weight="700" text-anchor="middle">SNP</text>
+      <text x="430" y="335" fill="rgba(249,115,22,.6)" font-size="7.5" text-anchor="middle">RX only · no TgtID</text>
+      <text x="430" y="346" fill="rgba(249,115,22,.4)" font-size="7" text-anchor="middle">→ Snoop Handler</text>
+
+      <!-- Link Layer -->
+      <rect x="510" y="35" width="350" height="300" rx="9" fill="rgba(251,191,36,.03)" stroke="rgba(251,191,36,.3)" stroke-width="1.5"/>
+      <text x="685" y="28" fill="rgba(251,191,36,.6)" font-size="9" text-anchor="middle" font-family="Share Tech Mono,monospace">LINK LAYER (Layer 1)</text>
+
+      <rect x="522" y="50" width="150" height="60" rx="6" fill="rgba(251,191,36,.06)" stroke="rgba(251,191,36,.25)" stroke-width="1"/>
+      <text x="597" y="70" fill="#fbbf24" font-size="9" font-weight="700" text-anchor="middle">TX Credit Mgr</text>
+      <text x="597" y="83" fill="rgba(251,191,36,.6)" font-size="7.5" text-anchor="middle">Per-channel L-credits</text>
+      <text x="597" y="96" fill="rgba(251,191,36,.5)" font-size="7" text-anchor="middle">Stall if no credit</text>
+
+      <rect x="682" y="50" width="165" height="60" rx="6" fill="rgba(251,191,36,.06)" stroke="rgba(251,191,36,.25)" stroke-width="1"/>
+      <text x="764" y="70" fill="#fbbf24" font-size="9" font-weight="700" text-anchor="middle">RX Credit Return</text>
+      <text x="764" y="83" fill="rgba(251,191,36,.6)" font-size="7.5" text-anchor="middle">LCrdReturn flit</text>
+      <text x="764" y="96" fill="rgba(251,191,36,.5)" font-size="7" text-anchor="middle">Refill sender budget</text>
+
+      <rect x="522" y="130" width="325" height="55" rx="6" fill="rgba(251,191,36,.05)" stroke="rgba(251,191,36,.2)" stroke-width="1"/>
+      <text x="684" y="152" fill="#fbbf24" font-size="9" font-weight="700" text-anchor="middle">Flit Serialiser / Deserialiser</text>
+      <text x="684" y="167" fill="rgba(251,191,36,.6)" font-size="7.5" text-anchor="middle">VC arbitration · Flit width matching · Clock domain crossing</text>
+
+      <rect x="522" y="200" width="325" height="55" rx="6" fill="rgba(251,191,36,.05)" stroke="rgba(251,191,36,.2)" stroke-width="1"/>
+      <text x="684" y="222" fill="#fbbf24" font-size="9" font-weight="700" text-anchor="middle">Physical Interface (PHY)</text>
+      <text x="684" y="237" fill="rgba(251,191,36,.6)" font-size="7.5" text-anchor="middle">Wire buffers · IO pads · ESD protection · Signal integrity</text>
+
+      <rect x="522" y="270" width="325" height="50" rx="6" fill="rgba(251,191,36,.04)" stroke="rgba(251,191,36,.15)" stroke-width="1"/>
+      <text x="684" y="292" fill="rgba(251,191,36,.7)" font-size="9" font-weight="700" text-anchor="middle">Power / Clock Gating</text>
+      <text x="684" y="307" fill="rgba(251,191,36,.5)" font-size="7.5" text-anchor="middle">Per-channel clock gate · Low-power idle detection</text>
+
+      <!-- Internal connections -->
+      <line x1="160" y1="80" x2="185" y2="60" stroke="rgba(34,211,238,.3)" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="160" y1="195" x2="185" y2="260" stroke="rgba(34,211,238,.3)" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="335" y1="60" x2="375" y2="60" stroke="rgba(56,189,248,.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <line x1="335" y1="155" x2="375" y2="155" stroke="rgba(192,132,252,.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <line x1="335" y1="245" x2="375" y2="245" stroke="rgba(52,211,153,.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <line x1="335" y1="325" x2="375" y2="325" stroke="rgba(249,115,22,.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <line x1="485" y1="70" x2="510" y2="80" stroke="rgba(56,189,248,.25)" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="485" y1="155" x2="510" y2="155" stroke="rgba(192,132,252,.25)" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="485" y1="245" x2="510" y2="245" stroke="rgba(52,211,153,.25)" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="485" y1="325" x2="510" y2="285" stroke="rgba(249,115,22,.25)" stroke-width="1" stroke-dasharray="3,2"/>
+
+      <!-- Output arrow to mesh -->
+      <line x1="847" y1="185" x2="885" y2="185" stroke="#fbbf24" stroke-width="2"/>
+      <polygon points="880,180 890,185 880,190" fill="#fbbf24"/>
+      <text x="897" y="189" fill="rgba(251,191,36,.7)" font-size="9">→ Mesh</text>
+
+      <!-- Labels -->
+      <text x="90" y="395" fill="rgba(34,211,238,.4)" font-size="7.5" text-anchor="middle" font-family="Share Tech Mono,monospace">CACHE SUBSYSTEM</text>
+      <text x="260" y="395" fill="rgba(245,158,11,.4)" font-size="7.5" text-anchor="middle" font-family="Share Tech Mono,monospace">COHERENCY CTRL</text>
+      <text x="620" y="395" fill="rgba(56,189,248,.4)" font-size="7.5" text-anchor="middle" font-family="Share Tech Mono,monospace">CHI PROTOCOL + LINK LAYER</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ══ SECTION 3: HN-F SUB-UNITS ══════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="hnf">
+  <div class="sec-eyebrow">Section 03</div>
+  <div class="sec-title" style="color:var(--hnf)">HN-F — Home Node (Full)</div>
+  <p class="sec-desc">The coherency brain. Contains the snoop filter, transaction tracker, multiple arbiters, and address decoder. Must maintain ordering for all transactions to its address range.</p>
+
+  <div class="g3" style="margin-bottom:20px;">
+    <div class="su-card" onclick="showDetail('hnf-sf')">
+      <div class="su-head" style="background:rgba(245,158,11,.06);border-bottom-color:rgba(245,158,11,.2);">
+        <span class="su-icon">🔍</span>
+        <span class="su-name" style="color:var(--hnf)">Snoop Filter</span>
+        <span class="nb nb-hnf" style="margin-left:auto;">CAM</span>
+      </div>
+      <div class="su-body">
+        <ul>
+          <li><strong>Set-associative CAM</strong> — content-addressed by physical address</li>
+          <li><strong>Sharer bitmap</strong> — one bit per RN-F node in system</li>
+          <li><strong>Aggregated state</strong> — worst-case across all sharers</li>
+          <li><strong>PLRU replacement</strong> — eviction forces SnpMakeInvalid</li>
+          <li><strong>Hit → targeted SNP</strong>; Miss → broadcast all RN-Fs</li>
+          <li><strong>N−1 bits</strong> per set for PLRU state</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="su-card" onclick="showDetail('hnf-tt')">
+      <div class="su-head" style="background:rgba(245,158,11,.06);border-bottom-color:rgba(245,158,11,.2);">
+        <span class="su-icon">📋</span>
+        <span class="su-name" style="color:var(--hnf)">Transaction Tracker</span>
+        <span class="nb nb-hnf" style="margin-left:auto;">SRAM</span>
+      </div>
+      <div class="su-body">
+        <ul>
+          <li><strong>One entry per in-flight txn</strong> — HN-F resource limit</li>
+          <li><strong>RetryAck</strong> issued when full (AllowRetry=1)</li>
+          <li><strong>PCrdGrant</strong> sent when slot frees</li>
+          <li><strong>Ordering point</strong> — serialises conflicting addresses</li>
+          <li><strong>State FSM</strong> — tracks each txn through protocol steps</li>
+          <li>Stores: TxnID, SrcID, Addr, snoop state, data-pending flag</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="su-card" onclick="showDetail('hnf-arb')">
+      <div class="su-head" style="background:rgba(245,158,11,.06);border-bottom-color:rgba(245,158,11,.2);">
+        <span class="su-icon">⚖️</span>
+        <span class="su-name" style="color:var(--hnf)">Request Arbiter</span>
+        <span class="nb nb-hnf" style="margin-left:auto;">Logic</span>
+      </div>
+      <div class="su-body">
+        <ul>
+          <li><strong>QoS-weighted</strong> round-robin across REQ flits</li>
+          <li><strong>Hazard detection</strong> — stall if address conflict in tracker</li>
+          <li><strong>Starvation prevention</strong> — QoS escalation timer</li>
+          <li><strong>Credit accounting</strong> — per-requester credit pool</li>
+          <li><strong>Ordering preservation</strong> — same-address serialisation</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="su-card" onclick="showDetail('hnf-ad')">
+      <div class="su-head" style="background:rgba(245,158,11,.06);border-bottom-color:rgba(245,158,11,.2);">
+        <span class="su-icon">🗺️</span>
+        <span class="su-name" style="color:var(--hnf)">Address Decoder</span>
+        <span class="nb nb-hnf" style="margin-left:auto;">Logic</span>
+      </div>
+      <div class="su-body">
+        <ul>
+          <li><strong>Maps address → SN-F</strong> — programmed at boot</li>
+          <li><strong>Non-coherent range</strong> — routes to HN-I instead</li>
+          <li><strong>Interleave logic</strong> — stripe across multiple SN-Fs</li>
+          <li><strong>Generates TgtID</strong> for ReadNoSnp/WriteNoSnp to SN</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="su-card" onclick="showDetail('hnf-pe')">
+      <div class="su-head" style="background:rgba(245,158,11,.06);border-bottom-color:rgba(245,158,11,.2);">
+        <span class="su-icon">⚙️</span>
+        <span class="su-name" style="color:var(--hnf)">Protocol Engine</span>
+        <span class="nb nb-hnf" style="margin-left:auto;">FSM</span>
+      </div>
+      <div class="su-body">
+        <ul>
+          <li><strong>Per-txn state machine</strong> — 20+ states per protocol flow</li>
+          <li><strong>Snoop dispatch</strong> — generates SNP flits from tracker</li>
+          <li><strong>Data forwarding</strong> — DCT path management</li>
+          <li><strong>Writeback handling</strong> — dirty data → SN-F</li>
+          <li><strong>CMO processing</strong> — CleanShared, CleanInvalid</li>
+          <li><strong>CompAck tracking</strong> — waits before tracker release</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="su-card" onclick="showDetail('hnf-db')">
+      <div class="su-head" style="background:rgba(245,158,11,.06);border-bottom-color:rgba(245,158,11,.2);">
+        <span class="su-icon">💾</span>
+        <span class="su-name" style="color:var(--hnf)">Data Buffer</span>
+        <span class="nb nb-hnf" style="margin-left:auto;">SRAM</span>
+      </div>
+      <div class="su-body">
+        <ul>
+          <li><strong>Temporary hold</strong> — dirty data from snoop response</li>
+          <li><strong>DBID issued</strong> — to requester for write data alignment</li>
+          <li><strong>Parallel path</strong> — forward to CPU + write to SN-F</li>
+          <li><strong>ECC protected</strong> — data integrity during transit</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 4: SN-F SUB-UNITS ══════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="snf">
+  <div class="sec-eyebrow">Section 04</div>
+  <div class="sec-title" style="color:var(--snf)">SN-F — Slave Node (Full)</div>
+  <p class="sec-desc">The simplest coherent node. No caching, no snoops, no coherency logic. Receives ReadNoSnp / WriteNoSnp from HN-F and returns data or acknowledges writes.</p>
+
+  <div class="g4">
+    <div class="su-card">
+      <div class="su-head" style="background:rgba(74,222,128,.06);border-bottom-color:rgba(74,222,128,.2);">
+        <span class="su-icon">🔌</span>
+        <span class="su-name" style="color:var(--snf)">CHI SN Interface</span>
+      </div>
+      <div class="su-body">
+        <ul>
+          <li><strong>REQ channel RX</strong> — accepts ReadNoSnp, WriteNoSnp</li>
+          <li><strong>DAT channel TX/RX</strong> — data to/from HN-F</li>
+          <li><strong>RSP channel TX</strong> — CompAck, DBIDResp</li>
+          <li>No SNP channel — never snooped</li>
+        </ul>
+      </div>
+    </div>
+    <div class="su-card">
+      <div class="su-head" style="background:rgba(74,222,128,.06);border-bottom-color:rgba(74,222,128,.2);">
+        <span class="su-icon">📥</span>
+        <span class="su-name" style="color:var(--snf)">Write Buffer</span>
+      </div>
+      <div class="su-body">
+        <ul>
+          <li><strong>Accepts CopyBackWrData</strong> from HN-F</li>
+          <li><strong>Coalesces partial writes</strong> — BE masking</li>
+          <li><strong>Drain policy</strong> — write to DRAM at burst boundary</li>
+          <li>Issues DBIDResp to allocate buffer slot</li>
+        </ul>
+      </div>
+    </div>
+    <div class="su-card">
+      <div class="su-head" style="background:rgba(74,222,128,.06);border-bottom-color:rgba(74,222,128,.2);">
+        <span class="su-icon">🏦</span>
+        <span class="su-name" style="color:var(--snf)">Memory Controller</span>
+      </div>
+      <div class="su-body">
+        <ul>
+          <li><strong>DRAM scheduler</strong> — row/column arbitration</li>
+          <li><strong>Refresh controller</strong> — tREFI/tRFC management</li>
+          <li><strong>Data path ECC</strong> — SECDED per burst</li>
+          <li><strong>Timing engine</strong> — DDR/LPDDR protocol</li>
+        </ul>
+      </div>
+    </div>
+    <div class="su-card">
+      <div class="su-head" style="background:rgba(74,222,128,.06);border-bottom-color:rgba(74,222,128,.2);">
+        <span class="su-icon">⚡</span>
+        <span class="su-name" style="color:var(--snf)">Read Buffer</span>
+      </div>
+      <div class="su-body">
+        <ul>
+          <li><strong>Prefetch queue</strong> — anticipate sequential reads</li>
+          <li><strong>DataID splitting</strong> — 64B → 2×32B DAT flits</li>
+          <li><strong>CCID ordering</strong> — critical chunk first</li>
+          <li>Returns CompData to HN-F</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 5: ROUTER ══════════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="router">
+  <div class="sec-eyebrow">Section 05</div>
+  <div class="sec-title" style="color:var(--rtr)">Mesh Router — Internal Sub-Units</div>
+  <p class="sec-desc">Each mesh crosspoint routes flits from any input port to any output port. Deadlock-free routing via dimension-ordered routing (X→Y). No flit modification — purely forwarding.</p>
+
+  <div class="card" style="margin-bottom:20px;overflow-x:auto;">
+    <svg viewBox="0 0 860 300" width="100%" style="max-height:320px;display:block;">
+      <rect width="860" height="300" fill="url(#grid)" opacity=".4"/>
+
+      <!-- Input ports -->
+      <g>
+        <rect x="20" y="20" width="90" height="50" rx="5" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.4)" stroke-width="1.5"/>
+        <text x="65" y="42" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">IN PORT N</text>
+        <text x="65" y="55" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">from North</text>
+        <rect x="20" y="80" width="90" height="50" rx="5" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.4)" stroke-width="1.5"/>
+        <text x="65" y="102" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">IN PORT S</text>
+        <text x="65" y="115" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">from South</text>
+        <rect x="20" y="140" width="90" height="50" rx="5" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.4)" stroke-width="1.5"/>
+        <text x="65" y="162" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">IN PORT E</text>
+        <text x="65" y="175" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">from East</text>
+        <rect x="20" y="200" width="90" height="50" rx="5" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.4)" stroke-width="1.5"/>
+        <text x="65" y="222" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">IN PORT W</text>
+        <text x="65" y="235" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">from West</text>
+        <rect x="20" y="260" width="90" height="30" rx="5" fill="rgba(167,139,250,.05)" stroke="rgba(167,139,250,.3)" stroke-width="1"/>
+        <text x="65" y="278" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">LOCAL (node)</text>
+      </g>
+
+      <!-- VC Input Buffers -->
+      <rect x="130" y="10" width="110" height="280" rx="8" fill="rgba(56,189,248,.04)" stroke="rgba(56,189,248,.25)" stroke-width="1"/>
+      <text x="185" y="26" fill="rgba(56,189,248,.6)" font-size="8" text-anchor="middle" font-family="Share Tech Mono,monospace">VC BUFFERS</text>
+      <text x="185" y="38" fill="rgba(56,189,248,.4)" font-size="7" text-anchor="middle">4 VCs per port</text>
+      <rect x="138" y="44" width="94" height="16" rx="3" fill="rgba(56,189,248,.08)" stroke="rgba(56,189,248,.2)" stroke-width="1"/>
+      <text x="185" y="55" fill="#38bdf8" font-size="7.5" text-anchor="middle">REQ FIFO depth=4</text>
+      <rect x="138" y="64" width="94" height="16" rx="3" fill="rgba(192,132,252,.08)" stroke="rgba(192,132,252,.2)" stroke-width="1"/>
+      <text x="185" y="75" fill="#c084fc" font-size="7.5" text-anchor="middle">RSP FIFO depth=4</text>
+      <rect x="138" y="84" width="94" height="16" rx="3" fill="rgba(52,211,153,.08)" stroke="rgba(52,211,153,.2)" stroke-width="1"/>
+      <text x="185" y="95" fill="#34d399" font-size="7.5" text-anchor="middle">DAT FIFO depth=2</text>
+      <rect x="138" y="104" width="94" height="16" rx="3" fill="rgba(249,115,22,.08)" stroke="rgba(249,115,22,.2)" stroke-width="1"/>
+      <text x="185" y="115" fill="#f97316" font-size="7.5" text-anchor="middle">SNP FIFO depth=4</text>
+      <text x="185" y="140" fill="rgba(56,189,248,.3)" font-size="7" text-anchor="middle">× 5 ports = 20 VCs</text>
+      <text x="185" y="155" fill="rgba(56,189,248,.3)" font-size="7" text-anchor="middle">total per router</text>
+
+      <!-- Route Compute -->
+      <rect x="265" y="30" width="130" height="100" rx="8" fill="rgba(251,191,36,.05)" stroke="rgba(251,191,36,.35)" stroke-width="1.5"/>
+      <text x="330" y="52" fill="#fbbf24" font-size="9" font-weight="700" text-anchor="middle">Route Compute</text>
+      <text x="330" y="66" fill="rgba(251,191,36,.6)" font-size="7.5" text-anchor="middle">Dim-Order Routing</text>
+      <rect x="273" y="72" width="114" height="16" rx="3" fill="rgba(251,191,36,.06)" stroke="rgba(251,191,36,.2)" stroke-width="1"/>
+      <text x="330" y="83" fill="rgba(251,191,36,.7)" font-size="7" text-anchor="middle">TgtID → X coord</text>
+      <rect x="273" y="92" width="114" height="16" rx="3" fill="rgba(251,191,36,.06)" stroke="rgba(251,191,36,.2)" stroke-width="1"/>
+      <text x="330" y="103" fill="rgba(251,191,36,.7)" font-size="7" text-anchor="middle">TgtID → Y coord</text>
+      <rect x="273" y="112" width="114" height="16" rx="3" fill="rgba(251,191,36,.06)" stroke="rgba(251,191,36,.2)" stroke-width="1"/>
+      <text x="330" y="123" fill="rgba(251,191,36,.7)" font-size="7" text-anchor="middle">X first, then Y</text>
+
+      <!-- VC Allocator -->
+      <rect x="265" y="145" width="130" height="80" rx="8" fill="rgba(251,191,36,.05)" stroke="rgba(251,191,36,.35)" stroke-width="1.5"/>
+      <text x="330" y="165" fill="#fbbf24" font-size="9" font-weight="700" text-anchor="middle">VC Allocator</text>
+      <text x="330" y="178" fill="rgba(251,191,36,.6)" font-size="7.5" text-anchor="middle">Output VC selection</text>
+      <rect x="273" y="184" width="114" height="15" rx="3" fill="rgba(251,191,36,.06)" stroke="rgba(251,191,36,.2)" stroke-width="1"/>
+      <text x="330" y="194" fill="rgba(251,191,36,.7)" font-size="7" text-anchor="middle">Round-robin per VC</text>
+      <rect x="273" y="202" width="114" height="15" rx="3" fill="rgba(251,191,36,.06)" stroke="rgba(251,191,36,.2)" stroke-width="1"/>
+      <text x="330" y="212" fill="rgba(251,191,36,.7)" font-size="7" text-anchor="middle">Deadlock avoidance</text>
+
+      <!-- Switch Allocator -->
+      <rect x="265" y="240" width="130" height="50" rx="8" fill="rgba(251,191,36,.05)" stroke="rgba(251,191,36,.35)" stroke-width="1.5"/>
+      <text x="330" y="261" fill="#fbbf24" font-size="9" font-weight="700" text-anchor="middle">Switch Allocator</text>
+      <text x="330" y="277" fill="rgba(251,191,36,.6)" font-size="7.5" text-anchor="middle">Conflict-free grant</text>
+
+      <!-- Crossbar Switch -->
+      <rect x="420" y="20" width="160" height="260" rx="10" fill="rgba(167,139,250,.06)" stroke="rgba(167,139,250,.45)" stroke-width="2"/>
+      <text x="500" y="42" fill="#a78bfa" font-size="10" font-weight="700" text-anchor="middle">CROSSBAR</text>
+      <text x="500" y="56" fill="rgba(167,139,250,.6)" font-size="8" text-anchor="middle">5×5 Non-blocking</text>
+      <text x="500" y="70" fill="rgba(167,139,250,.5)" font-size="7.5" text-anchor="middle">Per-VC paths</text>
+      <!-- grid inside crossbar -->
+      <g stroke="rgba(167,139,250,.2)" stroke-width=".5">
+        <line x1="448" y1="85" x2="448" y2="255"/>
+        <line x1="476" y1="85" x2="476" y2="255"/>
+        <line x1="504" y1="85" x2="504" y2="255"/>
+        <line x1="532" y1="85" x2="532" y2="255"/>
+        <line x1="430" y1="105" x2="575" y2="105"/>
+        <line x1="430" y1="135" x2="575" y2="135"/>
+        <line x1="430" y1="165" x2="575" y2="165"/>
+        <line x1="430" y1="195" x2="575" y2="195"/>
+        <line x1="430" y1="225" x2="575" y2="225"/>
+      </g>
+      <text x="500" y="150" fill="rgba(167,139,250,.3)" font-size="22" text-anchor="middle" font-weight="700">×</text>
+
+      <!-- Output VC Buffers -->
+      <rect x="605" y="10" width="110" height="280" rx="8" fill="rgba(52,211,153,.04)" stroke="rgba(52,211,153,.25)" stroke-width="1"/>
+      <text x="660" y="26" fill="rgba(52,211,153,.6)" font-size="8" text-anchor="middle" font-family="Share Tech Mono,monospace">OUT BUFFERS</text>
+      <rect x="613" y="34" width="94" height="16" rx="3" fill="rgba(56,189,248,.08)" stroke="rgba(56,189,248,.2)" stroke-width="1"/>
+      <text x="660" y="46" fill="#38bdf8" font-size="7.5" text-anchor="middle">REQ out FIFO</text>
+      <rect x="613" y="54" width="94" height="16" rx="3" fill="rgba(192,132,252,.08)" stroke="rgba(192,132,252,.2)" stroke-width="1"/>
+      <text x="660" y="66" fill="#c084fc" font-size="7.5" text-anchor="middle">RSP out FIFO</text>
+      <rect x="613" y="74" width="94" height="16" rx="3" fill="rgba(52,211,153,.08)" stroke="rgba(52,211,153,.2)" stroke-width="1"/>
+      <text x="660" y="86" fill="#34d399" font-size="7.5" text-anchor="middle">DAT out FIFO</text>
+      <rect x="613" y="94" width="94" height="16" rx="3" fill="rgba(249,115,22,.08)" stroke="rgba(249,115,22,.2)" stroke-width="1"/>
+      <text x="660" y="106" fill="#f97316" font-size="7.5" text-anchor="middle">SNP out FIFO</text>
+      <text x="660" y="130" fill="rgba(52,211,153,.3)" font-size="7" text-anchor="middle">Credit interface</text>
+      <text x="660" y="143" fill="rgba(52,211,153,.3)" font-size="7" text-anchor="middle">to downstream node</text>
+
+      <!-- Output ports -->
+      <rect x="740" y="20" width="100" height="50" rx="5" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.4)" stroke-width="1.5"/>
+      <text x="790" y="42" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">OUT PORT N</text>
+      <text x="790" y="55" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">to North</text>
+      <rect x="740" y="80" width="100" height="50" rx="5" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.4)" stroke-width="1.5"/>
+      <text x="790" y="102" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">OUT PORT S</text>
+      <text x="790" y="115" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">to South</text>
+      <rect x="740" y="140" width="100" height="50" rx="5" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.4)" stroke-width="1.5"/>
+      <text x="790" y="162" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">OUT PORT E</text>
+      <text x="790" y="175" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">to East</text>
+      <rect x="740" y="200" width="100" height="50" rx="5" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.4)" stroke-width="1.5"/>
+      <text x="790" y="222" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">OUT PORT W</text>
+      <text x="790" y="235" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">to West</text>
+      <rect x="740" y="260" width="100" height="30" rx="5" fill="rgba(167,139,250,.05)" stroke="rgba(167,139,250,.3)" stroke-width="1"/>
+      <text x="790" y="278" fill="rgba(167,139,250,.6)" font-size="7.5" text-anchor="middle">LOCAL (node)</text>
+
+      <!-- connections -->
+      <line x1="110" y1="150" x2="130" y2="150" stroke="rgba(167,139,250,.3)" stroke-width="1"/>
+      <line x1="240" y1="150" x2="265" y2="80" stroke="rgba(251,191,36,.3)" stroke-width="1"/>
+      <line x1="395" y1="80" x2="420" y2="140" stroke="rgba(167,139,250,.3)" stroke-width="1"/>
+      <line x1="580" y1="140" x2="605" y2="70" stroke="rgba(52,211,153,.3)" stroke-width="1"/>
+      <line x1="715" y1="70" x2="740" y2="150" stroke="rgba(167,139,250,.3)" stroke-width="1"/>
+    </svg>
+  </div>
+</div>
+
+<!-- ══ SECTION 6: LINK LAYER ══════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="link">
+  <div class="sec-eyebrow">Section 06</div>
+  <div class="sec-title" style="color:var(--lnk)">Link Layer — Layer 1 Sub-Units</div>
+  <p class="sec-desc">The Link Layer sits between the Protocol Layer and physical wires. Manages flit-level flow control via L-credits. Independent per virtual channel. Prevents buffer overflow without global stalls.</p>
+
+  <div class="g2" style="margin-bottom:20px;align-items:start;">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Sub-Unit</th><th>Function</th><th>Per VC?</th><th>Credit Width</th></tr></thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600;color:var(--lnk);">TX Credit Counter</td>
+            <td style="color:var(--soft);font-size:.76rem;">Tracks how many flits sender can transmit. Decrements on send.</td>
+            <td style="color:var(--dat);">Yes</td>
+            <td class="mono" style="color:var(--muted);">log₂(depth)</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;color:var(--lnk);">RX Credit Return</td>
+            <td style="color:var(--soft);font-size:.76rem;">Generates LCrdReturn flit after consuming received flit.</td>
+            <td style="color:var(--dat);">Yes</td>
+            <td class="mono" style="color:var(--muted);">—</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;color:var(--lnk);">Input Buffer</td>
+            <td style="color:var(--soft);font-size:.76rem;">FIFO per VC. Absorbs burst. Depth determines max in-flight.</td>
+            <td style="color:var(--dat);">Yes</td>
+            <td class="mono" style="color:var(--muted);">2–8 flits</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;color:var(--lnk);">Flit Encoder</td>
+            <td style="color:var(--soft);font-size:.76rem;">Serialise fields → parallel wire width. Add parity/ECC.</td>
+            <td style="color:var(--dat);">No (shared)</td>
+            <td class="mono" style="color:var(--muted);">—</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;color:var(--lnk);">Flit Decoder</td>
+            <td style="color:var(--soft);font-size:.76rem;">Deserialise received bits → flit fields. Check ECC.</td>
+            <td style="color:var(--dat);">No (shared)</td>
+            <td class="mono" style="color:var(--muted);">—</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;color:var(--lnk);">Clock Domain Cross</td>
+            <td style="color:var(--soft);font-size:.76rem;">FIFO for crossing from local to link clock domain.</td>
+            <td style="color:var(--dat);">Yes</td>
+            <td class="mono" style="color:var(--muted);">—</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;color:var(--lnk);">Power Controller</td>
+            <td style="color:var(--soft);font-size:.76rem;">Clock gate VC when empty. Link power-down when all idle.</td>
+            <td style="color:var(--dat);">Yes</td>
+            <td class="mono" style="color:var(--muted);">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <div class="callout co-info" style="margin-bottom:12px;">
+        <strong>Credit Rule:</strong> Sender may transmit only if credit count &gt; 0. Each transmitted flit decrements credit. LCrdReturn flit from receiver increments it. No ACK needed — credit return IS the acknowledgement.
+      </div>
+      <div class="formula">Credit flow (REQ channel example):
+  Init:  TX_credit = 4 (buffer depth)
+  Send:  TX_credit-- (=3)
+  Send:  TX_credit-- (=2)
+  Recv LCrdReturn: TX_credit++ (=3)
+  Send:  TX_credit-- (=2)
+  If TX_credit==0: STALL until LCrdReturn
+
+Per-channel independence:
+  REQ credits ≠ RSP credits ≠ DAT credits ≠ SNP credits
+  DAT channel stall does NOT block REQ channel</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 7: MESH TOPOLOGY ══════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="mesh">
+  <div class="sec-eyebrow">Section 07</div>
+  <div class="sec-title" style="color:var(--rtr)">4×3 Mesh Topology</div>
+  <p class="sec-desc">CMN-700 style 4×3 mesh. Each crosspoint contains a full router. Nodes attach at mesh intersections. Dimension-ordered routing (X first, then Y) guarantees deadlock freedom.</p>
+
+  <div class="card" style="overflow-x:auto;margin-bottom:20px;">
+    <svg viewBox="0 0 920 420" width="100%" style="max-height:440px;display:block;">
+      <rect width="920" height="420" fill="url(#grid)" opacity=".4"/>
+
+      <!-- Helper macros drawn as rectangles -->
+      <!-- Row 0 -->
+      <!-- (0,0) CPU Cluster -->
+      <rect x="20" y="30" width="100" height="50" rx="6" fill="rgba(34,211,238,.08)" stroke="rgba(34,211,238,.4)" stroke-width="1.5"/>
+      <text x="70" y="52" fill="#22d3ee" font-size="9" font-weight="700" text-anchor="middle">CPU Cluster</text>
+      <text x="70" y="65" fill="rgba(34,211,238,.5)" font-size="7.5" text-anchor="middle">RN-F×2 · L3</text>
+      <!-- (1,0) Router -->
+      <rect x="210" y="30" width="80" height="50" rx="6" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.45)" stroke-width="1.5"/>
+      <text x="250" y="52" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">RTR (1,0)</text>
+      <text x="250" y="65" fill="rgba(167,139,250,.5)" font-size="7" text-anchor="middle">XBar+Arb</text>
+      <!-- (2,0) CPU Cluster -->
+      <rect x="390" y="30" width="100" height="50" rx="6" fill="rgba(34,211,238,.08)" stroke="rgba(34,211,238,.4)" stroke-width="1.5"/>
+      <text x="440" y="52" fill="#22d3ee" font-size="9" font-weight="700" text-anchor="middle">CPU Cluster</text>
+      <text x="440" y="65" fill="rgba(34,211,238,.5)" font-size="7.5" text-anchor="middle">RN-F×2 · L3</text>
+      <!-- (3,0) Router -->
+      <rect x="570" y="30" width="80" height="50" rx="6" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.45)" stroke-width="1.5"/>
+      <text x="610" y="52" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">RTR (3,0)</text>
+      <text x="610" y="65" fill="rgba(167,139,250,.5)" font-size="7" text-anchor="middle">XBar+Arb</text>
+      <!-- (4,0) GPU -->
+      <rect x="750" y="30" width="100" height="50" rx="6" fill="rgba(244,114,182,.07)" stroke="rgba(244,114,182,.4)" stroke-width="1.5"/>
+      <text x="800" y="52" fill="#f472b6" font-size="9" font-weight="700" text-anchor="middle">GPU Cluster</text>
+      <text x="800" y="65" fill="rgba(244,114,182,.5)" font-size="7.5" text-anchor="middle">RN-F · L2</text>
+
+      <!-- Row 1 -->
+      <rect x="20" y="180" width="100" height="60" rx="6" fill="rgba(245,158,11,.07)" stroke="rgba(245,158,11,.5)" stroke-width="1.5"/>
+      <text x="70" y="204" fill="#f59e0b" font-size="9" font-weight="700" text-anchor="middle">HN-F #0</text>
+      <text x="70" y="218" fill="rgba(245,158,11,.5)" font-size="7" text-anchor="middle">Snoop Flt</text>
+      <text x="70" y="230" fill="rgba(245,158,11,.4)" font-size="7" text-anchor="middle">Txn Tracker</text>
+      <rect x="210" y="180" width="80" height="60" rx="6" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.45)" stroke-width="1.5"/>
+      <text x="250" y="207" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">RTR (1,1)</text>
+      <text x="250" y="222" fill="rgba(167,139,250,.5)" font-size="7" text-anchor="middle">Central node</text>
+      <rect x="390" y="180" width="100" height="60" rx="6" fill="rgba(245,158,11,.07)" stroke="rgba(245,158,11,.5)" stroke-width="1.5"/>
+      <text x="440" y="204" fill="#f59e0b" font-size="9" font-weight="700" text-anchor="middle">HN-F #1</text>
+      <text x="440" y="218" fill="rgba(245,158,11,.5)" font-size="7" text-anchor="middle">Snoop Flt</text>
+      <text x="440" y="230" fill="rgba(245,158,11,.4)" font-size="7" text-anchor="middle">Txn Tracker</text>
+      <rect x="570" y="180" width="80" height="60" rx="6" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.45)" stroke-width="1.5"/>
+      <text x="610" y="207" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">RTR (3,1)</text>
+      <text x="610" y="222" fill="rgba(167,139,250,.5)" font-size="7" text-anchor="middle">XBar+Arb</text>
+      <rect x="750" y="180" width="100" height="60" rx="6" fill="rgba(251,146,60,.07)" stroke="rgba(251,146,60,.4)" stroke-width="1.5"/>
+      <text x="800" y="204" fill="#fb923c" font-size="9" font-weight="700" text-anchor="middle">HN-I</text>
+      <text x="800" y="218" fill="rgba(251,146,60,.5)" font-size="7" text-anchor="middle">MMIO space</text>
+      <text x="800" y="230" fill="rgba(251,146,60,.4)" font-size="7" text-anchor="middle">No snoop flt</text>
+
+      <!-- Row 2 -->
+      <rect x="20" y="330" width="100" height="55" rx="6" fill="rgba(74,222,128,.06)" stroke="rgba(74,222,128,.4)" stroke-width="1.5"/>
+      <text x="70" y="354" fill="#4ade80" font-size="9" font-weight="700" text-anchor="middle">SN-F #0</text>
+      <text x="70" y="368" fill="rgba(74,222,128,.5)" font-size="7.5" text-anchor="middle">DDR Ch0</text>
+      <text x="70" y="380" fill="rgba(74,222,128,.4)" font-size="7" text-anchor="middle">MC + WrBuf</text>
+      <rect x="210" y="330" width="80" height="55" rx="6" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.45)" stroke-width="1.5"/>
+      <text x="250" y="357" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">RTR (1,2)</text>
+      <text x="250" y="372" fill="rgba(167,139,250,.5)" font-size="7" text-anchor="middle">XBar+Arb</text>
+      <rect x="390" y="330" width="100" height="55" rx="6" fill="rgba(74,222,128,.06)" stroke="rgba(74,222,128,.4)" stroke-width="1.5"/>
+      <text x="440" y="354" fill="#4ade80" font-size="9" font-weight="700" text-anchor="middle">SN-F #1</text>
+      <text x="440" y="368" fill="rgba(74,222,128,.5)" font-size="7.5" text-anchor="middle">DDR Ch1</text>
+      <text x="440" y="380" fill="rgba(74,222,128,.4)" font-size="7" text-anchor="middle">MC + WrBuf</text>
+      <rect x="570" y="330" width="80" height="55" rx="6" fill="rgba(167,139,250,.07)" stroke="rgba(167,139,250,.45)" stroke-width="1.5"/>
+      <text x="610" y="357" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">RTR (3,2)</text>
+      <text x="610" y="372" fill="rgba(167,139,250,.5)" font-size="7" text-anchor="middle">XBar+Arb</text>
+      <rect x="750" y="330" width="100" height="55" rx="6" fill="rgba(148,163,184,.06)" stroke="rgba(148,163,184,.4)" stroke-width="1.5"/>
+      <text x="800" y="354" fill="#94a3b8" font-size="9" font-weight="700" text-anchor="middle">SN-I</text>
+      <text x="800" y="368" fill="rgba(148,163,184,.5)" font-size="7.5" text-anchor="middle">ROM/SRAM</text>
+      <text x="800" y="380" fill="rgba(148,163,184,.4)" font-size="7" text-anchor="middle">Peripheral</text>
+
+      <!-- Horizontal mesh links -->
+      <g stroke="#334155" stroke-width="2">
+        <!-- Row 0 -->
+        <line x1="120" y1="55" x2="210" y2="55"/>
+        <line x1="290" y1="55" x2="390" y2="55"/>
+        <line x1="490" y1="55" x2="570" y2="55"/>
+        <line x1="650" y1="55" x2="750" y2="55"/>
+        <!-- Row 1 -->
+        <line x1="120" y1="210" x2="210" y2="210"/>
+        <line x1="290" y1="210" x2="390" y2="210"/>
+        <line x1="490" y1="210" x2="570" y2="210"/>
+        <line x1="650" y1="210" x2="750" y2="210"/>
+        <!-- Row 2 -->
+        <line x1="120" y1="357" x2="210" y2="357"/>
+        <line x1="290" y1="357" x2="390" y2="357"/>
+        <line x1="490" y1="357" x2="570" y2="357"/>
+        <line x1="650" y1="357" x2="750" y2="357"/>
+      </g>
+
+      <!-- Vertical mesh links -->
+      <g stroke="#334155" stroke-width="2">
+        <!-- Col 0 -->
+        <line x1="70" y1="80" x2="70" y2="180"/>
+        <line x1="70" y1="240" x2="70" y2="330"/>
+        <!-- Col 1 -->
+        <line x1="250" y1="80" x2="250" y2="180"/>
+        <line x1="250" y1="240" x2="250" y2="330"/>
+        <!-- Col 2 -->
+        <line x1="440" y1="80" x2="440" y2="180"/>
+        <line x1="440" y1="240" x2="440" y2="330"/>
+        <!-- Col 3 -->
+        <line x1="610" y1="80" x2="610" y2="180"/>
+        <line x1="610" y1="240" x2="610" y2="330"/>
+        <!-- Col 4 -->
+        <line x1="800" y1="80" x2="800" y2="180"/>
+        <line x1="800" y1="240" x2="800" y2="330"/>
+      </g>
+
+      <!-- Animated flow overlay -->
+      <g id="mesh-flow-overlay">
+        <line x1="120" y1="55" x2="210" y2="55" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5,4" class="flow-anim" opacity=".6"/>
+        <line x1="70" y1="80" x2="70" y2="180" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5,4" class="flow-anim" opacity=".6"/>
+        <line x1="250" y1="80" x2="250" y2="180" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,4" class="flow-anim" opacity=".5"/>
+        <line x1="440" y1="240" x2="440" y2="330" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,4" class="flow-anim" opacity=".6"/>
+        <line x1="120" y1="210" x2="210" y2="210" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,4" class="flow-anim" opacity=".5"/>
+      </g>
+
+      <!-- Legend -->
+      <rect x="20" y="400" width="860" height="18" rx="3" fill="rgba(0,0,0,.3)"/>
+      <text x="30" y="412" fill="rgba(34,211,238,.7)" font-size="8" font-family="Share Tech Mono,monospace">▪ RN-F (cyan)</text>
+      <text x="130" y="412" fill="rgba(245,158,11,.7)" font-size="8" font-family="Share Tech Mono,monospace">▪ HN-F (amber)</text>
+      <text x="240" y="412" fill="rgba(74,222,128,.7)" font-size="8" font-family="Share Tech Mono,monospace">▪ SN-F (green)</text>
+      <text x="340" y="412" fill="rgba(167,139,250,.7)" font-size="8" font-family="Share Tech Mono,monospace">▪ Router (purple)</text>
+      <text x="460" y="412" fill="rgba(244,114,182,.7)" font-size="8" font-family="Share Tech Mono,monospace">▪ RN-I (pink)</text>
+      <text x="540" y="412" fill="rgba(251,146,60,.7)" font-size="8" font-family="Share Tech Mono,monospace">▪ HN-I (orange)</text>
+      <text x="630" y="412" fill="rgba(148,163,184,.7)" font-size="8" font-family="Share Tech Mono,monospace">▪ SN-I (slate)</text>
+      <text x="710" y="412" fill="rgba(56,189,248,.5)" font-size="8" font-family="Share Tech Mono,monospace">── Mesh link (all 4 VCs)</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ══ SECTION 8: COMPLETE SUB-UNIT TABLE ════════════════ -->
+<div class="divider"></div>
+<div class="section" id="subunits">
+  <div class="sec-eyebrow">Section 08</div>
+  <div class="sec-title">Complete Sub-Unit Reference Table</div>
+  <p class="sec-desc">Every sub-unit in the CHI NoC, organised by node type. Use as a checklist when designing or reviewing a micro-architectural specification.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr><th>Node</th><th>Sub-Unit</th><th>Type</th><th>Key Function</th><th>Critical Parameter</th><th>Channels</th></tr>
+      </thead>
+      <tbody>
+        <!-- RN-F -->
+        <tr><td rowspan="8"><span class="nb nb-rnf">RN-F</span></td>
+          <td style="font-weight:600;color:var(--rnf);">L1-I Cache</td><td class="mono" style="font-size:.7rem;color:var(--muted);">SRAM</td>
+          <td style="color:var(--soft);font-size:.76rem;">Instruction fetch, 1-cycle access</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">32–64KB · 4-way · PLRU</td>
+          <td>—</td></tr>
+        <tr><td style="font-weight:600;color:var(--rnf);">L1-D Cache</td><td class="mono" style="font-size:.7rem;color:var(--muted);">SRAM</td>
+          <td style="color:var(--soft);font-size:.76rem;">Data load/store, write-back, MOESI states</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">32–64KB · 8-way · ECC</td>
+          <td>—</td></tr>
+        <tr><td style="font-weight:600;color:var(--rnf);">L2 Cache</td><td class="mono" style="font-size:.7rem;color:var(--muted);">SRAM</td>
+          <td style="color:var(--soft);font-size:.76rem;">Unified L1 miss buffer, CHI interface</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">512KB–4MB · 16-way</td>
+          <td>—</td></tr>
+        <tr><td style="font-weight:600;color:var(--rnf);">MSHR</td><td class="mono" style="font-size:.7rem;color:var(--muted);">CAM/SRAM</td>
+          <td style="color:var(--soft);font-size:.76rem;">Track outstanding cache misses, merge fills</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">8–16 entries</td>
+          <td><span class="ch ch-req">REQ</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--rnf);">CHI Txn Tracker</td><td class="mono" style="font-size:.7rem;color:var(--muted);">SRAM+FSM</td>
+          <td style="color:var(--soft);font-size:.76rem;">TxnID pool, RetryAck/PCrd state, CompAck gen</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">TxnID space=256</td>
+          <td><span class="ch ch-req">REQ</span><span class="ch ch-rsp">RSP</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--rnf);">Snoop Handler</td><td class="mono" style="font-size:.7rem;color:var(--muted);">FSM</td>
+          <td style="color:var(--soft);font-size:.76rem;">Process SNP, respond SnpResp/SnpRespData, forward DCT</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">Must process in &lt;N cycles</td>
+          <td><span class="ch ch-snp">SNP</span><span class="ch ch-dat">DAT</span><span class="ch ch-rsp">RSP</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--rnf);">Write Buffer</td><td class="mono" style="font-size:.7rem;color:var(--muted);">FIFO</td>
+          <td style="color:var(--soft);font-size:.76rem;">Non-cacheable writes, coalesce, drain on DAT</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">4–8 entries</td>
+          <td><span class="ch ch-dat">DAT</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--rnf);">Link Layer I/F</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">L-credit TX/RX, flit encode/decode, CDC</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">Per-VC credit depth</td>
+          <td><span class="ch ch-req">REQ</span><span class="ch ch-rsp">RSP</span><span class="ch ch-dat">DAT</span><span class="ch ch-snp">SNP</span></td></tr>
+
+        <!-- HN-F -->
+        <tr><td rowspan="7"><span class="nb nb-hnf">HN-F</span></td>
+          <td style="font-weight:600;color:var(--hnf);">Snoop Filter</td><td class="mono" style="font-size:.7rem;color:var(--muted);">CAM/SRAM</td>
+          <td style="color:var(--soft);font-size:.76rem;">Track sharers per cache line, aggregated state</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">1K–262K entries</td>
+          <td><span class="ch ch-snp">SNP</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--hnf);">Txn Tracker</td><td class="mono" style="font-size:.7rem;color:var(--muted);">SRAM+FSM</td>
+          <td style="color:var(--soft);font-size:.76rem;">Per-txn state, ordering point, RetryAck on full</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">64–512 entries</td>
+          <td><span class="ch ch-req">REQ</span><span class="ch ch-rsp">RSP</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--hnf);">Request Arbiter</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">QoS weighted RR, hazard detect, ordering</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">16-level QoS</td>
+          <td><span class="ch ch-req">REQ</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--hnf);">Address Decoder</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">Addr→SN-F mapping, interleave, non-coherent range</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">Boot-time config</td>
+          <td><span class="ch ch-req">REQ</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--hnf);">Protocol Engine</td><td class="mono" style="font-size:.7rem;color:var(--muted);">FSM</td>
+          <td style="color:var(--soft);font-size:.76rem;">Per-txn FSM, snoop dispatch, DCT, CMO</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">20+ states per txn</td>
+          <td><span class="ch ch-req">REQ</span><span class="ch ch-rsp">RSP</span><span class="ch ch-dat">DAT</span><span class="ch ch-snp">SNP</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--hnf);">Data Buffer</td><td class="mono" style="font-size:.7rem;color:var(--muted);">SRAM</td>
+          <td style="color:var(--soft);font-size:.76rem;">Hold dirty data from snoop, forward+writeback</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">64B×N entries</td>
+          <td><span class="ch ch-dat">DAT</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--hnf);">Link Layer I/F</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">L-credit per VC, SNP direct-link dispatch</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">One link per RN-F</td>
+          <td><span class="ch ch-req">REQ</span><span class="ch ch-rsp">RSP</span><span class="ch ch-dat">DAT</span><span class="ch ch-snp">SNP</span></td></tr>
+
+        <!-- SN-F -->
+        <tr><td rowspan="4"><span class="nb nb-snf">SN-F</span></td>
+          <td style="font-weight:600;color:var(--snf);">CHI SN Interface</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">REQ RX, DAT TX/RX, RSP TX — no SNP</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">No TgtID awareness</td>
+          <td><span class="ch ch-req">REQ</span><span class="ch ch-rsp">RSP</span><span class="ch ch-dat">DAT</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--snf);">Write Buffer</td><td class="mono" style="font-size:.7rem;color:var(--muted);">SRAM</td>
+          <td style="color:var(--soft);font-size:.76rem;">Coalesce writes, BE masking, DRAM drain</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">8–16 entries</td>
+          <td><span class="ch ch-dat">DAT</span></td></tr>
+        <tr><td style="font-weight:600;color:var(--snf);">Memory Controller</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">DRAM scheduler, refresh, ECC, timing</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">tRCD/tCL/tRFC</td>
+          <td>—</td></tr>
+        <tr><td style="font-weight:600;color:var(--snf);">Read Buffer</td><td class="mono" style="font-size:.7rem;color:var(--muted);">SRAM</td>
+          <td style="color:var(--soft);font-size:.76rem;">Prefetch, DataID split, CCID ordering</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">2–4 entries</td>
+          <td><span class="ch ch-dat">DAT</span></td></tr>
+
+        <!-- Router -->
+        <tr><td rowspan="5"><span class="nb nb-rtr">Router</span></td>
+          <td style="font-weight:600;color:var(--rtr);">VC Input Buffers</td><td class="mono" style="font-size:.7rem;color:var(--muted);">FIFO SRAM</td>
+          <td style="color:var(--soft);font-size:.76rem;">4 VCs per port, per-VC credit tracking</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">Depth=4 (REQ/RSP/SNP), 2 (DAT)</td>
+          <td>All</td></tr>
+        <tr><td style="font-weight:600;color:var(--rtr);">Route Compute</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">TgtID→XY, DOR (X-first), output port select</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">1-cycle latency</td>
+          <td>All</td></tr>
+        <tr><td style="font-weight:600;color:var(--rtr);">VC Allocator</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">Output VC selection, deadlock avoidance</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">Round-robin</td>
+          <td>All</td></tr>
+        <tr><td style="font-weight:600;color:var(--rtr);">Crossbar Switch</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">5×5 non-blocking, granted by SA</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">5 ports × 4 VCs</td>
+          <td>All</td></tr>
+        <tr><td style="font-weight:600;color:var(--rtr);">Switch Allocator</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">Conflict-free port grant, iSLIP algorithm</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">1-cycle pipeline</td>
+          <td>All</td></tr>
+
+        <!-- Link Layer -->
+        <tr><td rowspan="4"><span class="nb nb-rtr" style="color:var(--lnk);border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.07);">Link</span></td>
+          <td style="font-weight:600;color:var(--lnk);">TX Credit Counter</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Counter</td>
+          <td style="color:var(--soft);font-size:.76rem;">Per-VC send budget, stall on zero</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">= RX buffer depth</td>
+          <td>All</td></tr>
+        <tr><td style="font-weight:600;color:var(--lnk);">RX Credit Return</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">LCrdReturn flit generation, refill sender</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">1 flit per consumed flit</td>
+          <td>All</td></tr>
+        <tr><td style="font-weight:600;color:var(--lnk);">Flit Codec</td><td class="mono" style="font-size:.7rem;color:var(--muted);">Logic</td>
+          <td style="color:var(--soft);font-size:.76rem;">Encode/decode fields to wire width, ECC</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">128–512b DAT width</td>
+          <td>All</td></tr>
+        <tr><td style="font-weight:600;color:var(--lnk);">Clock Domain X</td><td class="mono" style="font-size:.7rem;color:var(--muted);">FIFO</td>
+          <td style="color:var(--soft);font-size:.76rem;">Safe crossing from node to link clock</td>
+          <td class="mono" style="font-size:.7rem;color:var(--muted);">2–4 stage sync</td>
+          <td>All</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<div class="divider" style="margin-bottom:0;"></div>
+<footer>
+  <div class="ft">CHI-Based NoC Micro-Architecture Reference · AMBA 5 CHI · ARM IHI 0050 · CMN-700 Architecture</div>
+  <div class="ft">RN-F · HN-F · SN-F · Router · Link Layer · Mesh Topology</div>
+</footer>
+
+<script>
+// Flow animation toggle
+let flowOn = true;
+function toggleFlow() {
+  flowOn = !flowOn;
+  document.querySelectorAll('.flow-anim').forEach(el => {
+    el.style.animationPlayState = flowOn ? 'running' : 'paused';
+  });
+  const btn = document.getElementById('flow-btn');
+  btn.textContent = flowOn ? '⏸ Pause Animations' : '▶ Resume Animations';
+  btn.className = flowOn ? 'toggle-btn tb-on' : 'toggle-btn tb-off';
+}
+
+function highlightChannels() {
+  const btn = document.getElementById('highlight-btn');
+  btn.className = 'toggle-btn tb-on';
+  btn.textContent = '✓ Channel flows shown';
+  setTimeout(() => {
+    btn.className = 'toggle-btn tb-off';
+    btn.textContent = 'Show Channel Flow';
+  }, 2000);
+}
+
+// Nav active highlight
+const allSections = document.querySelectorAll('[id]');
+const navLinks = document.querySelectorAll('.top-nav a');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(a => {
+        a.classList.remove('nav-active');
+        if (a.getAttribute('href') === '#'+e.target.id) a.classList.add('nav-active');
+      });
+    }
+  });
+}, { threshold:.25, rootMargin:'-60px 0px -60px 0px' });
+allSections.forEach(s => io.observe(s));
+</script>
+</body>
+</html>
