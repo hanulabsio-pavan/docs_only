@@ -1,5 +1,97 @@
-<h1>Read List</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Read List</title>
 
-<a href="lesson_01_chi_foundations.html">Lesson 1</a><br>
-<a href="AMBA_CHI_Issue_F_Master_Guide.html">CHI roadmap</a><br>
-<a href="cache_hierarchy_reference.html">Caches</a><br>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 600px;
+      background: rgba(255,255,255,0.08);
+      padding: 30px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 38px;
+      color: #38bdf8;
+    }
+
+    .card {
+      display: block;
+      text-decoration: none;
+      background: linear-gradient(90deg, #2563eb, #7c3aed);
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      border-radius: 14px;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      transition: all 0.25s ease;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .card:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+      background: linear-gradient(90deg, #0ea5e9, #9333ea);
+    }
+
+    .emoji {
+      margin-right: 10px;
+      font-size: 24px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 25px;
+      color: #cbd5e1;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>📚 Read List</h1>
+
+    <a class="card" href="lesson_01_chi_foundations.html">
+      <span class="emoji">🚀</span> Lesson 1 - CHI Foundations
+    </a>
+
+    <a class="card" href="AMBA_CHI_Issue_F_Master_Guide.html">
+      <span class="emoji">🧠</span> CHI Roadmap
+    </a>
+
+    <a class="card" href="cache_hierarchy_reference.html">
+      <span class="emoji">⚡</span> Cache Hierarchy
+    </a>
+
+    <div class="footer">
+      HANUMA • AMBA CHI Learning Portal
+    </div>
+
+  </div>
+
+</body>
+</html>
