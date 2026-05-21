@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Iron Protocol v2 — Hypertrophy Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg-2: #141414;
+  --bg-3: #1c1c1c;
+  --panel: #181818;
+  --ink: #f4f1ea;
+  --ink-dim: #8a8680;
+  --line: #2a2a2a;
+  --accent: #ff4500;
+  --accent-2: #ffb800;
+  --accent-3: #00d9a3;
+  --accent-4: #6db4ff;
+  --danger: #ff3355;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Fraunces', Georgia, serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(at 15% 10%, rgba(255,69,0,0.08) 0px, transparent 50%),
+    radial-gradient(at 85% 90%, rgba(255,184,0,0.05) 0px, transparent 50%);
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: overlay;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* ============ HEADER ============ */
+.header {
+  padding: 3rem 0 2rem;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 120px;
+  height: 3px;
+  background: var(--accent);
+}
+
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.eyebrow::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.8rem, 7vw, 5.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  margin-bottom: 0.5rem;
+}
+
+.title em {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--accent-2);
+}
+
+.subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.05em;
+}
+
+.athlete-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  margin-top: 2rem;
+  border: 1px solid var(--line);
+}
+
+.stat {
+  background: var(--bg-2);
+  padding: 1.25rem 1.5rem;
+}
+
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.75rem;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+.stat-value span {
+  color: var(--accent);
+  font-size: 1rem;
+  margin-left: 0.25rem;
+}
+
+/* ============ NAV ============ */
+.nav {
+  position: sticky;
+  top: 0;
+  background: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line);
+  z-index: 100;
+  padding: 1rem 0;
+  margin-top: 3rem;
+}
+
+.nav-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  gap: 2rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-inner::-webkit-scrollbar { display: none; }
+
+.nav a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 0.5rem 0;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s;
+}
+
+.nav a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+section {
+  padding: 5rem 0 3rem;
+  scroll-margin-top: 80px;
+}
+
+.section-head {
+  margin-bottom: 3rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1.5rem;
+}
+
+.section-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+  margin-bottom: 0.5rem;
+}
+
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.section-desc {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--ink-dim);
+  max-width: 420px;
+  text-align: right;
+}
+
+/* ============ WEEK GRID ============ */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.day-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 1.5rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  width: 100%;
+}
+
+.day-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+
+.day-card:hover {
+  background: var(--bg-3);
+  transform: translateY(-4px);
+  border-color: var(--accent);
+}
+
+.day-card:hover::before { transform: scaleX(1); }
+
+.day-card.rest { opacity: 0.6; }
+.day-card.rest::before { background: var(--ink-dim); }
+
+.day-card.active {
+  background: var(--bg-3);
+  border-color: var(--accent);
+}
+
+.day-card.active::before { transform: scaleX(1); }
+
+.day-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+  margin-bottom: 0.75rem;
+}
+
+.day-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+
+.day-stimulus {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+
+.day-card .arrow {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  color: var(--accent);
+  opacity: 0;
+  transition: all 0.3s;
+}
+
+.day-card:hover .arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* ============ WORKOUT PANEL ============ */
+.workout-panel {
+  display: none;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  padding: 2.5rem;
+  margin-bottom: 2rem;
+  animation: slideDown 0.5s ease;
+}
+
+.workout-panel.active { display: block; }
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.workout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.workout-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.workout-focus {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--accent-2);
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+.workout-meta {
+  display: flex;
+  gap: 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+}
+
+.workout-meta strong {
+  color: var(--accent);
+  display: block;
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+  font-weight: 700;
+}
+
+/* ============ TABLES ============ */
+.table-wrap {
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--line);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  min-width: 600px;
+}
+
+thead { background: var(--bg); }
+
+th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  vertical-align: top;
+}
+
+tbody tr { transition: background 0.2s; }
+tbody tr:hover { background: var(--bg-3); }
+tbody tr:last-child td { border-bottom: none; }
+
+.ex-name {
+  font-weight: 600;
+  font-family: 'Fraunces', serif;
+}
+
+.rpe-pill {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.rpe-7 { color: var(--accent-3); border-color: var(--accent-3); }
+.rpe-8 { color: var(--accent-2); border-color: var(--accent-2); }
+.rpe-9 { color: var(--accent); border-color: var(--accent); }
+.rpe-10 { color: var(--danger); border-color: var(--danger); background: rgba(255,51,85,0.1); }
+
+.cue {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+}
+
+/* ============ VOLUME ============ */
+.volume-section {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 2.5rem;
+  margin-top: 2rem;
+}
+
+.volume-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 50px;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bar-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+
+.bar-track {
+  height: 24px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+  width: 0;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bar-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--accent);
+  font-weight: 700;
+  text-align: right;
+}
+
+/* ============ MACRO RING ============ */
+.macro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  align-items: center;
+}
+
+@media (max-width: 768px) { .macro-grid { grid-template-columns: 1fr; } }
+
+.macro-visual {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.macro-ring {
+  width: 240px;
+  height: 240px;
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.macro-ring svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.ring-bg { fill: none; stroke: var(--bg-3); stroke-width: 16; }
+.ring-protein, .ring-carbs, .ring-fat {
+  fill: none;
+  stroke-width: 16;
+  stroke-linecap: butt;
+}
+.ring-protein { stroke: var(--accent); }
+.ring-carbs { stroke: var(--accent-2); }
+.ring-fat { stroke: var(--accent-3); }
+
+.ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.kcal-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.kcal-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-dim);
+  margin-top: 0.25rem;
+}
+
+.macro-legend {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.legend-dot { width: 12px; height: 12px; }
+.legend-item.protein .legend-dot { background: var(--accent); }
+.legend-item.carbs .legend-dot { background: var(--accent-2); }
+.legend-item.fat .legend-dot { background: var(--accent-3); }
+.legend-item strong { color: var(--ink); font-weight: 700; }
+.legend-item small { color: var(--ink-dim); margin-left: 0.25rem; }
+
+.macro-details {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 2.5rem;
+}
+
+.macro-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px dashed var(--line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+}
+
+.macro-line:last-child { border-bottom: none; }
+.macro-line span:first-child { color: var(--ink-dim); }
+.macro-line span:last-child { color: var(--ink); font-weight: 700; }
+
+/* ============ MEAL SLOT TABS ============ */
+.slot-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.slot-tab {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 1rem 0.75rem;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--ink);
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.slot-tab:hover {
+  border-color: var(--accent);
+  background: var(--bg-3);
+}
+
+.slot-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.slot-time {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  margin-bottom: 0.4rem;
+  opacity: 0.85;
+}
+
+.slot-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.slot-panel {
+  display: none;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  padding: 2rem;
+  animation: slideDown 0.4s ease;
+}
+
+.slot-panel.active { display: block; }
+
+.slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.slot-header h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.75rem;
+  letter-spacing: 0.03em;
+}
+
+.slot-target {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--accent-2);
+  letter-spacing: 0.08em;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.option {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  padding: 1.25rem;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.option:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.option-num {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  color: var(--bg-3);
+  line-height: 1;
+}
+
+.option-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+  padding-right: 2rem;
+}
+
+.option-foods {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--ink-dim);
+  margin-bottom: 0.75rem;
+  line-height: 1.45;
+}
+
+.option-macros {
+  display: flex;
+  gap: 0.85rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--line);
+}
+
+.option-macros span { color: var(--ink-dim); letter-spacing: 0.05em; }
+.option-macros span strong { color: var(--ink); margin-left: 0.2rem; }
+.option-macros .kcal-tag { color: var(--accent); font-weight: 700; margin-left: auto; }
+
+.tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid;
+  margin-right: 0.35rem;
+  margin-bottom: 0.25rem;
+}
+
+.tag-quick { color: var(--accent-3); border-color: var(--accent-3); }
+.tag-classic { color: var(--accent-2); border-color: var(--accent-2); }
+.tag-budget { color: var(--accent-4); border-color: var(--accent-4); }
+.tag-south { color: var(--accent); border-color: var(--accent); }
+
+/* ============ SUPPLEMENTS ============ */
+.supp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.supp-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 1.75rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.supp-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+}
+
+.supp-card::after {
+  content: attr(data-num);
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  color: var(--bg-3);
+  line-height: 1;
+}
+
+.supp-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.5rem;
+  color: var(--accent);
+}
+
+.supp-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+
+.supp-desc {
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+/* ============ RECOVERY ============ */
+.recovery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.recovery-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 2rem;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.recovery-card:hover {
+  border-left: 3px solid var(--accent);
+  background: var(--bg-3);
+}
+
+.recovery-icon {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.recovery-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.75rem;
+}
+
+.recovery-body {
+  font-size: 0.9rem;
+  color: var(--ink);
+  line-height: 1.6;
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 3rem 0 2rem;
+  margin-top: 5rem;
+  text-align: center;
+}
+
+.footer-quote {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.4rem;
+  color: var(--ink);
+  max-width: 600px;
+  margin: 0 auto 1.5rem;
+  line-height: 1.4;
+}
+
+.footer-quote em {
+  color: var(--accent);
+  font-weight: 600;
+  font-style: normal;
+}
+
+.footer-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .container { padding: 0 1.25rem; }
+  .workout-panel { padding: 1.5rem; }
+  .slot-panel { padding: 1.25rem; }
+  .volume-section { padding: 1.5rem; }
+  .bar-row { grid-template-columns: 100px 1fr 40px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- ============ HEADER ============ -->
+<header class="header">
+  <div class="eyebrow">v2 · 5-Day Upper-Body Specialization</div>
+  <h1 class="title">THE IRON<br>PROTOCOL <em>— hypertrophy</em></h1>
+  <p class="subtitle">35M · 5'4" · 71KG · COMBAT ATHLETE · STRICT LACTO-VEGETARIAN</p>
+
+  <div class="athlete-card">
+    <div class="stat">
+      <div class="stat-label">Age</div>
+      <div class="stat-value">35<span>yrs</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Height</div>
+      <div class="stat-value">5'4<span>"</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Weight</div>
+      <div class="stat-value">71<span>kg</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Background</div>
+      <div class="stat-value">MMA</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Goal</div>
+      <div class="stat-value">LEAN BULK</div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#training">01 · Training Split</a>
+    <a href="#volume">02 · Volume Audit</a>
+    <a href="#nutrition">03 · Nutrition</a>
+    <a href="#meals">04 · Meal Options</a>
+    <a href="#supps">05 · Supplements</a>
+    <a href="#recovery">06 · Recovery</a>
+  </div>
+</nav>
+
+<!-- ============ TRAINING SPLIT ============ -->
+<section id="training">
+  <div class="section-head">
+    <div>
+      <div class="section-number">CHAPTER 01</div>
+      <h2 class="section-title">THE TRAINING SPLIT</h2>
+    </div>
+    <p class="section-desc">One leg day per week. Chest, arms, and shoulders trained 2-3× weekly. Click any day to expand.</p>
+  </div>
+
+  <div class="week-grid">
+    <button class="day-card" onclick="showDay('d1')" data-target="d1">
+      <div class="day-num">MON · DAY 01</div>
+      <div class="day-name">CHEST + TRI</div>
+      <div class="day-stimulus">Heavy push · mechanical tension</div>
+      <span class="arrow">→</span>
+    </button>
+    <button class="day-card" onclick="showDay('d2')" data-target="d2">
+      <div class="day-num">TUE · DAY 02</div>
+      <div class="day-name">BACK + BI</div>
+      <div class="day-stimulus">Heavy pull · vertical bias</div>
+      <span class="arrow">→</span>
+    </button>
+    <button class="day-card" onclick="showDay('d3')" data-target="d3">
+      <div class="day-num">WED · DAY 03</div>
+      <div class="day-name">SHOULDERS</div>
+      <div class="day-stimulus">Delt specialization · all 3 heads</div>
+      <span class="arrow">→</span>
+    </button>
+    <div class="day-card rest">
+      <div class="day-num">THU · REST</div>
+      <div class="day-name">RECOVERY</div>
+      <div class="day-stimulus">Parasympathetic reset</div>
+    </div>
+    <button class="day-card" onclick="showDay('d5')" data-target="d5">
+      <div class="day-num">FRI · DAY 05</div>
+      <div class="day-name">CHEST + ARMS</div>
+      <div class="day-stimulus">Metabolic stress · pump</div>
+      <span class="arrow">→</span>
+    </button>
+    <button class="day-card" onclick="showDay('d6')" data-target="d6">
+      <div class="day-num">SAT · DAY 06</div>
+      <div class="day-name">LEGS</div>
+      <div class="day-stimulus">Full lower · once weekly</div>
+      <span class="arrow">→</span>
+    </button>
+    <button class="day-card" onclick="showDay('d7')" data-target="d7">
+      <div class="day-num">SUN · DAY 07</div>
+      <div class="day-name">BACK + DELTS</div>
+      <div class="day-stimulus">Width specialization · rear delts</div>
+      <span class="arrow">→</span>
+    </button>
+    <div class="day-card rest">
+      <div class="day-num">MON · REST</div>
+      <div class="day-name">FULL RESET</div>
+      <div class="day-stimulus">CNS recovery</div>
+    </div>
+  </div>
+
+  <!-- DAY 1 — CHEST + TRICEPS HEAVY -->
+  <div id="d1" class="workout-panel">
+    <div class="workout-header">
+      <div>
+        <h3 class="workout-title">DAY 01 — CHEST + TRICEPS (HEAVY)</h3>
+        <div class="workout-focus">Mechanical Tension · Long-Head Triceps Emphasis</div>
+      </div>
+      <div class="workout-meta">
+        <div><strong>7</strong>EXERCISES</div>
+        <div><strong>24</strong>SETS</div>
+        <div><strong>~75</strong>MIN</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Exercise</th><th>Sets × Reps</th><th>RPE</th><th>Rest</th><th>Cue</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td class="ex-name">Incline Barbell Bench Press (30°)</td><td>4 × 6-8</td><td><span class="rpe-pill rpe-8">8</span></td><td>2.5 min</td><td class="cue">Drive elbows at 60°, full scapular retraction</td></tr>
+          <tr><td>B</td><td class="ex-name">Flat Dumbbell Press</td><td>4 × 8-10</td><td><span class="rpe-pill rpe-8">8</span></td><td>2 min</td><td class="cue">Slight outward press at top for stretch</td></tr>
+          <tr><td>C</td><td class="ex-name">Weighted Dips (chest lean)</td><td>3 × 8-10</td><td><span class="rpe-pill rpe-8">8</span></td><td>90 sec</td><td class="cue">Lean forward, full stretch at bottom</td></tr>
+          <tr><td>D</td><td class="ex-name">Cable Crossover (mid-height)</td><td>3 × 12-15</td><td><span class="rpe-pill rpe-9">9</span></td><td>75 sec</td><td class="cue">Hold peak contraction 1 sec</td></tr>
+          <tr><td>E</td><td class="ex-name">Close-Grip Bench Press</td><td>3 × 8-10</td><td><span class="rpe-pill rpe-8">8</span></td><td>90 sec</td><td class="cue">Tuck elbows, triceps focus</td></tr>
+          <tr><td>F</td><td class="ex-name">Overhead Cable Tricep Ext. (rope)</td><td>4 × 12-15</td><td><span class="rpe-pill rpe-9">9</span></td><td>60 sec</td><td class="cue"><strong>Long-head emphasis</strong> — full overhead stretch</td></tr>
+          <tr><td>G</td><td class="ex-name">Tricep Pushdown (V-bar)</td><td>3 × 12-15</td><td><span class="rpe-pill rpe-9">9</span></td><td>45 sec</td><td class="cue">Lateral head finisher</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DAY 2 — BACK + BICEPS HEAVY -->
+  <div id="d2" class="workout-panel">
+    <div class="workout-header">
+      <div>
+        <h3 class="workout-title">DAY 02 — BACK + BICEPS (HEAVY)</h3>
+        <div class="workout-focus">Vertical Pull Bias · Lat Width + Bicep Long Head</div>
+      </div>
+      <div class="workout-meta">
+        <div><strong>7</strong>EXERCISES</div>
+        <div><strong>24</strong>SETS</div>
+        <div><strong>~80</strong>MIN</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Exercise</th><th>Sets × Reps</th><th>RPE</th><th>Rest</th><th>Cue</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td class="ex-name">Weighted Pull-Ups (pronated)</td><td>4 × 6-8</td><td><span class="rpe-pill rpe-8">8</span></td><td>2.5 min</td><td class="cue">Initiate with lat depression</td></tr>
+          <tr><td>B</td><td class="ex-name">Pendlay Row</td><td>4 × 6-8</td><td><span class="rpe-pill rpe-8">8</span></td><td>2 min</td><td class="cue">Explosive concentric, dead-stop</td></tr>
+          <tr><td>C</td><td class="ex-name">Chest-Supported T-Bar Row</td><td>3 × 10-12</td><td><span class="rpe-pill rpe-8">8</span></td><td>90 sec</td><td class="cue">Row to lower sternum</td></tr>
+          <tr><td>D</td><td class="ex-name">Single-Arm Lat Pulldown</td><td>3 × 12-15</td><td><span class="rpe-pill rpe-9">9</span></td><td>60 sec</td><td class="cue">Unilateral stretch emphasis</td></tr>
+          <tr><td>E</td><td class="ex-name">Incline DB Curl (supinated)</td><td>4 × 10-12</td><td><span class="rpe-pill rpe-8">8</span></td><td>90 sec</td><td class="cue"><strong>Long-head bias</strong> — full stretch</td></tr>
+          <tr><td>F</td><td class="ex-name">Hammer Curl (cross-body)</td><td>3 × 12</td><td><span class="rpe-pill rpe-9">9</span></td><td>60 sec</td><td class="cue">Brachialis focus</td></tr>
+          <tr><td>G</td><td class="ex-name">Face Pull (high pulley)</td><td>3 × 15-20</td><td><span class="rpe-pill rpe-9">9</span></td><td>45 sec</td><td class="cue">External rotation at endpoint</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DAY 3 — SHOULDER SPECIALIZATION -->
+  <div id="d3" class="workout-panel">
+    <div class="workout-header">
+      <div>
+        <h3 class="workout-title">DAY 03 — SHOULDER SPECIALIZATION</h3>
+        <div class="workout-focus">All Three Heads · Lateral Delt Priority for Width</div>
+      </div>
+      <div class="workout-meta">
+        <div><strong>7</strong>EXERCISES</div>
+        <div><strong>23</strong>SETS</div>
+        <div><strong>~70</strong>MIN</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Exercise</th><th>Sets × Reps</th><th>RPE</th><th>Rest</th><th>Cue</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td class="ex-name">Seated Dumbbell Overhead Press</td><td>4 × 6-8</td><td><span class="rpe-pill rpe-8">8</span></td><td>2.5 min</td><td class="cue">Neutral wrist, full ROM</td></tr>
+          <tr><td>B</td><td class="ex-name">Cable Lateral Raise (single arm)</td><td>4 × 12-15</td><td><span class="rpe-pill rpe-9">9</span></td><td>60 sec</td><td class="cue"><strong>Lateral delt priority</strong> — lead with elbow</td></tr>
+          <tr><td>C</td><td class="ex-name">DB Lateral Raise (lean-away)</td><td>3 × 12-15</td><td><span class="rpe-pill rpe-9">9</span></td><td>60 sec</td><td class="cue">Stretched position emphasis</td></tr>
+          <tr><td>D</td><td class="ex-name">Reverse Pec Deck</td><td>4 × 12-15</td><td><span class="rpe-pill rpe-9">9</span></td><td>60 sec</td><td class="cue">Rear delt isolation</td></tr>
+          <tr><td>E</td><td class="ex-name">Cable Front Raise (rope)</td><td>3 × 12-15</td><td><span class="rpe-pill rpe-8">8</span></td><td>60 sec</td><td class="cue">Anterior delt — minimal volume needed</td></tr>
+          <tr><td>F</td><td class="ex-name">Face Pull (high pulley)</td><td>3 × 15-20</td><td><span class="rpe-pill rpe-9">9</span></td><td>45 sec</td><td class="cue">Rear delt + rotator cuff health</td></tr>
+          <tr><td>G</td><td class="ex-name">DB Shrug (3-sec hold)</td><td>2 × 12</td><td><span class="rpe-pill rpe-9">9</span></td><td>60 sec</td><td class="cue">Isometric peak contraction</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DAY 5 — CHEST + ARMS METABOLIC -->
+  <div id="d5" class="workout-panel">
+    <div class="workout-header">
+      <div>
+        <h3 class="workout-title">DAY 05 — CHEST + ARMS (METABOLIC)</h3>
+        <div class="workout-focus">Pump Work · Zero overlap with Day 01 & 02</div>
+      </div>
+      <div class="workout-meta">
+        <div><strong>8</strong>EXERCISES</div>
+        <div><strong>26</strong>SETS</div>
+        <div><strong>~75</strong>MIN</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Exercise</th><th>Sets × Reps</th><th>RPE</th><th>Rest</th><th>Cue</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td class="ex-name">Machine Chest Press (slight decline)</td><td>4 × 10-12</td><td><span class="rpe-pill rpe-8">8</span></td><td>90 sec</td><td class="cue">Squeeze and hold at peak</td></tr>
+          <tr><td>B</td><td class="ex-name">Low-to-High Cable Fly</td><td>4 × 12-15</td><td><span class="rpe-pill rpe-9">9</span></td><td>75 sec</td><td class="cue">Upper chest emphasis</td></tr>
+          <tr><td>C</td><td class="ex-name">Pec Deck (1.5 reps)</td><td>3 × 10</td><td><span class="rpe-pill rpe-9">9</span></td><td>75 sec</td><td class="cue">Deep stretch position</td></tr>
+          <tr><td>D</td><td class="ex-name">EZ-Bar Skull Crusher (to forehead)</td><td>3 × 10-12</td><td><span class="rpe-pill rpe-8">8</span></td><td>75 sec</td><td class="cue">Elbows slightly behind head</td></tr>
+          <tr><td>E</td><td class="ex-name">Cable Tricep Kickback (single arm)</td><td>3 × 15/arm</td><td><span class="rpe-pill rpe-10">10</span></td><td>45 sec</td><td class="cue">Peak contraction emphasis</td></tr>
+          <tr><td>F</td><td class="ex-name">Spider Curl (preacher reversed)</td><td>4 × 10-12</td><td><span class="rpe-pill rpe-9">9</span></td><td>75 sec</td><td class="cue">Full bicep shortening</td></tr>
+          <tr><td>G</td><td class="ex-name">Cable Hammer Curl (rope)</td><td>3 × 12-15</td><td><span class="rpe-pill rpe-9">9</span></td><td>60 sec</td><td class="cue">Brachialis</td></tr>
+          <tr><td>H</td><td class="ex-name">Diamond Push-Up (to failure)</td><td>2 × AMRAP</td><td><span class="rpe-pill rpe-10">10</span></td><td>60 sec</td><td class="cue">Finisher</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DAY 6 — LEGS (FULL LOWER) -->
+  <div id="d6" class="workout-panel">
+    <div class="workout-header">
+      <div>
+        <h3 class="workout-title">DAY 06 — LEGS (FULL LOWER)</h3>
+        <div class="workout-focus">Quad + Hamstring + Glute + Calf · Once Weekly</div>
+      </div>
+      <div class="workout-meta">
+        <div><strong>7</strong>EXERCISES</div>
+        <div><strong>22</strong>SETS</div>
+        <div><strong>~80</strong>MIN</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Exercise</th><th>Sets × Reps</th><th>RPE</th><th>Rest</th><th>Cue</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td class="ex-name">Back Squat</td><td>4 × 6-8</td><td><span class="rpe-pill rpe-8">8</span></td><td>3 min</td><td class="cue">Brace hard, full depth</td></tr>
+          <tr><td>B</td><td class="ex-name">Romanian Deadlift</td><td>4 × 8-10</td><td><span class="rpe-pill rpe-8">8</span></td><td>2.5 min</td><td class="cue">Hamstring stretch priority</td></tr>
+          <tr><td>C</td><td class="ex-name">Bulgarian Split Squat</td><td>3 × 10/leg</td><td><span class="rpe-pill rpe-8">8</span></td><td>90 sec</td><td class="cue">Front foot far, knee tracks toe</td></tr>
+          <tr><td>D</td><td class="ex-name">Leg Extension (1.5 reps)</td><td>3 × 12</td><td><span class="rpe-pill rpe-9">9</span></td><td>75 sec</td><td class="cue">Bottom half emphasized</td></tr>
+          <tr><td>E</td><td class="ex-name">Seated Leg Curl</td><td>3 × 10-12</td><td><span class="rpe-pill rpe-9">9</span></td><td>75 sec</td><td class="cue">Slow eccentric</td></tr>
+          <tr><td>F</td><td class="ex-name">Standing Calf Raise</td><td>4 × 10-12</td><td><span class="rpe-pill rpe-9">9</span></td><td>60 sec</td><td class="cue">Full stretch at bottom</td></tr>
+          <tr><td>G</td><td class="ex-name">Hanging Leg Raise</td><td>3 × 12-15</td><td><span class="rpe-pill rpe-8">8</span></td><td>60 sec</td><td class="cue">Core finisher</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DAY 7 — BACK + REAR DELTS -->
+  <div id="d7" class="workout-panel">
+    <div class="workout-header">
+      <div>
+        <h3 class="workout-title">DAY 07 — BACK + REAR DELTS (WIDTH)</h3>
+        <div class="workout-focus">Horizontal Pull Bias · Rear Delt Specialization</div>
+      </div>
+      <div class="workout-meta">
+        <div><strong>7</strong>EXERCISES</div>
+        <div><strong>23</strong>SETS</div>
+        <div><strong>~70</strong>MIN</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Exercise</th><th>Sets × Reps</th><th>RPE</th><th>Rest</th><th>Cue</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td class="ex-name">Wide-Grip Lat Pulldown</td><td>4 × 10-12</td><td><span class="rpe-pill rpe-8">8</span></td><td>2 min</td><td class="cue">Drive elbows down, not back</td></tr>
+          <tr><td>B</td><td class="ex-name">Seated Cable Row (close grip)</td><td>4 × 10-12</td><td><span class="rpe-pill rpe-8">8</span></td><td>90 sec</td><td class="cue">Mid-back thickness</td></tr>
+          <tr><td>C</td><td class="ex-name">Meadows Row</td><td>3 × 10/side</td><td><span class="rpe-pill rpe-9">9</span></td><td>90 sec</td><td class="cue">Unilateral, hard pull</td></tr>
+          <tr><td>D</td><td class="ex-name">Straight-Arm Pulldown</td><td>3 × 12-15</td><td><span class="rpe-pill rpe-9">9</span></td><td>60 sec</td><td class="cue">Lat isolation</td></tr>
+          <tr><td>E</td><td class="ex-name">Cable Rear Delt Fly (single arm)</td><td>4 × 12-15</td><td><span class="rpe-pill rpe-10">10</span></td><td>60 sec</td><td class="cue"><strong>Rear delt priority</strong></td></tr>
+          <tr><td>F</td><td class="ex-name">Reverse Pec Deck (myo-reps)</td><td>3 × 10 + drops</td><td><span class="rpe-pill rpe-10">10</span></td><td>75 sec</td><td class="cue">High volume finisher</td></tr>
+          <tr><td>G</td><td class="ex-name">Cable Y-Raise</td><td>2 × 12-15</td><td><span class="rpe-pill rpe-9">9</span></td><td>60 sec</td><td class="cue">Upper trap + rear delt</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VOLUME ============ -->
+<section id="volume">
+  <div class="section-head">
+    <div>
+      <div class="section-number">CHAPTER 02</div>
+      <h2 class="section-title">WEEKLY VOLUME AUDIT</h2>
+    </div>
+    <p class="section-desc">Upper body volume increased. Legs maintained at minimum effective dose.</p>
+  </div>
+
+  <div class="volume-section">
+    <div class="volume-bars">
+      <div class="bar-row"><div class="bar-label">CHEST</div><div class="bar-track"><div class="bar-fill" data-w="100"></div></div><div class="bar-value">21</div></div>
+      <div class="bar-row"><div class="bar-label">SHOULDERS</div><div class="bar-track"><div class="bar-fill" data-w="100"></div></div><div class="bar-value">22</div></div>
+      <div class="bar-row"><div class="bar-label">TRICEPS</div><div class="bar-track"><div class="bar-fill" data-w="90"></div></div><div class="bar-value">19</div></div>
+      <div class="bar-row"><div class="bar-label">BACK</div><div class="bar-track"><div class="bar-fill" data-w="100"></div></div><div class="bar-value">21</div></div>
+      <div class="bar-row"><div class="bar-label">BICEPS</div><div class="bar-track"><div class="bar-fill" data-w="80"></div></div><div class="bar-value">17</div></div>
+      <div class="bar-row"><div class="bar-label">LEGS</div><div class="bar-track"><div class="bar-fill" data-w="50"></div></div><div class="bar-value">11</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ NUTRITION ============ -->
+<section id="nutrition">
+  <div class="section-head">
+    <div>
+      <div class="section-number">CHAPTER 03</div>
+      <h2 class="section-title">MACRO ARCHITECTURE</h2>
+    </div>
+    <p class="section-desc">Lean-bulk surplus of ~250 kcal. Targeting +0.25kg/week.</p>
+  </div>
+
+  <div class="macro-grid">
+    <div class="macro-visual">
+      <div class="macro-ring">
+        <svg viewBox="0 0 200 200">
+          <circle class="ring-bg" cx="100" cy="100" r="80"></circle>
+          <circle class="ring-protein" cx="100" cy="100" r="80" stroke-dasharray="502.65" stroke-dashoffset="382"></circle>
+          <circle class="ring-carbs" cx="100" cy="100" r="80" stroke-dasharray="502.65" stroke-dashoffset="281" transform="rotate(86 100 100)"></circle>
+          <circle class="ring-fat" cx="100" cy="100" r="80" stroke-dasharray="502.65" stroke-dashoffset="342" transform="rotate(244 100 100)"></circle>
+        </svg>
+        <div class="ring-center">
+          <div class="kcal-num">2,690</div>
+          <div class="kcal-label">KCAL / DAY</div>
+        </div>
+      </div>
+      <div class="macro-legend">
+        <div class="legend-item protein"><span class="legend-dot"></span><strong>168g</strong><small>protein</small></div>
+        <div class="legend-item carbs"><span class="legend-dot"></span><strong>297g</strong><small>carbs</small></div>
+        <div class="legend-item fat"><span class="legend-dot"></span><strong>85g</strong><small>fat</small></div>
+      </div>
+    </div>
+
+    <div class="macro-details">
+      <div class="macro-line"><span>Maintenance Estimate</span><span>2,450 kcal</span></div>
+      <div class="macro-line"><span>Surplus</span><span>+250 kcal</span></div>
+      <div class="macro-line"><span>Protein (2.25 g/kg)</span><span>168 g</span></div>
+      <div class="macro-line"><span>Carbs (4.2 g/kg)</span><span>297 g</span></div>
+      <div class="macro-line"><span>Fat (1.2 g/kg)</span><span>85 g</span></div>
+      <div class="macro-line"><span>Weekly Gain Target</span><span>+0.25 kg</span></div>
+      <div class="macro-line"><span>Lean Bulk Window</span><span>12-16 weeks</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MEAL OPTIONS ============ -->
+<section id="meals">
+  <div class="section-head">
+    <div>
+      <div class="section-number">CHAPTER 04</div>
+      <h2 class="section-title">MEAL OPTIONS LIBRARY</h2>
+    </div>
+    <p class="section-desc">Strict lacto-vegetarian. No eggs, no honey, no meat. Click any meal slot for all rotation options.</p>
+  </div>
+
+  <div class="slot-tabs">
+    <button class="slot-tab active" onclick="showSlot('s1')" data-target="s1">
+      <span class="slot-time">06:30</span><span class="slot-name">PRE-WORKOUT</span>
+    </button>
+    <button class="slot-tab" onclick="showSlot('s2')" data-target="s2">
+      <span class="slot-time">08:30</span><span class="slot-name">POST-WORKOUT</span>
+    </button>
+    <button class="slot-tab" onclick="showSlot('s3')" data-target="s3">
+      <span class="slot-time">10:00</span><span class="slot-name">BREAKFAST</span>
+    </button>
+    <button class="slot-tab" onclick="showSlot('s4')" data-target="s4">
+      <span class="slot-time">13:30</span><span class="slot-name">LUNCH</span>
+    </button>
+    <button class="slot-tab" onclick="showSlot('s5')" data-target="s5">
+      <span class="slot-time">17:00</span><span class="slot-name">SNACK</span>
+    </button>
+    <button class="slot-tab" onclick="showSlot('s6')" data-target="s6">
+      <span class="slot-time">20:30</span><span class="slot-name">DINNER</span>
+    </button>
+    <button class="slot-tab" onclick="showSlot('s7')" data-target="s7">
+      <span class="slot-time">22:30</span><span class="slot-name">PRE-SLEEP</span>
+    </button>
+  </div>
+
+  <!-- SLOT 1: PRE-WORKOUT -->
+  <div id="s1" class="slot-panel active">
+    <div class="slot-header">
+      <h3>PRE-WORKOUT FUEL — 06:30 AM</h3>
+      <div class="slot-target">TARGET · P3-5g · C25-30g · F5g · ~175 kcal</div>
+    </div>
+    <div class="options-grid">
+      <div class="option">
+        <div class="option-num">01</div>
+        <div class="option-name">CLASSIC BANANA</div>
+        <div class="option-foods"><span class="tag tag-quick">QUICK</span>1 banana · 5 almonds · black coffee</div>
+        <div class="option-macros"><span>P<strong>3g</strong></span><span>C<strong>30g</strong></span><span>F<strong>5g</strong></span><span class="kcal-tag">175</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">02</div>
+        <div class="option-name">DATE FUEL</div>
+        <div class="option-foods"><span class="tag tag-classic">CLASSIC</span>3 dates · 1 tbsp peanut butter · black coffee</div>
+        <div class="option-macros"><span>P<strong>4g</strong></span><span>C<strong>28g</strong></span><span>F<strong>8g</strong></span><span class="kcal-tag">200</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">03</div>
+        <div class="option-name">OATS SHOT</div>
+        <div class="option-foods">2 tbsp oats soaked in 100ml milk · 1 tsp jaggery · cinnamon</div>
+        <div class="option-macros"><span>P<strong>5g</strong></span><span>C<strong>28g</strong></span><span>F<strong>3g</strong></span><span class="kcal-tag">165</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">04</div>
+        <div class="option-name">APPLE & WALNUT</div>
+        <div class="option-foods"><span class="tag tag-quick">QUICK</span>1 apple · 6 walnut halves · green tea</div>
+        <div class="option-macros"><span>P<strong>3g</strong></span><span>C<strong>25g</strong></span><span>F<strong>7g</strong></span><span class="kcal-tag">180</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">05</div>
+        <div class="option-name">RAISIN ENERGY</div>
+        <div class="option-foods">30g raisins · 5 cashews · black coffee</div>
+        <div class="option-macros"><span>P<strong>3g</strong></span><span>C<strong>28g</strong></span><span>F<strong>5g</strong></span><span class="kcal-tag">175</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">06</div>
+        <div class="option-name">SOUTH INDIAN START</div>
+        <div class="option-foods"><span class="tag tag-south">SOUTH</span>2 small idlis (pre-made) · black filter coffee</div>
+        <div class="option-macros"><span>P<strong>4g</strong></span><span>C<strong>30g</strong></span><span>F<strong>2g</strong></span><span class="kcal-tag">155</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLOT 2: POST-WORKOUT -->
+  <div id="s2" class="slot-panel">
+    <div class="slot-header">
+      <h3>POST-WORKOUT SHAKE — 08:30 AM</h3>
+      <div class="slot-target">TARGET · P30g+ · C20-25g · F5g · ~285 kcal</div>
+    </div>
+    <div class="options-grid">
+      <div class="option">
+        <div class="option-num">01</div>
+        <div class="option-name">CLASSIC WHEY</div>
+        <div class="option-foods"><span class="tag tag-classic">CLASSIC</span>1 scoop whey (30g) · 250ml low-fat milk · 1 tbsp oats</div>
+        <div class="option-macros"><span>P<strong>32g</strong></span><span>C<strong>25g</strong></span><span>F<strong>5g</strong></span><span class="kcal-tag">285</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">02</div>
+        <div class="option-name">BANANA WHEY</div>
+        <div class="option-foods">1 scoop whey · 200ml milk · ½ banana · cinnamon</div>
+        <div class="option-macros"><span>P<strong>30g</strong></span><span>C<strong>28g</strong></span><span>F<strong>4g</strong></span><span class="kcal-tag">280</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">03</div>
+        <div class="option-name">PLANT POWER</div>
+        <div class="option-foods">1 scoop soy protein isolate · 250ml almond milk · 1 tbsp oats · 1 tsp cocoa</div>
+        <div class="option-macros"><span>P<strong>28g</strong></span><span>C<strong>22g</strong></span><span>F<strong>4g</strong></span><span class="kcal-tag">240</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">04</div>
+        <div class="option-name">PANEER SMOOTHIE</div>
+        <div class="option-foods">80g paneer blended · 200ml milk · 1 date · vanilla</div>
+        <div class="option-macros"><span>P<strong>26g</strong></span><span>C<strong>22g</strong></span><span>F<strong>14g</strong></span><span class="kcal-tag">315</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">05</div>
+        <div class="option-name">GREEK YOGURT BOWL</div>
+        <div class="option-foods">300g Greek yogurt · 2 tbsp oats · 1 tsp jaggery · 5 berries</div>
+        <div class="option-macros"><span>P<strong>28g</strong></span><span>C<strong>28g</strong></span><span>F<strong>6g</strong></span><span class="kcal-tag">285</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">06</div>
+        <div class="option-name">MASS SHAKE</div>
+        <div class="option-foods"><span class="tag tag-budget">CHEAP</span>1 scoop whey · 300ml milk · 1 tbsp peanut butter</div>
+        <div class="option-macros"><span>P<strong>34g</strong></span><span>C<strong>20g</strong></span><span>F<strong>9g</strong></span><span class="kcal-tag">315</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLOT 3: BREAKFAST -->
+  <div id="s3" class="slot-panel">
+    <div class="slot-header">
+      <h3>BREAKFAST — 10:00 AM</h3>
+      <div class="slot-target">TARGET · P35-40g · C45-55g · F18-22g · ~555 kcal</div>
+    </div>
+    <div class="options-grid">
+      <div class="option">
+        <div class="option-num">01</div>
+        <div class="option-name">PANEER BHURJI</div>
+        <div class="option-foods"><span class="tag tag-classic">CLASSIC</span>150g paneer bhurji · 2 multigrain rotis · 1 tsp ghee</div>
+        <div class="option-macros"><span>P<strong>38g</strong></span><span>C<strong>50g</strong></span><span>F<strong>22g</strong></span><span class="kcal-tag">555</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">02</div>
+        <div class="option-name">PANEER PARATHA</div>
+        <div class="option-foods">2 paneer parathas (100g paneer stuffed) · 100g curd · pickle</div>
+        <div class="option-macros"><span>P<strong>32g</strong></span><span>C<strong>55g</strong></span><span>F<strong>20g</strong></span><span class="kcal-tag">540</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">03</div>
+        <div class="option-name">MASALA OATS + PANEER</div>
+        <div class="option-foods">60g oats cooked with veggies · 100g paneer cubes · 1 tsp ghee</div>
+        <div class="option-macros"><span>P<strong>30g</strong></span><span>C<strong>50g</strong></span><span>F<strong>18g</strong></span><span class="kcal-tag">510</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">04</div>
+        <div class="option-name">TOFU SCRAMBLE</div>
+        <div class="option-foods">150g tofu scramble (turmeric, onion, tomato) · 2 multigrain rotis · 1 tsp ghee</div>
+        <div class="option-macros"><span>P<strong>30g</strong></span><span>C<strong>48g</strong></span><span>F<strong>20g</strong></span><span class="kcal-tag">520</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">05</div>
+        <div class="option-name">RAGI DOSA + CHUTNEY</div>
+        <div class="option-foods"><span class="tag tag-south">SOUTH</span>3 ragi dosas · coconut chutney · 100g paneer · 150ml milk</div>
+        <div class="option-macros"><span>P<strong>32g</strong></span><span>C<strong>55g</strong></span><span>F<strong>18g</strong></span><span class="kcal-tag">540</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">06</div>
+        <div class="option-name">UTTAPAM + SAMBAR</div>
+        <div class="option-foods"><span class="tag tag-south">SOUTH</span>2 uttapams · sambar (dal-based) · 100g paneer side · curd</div>
+        <div class="option-macros"><span>P<strong>30g</strong></span><span>C<strong>60g</strong></span><span>F<strong>15g</strong></span><span class="kcal-tag">525</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">07</div>
+        <div class="option-name">POHA + DAHI</div>
+        <div class="option-foods"><span class="tag tag-budget">CHEAP</span>1 plate poha (60g flattened rice) · peanuts · 200g curd · 80g paneer cubes</div>
+        <div class="option-macros"><span>P<strong>28g</strong></span><span>C<strong>58g</strong></span><span>F<strong>17g</strong></span><span class="kcal-tag">535</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">08</div>
+        <div class="option-name">UPMA + CURD</div>
+        <div class="option-foods"><span class="tag tag-south">SOUTH</span>Vegetable upma (60g sooji) · cashews · 200g curd · 1 scoop whey in milk</div>
+        <div class="option-macros"><span>P<strong>34g</strong></span><span>C<strong>55g</strong></span><span>F<strong>16g</strong></span><span class="kcal-tag">540</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">09</div>
+        <div class="option-name">SOY MILK CHILLA</div>
+        <div class="option-foods">2 besan chillas (gram flour) · 100g paneer filling · 250ml soy milk</div>
+        <div class="option-macros"><span>P<strong>36g</strong></span><span>C<strong>45g</strong></span><span>F<strong>20g</strong></span><span class="kcal-tag">540</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLOT 4: LUNCH -->
+  <div id="s4" class="slot-panel">
+    <div class="slot-header">
+      <h3>LUNCH — 01:30 PM</h3>
+      <div class="slot-target">TARGET · P35g · C75-80g · F12-15g · ~615 kcal</div>
+    </div>
+    <div class="options-grid">
+      <div class="option">
+        <div class="option-num">01</div>
+        <div class="option-name">TOFU & DAL</div>
+        <div class="option-foods"><span class="tag tag-classic">CLASSIC</span>150g tofu sabzi · 1 cup dal · 1 cup brown rice · 100g curd · salad</div>
+        <div class="option-macros"><span>P<strong>35g</strong></span><span>C<strong>80g</strong></span><span>F<strong>15g</strong></span><span class="kcal-tag">615</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">02</div>
+        <div class="option-name">RAJMA CHAWAL</div>
+        <div class="option-foods">1.5 cup rajma curry · 1 cup brown rice · 80g paneer side · salad · 100g curd</div>
+        <div class="option-macros"><span>P<strong>34g</strong></span><span>C<strong>85g</strong></span><span>F<strong>12g</strong></span><span class="kcal-tag">600</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">03</div>
+        <div class="option-name">CHOLE & ROTI</div>
+        <div class="option-foods">1.5 cup chole (chickpea) · 3 multigrain rotis · 100g paneer · salad</div>
+        <div class="option-macros"><span>P<strong>36g</strong></span><span>C<strong>78g</strong></span><span>F<strong>14g</strong></span><span class="kcal-tag">620</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">04</div>
+        <div class="option-name">PANEER BHURJI THALI</div>
+        <div class="option-foods">120g paneer bhurji · 1 cup dal · 2 rotis · ½ cup rice · curd · salad</div>
+        <div class="option-macros"><span>P<strong>40g</strong></span><span>C<strong>75g</strong></span><span>F<strong>16g</strong></span><span class="kcal-tag">620</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">05</div>
+        <div class="option-name">SOUTH INDIAN THALI</div>
+        <div class="option-foods"><span class="tag tag-south">SOUTH</span>1 cup sambar · 1 cup rasam · 1 cup rice · 80g paneer curry · curd</div>
+        <div class="option-macros"><span>P<strong>32g</strong></span><span>C<strong>82g</strong></span><span>F<strong>14g</strong></span><span class="kcal-tag">605</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">06</div>
+        <div class="option-name">SOYA CHUNKS BIRYANI</div>
+        <div class="option-foods">80g soya chunks pulao · 100g raita (curd) · salad · papad</div>
+        <div class="option-macros"><span>P<strong>38g</strong></span><span>C<strong>80g</strong></span><span>F<strong>13g</strong></span><span class="kcal-tag">615</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">07</div>
+        <div class="option-name">PALAK PANEER MEAL</div>
+        <div class="option-foods">120g palak paneer · 1 cup dal · 2 rotis · ½ cup rice · salad</div>
+        <div class="option-macros"><span>P<strong>36g</strong></span><span>C<strong>78g</strong></span><span>F<strong>17g</strong></span><span class="kcal-tag">625</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">08</div>
+        <div class="option-name">DAL MAKHANI</div>
+        <div class="option-foods">1 cup dal makhani (low ghee) · 100g tofu tikka · 2 rotis · ½ cup rice · salad</div>
+        <div class="option-macros"><span>P<strong>34g</strong></span><span>C<strong>80g</strong></span><span>F<strong>16g</strong></span><span class="kcal-tag">620</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">09</div>
+        <div class="option-name">CURD RICE COMBO</div>
+        <div class="option-foods"><span class="tag tag-south">SOUTH</span>Curd rice (1 cup rice + 200g curd) · 80g paneer fry · sambar · salad</div>
+        <div class="option-macros"><span>P<strong>34g</strong></span><span>C<strong>78g</strong></span><span>F<strong>15g</strong></span><span class="kcal-tag">615</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLOT 5: SNACK -->
+  <div id="s5" class="slot-panel">
+    <div class="slot-header">
+      <h3>EVENING SNACK — 05:00 PM</h3>
+      <div class="slot-target">TARGET · P18-20g · C30-35g · F12-14g · ~340 kcal</div>
+    </div>
+    <div class="options-grid">
+      <div class="option">
+        <div class="option-num">01</div>
+        <div class="option-name">GREEK YOGURT BOWL</div>
+        <div class="option-foods"><span class="tag tag-classic">CLASSIC</span>200ml Greek yogurt · 1 fruit · 20g walnuts</div>
+        <div class="option-macros"><span>P<strong>18g</strong></span><span>C<strong>35g</strong></span><span>F<strong>14g</strong></span><span class="kcal-tag">340</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">02</div>
+        <div class="option-name">SPROUTS CHAAT</div>
+        <div class="option-foods">1 cup moong sprouts · onion, tomato, lemon · 100g paneer cubes · 10 peanuts</div>
+        <div class="option-macros"><span>P<strong>22g</strong></span><span>C<strong>30g</strong></span><span>F<strong>12g</strong></span><span class="kcal-tag">320</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">03</div>
+        <div class="option-name">MASALA CHANA</div>
+        <div class="option-foods">80g roasted chana · 200ml milk · 1 fruit</div>
+        <div class="option-macros"><span>P<strong>19g</strong></span><span>C<strong>40g</strong></span><span>F<strong>10g</strong></span><span class="kcal-tag">325</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">04</div>
+        <div class="option-name">PANEER TIKKA</div>
+        <div class="option-foods">120g paneer tikka (tandoor style) · mint chutney · 1 fruit</div>
+        <div class="option-macros"><span>P<strong>22g</strong></span><span>C<strong>22g</strong></span><span>F<strong>16g</strong></span><span class="kcal-tag">335</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">05</div>
+        <div class="option-name">PROTEIN SMOOTHIE</div>
+        <div class="option-foods"><span class="tag tag-quick">QUICK</span>1 scoop whey · 200ml milk · 1 banana · 5 almonds</div>
+        <div class="option-macros"><span>P<strong>30g</strong></span><span>C<strong>35g</strong></span><span>F<strong>10g</strong></span><span class="kcal-tag">355</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">06</div>
+        <div class="option-name">BHEL & MILK</div>
+        <div class="option-foods"><span class="tag tag-budget">CHEAP</span>Roasted bhel (puffed rice + sev + chana) · 300ml masala milk · 1 fruit</div>
+        <div class="option-macros"><span>P<strong>18g</strong></span><span>C<strong>40g</strong></span><span>F<strong>11g</strong></span><span class="kcal-tag">340</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">07</div>
+        <div class="option-name">PEANUT BUTTER TOAST</div>
+        <div class="option-foods">2 slices multigrain toast · 2 tbsp peanut butter · 200ml milk · 1 fruit</div>
+        <div class="option-macros"><span>P<strong>20g</strong></span><span>C<strong>38g</strong></span><span>F<strong>15g</strong></span><span class="kcal-tag">365</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">08</div>
+        <div class="option-name">TOFU BHURJI WRAP</div>
+        <div class="option-foods">1 multigrain wrap · 100g tofu bhurji · veggies · curd dip</div>
+        <div class="option-macros"><span>P<strong>22g</strong></span><span>C<strong>34g</strong></span><span>F<strong>12g</strong></span><span class="kcal-tag">325</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLOT 6: DINNER -->
+  <div id="s6" class="slot-panel">
+    <div class="slot-header">
+      <h3>DINNER — 08:30 PM</h3>
+      <div class="slot-target">TARGET · P30g · C60-65g · F13g · ~525 kcal</div>
+    </div>
+    <div class="options-grid">
+      <div class="option">
+        <div class="option-num">01</div>
+        <div class="option-name">SOYA CHUNKS</div>
+        <div class="option-foods"><span class="tag tag-classic">CLASSIC</span>80g soya chunks curry · 2 jowar rotis · sautéed veg · 1 tsp ghee</div>
+        <div class="option-macros"><span>P<strong>30g</strong></span><span>C<strong>65g</strong></span><span>F<strong>13g</strong></span><span class="kcal-tag">525</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">02</div>
+        <div class="option-name">TOFU CURRY</div>
+        <div class="option-foods">150g tofu curry · 2 multigrain rotis · stir-fried veg · salad</div>
+        <div class="option-macros"><span>P<strong>30g</strong></span><span>C<strong>60g</strong></span><span>F<strong>14g</strong></span><span class="kcal-tag">520</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">03</div>
+        <div class="option-name">KHICHDI + PANEER</div>
+        <div class="option-foods">1 cup moong dal khichdi · 100g paneer bhurji · curd · sautéed veg</div>
+        <div class="option-macros"><span>P<strong>32g</strong></span><span>C<strong>62g</strong></span><span>F<strong>14g</strong></span><span class="kcal-tag">530</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">04</div>
+        <div class="option-name">DAL & ROTI</div>
+        <div class="option-foods">1 cup dal · 3 multigrain rotis · 80g paneer curry · salad</div>
+        <div class="option-macros"><span>P<strong>28g</strong></span><span>C<strong>68g</strong></span><span>F<strong>12g</strong></span><span class="kcal-tag">530</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">05</div>
+        <div class="option-name">MIXED VEG & PANEER</div>
+        <div class="option-foods">Mixed veg curry · 100g paneer makhani (light) · 2 rotis · salad</div>
+        <div class="option-macros"><span>P<strong>30g</strong></span><span>C<strong>58g</strong></span><span>F<strong>16g</strong></span><span class="kcal-tag">535</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">06</div>
+        <div class="option-name">RASAM RICE</div>
+        <div class="option-foods"><span class="tag tag-south">SOUTH</span>Rasam · 1 cup rice · 100g paneer · sambar side · curd</div>
+        <div class="option-macros"><span>P<strong>28g</strong></span><span>C<strong>65g</strong></span><span>F<strong>14g</strong></span><span class="kcal-tag">520</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">07</div>
+        <div class="option-name">TOFU TIKKA WRAP</div>
+        <div class="option-foods">2 multigrain wraps · 120g grilled tofu tikka · veggies · mint chutney · curd</div>
+        <div class="option-macros"><span>P<strong>32g</strong></span><span>C<strong>62g</strong></span><span>F<strong>12g</strong></span><span class="kcal-tag">525</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">08</div>
+        <div class="option-name">CHOLE PALAK</div>
+        <div class="option-foods">1 cup chana palak curry · 2 jowar rotis · 80g paneer side · salad</div>
+        <div class="option-macros"><span>P<strong>30g</strong></span><span>C<strong>62g</strong></span><span>F<strong>13g</strong></span><span class="kcal-tag">525</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">09</div>
+        <div class="option-name">VEG PULAO</div>
+        <div class="option-foods">1 cup veg pulao · 100g paneer butter masala (low ghee) · curd · salad</div>
+        <div class="option-macros"><span>P<strong>28g</strong></span><span>C<strong>65g</strong></span><span>F<strong>15g</strong></span><span class="kcal-tag">540</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLOT 7: PRE-SLEEP -->
+  <div id="s7" class="slot-panel">
+    <div class="slot-header">
+      <h3>PRE-SLEEP CASEIN — 10:30 PM</h3>
+      <div class="slot-target">TARGET · P12-15g slow-release · C10-15g · F10-12g · ~195 kcal</div>
+    </div>
+    <div class="options-grid">
+      <div class="option">
+        <div class="option-num">01</div>
+        <div class="option-name">CLASSIC MILK</div>
+        <div class="option-foods"><span class="tag tag-classic">CLASSIC</span>200ml milk · 1 tbsp peanut butter</div>
+        <div class="option-macros"><span>P<strong>12g</strong></span><span>C<strong>12g</strong></span><span>F<strong>11g</strong></span><span class="kcal-tag">195</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">02</div>
+        <div class="option-name">GREEK YOGURT</div>
+        <div class="option-foods">200g Greek yogurt · 5 almonds · cinnamon</div>
+        <div class="option-macros"><span>P<strong>18g</strong></span><span>C<strong>10g</strong></span><span>F<strong>10g</strong></span><span class="kcal-tag">200</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">03</div>
+        <div class="option-name">PANEER NIGHTCAP</div>
+        <div class="option-foods">80g paneer cubes (plain) · 100ml warm milk · pinch cardamom</div>
+        <div class="option-macros"><span>P<strong>15g</strong></span><span>C<strong>8g</strong></span><span>F<strong>13g</strong></span><span class="kcal-tag">210</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">04</div>
+        <div class="option-name">CASEIN SHAKE</div>
+        <div class="option-foods"><span class="tag tag-quick">QUICK</span>1 scoop casein (if available) · 200ml water · cinnamon</div>
+        <div class="option-macros"><span>P<strong>24g</strong></span><span>C<strong>3g</strong></span><span>F<strong>1g</strong></span><span class="kcal-tag">120</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">05</div>
+        <div class="option-name">TURMERIC MILK</div>
+        <div class="option-foods">250ml haldi doodh · 5 walnut halves</div>
+        <div class="option-macros"><span>P<strong>10g</strong></span><span>C<strong>14g</strong></span><span>F<strong>11g</strong></span><span class="kcal-tag">205</span></div>
+      </div>
+      <div class="option">
+        <div class="option-num">06</div>
+        <div class="option-name">CURD & SEEDS</div>
+        <div class="option-foods">150g curd · 1 tsp flax seeds · 1 tsp chia seeds</div>
+        <div class="option-macros"><span>P<strong>12g</strong></span><span>C<strong>10g</strong></span><span>F<strong>10g</strong></span><span class="kcal-tag">180</span></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============ SUPPLEMENTS ============ -->
+<section id="supps">
+  <div class="section-head">
+    <div>
+      <div class="section-number">CHAPTER 05</div>
+      <h2 class="section-title">SUPPLEMENT STACK</h2>
+    </div>
+    <p class="section-desc">Timing is everything. Absorption windows matter.</p>
+  </div>
+
+  <div class="supp-grid">
+    <div class="supp-card" data-num="01">
+      <div class="supp-name">MULTIVITAMIN</div>
+      <div class="supp-time">10:00 AM · with breakfast</div>
+      <div class="supp-desc">Fat-soluble vitamins (A, D, E, K) absorb with the dietary fat from paneer and ghee. Don't take on an empty stomach.</div>
+    </div>
+    <div class="supp-card" data-num="02">
+      <div class="supp-name">OMEGA-3</div>
+      <div class="supp-time">SPLIT · 1g lunch · 1-2g dinner</div>
+      <div class="supp-desc">2-3g EPA/DHA total. Always with fat-containing meals. Reduces joint inflammation — non-negotiable for combat-history athlete.</div>
+    </div>
+    <div class="supp-card" data-num="03">
+      <div class="supp-name">WHEY PROTEIN</div>
+      <div class="supp-time">08:30 AM · post-workout</div>
+      <div class="supp-desc">Fastest leucine delivery to muscle. Triggers MPS within 30 minutes. The single most ROI-positive supplement in the stack.</div>
+    </div>
+    <div class="supp-card" data-num="04">
+      <div class="supp-name">CREATINE MONOHYDRATE</div>
+      <div class="supp-time">5g/DAY · any time · consistent</div>
+      <div class="supp-desc"><strong style="color:var(--accent-2)">NEW ADDITION.</strong> 5g daily, any time of day — what matters is daily consistency, not timing. Most-researched supplement in sports nutrition. Boosts strength output, intramuscular water retention (visual fullness), and recovery. <strong>Vegetarians benefit most</strong> — your dietary creatine intake from non-meat sources is near zero. Mix with whey shake or any beverage. No loading phase needed — start at 5g/day from day one. Saturation occurs in 3-4 weeks.</div>
+    </div>
+    <div class="supp-card" data-num="05">
+      <div class="supp-name">ZMA</div>
+      <div class="supp-time">30-45 MIN PRE-SLEEP · empty stomach</div>
+      <div class="supp-desc"><strong style="color:var(--danger)">CRITICAL:</strong> Away from dairy. Calcium blocks zinc absorption — separate from your 10:30 PM milk by at least 60 minutes. Take ZMA at 9:30 PM, then casein meal at 10:30 PM.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RECOVERY ============ -->
+<section id="recovery">
+  <div class="section-head">
+    <div>
+      <div class="section-number">CHAPTER 06</div>
+      <h2 class="section-title">RECOVERY FOR THE 30+ ATHLETE</h2>
+    </div>
+    <p class="section-desc">CNS management for the combat veteran.</p>
+  </div>
+
+  <div class="recovery-grid">
+    <div class="recovery-card">
+      <span class="recovery-icon">01</span>
+      <div class="recovery-title">SLEEP ARCHITECTURE</div>
+      <div class="recovery-body">8 hours minimum, consistent windows (±30 min). Growth hormone pulses during deep sleep are your primary recovery driver after 30. Cool room (18-20°C), zero screens 60 min before bed.</div>
+    </div>
+    <div class="recovery-card">
+      <span class="recovery-icon">02</span>
+      <div class="recovery-title">JOINT PREHAB</div>
+      <div class="recovery-body">10 minutes daily. Band pull-aparts, face pulls, wrist circles, cat-cow, hip 90/90. Combat history = rotator cuffs, elbows, lumbar spine have miles on them. Insurance, not optional.</div>
+    </div>
+    <div class="recovery-card">
+      <span class="recovery-icon">03</span>
+      <div class="recovery-title">HRV MONITORING</div>
+      <div class="recovery-body">If HRV drops 10%+ below 7-day rolling average, downshift that day's RPE by one full point. Not weakness — the difference between a 5-year program and burning out in 6 months.</div>
+    </div>
+    <div class="recovery-card">
+      <span class="recovery-icon">04</span>
+      <div class="recovery-title">DELOAD EVERY 5TH WEEK</div>
+      <div class="recovery-body">Reduce working sets 40%, drop RPE to 6-7. You grow during recovery, not during the session. Combat athletes resist this — don't be one of them.</div>
+    </div>
+    <div class="recovery-card">
+      <span class="recovery-icon">05</span>
+      <div class="recovery-title">CONDITIONING CAP</div>
+      <div class="recovery-body">Max 2x/week, 20-25 min steady-state OR 1 interval session. Heavy bag work over running for the combat itch — low impact, technique-focused, 3 rounds.</div>
+    </div>
+    <div class="recovery-card">
+      <span class="recovery-icon">06</span>
+      <div class="recovery-title">PARASYMPATHETIC RESET</div>
+      <div class="recovery-body">5 min box breathing (4-4-4-4) post-training. Shifts you parasympathetic, accelerates recovery initiation. Cortisol is the enemy in a lean bulk. Sounds soft — it's not.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p class="footer-quote">Train hard. <em>Recover harder.</em> The athlete who lasts is the one who learns to manage recovery as aggressively as he manages effort.</p>
+  <div class="footer-meta">THE IRON PROTOCOL · V2.0 · CALIBRATED FOR 71KG</div>
+</footer>
+
+</div>
+
+<script>
+function showDay(id) {
+  const target = document.getElementById(id);
+  const isActive = target.classList.contains('active');
+  document.querySelectorAll('.workout-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.day-card').forEach(c => c.classList.remove('active'));
+  if (!isActive) {
+    target.classList.add('active');
+    document.querySelector(`[data-target="${id}"]`).classList.add('active');
+    setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+  }
+}
+
+function showSlot(id) {
+  document.querySelectorAll('.slot-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.slot-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelector(`[data-target="${id}"]`).classList.add('active');
+}
+
+const barObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.width = entry.target.dataset.w + '%';
+      barObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+document.querySelectorAll('.bar-fill').forEach(b => barObserver.observe(b));
+
+window.addEventListener('load', () => {
+  setTimeout(() => showDay('d1'), 300);
+});
+</script>
+
+</body>
+</html>
