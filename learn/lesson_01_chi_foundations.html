@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 1 — CHI Foundations & Link Interface · hanuma</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --surface-2: #f5f5f4;
+    --text: #1c1917;
+    --text-muted: #57534e;
+    --text-dim: #a8a29e;
+    --border: #e7e5e4;
+    --border-strong: #d6d3d1;
+    --accent: #0f172a;
+
+    --c-req: #2563eb;     /* blue */
+    --c-rsp: #16a34a;     /* green */
+    --c-snp: #d97706;     /* amber */
+    --c-dat: #9333ea;     /* purple */
+
+    --c-req-bg: #eff6ff;
+    --c-rsp-bg: #f0fdf4;
+    --c-snp-bg: #fffbeb;
+    --c-dat-bg: #faf5ff;
+
+    --c-rn: #0e7490;      /* teal */
+    --c-hn: #be123c;      /* rose */
+    --c-sn: #4338ca;      /* indigo */
+
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+    --radius: 10px;
+    --radius-lg: 16px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- Top nav ---------- */
+  nav.top {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250, 250, 249, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  nav.top .inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px; max-width: 1100px; margin: 0 auto; padding: 0 24px;
+  }
+  nav.top .brand { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+  nav.top .brand span.dim { color: var(--text-dim); font-weight: 400; }
+  nav.top ul { display: flex; gap: 22px; list-style: none; padding: 0; margin: 0; }
+  nav.top a {
+    color: var(--text-muted); text-decoration: none; font-size: 14px;
+    transition: color 0.15s;
+  }
+  nav.top a:hover { color: var(--text); }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 64px 0 48px; }
+  .hero .eyebrow {
+    display: inline-block;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--c-req);
+    padding: 4px 10px; background: var(--c-req-bg);
+    border-radius: 999px; margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-size: 40px; font-weight: 600; letter-spacing: -0.025em;
+    margin: 0 0 16px; line-height: 1.15;
+  }
+  .hero p.lead {
+    font-size: 18px; color: var(--text-muted); max-width: 720px;
+    margin: 0 0 32px;
+  }
+  .hero .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    max-width: 720px;
+  }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .stat .v { font-size: 22px; font-weight: 600; letter-spacing: -0.015em; }
+  .stat .l { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ---------- Sections ---------- */
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  section h2 {
+    font-size: 28px; font-weight: 600; letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  section h2 .num {
+    display: inline-block; width: 32px; height: 32px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted);
+    font-size: 14px; font-weight: 500;
+    text-align: center; line-height: 30px;
+    margin-right: 12px; vertical-align: 2px;
+  }
+  section .sub {
+    color: var(--text-muted); margin: 0 0 32px; font-size: 16px;
+    max-width: 720px;
+  }
+  h3 {
+    font-size: 18px; font-weight: 600; letter-spacing: -0.01em;
+    margin: 32px 0 12px;
+  }
+
+  /* ---------- The big-picture SVG ---------- */
+  .arch-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .arch-controls {
+    display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .chan-chip {
+    padding: 6px 14px; border-radius: 999px; font-size: 13px;
+    font-weight: 500; cursor: pointer; transition: all 0.15s;
+    border: 1px solid transparent; user-select: none;
+  }
+  .chan-chip.req { background: var(--c-req-bg); color: var(--c-req); border-color: transparent; }
+  .chan-chip.rsp { background: var(--c-rsp-bg); color: var(--c-rsp); border-color: transparent; }
+  .chan-chip.snp { background: var(--c-snp-bg); color: var(--c-snp); border-color: transparent; }
+  .chan-chip.dat { background: var(--c-dat-bg); color: var(--c-dat); border-color: transparent; }
+  .chan-chip.all { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+  .chan-chip.active.req { background: var(--c-req); color: white; }
+  .chan-chip.active.rsp { background: var(--c-rsp); color: white; }
+  .chan-chip.active.snp { background: var(--c-snp); color: white; }
+  .chan-chip.active.dat { background: var(--c-dat); color: white; }
+  .chan-chip.active.all { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .arch-svg { width: 100%; height: auto; }
+  .arch-svg .node-box rect { transition: filter 0.2s; }
+  .arch-svg .node-box:hover rect { filter: brightness(1.05); }
+  .arch-svg .arrow {
+    transition: opacity 0.25s, stroke-width 0.25s;
+    opacity: 0.18;
+  }
+  .arch-svg .arrow.active { opacity: 1; stroke-width: 3; }
+  .arch-svg .arrow-label {
+    font-size: 12px; font-weight: 500;
+    transition: opacity 0.25s; opacity: 0.3;
+  }
+  .arch-svg .arrow-label.active { opacity: 1; }
+
+  /* ---------- Channel cards ---------- */
+  .channel-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+  }
+  .channel-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px;
+    border-left-width: 4px;
+  }
+  .channel-card.req { border-left-color: var(--c-req); }
+  .channel-card.rsp { border-left-color: var(--c-rsp); }
+  .channel-card.snp { border-left-color: var(--c-snp); }
+  .channel-card.dat { border-left-color: var(--c-dat); }
+  .channel-card .name {
+    font-family: var(--mono); font-size: 13px;
+    font-weight: 600; letter-spacing: 0.04em;
+  }
+  .channel-card.req .name { color: var(--c-req); }
+  .channel-card.rsp .name { color: var(--c-rsp); }
+  .channel-card.snp .name { color: var(--c-snp); }
+  .channel-card.dat .name { color: var(--c-dat); }
+  .channel-card .title {
+    font-size: 17px; font-weight: 600; margin: 4px 0 6px;
+  }
+  .channel-card .desc { color: var(--text-muted); font-size: 14px; margin: 0 0 12px; }
+  .channel-card .meta {
+    display: flex; gap: 12px; font-size: 12px;
+    color: var(--text-muted); flex-wrap: wrap;
+    padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .channel-card .meta .k { font-weight: 500; color: var(--text); }
+
+  /* ---------- Flit anatomy ---------- */
+  .flit-tabs {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .flit-tab {
+    padding: 10px 20px; cursor: pointer; font-size: 14px;
+    font-weight: 500; color: var(--text-muted);
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+    background: none; border-left: none; border-right: none; border-top: none;
+    font-family: var(--mono);
+  }
+  .flit-tab.active.req { color: var(--c-req); border-bottom-color: var(--c-req); }
+  .flit-tab.active.rsp { color: var(--c-rsp); border-bottom-color: var(--c-rsp); }
+  .flit-tab.active.snp { color: var(--c-snp); border-bottom-color: var(--c-snp); }
+  .flit-tab.active.dat { color: var(--c-dat); border-bottom-color: var(--c-dat); }
+
+  .flit-pane { display: none; }
+  .flit-pane.active { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  .flit-strip {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .flit-strip h4 {
+    margin: 0 0 12px; font-size: 13px; font-weight: 600;
+    color: var(--text-muted); letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .flit-bar {
+    display: flex; width: 100%; height: 36px;
+    border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--border-strong);
+    margin-bottom: 8px;
+  }
+  .flit-bar .seg {
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 10px; color: white;
+    cursor: pointer; transition: filter 0.15s; overflow: hidden;
+    white-space: nowrap; text-overflow: ellipsis;
+  }
+  .flit-bar .seg:hover { filter: brightness(1.15); }
+  .flit-bar .seg.dim-1 { background: var(--c-req); }
+  .flit-bar .seg.dim-2 { background: #60a5fa; }
+  .flit-bar .seg.dim-3 { background: var(--c-rsp); }
+  .flit-bar .seg.dim-4 { background: #4ade80; }
+  .flit-bar .seg.dim-5 { background: var(--c-snp); }
+  .flit-bar .seg.dim-6 { background: #fbbf24; }
+  .flit-bar .seg.dim-7 { background: var(--c-dat); }
+  .flit-bar .seg.dim-8 { background: #c084fc; }
+
+  .field-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .field-table th {
+    text-align: left; padding: 10px 14px; font-weight: 500;
+    color: var(--text-muted); background: var(--surface-2);
+    border-bottom: 1px solid var(--border); font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .field-table td {
+    padding: 9px 14px; border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .field-table tr:last-child td { border-bottom: none; }
+  .field-table td.name { font-family: var(--mono); font-size: 12px; }
+  .field-table td.bits {
+    font-family: var(--mono); font-size: 12px;
+    color: var(--text-muted); white-space: nowrap;
+  }
+  .field-table td.desc { color: var(--text-muted); }
+
+  /* ---------- Node-type cards ---------- */
+  .node-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  }
+  .node-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    border-top: 4px solid;
+  }
+  .node-card.rn { border-top-color: var(--c-rn); }
+  .node-card.hn { border-top-color: var(--c-hn); }
+  .node-card.sn { border-top-color: var(--c-sn); }
+  .node-card .badge {
+    display: inline-block; padding: 3px 8px; border-radius: 4px;
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+  }
+  .node-card.rn .badge { background: #ecfeff; color: var(--c-rn); }
+  .node-card.hn .badge { background: #fff1f2; color: var(--c-hn); }
+  .node-card.sn .badge { background: #eef2ff; color: var(--c-sn); }
+  .node-card h4 { margin: 8px 0 4px; font-size: 17px; font-weight: 600; }
+  .node-card p { margin: 0; font-size: 14px; color: var(--text-muted); }
+  .node-card ul {
+    margin: 14px 0 0; padding-left: 18px;
+    font-size: 13px; color: var(--text-muted);
+  }
+  .node-card ul li { margin-bottom: 4px; }
+
+  /* ---------- Handshake animation ---------- */
+  .wave-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px;
+  }
+  .wave-controls {
+    display: flex; gap: 12px; align-items: center; margin-bottom: 20px;
+  }
+  .btn {
+    padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+    background: var(--surface); cursor: pointer; font-size: 14px;
+    font-weight: 500; transition: all 0.15s; color: var(--text);
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary {
+    background: var(--accent); color: white; border-color: var(--accent);
+  }
+  .btn.primary:hover { background: #1e293b; }
+  .wave-speed {
+    font-size: 13px; color: var(--text-muted); margin-left: auto;
+  }
+  .wave-svg { width: 100%; height: auto; }
+
+  .wave-label {
+    font-family: var(--mono); font-size: 12px; fill: var(--text-muted);
+  }
+  .wave-clock { stroke: var(--text-dim); stroke-width: 1; fill: none; }
+  .wave-sig { stroke-width: 2; fill: none; }
+  .wave-sig.pend { stroke: var(--c-req); }
+  .wave-sig.valid { stroke: var(--c-rsp); }
+  .wave-sig.lcrd { stroke: var(--c-dat); }
+  .wave-cursor {
+    stroke: var(--text); stroke-width: 1.5; stroke-dasharray: 3,3;
+  }
+
+  .wave-legend {
+    display: flex; gap: 18px; margin-top: 16px; font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .wave-legend .item { display: flex; align-items: center; gap: 6px; }
+  .wave-legend .swatch {
+    width: 16px; height: 3px; border-radius: 2px;
+  }
+
+  .wave-explainer {
+    margin-top: 24px; padding: 16px;
+    background: var(--surface-2); border-radius: var(--radius);
+    font-size: 14px; color: var(--text-muted);
+  }
+  .wave-explainer code {
+    background: var(--surface); padding: 1px 6px; border-radius: 4px;
+    font-family: var(--mono); font-size: 12px; color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* ---------- Code-map table ---------- */
+  .code-table {
+    width: 100%; border-collapse: collapse; font-size: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .code-table th, .code-table td {
+    text-align: left; padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .code-table tr:last-child td { border-bottom: none; }
+  .code-table th {
+    font-size: 12px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em;
+    background: var(--surface-2);
+  }
+  .code-table td.path {
+    font-family: var(--mono); font-size: 12px; color: var(--text);
+  }
+  .code-table td.line { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+
+  /* ---------- Quiz ---------- */
+  .quiz {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+  }
+  .quiz .q { margin-bottom: 24px; }
+  .quiz .q:last-child { margin-bottom: 0; }
+  .quiz .q .question {
+    font-weight: 500; margin-bottom: 8px;
+  }
+  .quiz .q .reveal {
+    padding: 6px 12px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    background: var(--surface); color: var(--text-muted);
+  }
+  .quiz .q .reveal:hover { background: var(--surface-2); color: var(--text); }
+  .quiz .q .answer {
+    display: none; margin-top: 12px; padding: 14px;
+    background: var(--c-rsp-bg); border-left: 3px solid var(--c-rsp);
+    border-radius: 4px; font-size: 14px;
+  }
+  .quiz .q.open .answer { display: block; }
+  .quiz .q.open .reveal { display: none; }
+
+  /* ---------- Footer / next ---------- */
+  .next-card {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: white; border-radius: var(--radius-lg);
+    padding: 32px; margin: 32px 0;
+  }
+  .next-card .eyebrow {
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #94a3b8; font-weight: 600;
+  }
+  .next-card h3 {
+    margin: 8px 0 12px; color: white; font-size: 24px;
+  }
+  .next-card p { color: #cbd5e1; margin: 0 0 16px; }
+  .next-card .files {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .next-card .file-chip {
+    background: rgba(255,255,255,0.08); padding: 6px 12px;
+    border-radius: 4px; font-family: var(--mono); font-size: 12px;
+    color: #e2e8f0;
+  }
+
+  footer { padding: 32px 0; color: var(--text-muted); font-size: 13px; text-align: center; }
+
+  /* Responsive */
+  @media (max-width: 720px) {
+    .hero h1 { font-size: 30px; }
+    .hero .stats { grid-template-columns: repeat(2, 1fr); }
+    .channel-grid { grid-template-columns: 1fr; }
+    .node-grid { grid-template-columns: 1fr; }
+    .flit-pane.active { grid-template-columns: 1fr; }
+    nav.top ul { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="inner">
+    <div class="brand">hanuma <span class="dim">/ learning / lesson 01</span></div>
+    <ul>
+      <li><a href="#picture">Big picture</a></li>
+      <li><a href="#channels">Channels</a></li>
+      <li><a href="#flit">Flits</a></li>
+      <li><a href="#nodes">Nodes</a></li>
+      <li><a href="#handshake">Handshake</a></li>
+      <li><a href="#code">Code map</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <span class="eyebrow">Lesson 1 of 10</span>
+    <h1>CHI Foundations &amp; the Link Interface</h1>
+    <p class="lead">
+      Before reading any router or node logic, you need to know what a flit is, what
+      the four CHI channels do, and how two nodes talk over a link. Everything else
+      in <code style="font-family: var(--mono); font-size: 14px;">rtl/interconnect/</code>
+      builds on these three concepts.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="v">4</div><div class="l">CHI channels</div></div>
+      <div class="stat"><div class="v">3</div><div class="l">Node families</div></div>
+      <div class="stat"><div class="v">7</div><div class="l">Foundation files</div></div>
+      <div class="stat"><div class="v">~30 min</div><div class="l">To finish this lesson</div></div>
+    </div>
+  </header>
+
+  <!-- ============ THE BIG PICTURE ============ -->
+  <section id="picture">
+    <h2><span class="num">1</span>The big picture</h2>
+    <p class="sub">
+      CHI (Coherent Hub Interface) is the protocol that lets CPU clusters, memory
+      controllers, and IO agents share data coherently. In hanuma, every agent is
+      one of three kinds — RN (request), HN (home), SN (slave) — and they all
+      communicate over four channels. Click a channel name to highlight its path.
+    </p>
+
+    <div class="arch-card">
+      <div class="arch-controls">
+        <button class="chan-chip all active" data-ch="all">All channels</button>
+        <button class="chan-chip req" data-ch="req">REQ — requests</button>
+        <button class="chan-chip rsp" data-ch="rsp">RSP — responses</button>
+        <button class="chan-chip snp" data-ch="snp">SNP — snoops</button>
+        <button class="chan-chip dat" data-ch="dat">DAT — data</button>
+      </div>
+
+      <svg class="arch-svg" viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ar-req" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#2563eb"/>
+          </marker>
+          <marker id="ar-rsp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#16a34a"/>
+          </marker>
+          <marker id="ar-snp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#d97706"/>
+          </marker>
+          <marker id="ar-dat" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#9333ea"/>
+          </marker>
+        </defs>
+
+        <!-- Nodes -->
+        <g class="node-box">
+          <rect x="40" y="120" width="160" height="120" rx="12" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+          <text x="120" y="155" text-anchor="middle" font-size="14" font-weight="600" fill="#0e7490">RN-F</text>
+          <text x="120" y="178" text-anchor="middle" font-size="11" fill="#0e7490">CPU cluster</text>
+          <text x="120" y="200" text-anchor="middle" font-size="10" fill="#0e7490">(Request Node)</text>
+          <text x="120" y="220" text-anchor="middle" font-size="10" fill="#0e7490">Fully Coherent</text>
+        </g>
+
+        <g class="node-box">
+          <rect x="370" y="120" width="160" height="120" rx="12" fill="#fff1f2" stroke="#be123c" stroke-width="2"/>
+          <text x="450" y="155" text-anchor="middle" font-size="14" font-weight="600" fill="#be123c">HN-F</text>
+          <text x="450" y="178" text-anchor="middle" font-size="11" fill="#be123c">LLC + Directory</text>
+          <text x="450" y="200" text-anchor="middle" font-size="10" fill="#be123c">(Home Node)</text>
+          <text x="450" y="220" text-anchor="middle" font-size="10" fill="#be123c">Coherency manager</text>
+        </g>
+
+        <g class="node-box">
+          <rect x="700" y="120" width="160" height="120" rx="12" fill="#eef2ff" stroke="#4338ca" stroke-width="2"/>
+          <text x="780" y="155" text-anchor="middle" font-size="14" font-weight="600" fill="#4338ca">SN-F</text>
+          <text x="780" y="178" text-anchor="middle" font-size="11" fill="#4338ca">DDR controller</text>
+          <text x="780" y="200" text-anchor="middle" font-size="10" fill="#4338ca">(Slave Node)</text>
+          <text x="780" y="220" text-anchor="middle" font-size="10" fill="#4338ca">Memory</text>
+        </g>
+
+        <!-- REQ arrow: RN -> HN (top) -->
+        <path class="arrow ch-req" d="M200,150 L370,150" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#ar-req)"/>
+        <text class="arrow-label ch-req" x="285" y="142" text-anchor="middle" fill="#2563eb" font-family="ui-monospace, monospace">REQ</text>
+
+        <!-- RSP arrow: HN -> RN (bottom of RN-HN gap) -->
+        <path class="arrow ch-rsp" d="M370,180 L200,180" stroke="#16a34a" stroke-width="2" fill="none" marker-end="url(#ar-rsp)"/>
+        <text class="arrow-label ch-rsp" x="285" y="172" text-anchor="middle" fill="#16a34a" font-family="ui-monospace, monospace">RSP</text>
+
+        <!-- SNP arrow: HN -> RN (curved bottom) -->
+        <path class="arrow ch-snp" d="M370,220 Q285,290 200,220" stroke="#d97706" stroke-width="2" fill="none" marker-end="url(#ar-snp)"/>
+        <text class="arrow-label ch-snp" x="285" y="285" text-anchor="middle" fill="#d97706" font-family="ui-monospace, monospace">SNP</text>
+
+        <!-- DAT arrow: RN <-> HN (curved top) -->
+        <path class="arrow ch-dat" d="M200,120 Q285,50 370,120" stroke="#9333ea" stroke-width="2" fill="none" marker-end="url(#ar-dat)"/>
+        <text class="arrow-label ch-dat" x="285" y="60" text-anchor="middle" fill="#9333ea" font-family="ui-monospace, monospace">DAT</text>
+
+        <!-- REQ arrow: HN -> SN (top) -->
+        <path class="arrow ch-req" d="M530,150 L700,150" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#ar-req)"/>
+        <text class="arrow-label ch-req" x="615" y="142" text-anchor="middle" fill="#2563eb" font-family="ui-monospace, monospace">REQ</text>
+
+        <!-- RSP arrow: SN -> HN -->
+        <path class="arrow ch-rsp" d="M700,180 L530,180" stroke="#16a34a" stroke-width="2" fill="none" marker-end="url(#ar-rsp)"/>
+        <text class="arrow-label ch-rsp" x="615" y="172" text-anchor="middle" fill="#16a34a" font-family="ui-monospace, monospace">RSP</text>
+
+        <!-- DAT bidirectional HN-SN -->
+        <path class="arrow ch-dat" d="M530,120 Q615,50 700,120" stroke="#9333ea" stroke-width="2" fill="none" marker-end="url(#ar-dat)"/>
+        <text class="arrow-label ch-dat" x="615" y="60" text-anchor="middle" fill="#9333ea" font-family="ui-monospace, monospace">DAT</text>
+
+        <!-- Caption -->
+        <text x="450" y="330" text-anchor="middle" font-size="12" fill="#57534e">
+          A single CHI link carries all 4 channels in both directions. The NoC routes flits between nodes.
+        </text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ============ THE 4 CHANNELS ============ -->
+  <section id="channels">
+    <h2><span class="num">2</span>The four channels</h2>
+    <p class="sub">
+      Each CHI channel carries a different kind of message and has its own flit
+      structure, opcode set, and virtual-channel assignment inside the router. The
+      widths below are taken straight from <code>chi_pkg.sv</code>.
+    </p>
+
+    <div class="channel-grid">
+      <div class="channel-card req">
+        <div class="name">CHI_CH_REQ &nbsp;·&nbsp; VC0</div>
+        <div class="title">REQ — Requests</div>
+        <p class="desc">
+          Read, write, atomic, and DVM transactions issued by a Request Node toward a
+          Home Node. This is the channel that starts every transaction.
+        </p>
+        <div class="meta">
+          <span><span class="k">Flit width:</span> 88 bits</span>
+          <span><span class="k">Direction:</span> RN → HN</span>
+          <span><span class="k">Opcodes:</span> ~35</span>
+        </div>
+      </div>
+
+      <div class="channel-card rsp">
+        <div class="name">CHI_CH_RSP &nbsp;·&nbsp; VC1</div>
+        <div class="title">RSP — Responses</div>
+        <p class="desc">
+          Completions, acknowledgements, retries, and credit grants. Carries no
+          data — just protocol-level status (Comp, DBIDResp, RetryAck, PCrdGrant).
+        </p>
+        <div class="meta">
+          <span><span class="k">Flit width:</span> 46 bits</span>
+          <span><span class="k">Direction:</span> bidirectional</span>
+          <span><span class="k">Opcodes:</span> ~20</span>
+        </div>
+      </div>
+
+      <div class="channel-card snp">
+        <div class="name">CHI_CH_SNP &nbsp;·&nbsp; VC0</div>
+        <div class="title">SNP — Snoops</div>
+        <p class="desc">
+          Coherency probes from a Home Node to Request Nodes. Asks an RN to invalidate
+          or share its cached copy of a line so the requester can be served.
+        </p>
+        <div class="meta">
+          <span><span class="k">Flit width:</span> 84 bits</span>
+          <span><span class="k">Direction:</span> HN → RN</span>
+          <span><span class="k">Opcodes:</span> ~20</span>
+        </div>
+      </div>
+
+      <div class="channel-card dat">
+        <div class="name">CHI_CH_DAT &nbsp;·&nbsp; VC2</div>
+        <div class="title">DAT — Data</div>
+        <p class="desc">
+          Cache-line payload — read returns, writeback data, snoop responses with
+          data. The widest channel by far (one 256-bit cache line per flit).
+        </p>
+        <div class="meta">
+          <span><span class="k">Flit width:</span> 368 bits</span>
+          <span><span class="k">Direction:</span> bidirectional</span>
+          <span><span class="k">Opcodes:</span> ~12</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ANATOMY OF A FLIT ============ -->
+  <section id="flit">
+    <h2><span class="num">3</span>Anatomy of a flit</h2>
+    <p class="sub">
+      A "flit" (flow-control unit) is one cycle's worth of data on a channel. Each
+      channel has its own packed struct. Click a tab to see the field layout — hover
+      a segment in the strip to see what it carries.
+    </p>
+
+    <div class="flit-tabs">
+      <button class="flit-tab active req" data-flit="req">chi_req_flit_t</button>
+      <button class="flit-tab rsp" data-flit="rsp">chi_rsp_flit_t</button>
+      <button class="flit-tab snp" data-flit="snp">chi_snp_flit_t</button>
+      <button class="flit-tab dat" data-flit="dat">chi_dat_flit_t</button>
+    </div>
+
+    <!-- REQ pane -->
+    <div class="flit-pane active" data-flit="req">
+      <div class="flit-strip">
+        <h4>Visual layout · 88 bits total</h4>
+        <div class="flit-bar">
+          <div class="seg dim-1" style="flex: 4" title="qos: 4-bit QoS priority">qos</div>
+          <div class="seg dim-2" style="flex: 7" title="tgt_id: destination node">tgt_id</div>
+          <div class="seg dim-1" style="flex: 7" title="src_id: source node">src_id</div>
+          <div class="seg dim-2" style="flex: 12" title="txn_id: transaction tag">txn_id</div>
+          <div class="seg dim-1" style="flex: 44" title="addr: 44-bit physical address">addr</div>
+          <div class="seg dim-2" style="flex: 7" title="opcode: which kind of request">opcode</div>
+          <div class="seg dim-1" style="flex: 7" title="misc: ns, mem_attr, etc.">misc</div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin: 12px 0 0;">
+          Widths are illustrative. The full struct in <code>chi_pkg.sv:249</code>
+          has ~20 packed fields including return_nid, snp_attr, pcrd_type, and
+          trace_tag.
+        </p>
+      </div>
+      <table class="field-table">
+        <thead>
+          <tr><th>Field</th><th>Bits</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">qos</td><td class="bits">4</td><td class="desc">QoS priority class</td></tr>
+          <tr><td class="name">tgt_id</td><td class="bits">7</td><td class="desc">Destination node ID</td></tr>
+          <tr><td class="name">src_id</td><td class="bits">7</td><td class="desc">Source node ID</td></tr>
+          <tr><td class="name">txn_id</td><td class="bits">12</td><td class="desc">Transaction tag (links REQ to later RSP/DAT)</td></tr>
+          <tr><td class="name">addr</td><td class="bits">44</td><td class="desc">Physical address</td></tr>
+          <tr><td class="name">opcode</td><td class="bits">7</td><td class="desc">Which request (ReadShared, WriteBackFull, …)</td></tr>
+          <tr><td class="name">size</td><td class="bits">2</td><td class="desc">Transfer size encoding</td></tr>
+          <tr><td class="name">ns</td><td class="bits">1</td><td class="desc">Non-secure access</td></tr>
+          <tr><td class="name">allow_retry</td><td class="bits">1</td><td class="desc">HN may RetryAck this txn</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- RSP pane -->
+    <div class="flit-pane" data-flit="rsp">
+      <div class="flit-strip">
+        <h4>Visual layout · 46 bits total</h4>
+        <div class="flit-bar">
+          <div class="seg dim-3" style="flex: 4" title="qos">qos</div>
+          <div class="seg dim-4" style="flex: 7" title="tgt_id">tgt_id</div>
+          <div class="seg dim-3" style="flex: 7" title="src_id">src_id</div>
+          <div class="seg dim-4" style="flex: 12" title="txn_id">txn_id</div>
+          <div class="seg dim-3" style="flex: 5" title="opcode">opcode</div>
+          <div class="seg dim-4" style="flex: 12" title="db_id">db_id</div>
+          <div class="seg dim-3" style="flex: 5" title="resp + err">resp</div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin: 12px 0 0;">
+          The narrowest channel. No address and no data payload — RSP is purely a
+          status message keyed by <code>txn_id</code>.
+        </p>
+      </div>
+      <table class="field-table">
+        <thead>
+          <tr><th>Field</th><th>Bits</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">tgt_id</td><td class="bits">7</td><td class="desc">Which node receives this RSP</td></tr>
+          <tr><td class="name">src_id</td><td class="bits">7</td><td class="desc">Which node sent it</td></tr>
+          <tr><td class="name">txn_id</td><td class="bits">12</td><td class="desc">Which transaction this RSP completes</td></tr>
+          <tr><td class="name">opcode</td><td class="bits">5</td><td class="desc">Comp, RetryAck, PCrdGrant, DBIDResp, …</td></tr>
+          <tr><td class="name">db_id</td><td class="bits">12</td><td class="desc">Data-buffer ID for upcoming WRITE data</td></tr>
+          <tr><td class="name">resp_err</td><td class="bits">2</td><td class="desc">OK / EXCLUSIVE / DERR / NDERR</td></tr>
+          <tr><td class="name">resp</td><td class="bits">3</td><td class="desc">Cache-state hint after the transaction</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SNP pane -->
+    <div class="flit-pane" data-flit="snp">
+      <div class="flit-strip">
+        <h4>Visual layout · 84 bits total</h4>
+        <div class="flit-bar">
+          <div class="seg dim-5" style="flex: 4" title="qos">qos</div>
+          <div class="seg dim-6" style="flex: 7" title="src_id">src_id</div>
+          <div class="seg dim-5" style="flex: 12" title="txn_id">txn_id</div>
+          <div class="seg dim-6" style="flex: 44" title="addr">addr</div>
+          <div class="seg dim-5" style="flex: 6" title="opcode">opcode</div>
+          <div class="seg dim-6" style="flex: 11" title="fwd_nid + fwd_txn">fwd</div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin: 12px 0 0;">
+          SNP carries an address (the cache line being snooped) but no
+          <code>tgt_id</code> — the snoop is routed by the broadcast network logic.
+        </p>
+      </div>
+      <table class="field-table">
+        <thead>
+          <tr><th>Field</th><th>Bits</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">src_id</td><td class="bits">7</td><td class="desc">Source HN that issued the snoop</td></tr>
+          <tr><td class="name">txn_id</td><td class="bits">12</td><td class="desc">Snoop transaction tag</td></tr>
+          <tr><td class="name">addr</td><td class="bits">44</td><td class="desc">Cache line address being probed</td></tr>
+          <tr><td class="name">opcode</td><td class="bits">6</td><td class="desc">SnpShared, SnpUnique, SnpInvalid, …</td></tr>
+          <tr><td class="name">do_not_goto_sd</td><td class="bits">1</td><td class="desc">Forbid Shared-Dirty next state</td></tr>
+          <tr><td class="name">rettosrc</td><td class="bits">1</td><td class="desc">Forward data to original requester</td></tr>
+          <tr><td class="name">fwd_nid</td><td class="bits">7</td><td class="desc">Forwarded snoop target node</td></tr>
+          <tr><td class="name">fwd_txn_id</td><td class="bits">12</td><td class="desc">Forwarded snoop txn tag</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- DAT pane -->
+    <div class="flit-pane" data-flit="dat">
+      <div class="flit-strip">
+        <h4>Visual layout · 368 bits total</h4>
+        <div class="flit-bar">
+          <div class="seg dim-7" style="flex: 4" title="qos">qos</div>
+          <div class="seg dim-8" style="flex: 7" title="tgt_id">tgt</div>
+          <div class="seg dim-7" style="flex: 7" title="src_id">src</div>
+          <div class="seg dim-8" style="flex: 12" title="txn_id">txn</div>
+          <div class="seg dim-7" style="flex: 4" title="opcode">op</div>
+          <div class="seg dim-8" style="flex: 256" title="data: 256-bit cache line payload">data (256 bits)</div>
+          <div class="seg dim-7" style="flex: 32" title="be: byte enable">be</div>
+          <div class="seg dim-8" style="flex: 46" title="other: tag, resp, fwd_state">other</div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin: 12px 0 0;">
+          The <code>data</code> field dominates — 256 bits out of 368 is the payload.
+          This is why DAT gets its own VC and its own credit pool.
+        </p>
+      </div>
+      <table class="field-table">
+        <thead>
+          <tr><th>Field</th><th>Bits</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">tgt_id</td><td class="bits">7</td><td class="desc">Destination node ID</td></tr>
+          <tr><td class="name">src_id</td><td class="bits">7</td><td class="desc">Source node ID</td></tr>
+          <tr><td class="name">txn_id</td><td class="bits">12</td><td class="desc">Transaction this data belongs to</td></tr>
+          <tr><td class="name">opcode</td><td class="bits">4</td><td class="desc">CompData, CopyBackWrData, SnpRespData, …</td></tr>
+          <tr><td class="name">data</td><td class="bits">256</td><td class="desc">One cache line of payload (32 bytes)</td></tr>
+          <tr><td class="name">be</td><td class="bits">32</td><td class="desc">Byte-enable for partial writes</td></tr>
+          <tr><td class="name">tag</td><td class="bits">16</td><td class="desc">Memory tagging (MTE) bits</td></tr>
+          <tr><td class="name">data_id</td><td class="bits">2</td><td class="desc">Beat index (which 64-bit chunk if split)</td></tr>
+          <tr><td class="name">resp_err</td><td class="bits">2</td><td class="desc">Per-data-flit error status</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ NODE TYPES ============ -->
+  <section id="nodes">
+    <h2><span class="num">4</span>The three node families</h2>
+    <p class="sub">
+      Every CHI participant is one of these. The role determines which channels it
+      drives and which it receives — and which file in <code>rtl/interconnect/chi/</code>
+      implements it.
+    </p>
+    <div class="node-grid">
+      <div class="node-card rn">
+        <span class="badge">RN-F · RN-I · RN-D</span>
+        <h4>Request Node</h4>
+        <p>The initiator. CPUs, DMA engines, accelerators.</p>
+        <ul>
+          <li><b>Sends:</b> REQ, RSP, DAT</li>
+          <li><b>Receives:</b> SNP, RSP, DAT</li>
+          <li><b>RTL:</b> <code>chi_rn.sv</code></li>
+          <li><b>F = Fully Coherent</b> (with cache)</li>
+          <li><b>I = IO Coherent</b> (no cache)</li>
+        </ul>
+      </div>
+      <div class="node-card hn">
+        <span class="badge">HN-F · HN-I</span>
+        <h4>Home Node</h4>
+        <p>The arbiter of coherency. Owns the directory and the last-level cache.</p>
+        <ul>
+          <li><b>Sends:</b> RSP, SNP, DAT</li>
+          <li><b>Receives:</b> REQ, RSP, DAT</li>
+          <li><b>RTL:</b> <code>chi_hn.sv</code></li>
+          <li><b>F = LLC + Directory</b></li>
+          <li><b>I = MMIO regions</b> (no caching)</li>
+        </ul>
+      </div>
+      <div class="node-card sn">
+        <span class="badge">SN-F · SN-I</span>
+        <h4>Slave Node</h4>
+        <p>The endpoint. Memory controllers and IO peripherals.</p>
+        <ul>
+          <li><b>Sends:</b> RSP, DAT</li>
+          <li><b>Receives:</b> REQ, DAT</li>
+          <li><b>RTL:</b> <code>chi_sn.sv</code></li>
+          <li><b>F = DDR / fully coherent memory</b></li>
+          <li><b>I = peripherals</b></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HANDSHAKE ============ -->
+  <section id="handshake">
+    <h2><span class="num">5</span>The link-layer handshake</h2>
+    <p class="sub">
+      Every channel uses the same three signals to move a flit across a link:
+      <code>pend</code> announces the sender's intent one cycle early,
+      <code>valid</code> carries the actual flit, and <code>lcrdv</code> returns a
+      credit so the sender knows the receiver had room. Press play to step through.
+    </p>
+
+    <div class="wave-card">
+      <div class="wave-controls">
+        <button class="btn primary" id="wavePlay">Play</button>
+        <button class="btn" id="waveReset">Reset</button>
+        <div class="wave-speed">Cycle: <span id="cycleNum">0</span> / 10</div>
+      </div>
+
+      <svg class="wave-svg" viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg" id="waveSvg">
+        <!-- Grid -->
+        <g stroke="#e7e5e4" stroke-width="0.5">
+          <line x1="120" y1="20" x2="120" y2="260"/>
+          <line x1="120" y1="20" x2="780" y2="20"/>
+          <line x1="120" y1="260" x2="780" y2="260"/>
+        </g>
+
+        <!-- Cycle markers -->
+        <g font-family="ui-monospace, monospace" font-size="10" fill="#a8a29e" text-anchor="middle">
+          <text x="120" y="14">t=0</text>
+          <text x="186" y="14">1</text>
+          <text x="252" y="14">2</text>
+          <text x="318" y="14">3</text>
+          <text x="384" y="14">4</text>
+          <text x="450" y="14">5</text>
+          <text x="516" y="14">6</text>
+          <text x="582" y="14">7</text>
+          <text x="648" y="14">8</text>
+          <text x="714" y="14">9</text>
+          <text x="780" y="14">10</text>
+        </g>
+        <g stroke="#e7e5e4" stroke-width="0.5">
+          <line x1="186" y1="20" x2="186" y2="260"/>
+          <line x1="252" y1="20" x2="252" y2="260"/>
+          <line x1="318" y1="20" x2="318" y2="260"/>
+          <line x1="384" y1="20" x2="384" y2="260"/>
+          <line x1="450" y1="20" x2="450" y2="260"/>
+          <line x1="516" y1="20" x2="516" y2="260"/>
+          <line x1="582" y1="20" x2="582" y2="260"/>
+          <line x1="648" y1="20" x2="648" y2="260"/>
+          <line x1="714" y1="20" x2="714" y2="260"/>
+        </g>
+
+        <!-- Clock waveform -->
+        <text class="wave-label" x="10" y="48">clk</text>
+        <path class="wave-clock" d="M120,55 L120,30 L153,30 L153,55 L186,55 L186,30 L219,30 L219,55 L252,55 L252,30 L285,30 L285,55 L318,55 L318,30 L351,30 L351,55 L384,55 L384,30 L417,30 L417,55 L450,55 L450,30 L483,30 L483,55 L516,55 L516,30 L549,30 L549,55 L582,55 L582,30 L615,30 L615,55 L648,55 L648,30 L681,30 L681,55 L714,55 L714,30 L747,30 L747,55 L780,55"/>
+
+        <!-- txreqflitpend -->
+        <text class="wave-label" x="10" y="105">txreqflitpend</text>
+        <path class="wave-sig pend" id="sig-pend" d="M120,110 L120,110"/>
+
+        <!-- txreqflitv -->
+        <text class="wave-label" x="10" y="165">txreqflitv</text>
+        <path class="wave-sig valid" id="sig-valid" d="M120,170 L120,170"/>
+
+        <!-- rxreqlcrdv (credit return) -->
+        <text class="wave-label" x="10" y="225">rxreqlcrdv</text>
+        <path class="wave-sig lcrd" id="sig-lcrd" d="M120,230 L120,230"/>
+
+        <!-- Time cursor -->
+        <line class="wave-cursor" id="waveCursor" x1="120" y1="20" x2="120" y2="260"/>
+      </svg>
+
+      <div class="wave-legend">
+        <div class="item"><div class="swatch" style="background: var(--c-req)"></div> txreqflitpend (sender)</div>
+        <div class="item"><div class="swatch" style="background: var(--c-rsp)"></div> txreqflitv (sender)</div>
+        <div class="item"><div class="swatch" style="background: var(--c-dat)"></div> rxreqlcrdv (receiver returns credit)</div>
+      </div>
+
+      <div class="wave-explainer" id="waveExplain">
+        Click <b>Play</b> to walk through a single flit transfer. At <code>t=0</code>
+        the link is idle; the sender holds a credit from link training. Watch how
+        <code>pend</code> rises one cycle before <code>valid</code> — this gives the
+        receiver a cycle of head-start to prepare buffer write enables.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHERE THIS LIVES IN CODE ============ -->
+  <section id="code">
+    <h2><span class="num">6</span>Where to find this in the code</h2>
+    <p class="sub">
+      Map every concept above to a real file and line. Open these in your editor as
+      you re-read this lesson — it's how the abstractions become concrete.
+    </p>
+    <table class="code-table">
+      <thead>
+        <tr><th>Concept</th><th>File</th><th>Line</th><th>Definition</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Channel enum</td>
+          <td class="path">rtl/pkg/chi_pkg.sv</td>
+          <td class="line">69</td>
+          <td>chi_channel_e (REQ, RSP, SNP, DAT)</td>
+        </tr>
+        <tr>
+          <td>Node type enum</td>
+          <td class="path">rtl/pkg/chi_pkg.sv</td>
+          <td class="line">81</td>
+          <td>chi_node_type_e (RNF/RNI/HNF/HNI/SNF/SNI/MN)</td>
+        </tr>
+        <tr>
+          <td>REQ opcodes</td>
+          <td class="path">rtl/pkg/chi_pkg.sv</td>
+          <td class="line">96</td>
+          <td>chi_req_opcode_e (ReadShared, WriteBackFull, …)</td>
+        </tr>
+        <tr>
+          <td>RSP opcodes</td>
+          <td class="path">rtl/pkg/chi_pkg.sv</td>
+          <td class="line">154</td>
+          <td>chi_rsp_opcode_e</td>
+        </tr>
+        <tr>
+          <td>SNP opcodes</td>
+          <td class="path">rtl/pkg/chi_pkg.sv</td>
+          <td class="line">180</td>
+          <td>chi_snp_opcode_e</td>
+        </tr>
+        <tr>
+          <td>DAT opcodes</td>
+          <td class="path">rtl/pkg/chi_pkg.sv</td>
+          <td class="line">208</td>
+          <td>chi_dat_opcode_e</td>
+        </tr>
+        <tr>
+          <td>Cache states (MOESI)</td>
+          <td class="path">rtl/pkg/chi_pkg.sv</td>
+          <td class="line">226</td>
+          <td>chi_cache_state_e (I/S/E/O/M/UC/UD/SD)</td>
+        </tr>
+        <tr>
+          <td>REQ flit struct</td>
+          <td class="path">rtl/pkg/chi_pkg.sv</td>
+          <td class="line">249</td>
+          <td>chi_req_flit_t</td>
+        </tr>
+        <tr>
+          <td>DAT flit struct</td>
+          <td class="path">rtl/pkg/chi_pkg.sv</td>
+          <td class="line">315</td>
+          <td>chi_dat_flit_t</td>
+        </tr>
+        <tr>
+          <td>Helper functions</td>
+          <td class="path">rtl/pkg/chi_pkg.sv</td>
+          <td class="line">405</td>
+          <td>node_id_to_x/y, req_is_snoop_gen, req_has_write_data</td>
+        </tr>
+        <tr>
+          <td>VC mapping</td>
+          <td class="path">rtl/pkg/noc_pkg.sv</td>
+          <td class="line">76</td>
+          <td>channel_to_vc()</td>
+        </tr>
+        <tr>
+          <td>Topology + router params</td>
+          <td class="path">rtl/pkg/noc_pkg.sv</td>
+          <td class="line">41</td>
+          <td>NOC_MESH_ROWS, NOC_NUM_VCS, NOC_BUF_DEPTH</td>
+        </tr>
+        <tr>
+          <td>Link interface (all 4 channels)</td>
+          <td class="path">rtl/interfaces/chi_link_if.sv</td>
+          <td class="line">23</td>
+          <td>chi_link_if + requester/completer modports</td>
+        </tr>
+        <tr>
+          <td>Link assertions</td>
+          <td class="path">rtl/interfaces/chi_link_if.sv</td>
+          <td class="line">163</td>
+          <td>p_req_valid_needs_credit, p_link_active_ack</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section id="quiz">
+    <h2><span class="num">7</span>Check yourself</h2>
+    <p class="sub">
+      If you can answer these without re-reading, you're ready for Lesson 2 (leaf
+      primitives — flit buffers, credit managers, FIFOs).
+    </p>
+    <div class="quiz" id="quizBlock">
+      <div class="q">
+        <div class="question">Q1. A CPU cluster sends a <code>ReadShared</code> request and a memory controller eventually responds with <code>CompData</code>. Which two channels carried these flits, and which VCs did they use?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          The <code>ReadShared</code> request is a REQ flit on <b>VC0</b>; the
+          <code>CompData</code> reply is a DAT flit on <b>VC2</b>. Both are defined
+          in <code>chi_pkg.sv</code>; the VC mapping is in
+          <code>noc_pkg.sv :: channel_to_vc()</code>.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q2. Why is REQ 88 bits but DAT 368 bits? What does that imply for buffer sizing inside the router?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          REQ carries protocol metadata only — addr, opcode, IDs. DAT carries a full
+          256-bit cache line plus byte-enables and tags. Since router input/output
+          buffers must size to the <b>widest</b> flit (<code>NOC_FLIT_WIDTH = CHI_DAT_FLIT_WIDTH</code>
+          in <code>noc_pkg.sv:51</code>), every per-VC FIFO is 368 bits × 8 deep
+          regardless of which channel actually uses it.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q3. Why does <code>txreqflitpend</code> rise one cycle before <code>txreqflitv</code>?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          The pend signal is an early hint that lets the receiver decode its buffer
+          write enable in time for the flit to land in the right VC FIFO without a
+          single-cycle stall. Without pend, the receiver would have to gate every
+          incoming flit on a combinational decode of <code>valid + channel</code>,
+          which is a timing-closure hazard at 1 GHz.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q4. Where in the interface do you find the modport an RTL designer uses on the requester side of a link?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          <code>rtl/interfaces/chi_link_if.sv</code>, line 106 — the
+          <code>requester</code> modport. The mirror is <code>completer</code> on
+          line 125; a third <code>monitor</code> modport (line 144) gives read-only
+          access for assertions and scoreboards.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NEXT ============ -->
+  <div class="next-card">
+    <div class="eyebrow">Lesson 2 — Up next</div>
+    <h3>Leaf primitives: flit buffers, credit managers, FIFOs</h3>
+    <p>
+      Now that you know what flits look like and how the link signals work, the next
+      lesson reads the smallest building blocks — the sync FIFO that stores flits in
+      each VC, the credit counter that gates transmission, and the CDC primitives
+      that cross clock domains.
+    </p>
+    <div class="files">
+      <span class="file-chip">rtl/interconnect/buffers/flit_buffer.sv</span>
+      <span class="file-chip">rtl/interconnect/link/credit_manager.sv</span>
+      <span class="file-chip">rtl/interconnect/clock_crossing/cdc_sync.sv</span>
+      <span class="file-chip">rtl/interconnect/clock_crossing/async_fifo.sv</span>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="container">
+    Lesson 1 of 10 · hanuma SoC learning track · generated 2026-05-21
+  </div>
+</footer>
+
+<script>
+  // ---------- Channel highlighting in big-picture SVG ----------
+  document.querySelectorAll('.chan-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const ch = chip.dataset.ch;
+      document.querySelectorAll('.chan-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+
+      document.querySelectorAll('.arch-svg .arrow, .arch-svg .arrow-label').forEach(el => {
+        el.classList.remove('active');
+      });
+      if (ch === 'all') {
+        document.querySelectorAll('.arch-svg .arrow, .arch-svg .arrow-label').forEach(el => {
+          el.classList.add('active');
+        });
+      } else {
+        document.querySelectorAll('.arch-svg .ch-' + ch).forEach(el => {
+          el.classList.add('active');
+        });
+      }
+    });
+  });
+  // Trigger 'all' on load
+  document.querySelector('.chan-chip.all').click();
+
+  // ---------- Flit tabs ----------
+  document.querySelectorAll('.flit-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const flit = tab.dataset.flit;
+      document.querySelectorAll('.flit-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.flit-pane').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelector('.flit-pane[data-flit="' + flit + '"]').classList.add('active');
+    });
+  });
+
+  // ---------- Handshake animation ----------
+  // 11 cycles, signals at each cycle (0 = low, 1 = high)
+  const handshake = {
+    pend:  [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+    valid: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+    lcrd:  [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]
+  };
+  const explanations = [
+    "t=0 — Link is idle. The sender holds initial credits granted during link training.",
+    "t=1 — Still idle. A new REQ flit is queued behind the sender's link-layer arbiter.",
+    "t=2 — <b>pend rises</b>. The sender warns the receiver: 'a REQ flit will be valid next cycle'. The receiver pre-decodes its buffer write enables.",
+    "t=3 — <b>valid rises with the flit on the bus</b>. The receiver latches it into the VC0 FIFO. The sender's credit counter decrements (8 → 7).",
+    "t=4 — valid falls. One flit transferred. The flit is sitting in the receiver's FIFO, waiting to be drained by the router pipeline.",
+    "t=5 — Receiver's router pipeline drains the FIFO entry. Buffer slot frees up.",
+    "t=6 — <b>rxreqlcrdv rises</b>. The receiver returns one credit to the sender. The sender's counter increments back (7 → 8).",
+    "t=7 — Credit return falls. Link is idle again, ready for the next flit.",
+    "t=8 — Idle.",
+    "t=9 — Idle.",
+    "t=10 — End of trace. One complete flit transfer + credit return in 7 cycles."
+  ];
+
+  function pathForSig(arr, baseY) {
+    const x0 = 120, dx = 66;
+    let d = `M${x0},${baseY}`;
+    for (let i = 0; i < arr.length; i++) {
+      const x = x0 + i * dx;
+      const y = baseY - arr[i] * 25;
+      d += ` L${x},${y}`;
+      if (i < arr.length - 1) {
+        const nextY = baseY - arr[i+1] * 25;
+        if (nextY !== y) d += ` L${x},${nextY}`;
+      }
+    }
+    return d;
+  }
+
+  let curCycle = 0;
+  let playing = false;
+  let timer = null;
+
+  function renderCycle(c) {
+    // Build partial paths up to cycle c
+    const pendArr  = handshake.pend.slice(0, c + 1);
+    const validArr = handshake.valid.slice(0, c + 1);
+    const lcrdArr  = handshake.lcrd.slice(0, c + 1);
+
+    document.getElementById('sig-pend').setAttribute('d', pathForSig(pendArr, 110));
+    document.getElementById('sig-valid').setAttribute('d', pathForSig(validArr, 170));
+    document.getElementById('sig-lcrd').setAttribute('d', pathForSig(lcrdArr, 230));
+
+    const x = 120 + c * 66;
+    document.getElementById('waveCursor').setAttribute('x1', x);
+    document.getElementById('waveCursor').setAttribute('x2', x);
+
+    document.getElementById('cycleNum').textContent = c;
+    document.getElementById('waveExplain').innerHTML = explanations[c];
+  }
+
+  function play() {
+    if (playing) {
+      playing = false;
+      clearInterval(timer);
+      document.getElementById('wavePlay').textContent = 'Play';
+      return;
+    }
+    if (curCycle >= 10) reset();
+    playing = true;
+    document.getElementById('wavePlay').textContent = 'Pause';
+    timer = setInterval(() => {
+      if (curCycle >= 10) {
+        playing = false;
+        clearInterval(timer);
+        document.getElementById('wavePlay').textContent = 'Replay';
+        return;
+      }
+      curCycle++;
+      renderCycle(curCycle);
+    }, 700);
+  }
+
+  function reset() {
+    playing = false;
+    clearInterval(timer);
+    curCycle = 0;
+    renderCycle(0);
+    document.getElementById('wavePlay').textContent = 'Play';
+  }
+
+  document.getElementById('wavePlay').addEventListener('click', play);
+  document.getElementById('waveReset').addEventListener('click', reset);
+  renderCycle(0);
+
+  // ---------- Quiz reveals ----------
+  document.querySelectorAll('.quiz .reveal').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.parentElement.classList.add('open');
+    });
+  });
+</script>
+
+</body>
+</html>
