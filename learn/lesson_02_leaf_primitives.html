@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 2 — Leaf Primitives · hanuma</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .hero .eyebrow { color: var(--c-rsp); background: var(--c-rsp-bg); }
+
+  /* FIFO visualizer */
+  .fifo-card { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  .fifo-controls { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .fifo-slot {
+    width: 100%; height: 36px;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 12px;
+    background: var(--surface-2); color: var(--text-muted);
+    transition: all 0.25s ease;
+  }
+  .fifo-slot.filled {
+    background: var(--c-req); color: white; border-color: var(--c-req);
+  }
+  .fifo-slot.wr-here { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); }
+  .fifo-slot.rd-here { box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25); }
+  .fifo-slot.both-here {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 0 0 6px rgba(22, 163, 74, 0.25);
+  }
+  .fifo-grid { display: grid; grid-template-columns: 1fr; gap: 4px; }
+  .fifo-stats {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    font-size: 13px; color: var(--text-muted); margin-top: 16px;
+    padding: 14px; background: var(--surface-2); border-radius: 8px;
+  }
+  .fifo-stats .v { font-family: var(--mono); color: var(--text); font-weight: 500; }
+
+  /* Credit visualizer */
+  .credit-card { padding: 24px; }
+  .credit-bar {
+    display: flex; gap: 4px; margin: 16px 0;
+  }
+  .credit-tok {
+    flex: 1; height: 40px; border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+    transition: all 0.3s ease;
+  }
+  .credit-tok.have {
+    background: var(--c-dat); color: white;
+    border-color: var(--c-dat);
+  }
+  .credit-tok.spent {
+    background: var(--surface); color: var(--text-dim);
+    text-decoration: line-through;
+  }
+  .credit-event {
+    padding: 10px 14px; background: var(--surface-2);
+    border-radius: 8px; font-size: 13px; color: var(--text-muted);
+    margin-top: 12px;
+  }
+
+  /* CDC 2FF visualizer */
+  .cdc-card { padding: 24px; }
+  .cdc-svg { width: 100%; height: auto; }
+  .cdc-flop {
+    fill: var(--surface); stroke: var(--border-strong); stroke-width: 1.5;
+  }
+  .cdc-flop.danger { stroke: #ef4444; stroke-width: 2.5; }
+  .cdc-flop.safe { stroke: var(--c-rsp); stroke-width: 2.5; }
+  .cdc-label { font-family: var(--mono); font-size: 11px; fill: var(--text-muted); }
+  .cdc-domain {
+    fill: none; stroke: var(--text-dim); stroke-width: 1; stroke-dasharray: 5, 4;
+  }
+  .cdc-domain-label { font-size: 12px; fill: var(--text-muted); font-weight: 500; }
+  .cdc-pulse {
+    fill: var(--c-req); opacity: 0;
+  }
+
+  /* Gray code visualizer */
+  .gray-grid {
+    display: grid; grid-template-columns: 60px 80px 80px;
+    gap: 4px 12px; font-family: var(--mono); font-size: 13px;
+    align-items: center;
+  }
+  .gray-grid .head {
+    font-weight: 500; color: var(--text-muted); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .gray-grid .row {
+    padding: 6px 10px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; text-align: center;
+  }
+  .gray-grid .row.bin { color: var(--c-req); }
+  .gray-grid .row.gray { color: var(--c-rsp); font-weight: 500; }
+  .gray-grid .row.current {
+    background: var(--c-rsp); color: white; border-color: var(--c-rsp);
+  }
+  .bit-diff { background: #fef3c7 !important; }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="inner">
+    <div class="brand">hanuma <span class="dim">/ learning / lesson 02</span></div>
+    <ul>
+      <li><a href="#fifo">FIFO</a></li>
+      <li><a href="#credit">Credits</a></li>
+      <li><a href="#cdc">CDC sync</a></li>
+      <li><a href="#async">Async FIFO</a></li>
+      <li><a href="#code">Code map</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <header class="hero">
+    <span class="eyebrow">Lesson 2 of 10</span>
+    <h1>Leaf Primitives</h1>
+    <p class="lead">
+      Four small modules that appear in nearly every router and link block: a
+      synchronous flit FIFO, a credit counter, a 2-flop synchronizer, and an
+      asynchronous (Gray-code) FIFO. Master these and the bigger modules collapse
+      into "FIFO + arbiter + state machine" patterns you already know.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="v">4</div><div class="l">Files</div></div>
+      <div class="stat"><div class="v">~280</div><div class="l">Lines of RTL</div></div>
+      <div class="stat"><div class="v">2</div><div class="l">Clock domains</div></div>
+      <div class="stat"><div class="v">~25 min</div><div class="l">To finish</div></div>
+    </div>
+  </header>
+
+  <!-- ============ FLIT BUFFER ============ -->
+  <section id="fifo">
+    <h2><span class="num">1</span>flit_buffer — the synchronous FIFO</h2>
+    <p class="sub">
+      A power-of-2-depth synchronous FIFO that stores one flit per slot. Write and
+      read pointers are <code>$clog2(DEPTH)+1</code> bits — the extra MSB is the
+      "wrap bit" that lets full and empty be distinguished without a separate
+      counter. Press <b>Write</b> and <b>Read</b> to watch the pointers move.
+    </p>
+
+    <div class="card">
+      <div class="fifo-controls">
+        <button class="btn primary" id="fifoWr">Write flit</button>
+        <button class="btn" id="fifoRd">Read flit</button>
+        <button class="btn" id="fifoReset">Reset</button>
+      </div>
+      <div class="fifo-card">
+        <div>
+          <div class="fifo-grid" id="fifoGrid"></div>
+        </div>
+        <div>
+          <h3 style="margin-top: 0">Pointers &amp; status</h3>
+          <p style="font-size: 14px; color: var(--text-muted);">
+            Each pointer is 4 bits for a depth-8 FIFO. The bottom 3 bits index the
+            storage; the top bit is the wrap. <b>Full</b> when wrap bits differ but
+            indices match. <b>Empty</b> when both halves match exactly.
+          </p>
+          <div class="fifo-stats">
+            <div>wr_ptr</div><div class="v" id="wrPtr">0000</div>
+            <div>rd_ptr</div><div class="v" id="rdPtr">0000</div>
+            <div>fill_level</div><div class="v" id="fillLvl">0 / 8</div>
+            <div>full</div><div class="v" id="fullSig">0</div>
+            <div>empty</div><div class="v" id="emptySig">1</div>
+            <div>almost_full</div><div class="v" id="almFull">0</div>
+          </div>
+        </div>
+      </div>
+      <h3>Key invariants</h3>
+      <table class="code-table">
+        <thead><tr><th>Property</th><th>RTL expression</th></tr></thead>
+        <tbody>
+          <tr><td>full</td><td class="path">wr_ptr[MSB] != rd_ptr[MSB] &amp;&amp; wr_ptr[lo] == rd_ptr[lo]</td></tr>
+          <tr><td>empty</td><td class="path">wr_ptr == rd_ptr</td></tr>
+          <tr><td>fill_level</td><td class="path">wr_ptr - rd_ptr</td></tr>
+          <tr><td>almost_full</td><td class="path">fill_level &gt;= DEPTH - 1</td></tr>
+          <tr><td>safety assertion</td><td class="path">if (wr_valid &amp;&amp; full) $error(...)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ CREDIT MANAGER ============ -->
+  <section id="credit">
+    <h2><span class="num">2</span>credit_manager — counting permits to send</h2>
+    <p class="sub">
+      Each CHI channel uses credit-based flow control: the sender starts with
+      <code>INIT_CREDITS</code> tokens (loaded during link training), spends one per
+      flit, and gets one back via <code>lcrd_return</code> each time the receiver
+      drains its buffer. The trick is the simultaneous <code>{flit_sent,
+      lcrd_return} = 2'b11</code> case — net zero, no race. Press play to walk it.
+    </p>
+
+    <div class="card credit-card">
+      <div class="fifo-controls">
+        <button class="btn primary" id="credSend">Send flit (consume credit)</button>
+        <button class="btn" id="credReturn">Return credit (LCrdV)</button>
+        <button class="btn" id="credBoth">Send + Return same cycle</button>
+        <button class="btn" id="credReset">Reset</button>
+      </div>
+      <div>
+        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">
+          Credit pool · <code id="credCount">8</code> / 8
+        </div>
+        <div class="credit-bar" id="credBar"></div>
+      </div>
+      <div class="credit-event" id="credEvent">
+        Link is freshly trained. 8 credits in hand — sender may transmit up to 8
+        flits before stalling.
+      </div>
+      <h3>The four cases</h3>
+      <table class="code-table">
+        <thead><tr><th>{lcrd_return, flit_sent}</th><th>credit_count update</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td class="path">2'b00</td><td class="path">no change</td><td>Idle</td></tr>
+          <tr><td class="path">2'b01</td><td class="path">−1</td><td>Sent a flit; one credit consumed</td></tr>
+          <tr><td class="path">2'b10</td><td class="path">+1</td><td>Receiver freed a slot; credit returned</td></tr>
+          <tr><td class="path">2'b11</td><td class="path">no change</td><td>Both at once — net-zero, no overflow</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ CDC SYNC ============ -->
+  <section id="cdc">
+    <h2><span class="num">3</span>cdc_sync — 2-flop synchronizer</h2>
+    <p class="sub">
+      The smallest module in the codebase, and the most important. A single bit
+      from clock domain A can violate setup/hold on a flop in domain B; the result
+      is <b>metastability</b>. Two cascaded flops in domain B give the metastable
+      signal time to resolve before any logic reads it. This block protects every
+      cross-domain control signal in the NoC.
+    </p>
+
+    <div class="card cdc-card">
+      <svg class="cdc-svg" viewBox="0 0 800 240" xmlns="http://www.w3.org/2000/svg">
+        <!-- Domain boundaries -->
+        <rect class="cdc-domain" x="20" y="40" width="200" height="160" rx="8"/>
+        <rect class="cdc-domain" x="240" y="40" width="540" height="160" rx="8"/>
+        <text class="cdc-domain-label" x="120" y="32" text-anchor="middle">Source domain (clk_src)</text>
+        <text class="cdc-domain-label" x="510" y="32" text-anchor="middle">Destination domain (clk_dst)</text>
+
+        <!-- Source flop -->
+        <rect class="cdc-flop" x="70" y="100" width="80" height="50" rx="4"/>
+        <text class="cdc-label" x="110" y="130" text-anchor="middle">SRC</text>
+        <text class="cdc-label" x="110" y="170" text-anchor="middle">data_src</text>
+
+        <!-- Wire across boundary -->
+        <line x1="150" y1="125" x2="290" y2="125" stroke="#a8a29e" stroke-width="2"/>
+
+        <!-- Sync flop 1 (DANGEROUS - may go metastable) -->
+        <rect class="cdc-flop danger" id="syncFlop1" x="290" y="100" width="100" height="50" rx="4"/>
+        <text class="cdc-label" x="340" y="125" text-anchor="middle">sync_q[0]</text>
+        <text class="cdc-label" x="340" y="142" text-anchor="middle" font-size="9">may be metastable</text>
+        <text class="cdc-label" x="340" y="170" text-anchor="middle" fill="#ef4444">⚠ unsafe</text>
+
+        <!-- Sync flop 2 (SAFE) -->
+        <rect class="cdc-flop safe" id="syncFlop2" x="430" y="100" width="100" height="50" rx="4"/>
+        <text class="cdc-label" x="480" y="125" text-anchor="middle">sync_q[1]</text>
+        <text class="cdc-label" x="480" y="142" text-anchor="middle" font-size="9">resolved</text>
+        <text class="cdc-label" x="480" y="170" text-anchor="middle" fill="var(--c-rsp)">✓ safe</text>
+
+        <!-- Wires between sync flops -->
+        <line x1="390" y1="125" x2="430" y2="125" stroke="#a8a29e" stroke-width="2"/>
+        <line x1="530" y1="125" x2="780" y2="125" stroke="#a8a29e" stroke-width="2"/>
+        <text class="cdc-label" x="650" y="115" text-anchor="middle">data_dst</text>
+        <text class="cdc-label" x="650" y="142" text-anchor="middle" font-size="9">consumed by domain logic</text>
+
+        <!-- Animated pulse -->
+        <circle class="cdc-pulse" id="cdcPulse" cx="110" cy="125" r="6"/>
+      </svg>
+
+      <div style="text-align: center; margin-top: 12px;">
+        <button class="btn primary" id="cdcPulseBtn">Send a pulse across the boundary</button>
+      </div>
+
+      <p style="font-size: 14px; color: var(--text-muted); margin-top: 20px;">
+        <b>Why 2 flops?</b> The first flop captures the asynchronous signal — its
+        output may be metastable for some duration <code>τ_resolve</code>. The
+        second flop samples after one full <code>clk_dst</code> period, by which
+        time the first flop has almost certainly settled. This gives a mean-
+        time-between-failure (MTBF) of years-to-millennia in modern processes.
+      </p>
+      <table class="code-table">
+        <thead><tr><th>Parameter</th><th>Value</th><th>When to change</th></tr></thead>
+        <tbody>
+          <tr><td class="path">DATA_W</td><td class="path">1</td><td>Always 1 — multi-bit needs <code>async_fifo</code> below</td></tr>
+          <tr><td class="path">NUM_SYNC_FF</td><td class="path">2</td><td>Bump to 3 for &gt;5 GHz or aggressive metastability margin</td></tr>
+          <tr><td class="path">(* ASYNC_REG *)</td><td class="path">TRUE</td><td>Tells synth not to retime or clock-gate sync flops</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ ASYNC FIFO ============ -->
+  <section id="async">
+    <h2><span class="num">4</span>async_fifo — Gray-code pointer FIFO</h2>
+    <p class="sub">
+      To pass a multi-bit value (the whole flit) between two clock domains, you can't
+      just use <code>cdc_sync</code> on each bit — bits could synchronize on
+      different cycles and the receiver would briefly see a corrupted value. The
+      classic answer: store data in a shared memory, and synchronize only the
+      <b>Gray-coded pointers</b>. Gray code guarantees only one bit changes per
+      increment, so the worst case is one bit transitioning while sampled.
+    </p>
+
+    <div class="card">
+      <h3 style="margin-top: 0">Binary vs Gray, depth-8</h3>
+      <p style="font-size: 14px; color: var(--text-muted);">
+        Watch which bits change as you advance the pointer. Binary: multiple bits
+        often flip together (e.g. 0011 → 0100 flips three). Gray: always one bit.
+      </p>
+      <div class="fifo-controls">
+        <button class="btn primary" id="grayAdv">Advance pointer</button>
+        <button class="btn" id="grayReset">Reset</button>
+        <span style="margin-left: auto; font-size: 14px; color: var(--text-muted);">
+          Bits that flipped: <span id="grayDelta" style="font-family: var(--mono); color: var(--text);">—</span>
+        </span>
+      </div>
+      <div class="gray-grid">
+        <div class="head">count</div><div class="head">binary</div><div class="head">gray</div>
+        <div class="row" id="gr-0">0</div><div class="row bin" id="gb-0">0000</div><div class="row gray" id="gg-0">0000</div>
+        <div class="row" id="gr-1">1</div><div class="row bin" id="gb-1">0001</div><div class="row gray" id="gg-1">0001</div>
+        <div class="row" id="gr-2">2</div><div class="row bin" id="gb-2">0010</div><div class="row gray" id="gg-2">0011</div>
+        <div class="row" id="gr-3">3</div><div class="row bin" id="gb-3">0011</div><div class="row gray" id="gg-3">0010</div>
+        <div class="row" id="gr-4">4</div><div class="row bin" id="gb-4">0100</div><div class="row gray" id="gg-4">0110</div>
+        <div class="row" id="gr-5">5</div><div class="row bin" id="gb-5">0101</div><div class="row gray" id="gg-5">0111</div>
+        <div class="row" id="gr-6">6</div><div class="row bin" id="gb-6">0110</div><div class="row gray" id="gg-6">0101</div>
+        <div class="row" id="gr-7">7</div><div class="row bin" id="gb-7">0111</div><div class="row gray" id="gg-7">0100</div>
+      </div>
+
+      <h3>The async_fifo data path</h3>
+      <table class="code-table">
+        <thead><tr><th>Domain</th><th>Pointer</th><th>What it crosses to</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>wr_clk</td><td class="path">wr_ptr_gray</td><td>rd_clk via 2-FF sync</td><td>Tells reader "data is available up to here"</td></tr>
+          <tr><td>rd_clk</td><td class="path">rd_ptr_gray</td><td>wr_clk via 2-FF sync</td><td>Tells writer "you may overwrite up to here"</td></tr>
+          <tr><td>shared</td><td class="path">mem[DEPTH]</td><td>(no clock crossing)</td><td>Storage written by wr_clk, read by rd_clk</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size: 14px; color: var(--text-muted); margin-top: 16px;">
+        <b>Full</b> is detected when the write Gray pointer equals the synchronized
+        read Gray pointer with the two MSBs inverted (wrap-around). <b>Empty</b> is
+        the simpler case — write and read Gray pointers are exactly equal.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ CODE MAP ============ -->
+  <section id="code">
+    <h2><span class="num">5</span>Code map</h2>
+    <p class="sub">Where each concept lives in the RTL.</p>
+    <table class="code-table">
+      <thead><tr><th>Concept</th><th>File</th><th>Line</th><th>What's there</th></tr></thead>
+      <tbody>
+        <tr><td>Sync FIFO pointer logic</td><td class="path">rtl/interconnect/buffers/flit_buffer.sv</td><td class="line">44</td><td>full/empty with MSB-wrap trick</td></tr>
+        <tr><td>FIFO write/read</td><td class="path">rtl/interconnect/buffers/flit_buffer.sv</td><td class="line">53</td><td>ff_ptrs block — gated by wr_ready/rd_valid</td></tr>
+        <tr><td>FIFO overflow guard</td><td class="path">rtl/interconnect/buffers/flit_buffer.sv</td><td class="line">77</td><td>$error on write-to-full (SIM only)</td></tr>
+        <tr><td>Credit counter FSM</td><td class="path">rtl/interconnect/link/credit_manager.sv</td><td class="line">41</td><td>The 4-case {lcrd_return, flit_sent} update</td></tr>
+        <tr><td>Credit underflow assertion</td><td class="path">rtl/interconnect/link/credit_manager.sv</td><td class="line">63</td><td>assert_no_underflow</td></tr>
+        <tr><td>2-FF sync chain</td><td class="path">rtl/interconnect/clock_crossing/cdc_sync.sv</td><td class="line">37</td><td>(* ASYNC_REG = "TRUE" *) attribute</td></tr>
+        <tr><td>Async FIFO write side</td><td class="path">rtl/interconnect/clock_crossing/async_fifo.sv</td><td class="line">52</td><td>wr_ptr_bin + wr_ptr_gray update</td></tr>
+        <tr><td>Gray sync to rd_clk</td><td class="path">rtl/interconnect/clock_crossing/async_fifo.sv</td><td class="line">64</td><td>2-stage gray sync of read pointer</td></tr>
+        <tr><td>Full / empty detect</td><td class="path">rtl/interconnect/clock_crossing/async_fifo.sv</td><td class="line">75</td><td>wr_full / rd_empty conditions</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section id="quiz">
+    <h2><span class="num">6</span>Check yourself</h2>
+    <div class="quiz">
+      <div class="q">
+        <div class="question">Q1. Why does <code>flit_buffer</code> use a pointer one bit wider than <code>$clog2(DEPTH)</code>?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          The extra MSB is a wrap bit. Without it, wr_ptr == rd_ptr is ambiguous —
+          it could mean "FIFO empty" or "FIFO full with same indexes". With the
+          wrap bit, full = (MSBs differ) &amp;&amp; (indexes equal); empty = full
+          pointer match. No counter needed.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q2. In <code>credit_manager</code>, what would go wrong if the 2'b11 case decremented instead of doing nothing?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          You'd "leak" credits. Each cycle where both events happen would lose one
+          credit forever — eventually the sender runs out and stalls even though the
+          receiver had room. The 2'b11 net-zero case keeps the credit pool stable
+          at steady-state sustained throughput.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q3. Why is a single <code>cdc_sync</code> not enough for a multi-bit bus?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          Each bit's metastability resolves independently. If the bus is changing
+          when sampled, some bits may catch the new value and others the old —
+          producing a transient corrupted word never present in either domain. Use
+          <code>async_fifo</code> instead: only Gray-coded pointers cross domains,
+          and the data itself sits in a shared memory.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q4. What's the (* ASYNC_REG = "TRUE" *) attribute doing in <code>cdc_sync.sv</code>?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          It tells the synthesis tool: don't optimize, retime, or clock-gate these
+          flops; place them physically adjacent. Without it, synth might decide
+          that <code>sync_q[0]</code> looks redundant and combine it with
+          <code>sync_q[1]</code>, breaking the metastability margin.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="next-card">
+    <div class="eyebrow">Lesson 3 — Up next</div>
+    <h3>Arbitration &amp; routing</h3>
+    <p>
+      Now that you understand the storage primitives, the next lesson covers the
+      decision-makers: round-robin arbiters that pick a winner among requesters,
+      the XY routing unit that says "next hop is East", a routing-table alternative
+      for irregular topologies, and the N×N crossbar that physically moves the flit.
+    </p>
+    <div class="files">
+      <span class="file-chip">round_robin_arb.sv</span>
+      <span class="file-chip">arb_unit.sv</span>
+      <span class="file-chip">route_compute_unit.sv</span>
+      <span class="file-chip">routing_table.sv</span>
+      <span class="file-chip">crossbar.sv</span>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="container">Lesson 2 of 10 · hanuma SoC learning track</div>
+</footer>
+
+<script>
+  // ---------- Sync FIFO visualization ----------
+  const DEPTH = 8;
+  let fifoMem = new Array(DEPTH).fill(null);
+  let wrPtr = 0, rdPtr = 0; // 4-bit pointers
+  let counter = 0;
+
+  function renderFifo() {
+    const grid = document.getElementById('fifoGrid');
+    grid.innerHTML = '';
+    for (let i = DEPTH - 1; i >= 0; i--) {
+      const slot = document.createElement('div');
+      slot.className = 'fifo-slot';
+      const wrIdx = wrPtr & 0x7;
+      const rdIdx = rdPtr & 0x7;
+      if (fifoMem[i] !== null) {
+        slot.classList.add('filled');
+        slot.textContent = 'F' + fifoMem[i];
+      } else {
+        slot.textContent = 'slot ' + i;
+      }
+      const here = (i === wrIdx && i === rdIdx);
+      const wr = (i === wrIdx);
+      const rd = (i === rdIdx);
+      if (here) slot.classList.add('both-here');
+      else if (wr) slot.classList.add('wr-here');
+      else if (rd) slot.classList.add('rd-here');
+      grid.appendChild(slot);
+    }
+    document.getElementById('wrPtr').textContent =
+      wrPtr.toString(2).padStart(4, '0');
+    document.getElementById('rdPtr').textContent =
+      rdPtr.toString(2).padStart(4, '0');
+    const fill = (wrPtr - rdPtr + 16) & 0xF;
+    document.getElementById('fillLvl').textContent = fill + ' / 8';
+    const wrMsb = (wrPtr >> 3) & 1, rdMsb = (rdPtr >> 3) & 1;
+    const wrLo = wrPtr & 0x7, rdLo = rdPtr & 0x7;
+    const isFull = (wrMsb !== rdMsb && wrLo === rdLo);
+    const isEmpty = (wrPtr === rdPtr);
+    document.getElementById('fullSig').textContent = isFull ? '1' : '0';
+    document.getElementById('emptySig').textContent = isEmpty ? '1' : '0';
+    document.getElementById('almFull').textContent = fill >= 7 ? '1' : '0';
+  }
+
+  document.getElementById('fifoWr').addEventListener('click', () => {
+    const wrMsb = (wrPtr >> 3) & 1, rdMsb = (rdPtr >> 3) & 1;
+    const wrLo = wrPtr & 0x7, rdLo = rdPtr & 0x7;
+    if (wrMsb !== rdMsb && wrLo === rdLo) return; // full
+    fifoMem[wrPtr & 0x7] = ++counter;
+    wrPtr = (wrPtr + 1) & 0xF;
+    renderFifo();
+  });
+  document.getElementById('fifoRd').addEventListener('click', () => {
+    if (wrPtr === rdPtr) return; // empty
+    fifoMem[rdPtr & 0x7] = null;
+    rdPtr = (rdPtr + 1) & 0xF;
+    renderFifo();
+  });
+  document.getElementById('fifoReset').addEventListener('click', () => {
+    fifoMem = new Array(DEPTH).fill(null);
+    wrPtr = 0; rdPtr = 0; counter = 0;
+    renderFifo();
+  });
+  renderFifo();
+
+  // ---------- Credit visualization ----------
+  const MAX_CRED = 8;
+  let credCount = 8;
+
+  function renderCred() {
+    const bar = document.getElementById('credBar');
+    bar.innerHTML = '';
+    for (let i = 0; i < MAX_CRED; i++) {
+      const t = document.createElement('div');
+      t.className = 'credit-tok';
+      if (i < credCount) { t.classList.add('have'); t.textContent = '●'; }
+      else { t.classList.add('spent'); t.textContent = '○'; }
+      bar.appendChild(t);
+    }
+    document.getElementById('credCount').textContent = credCount;
+  }
+  function setEvent(msg) {
+    document.getElementById('credEvent').innerHTML = msg;
+  }
+
+  document.getElementById('credSend').addEventListener('click', () => {
+    if (credCount === 0) { setEvent('<b>Stalled.</b> Credit pool is empty — sender must wait for an LCrdV.'); return; }
+    credCount--;
+    setEvent('Sent 1 flit. <code>{lcrd_return, flit_sent} = 2\\'b01</code> → credit_count − 1.');
+    renderCred();
+  });
+  document.getElementById('credReturn').addEventListener('click', () => {
+    if (credCount === MAX_CRED) { setEvent('<b>Already full.</b> Receiver returned a credit but the pool is at MAX_CREDITS.'); return; }
+    credCount++;
+    setEvent('Receiver drained 1 slot, returned LCrdV. <code>{lcrd_return, flit_sent} = 2\\'b10</code> → credit_count + 1.');
+    renderCred();
+  });
+  document.getElementById('credBoth').addEventListener('click', () => {
+    setEvent('<b>Same cycle:</b> sender transmits while receiver returns. <code>{lcrd_return, flit_sent} = 2\\'b11</code> → <b>net zero</b>. No race, no overflow.');
+    renderCred();
+  });
+  document.getElementById('credReset').addEventListener('click', () => {
+    credCount = 8;
+    setEvent('Link re-trained. 8 credits in hand.');
+    renderCred();
+  });
+  renderCred();
+
+  // ---------- CDC pulse animation ----------
+  document.getElementById('cdcPulseBtn').addEventListener('click', () => {
+    const pulse = document.getElementById('cdcPulse');
+    const f1 = document.getElementById('syncFlop1');
+    const f2 = document.getElementById('syncFlop2');
+    pulse.style.transition = 'none';
+    pulse.setAttribute('cx', '110');
+    pulse.style.opacity = '1';
+    setTimeout(() => {
+      pulse.style.transition = 'cx 0.6s ease, opacity 0.6s';
+      pulse.setAttribute('cx', '340');
+      f1.style.filter = 'drop-shadow(0 0 10px #ef4444)';
+    }, 30);
+    setTimeout(() => {
+      pulse.setAttribute('cx', '480');
+      f1.style.filter = 'none';
+      f2.style.filter = 'drop-shadow(0 0 10px #16a34a)';
+    }, 700);
+    setTimeout(() => {
+      pulse.setAttribute('cx', '720');
+      f2.style.filter = 'none';
+    }, 1400);
+    setTimeout(() => {
+      pulse.style.opacity = '0';
+    }, 2100);
+  });
+
+  // ---------- Gray code visualization ----------
+  let grayIdx = 0;
+  let prevGray = '0000';
+  function renderGray() {
+    for (let i = 0; i < 8; i++) {
+      ['gr-' + i, 'gb-' + i, 'gg-' + i].forEach(id => {
+        document.getElementById(id).classList.remove('current');
+        document.getElementById(id).classList.remove('bit-diff');
+      });
+    }
+    ['gr-', 'gb-', 'gg-'].forEach(prefix => {
+      document.getElementById(prefix + grayIdx).classList.add('current');
+    });
+    // show bit diff
+    if (grayIdx > 0) {
+      const curGray = document.getElementById('gg-' + grayIdx).textContent;
+      let diffs = [];
+      for (let b = 0; b < 4; b++) {
+        if (curGray[b] !== prevGray[b]) diffs.push(3 - b);
+      }
+      document.getElementById('grayDelta').textContent =
+        diffs.length === 1 ? 'bit ' + diffs[0] + ' only' : diffs.length + ' bits';
+      prevGray = curGray;
+    } else {
+      document.getElementById('grayDelta').textContent = '—';
+      prevGray = '0000';
+    }
+  }
+  document.getElementById('grayAdv').addEventListener('click', () => {
+    grayIdx = (grayIdx + 1) % 8;
+    renderGray();
+  });
+  document.getElementById('grayReset').addEventListener('click', () => {
+    grayIdx = 0;
+    renderGray();
+  });
+  renderGray();
+
+  // ---------- Quiz reveals ----------
+  document.querySelectorAll('.quiz .reveal').forEach(btn => {
+    btn.addEventListener('click', () => btn.parentElement.classList.add('open'));
+  });
+</script>
+</body>
+</html>
