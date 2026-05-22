@@ -1,0 +1,161 @@
+/* Shared learning-track stylesheet for hanuma lesson HTMLs */
+:root {
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --surface-2: #f5f5f4;
+  --text: #1c1917;
+  --text-muted: #57534e;
+  --text-dim: #a8a29e;
+  --border: #e7e5e4;
+  --border-strong: #d6d3d1;
+  --accent: #0f172a;
+
+  --c-req: #2563eb;
+  --c-rsp: #16a34a;
+  --c-snp: #d97706;
+  --c-dat: #9333ea;
+
+  --c-req-bg: #eff6ff;
+  --c-rsp-bg: #f0fdf4;
+  --c-snp-bg: #fffbeb;
+  --c-dat-bg: #faf5ff;
+
+  --c-rn: #0e7490;
+  --c-hn: #be123c;
+  --c-sn: #4338ca;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+nav.top {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(250, 250, 249, 0.85); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+nav.top .inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; max-width: 1100px; margin: 0 auto; padding: 0 24px;
+}
+nav.top .brand { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+nav.top .brand span.dim { color: var(--text-dim); font-weight: 400; }
+nav.top ul { display: flex; gap: 22px; list-style: none; padding: 0; margin: 0; }
+nav.top a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+nav.top a:hover { color: var(--text); }
+.hero { padding: 64px 0 48px; }
+.hero .eyebrow {
+  display: inline-block; font-size: 12px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px; margin-bottom: 16px;
+}
+.hero h1 {
+  font-size: 40px; font-weight: 600; letter-spacing: -0.025em;
+  margin: 0 0 16px; line-height: 1.15;
+}
+.hero p.lead {
+  font-size: 18px; color: var(--text-muted); max-width: 720px; margin: 0 0 32px;
+}
+.hero .stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 720px;
+}
+.stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+}
+.stat .v { font-size: 22px; font-weight: 600; letter-spacing: -0.015em; }
+.stat .l { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+section { padding: 56px 0; border-top: 1px solid var(--border); }
+section h2 {
+  font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px;
+}
+section h2 .num {
+  display: inline-block; width: 32px; height: 32px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text-muted);
+  font-size: 14px; font-weight: 500; text-align: center; line-height: 30px;
+  margin-right: 12px; vertical-align: 2px;
+}
+section .sub {
+  color: var(--text-muted); margin: 0 0 32px; font-size: 16px; max-width: 720px;
+}
+h3 {
+  font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin: 32px 0 12px;
+}
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm);
+}
+.btn {
+  padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+  background: var(--surface); cursor: pointer; font-size: 14px;
+  font-weight: 500; transition: all 0.15s; color: var(--text);
+}
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+.btn.primary:hover { background: #1e293b; }
+.code-table {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.code-table th, .code-table td {
+  text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border);
+}
+.code-table tr:last-child td { border-bottom: none; }
+.code-table th {
+  font-size: 12px; font-weight: 500; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface-2);
+}
+.code-table td.path { font-family: var(--mono); font-size: 12px; color: var(--text); }
+.code-table td.line { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+.quiz {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+}
+.quiz .q { margin-bottom: 24px; }
+.quiz .q:last-child { margin-bottom: 0; }
+.quiz .q .question { font-weight: 500; margin-bottom: 8px; }
+.quiz .q .reveal {
+  padding: 6px 12px; font-size: 13px; cursor: pointer;
+  border: 1px solid var(--border-strong); border-radius: 6px;
+  background: var(--surface); color: var(--text-muted);
+}
+.quiz .q .reveal:hover { background: var(--surface-2); color: var(--text); }
+.quiz .q .answer {
+  display: none; margin-top: 12px; padding: 14px;
+  background: var(--c-rsp-bg); border-left: 3px solid var(--c-rsp);
+  border-radius: 4px; font-size: 14px;
+}
+.quiz .q.open .answer { display: block; }
+.quiz .q.open .reveal { display: none; }
+.next-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: white; border-radius: var(--radius-lg); padding: 32px; margin: 32px 0;
+}
+.next-card .eyebrow {
+  font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #94a3b8; font-weight: 600;
+}
+.next-card h3 { margin: 8px 0 12px; color: white; font-size: 24px; }
+.next-card p { color: #cbd5e1; margin: 0 0 16px; }
+.next-card .files { display: flex; gap: 8px; flex-wrap: wrap; }
+.next-card .file-chip {
+  background: rgba(255,255,255,0.08); padding: 6px 12px;
+  border-radius: 4px; font-family: var(--mono); font-size: 12px; color: #e2e8f0;
+}
+footer { padding: 32px 0; color: var(--text-muted); font-size: 13px; text-align: center; }
+@media (max-width: 720px) {
+  .hero h1 { font-size: 30px; }
+  .hero .stats { grid-template-columns: repeat(2, 1fr); }
+  nav.top ul { display: none; }
+}
