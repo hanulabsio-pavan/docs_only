@@ -4,80 +4,150 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lesson 4 — Router Building Blocks · hanuma</title>
-<link rel="stylesheet" href="_shared.css">
 <style>
-  .hero .eyebrow { color: var(--c-dat); background: var(--c-dat-bg); }
+  :root {
+    --bg: #0a0a0b; --surface: #18181b; --surface-2: #27272a;
+    --text: #fafafa; --text-muted: #a1a1aa; --text-dim: #71717a;
+    --border: #27272a; --border-strong: #3f3f46; --accent: #fafafa;
+    --c-req: #60a5fa; --c-rsp: #4ade80; --c-snp: #fbbf24; --c-dat: #c084fc;
+    --c-req-bg: rgba(96, 165, 250, 0.12);
+    --c-rsp-bg: rgba(74, 222, 128, 0.12);
+    --c-snp-bg: rgba(251, 191, 36, 0.12);
+    --c-dat-bg: rgba(192, 132, 252, 0.12);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --radius: 10px; --radius-lg: 16px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.6; }
+  code { color: var(--text); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 0.92em; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top { position: sticky; top: 0; z-index: 100;
+    background: rgba(10, 10, 11, 0.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border); }
+  nav.top .inner { display: flex; align-items: center; justify-content: space-between;
+    height: 56px; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top .brand { font-weight: 600; font-size: 15px; }
+  nav.top .brand span.dim { color: var(--text-dim); font-weight: 400; }
+  nav.top ul { display: flex; gap: 22px; list-style: none; padding: 0; margin: 0; }
+  nav.top a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+  nav.top a:hover { color: var(--text); }
+  .hero { padding: 64px 0 48px; }
+  .hero .eyebrow { display: inline-block; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 16px;
+    color: var(--c-dat); background: var(--c-dat-bg); }
+  .hero h1 { font-size: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 0 0 16px; line-height: 1.15; }
+  .hero p.lead { font-size: 18px; color: var(--text-muted); max-width: 720px; margin: 0 0 32px; }
+  .hero .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 720px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat .v { font-size: 22px; font-weight: 600; }
+  .stat .l { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  section h2 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; }
+  section h2 .num { display: inline-block; width: 32px; height: 32px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted);
+    font-size: 14px; font-weight: 500; text-align: center; line-height: 30px;
+    margin-right: 12px; vertical-align: 2px; }
+  section .sub { color: var(--text-muted); margin: 0 0 32px; font-size: 16px; max-width: 720px; }
+  h3 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+  .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); cursor: pointer; font-size: 14px;
+    font-weight: 500; transition: all 0.15s; color: var(--text); font-family: inherit; }
+  .btn:hover { background: var(--border-strong); }
+  .btn.primary { background: var(--c-req); color: #000; border-color: var(--c-req); }
+  .btn.primary:hover { background: #93c5fd; }
+  .code-table { width: 100%; border-collapse: collapse; font-size: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; }
+  .code-table th, .code-table td { text-align: left; padding: 12px 16px;
+    border-bottom: 1px solid var(--border); color: var(--text); }
+  .code-table tr:last-child td { border-bottom: none; }
+  .code-table th { font-size: 12px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface-2); }
+  .code-table td.path { font-family: var(--mono); font-size: 12px; }
+  .code-table td.line { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+  .quiz { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; }
+  .quiz .q { margin-bottom: 24px; }
+  .quiz .q:last-child { margin-bottom: 0; }
+  .quiz .q .question { font-weight: 500; margin-bottom: 8px; }
+  .quiz .q .reveal { padding: 6px 12px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    background: var(--surface-2); color: var(--text-muted); font-family: inherit; }
+  .quiz .q .reveal:hover { background: var(--border-strong); color: var(--text); }
+  .quiz .q .answer { display: none; margin-top: 12px; padding: 14px;
+    background: var(--c-rsp-bg); border-left: 3px solid var(--c-rsp);
+    border-radius: 4px; font-size: 14px; }
+  .quiz .q.open .answer { display: block; }
+  .quiz .q.open .reveal { display: none; }
+  .next-card { background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+    color: white; border-radius: var(--radius-lg); padding: 32px; margin: 32px 0;
+    border: 1px solid var(--border-strong); }
+  .next-card .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--c-hn, #fb7185); font-weight: 600; }
+  .next-card h3 { margin: 8px 0 12px; color: white; font-size: 24px; }
+  .next-card p { color: #d4d4d8; margin: 0 0 16px; }
+  .next-card .files { display: flex; gap: 8px; flex-wrap: wrap; }
+  .next-card .file-chip { background: rgba(255,255,255,0.08); padding: 6px 12px;
+    border-radius: 4px; font-family: var(--mono); font-size: 12px; color: #e4e4e7; }
+  footer { padding: 32px 0; color: var(--text-muted); font-size: 13px; text-align: center; }
+  @media (max-width: 720px) {
+    .hero h1 { font-size: 30px; }
+    .hero .stats { grid-template-columns: repeat(2, 1fr); }
+    nav.top ul { display: none; }
+  }
 
-  /* Input port visual */
-  .port-card { padding: 24px; }
+  /* Lesson-specific */
   .port-svg { width: 100%; height: auto; }
-  .port-flit {
-    fill: var(--c-req); stroke: var(--c-req); stroke-width: 1.5;
-    transition: all 0.4s ease;
-  }
-  .port-flit.rsp { fill: var(--c-rsp); stroke: var(--c-rsp); }
-  .port-flit.snp { fill: var(--c-snp); stroke: var(--c-snp); }
-  .port-flit.dat { fill: var(--c-dat); stroke: var(--c-dat); }
-  .vc-slot {
-    fill: var(--surface); stroke: var(--border-strong); stroke-width: 1.5;
-  }
-  .vc-slot.req-bg { fill: var(--c-req-bg); stroke: var(--c-req); }
-  .vc-slot.rsp-bg { fill: var(--c-rsp-bg); stroke: var(--c-rsp); }
-  .vc-slot.snp-bg { fill: var(--c-snp-bg); stroke: var(--c-snp); }
-  .vc-slot.dat-bg { fill: var(--c-dat-bg); stroke: var(--c-dat); }
+  .port-flit { fill: var(--c-req); stroke: var(--c-req); stroke-width: 1.5;
+    transition: all 0.4s ease; }
+  .vc-slot { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1.5; }
+  .vc-slot.req-bg { fill: rgba(96, 165, 250, 0.15); stroke: var(--c-req); }
+  .vc-slot.rsp-bg { fill: rgba(74, 222, 128, 0.15); stroke: var(--c-rsp); }
+  .vc-slot.dat-bg { fill: rgba(192, 132, 252, 0.15); stroke: var(--c-dat); }
   .vc-label { font-family: var(--mono); font-size: 12px; fill: var(--text); font-weight: 500; }
   .vc-sub { font-family: var(--mono); font-size: 10px; fill: var(--text-muted); }
   .port-arrow { stroke: var(--text-dim); stroke-width: 1.5; fill: none; marker-end: url(#paArrow); }
 
-  .input-controls {
-    display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;
-  }
+  .input-controls { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
   .input-controls .lbl { font-size: 13px; color: var(--text-muted); }
 
-  /* Output port visual */
-  .out-vc-row {
-    display: grid; grid-template-columns: 80px 1fr 100px; gap: 12px;
-    align-items: center; padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-  }
+  .out-vc-row { display: grid; grid-template-columns: 80px 1fr 100px; gap: 12px;
+    align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .out-vc-row:last-child { border-bottom: none; }
   .out-vc-row.granted { background: var(--c-rsp-bg); border-radius: 8px; padding: 10px; margin: 0 -10px; }
   .out-vc-label { font-family: var(--mono); font-size: 13px; }
-  .out-vc-bar {
-    display: flex; gap: 3px; height: 28px;
-  }
-  .out-vc-bar .slot {
-    flex: 1; border: 1px solid var(--border-strong); border-radius: 4px;
-    background: var(--surface-2);
-  }
+  .out-vc-bar { display: flex; gap: 3px; height: 28px; }
+  .out-vc-bar .slot { flex: 1; border: 1px solid var(--border-strong); border-radius: 4px;
+    background: var(--surface-2); }
   .out-vc-bar .slot.full { background: var(--c-dat); border-color: var(--c-dat); }
   .out-vc-status { font-family: var(--mono); font-size: 11px; color: var(--text-muted); text-align: right; }
-  .out-vc-status .credit-bad { color: #ef4444; }
-  .out-vc-status .credit-ok { color: var(--c-rsp); }
+  .credit-bad { color: #ef4444; }
+  .credit-ok { color: var(--c-rsp); }
 
-  .vc-grid {
-    display: grid; grid-template-columns: 100px repeat(4, 1fr);
-    gap: 4px; max-width: 100%; margin: 0 auto;
-  }
-  .vc-cell {
-    padding: 10px; border: 1px solid var(--border-strong);
+  .vc-grid { display: grid; grid-template-columns: 100px repeat(4, 1fr);
+    gap: 4px; max-width: 100%; margin: 0 auto; }
+  .vc-cell { padding: 10px; border: 1px solid var(--border-strong);
     border-radius: 6px; text-align: center;
     font-family: var(--mono); font-size: 12px;
-    background: var(--surface);
-  }
-  .vc-cell.header { background: var(--surface-2); font-weight: 600; }
-  .vc-cell.row-header { background: var(--surface-2); text-align: left; font-size: 11px; font-weight: 600; }
-  .vc-cell.full { background: #fee2e2; color: #b91c1c; border-color: #b91c1c; }
-  .vc-cell.almost { background: #fef3c7; color: #92400e; border-color: #d97706; }
-  .vc-cell.normal { color: var(--text); }
+    background: var(--surface-2); color: var(--text); }
+  .vc-cell.header { background: var(--surface); font-weight: 600; }
+  .vc-cell.row-header { background: var(--surface); text-align: left; font-size: 11px; font-weight: 600; }
+  .vc-cell.full { background: rgba(239, 68, 68, 0.25); color: #fca5a5; border-color: #ef4444; }
+  .vc-cell.almost { background: rgba(251, 191, 36, 0.2); color: var(--c-snp); border-color: var(--c-snp); }
 
-  .deadlock-alert {
-    margin-top: 16px; padding: 14px;
-    background: #fef2f2; border-left: 3px solid #ef4444;
-    border-radius: 4px; font-size: 13px; color: #7f1d1d;
-    display: none;
-  }
+  .deadlock-alert { margin-top: 16px; padding: 14px;
+    background: rgba(239, 68, 68, 0.12); border-left: 3px solid #ef4444;
+    border-radius: 4px; font-size: 13px; color: #fca5a5; display: none; }
   .deadlock-alert.show { display: block; }
+  .deadlock-alert code { background: rgba(0, 0, 0, 0.3); color: #fca5a5; }
 </style>
 </head>
 <body>
@@ -101,11 +171,10 @@
     <span class="eyebrow">Lesson 4 of 10</span>
     <h1>Router Building Blocks</h1>
     <p class="lead">
-      Three mid-size modules sit between the leaf primitives and the full router:
-      the input port that sorts incoming flits into per-VC FIFOs, the output port
-      that arbitrates among VCs and gates on downstream credits, and the
-      virtual-channel manager that tracks occupancy and watches for deadlock. By
-      the end, you'll be able to read <code>router_top.sv</code> top-to-bottom.
+      Three mid-size modules between leaf primitives and the full router: the
+      input port that sorts incoming flits into per-VC FIFOs, the output port
+      that arbitrates and gates on credits, and the VC manager that tracks
+      occupancy and watches for deadlock.
     </p>
     <div class="stats">
       <div class="stat"><div class="v">3</div><div class="l">Files</div></div>
@@ -115,50 +184,44 @@
     </div>
   </header>
 
-  <!-- ============ INPUT PORT ============ -->
   <section id="input">
     <h2><span class="num">1</span>input_port — sorting flits into per-VC FIFOs</h2>
     <p class="sub">
-      One <code>input_port</code> sits at each of the 5 router input directions
-      (N/S/E/W/Local). It decodes the channel field of the incoming flit, looks up
-      which VC it belongs to via <code>channel_to_vc()</code>, and writes it to
-      that VC's dedicated FIFO. Each VC has its own depth-8 storage so head-of-line
-      blocking on one channel doesn't stall the others.
+      One <code>input_port</code> sits at each of the 5 router input directions.
+      It decodes the channel field, looks up which VC it belongs to via
+      <code>channel_to_vc()</code>, and writes to that VC's FIFO. Each VC has its
+      own depth-8 storage.
     </p>
 
-    <div class="card port-card">
+    <div class="card">
       <div class="input-controls">
         <span class="lbl">Send a flit on:</span>
         <button class="btn" data-ch="req" id="sendReq" style="border-color: var(--c-req); color: var(--c-req);">REQ</button>
         <button class="btn" data-ch="rsp" id="sendRsp" style="border-color: var(--c-rsp); color: var(--c-rsp);">RSP</button>
         <button class="btn" data-ch="snp" id="sendSnp" style="border-color: var(--c-snp); color: var(--c-snp);">SNP</button>
         <button class="btn" data-ch="dat" id="sendDat" style="border-color: var(--c-dat); color: var(--c-dat);">DAT</button>
-        <button class="btn" id="drainAll" style="margin-left: 16px;">Drain one from each VC</button>
+        <button class="btn" id="drainAll" style="margin-left: 16px;">Drain one per VC</button>
         <button class="btn" id="ipReset">Reset</button>
       </div>
 
       <svg class="port-svg" viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg" id="inputPortSvg">
         <defs>
           <marker id="paArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M0,0 L10,5 L0,10 Z" fill="#a8a29e"/>
+            <path d="M0,0 L10,5 L0,10 Z" fill="#71717a"/>
           </marker>
         </defs>
 
-        <!-- Incoming flit (animated) -->
         <g id="incomingFlit" style="opacity: 0;">
           <rect class="port-flit" id="incomingRect" x="20" y="120" width="60" height="40" rx="6"/>
-          <text id="incomingTxt" x="50" y="145" text-anchor="middle" font-size="13" fill="white" font-weight="600">REQ</text>
+          <text id="incomingTxt" x="50" y="145" text-anchor="middle" font-size="13" fill="#000" font-weight="600">REQ</text>
         </g>
 
-        <!-- vc_sel decoder -->
-        <rect x="140" y="100" width="120" height="80" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)" stroke-width="1.5"/>
-        <text x="200" y="135" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" fill="var(--text)">channel_to_vc()</text>
-        <text x="200" y="155" text-anchor="middle" font-size="10" fill="var(--text-muted)">VC decode</text>
+        <rect x="140" y="100" width="120" height="80" rx="8" fill="#27272a" stroke="#3f3f46" stroke-width="1.5"/>
+        <text x="200" y="135" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" fill="#fafafa">channel_to_vc()</text>
+        <text x="200" y="155" text-anchor="middle" font-size="10" fill="#a1a1aa">VC decode</text>
 
-        <!-- Wire from flit to decoder -->
         <path class="port-arrow" d="M85,140 L138,140"/>
 
-        <!-- 4 VC FIFOs -->
         <g id="vc0Group">
           <rect class="vc-slot req-bg" x="340" y="20" width="280" height="50" rx="6"/>
           <text class="vc-label" x="350" y="40">VC 0 — REQ / SNP</text>
@@ -180,20 +243,15 @@
           <text class="vc-sub" x="350" y="238">fill=<tspan id="vc3Fill">0</tspan>/8</text>
         </g>
 
-        <!-- Decoder to VCs -->
         <path class="port-arrow" d="M260,140 L342,45"/>
         <path class="port-arrow" d="M260,140 L342,105"/>
         <path class="port-arrow" d="M260,140 L342,165"/>
         <path class="port-arrow" d="M260,140 L342,225"/>
 
-        <!-- VC fill indicators (as small rectangles inside each row) -->
-        <g id="vc0Cells"></g>
-        <g id="vc1Cells"></g>
-        <g id="vc2Cells"></g>
-        <g id="vc3Cells"></g>
+        <g id="vc0Cells"></g><g id="vc1Cells"></g>
+        <g id="vc2Cells"></g><g id="vc3Cells"></g>
 
-        <!-- Outgoing to crossbar label -->
-        <text x="700" y="20" font-size="11" fill="var(--text-muted)" text-anchor="middle">to crossbar / SA stage</text>
+        <text x="700" y="20" font-size="11" fill="#a1a1aa" text-anchor="middle">to crossbar / SA</text>
         <path class="port-arrow" d="M625,45 L780,45"/>
         <path class="port-arrow" d="M625,105 L780,105"/>
         <path class="port-arrow" d="M625,165 L780,165"/>
@@ -202,225 +260,179 @@
 
       <h3>Backpressure: <code>ready_out</code></h3>
       <p style="font-size: 14px; color: var(--text-muted);">
-        The input port asserts <code>ready_out</code> only when the <i>selected</i>
-        VC's FIFO has room. If REQ's VC0 is full but RSP's VC1 is empty, the port
-        is <i>not</i> ready for REQ but is for RSP — that's why each VC has its own
-        FIFO instead of one shared FIFO.
+        The input port asserts <code>ready_out</code> only when the selected VC's
+        FIFO has room. If REQ's VC0 is full but RSP's VC1 is empty, the port is
+        not ready for REQ but is for RSP — that's why each VC has its own FIFO.
       </p>
     </div>
   </section>
 
-  <!-- ============ OUTPUT PORT ============ -->
   <section id="output">
     <h2><span class="num">2</span>output_port — VC priority + credit gating</h2>
     <p class="sub">
-      The output port instantiates 4 <code>flit_buffer</code>s (one per VC) on its
-      input side. On the output side it does <b>strict-priority arbitration</b>:
-      VC3 wins over VC2 over VC1 over VC0. But a VC only enters arbitration if
-      <i>both</i> its FIFO has a flit ready <i>and</i> it has at least one
-      downstream credit. Click any VC's "credit" button to spend a credit; press
-      <b>Tick</b> to advance the arbiter.
+      4 <code>flit_buffer</code>s on input side; strict-priority arbitration
+      (VC3>VC2>VC1>VC0) on output. A VC enters arbitration only if its FIFO has a
+      flit AND it has at least one credit. Press Tick.
     </p>
 
-    <div class="card port-card">
+    <div class="card">
       <div class="input-controls">
-        <button class="btn primary" id="opTick">Tick — one arbitration cycle</button>
-        <button class="btn" id="opEnqAll">Enqueue 1 flit per VC</button>
+        <button class="btn primary" id="opTick">Tick — one cycle</button>
+        <button class="btn" id="opEnqAll">Enqueue 1 per VC</button>
         <button class="btn" id="opRtnAll">Return 1 credit per VC</button>
         <button class="btn" id="opReset">Reset</button>
       </div>
-
       <div id="opRows"></div>
-
       <p style="font-size: 14px; color: var(--text-muted); margin-top: 16px;">
-        <b>The dequeue condition:</b>
+        <b>Dequeue condition:</b>
         <code>buf_rd_ready[vc] = any_grant &amp;&amp; (grant_vc == vc) &amp;&amp; link_ready;</code>
-        — meaning the buffer drains <i>only</i> when this VC won arbitration AND
-        the downstream link said it was ready. <code>any_grant</code> requires both
-        <code>buf_rd_valid &amp;&amp; credit_avail</code>.
       </p>
     </div>
   </section>
 
-  <!-- ============ VIRTUAL CHANNEL MANAGER ============ -->
   <section id="vcmgr">
     <h2><span class="num">3</span>virtual_channel_mgr — occupancy &amp; deadlock</h2>
     <p class="sub">
-      A bookkeeper that tracks how many flits sit in each (port, VC) pair across
-      the whole router, allocates VCs by mapping channel → VC class, and watches
-      for the worst kind of bug — a deadlock. The stall counter increments any
-      cycle the buffer is at <code>BUF_DEPTH</code>; if it ever hits
+      Bookkeeper that tracks how many flits sit in each (port, VC) pair, allocates
+      VCs by mapping channel → VC class, and watches for deadlock. Stall counter
+      increments any cycle the buffer is at <code>BUF_DEPTH</code>; if it hits
       <code>0xFFFF</code> the watchdog raises <code>deadlock_suspected</code>.
     </p>
 
     <div class="card">
-      <h3 style="margin-top: 0">Buffer occupancy across all (port, VC) pairs</h3>
+      <h3 style="margin-top: 0">Buffer occupancy across (port, VC) pairs</h3>
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-        Click any cell to push a flit into that (port, VC). Cell turns yellow at 7/8 (almost_full), red at 8/8 (full).
+        Click any cell to push a flit. Yellow at 7/8, red at 8/8.
       </p>
       <div class="vc-grid" id="vcGrid"></div>
       <div class="deadlock-alert" id="deadlockAlert">
-        <b>⚠ deadlock_suspected = 1</b>: at least one (port, VC) has been at full
-        capacity for 65,535 consecutive cycles. <code>perf_monitor</code> logs the
-        event and <code>error_handler</code> raises <code>irq_error</code>.
+        <b>deadlock_suspected = 1</b>: at least one (port, VC) has been at full
+        capacity for 65,535 cycles. <code>perf_monitor</code> logs the event and
+        <code>error_handler</code> raises <code>irq_error</code>.
       </div>
 
       <h3>The CHI_ASSERT that protects the design</h3>
       <table class="code-table">
         <thead><tr><th>Assertion</th><th>Condition</th><th>Why it matters</th></tr></thead>
         <tbody>
-          <tr>
-            <td class="path">a_rsp_vc_never_full_due_to_req</td>
-            <td class="path">!(VC_RSP full &amp;&amp; VC_REQ full &amp;&amp; new RSP arriving)</td>
-            <td>If both request and response classes can be blocked together by REQ traffic, you have a protocol deadlock. CHI absolutely forbids this.</td>
-          </tr>
+          <tr><td class="path">a_rsp_vc_never_full_due_to_req</td>
+              <td class="path">!(VC_RSP full &amp;&amp; VC_REQ full &amp;&amp; new RSP arriving)</td>
+              <td>Protocol deadlock if both classes can block together.</td></tr>
         </tbody>
       </table>
 
-      <h3>The channel → VC mapping</h3>
+      <h3>Channel → VC mapping</h3>
       <table class="code-table">
         <thead><tr><th>chi_channel_e</th><th>VC</th><th>Why this class</th></tr></thead>
         <tbody>
           <tr><td class="path">CHI_CH_REQ</td><td class="path">VC_REQ (0)</td><td>Request class — may cause snoops</td></tr>
-          <tr><td class="path">CHI_CH_SNP</td><td class="path">VC_REQ (0)</td><td>Same class as REQ — both are "request side"</td></tr>
-          <tr><td class="path">CHI_CH_RSP</td><td class="path">VC_RSP (1)</td><td>Response class — must drain even if REQ blocks</td></tr>
-          <tr><td class="path">CHI_CH_DAT</td><td class="path">VC_DAT (2)</td><td>Data class — payload, must not back up</td></tr>
-          <tr><td>—</td><td class="path">VC_HI (3)</td><td>Reserved for high-priority / retry traffic</td></tr>
+          <tr><td class="path">CHI_CH_SNP</td><td class="path">VC_REQ (0)</td><td>Same class as REQ</td></tr>
+          <tr><td class="path">CHI_CH_RSP</td><td class="path">VC_RSP (1)</td><td>Response — must drain even if REQ blocks</td></tr>
+          <tr><td class="path">CHI_CH_DAT</td><td class="path">VC_DAT (2)</td><td>Data — payload, must not back up</td></tr>
+          <tr><td>—</td><td class="path">VC_HI (3)</td><td>Reserved for high-priority / retry</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <!-- ============ DATA PATH ============ -->
   <section id="chain">
     <h2><span class="num">4</span>How they chain together</h2>
     <p class="sub">
-      A flit's life inside one router, from the moment it arrives at the input
-      port to the moment it drives the output link. This is the data-path skeleton
-      you'll see inside <code>router_top.sv</code> next lesson.
+      A flit's life inside one router. This is the skeleton you'll see in
+      <code>router_top.sv</code>.
     </p>
     <div class="card">
       <svg viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto;">
         <defs>
           <marker id="chainArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-            <path d="M0,0 L10,5 L0,10 Z" fill="#0f172a"/>
+            <path d="M0,0 L10,5 L0,10 Z" fill="#fafafa"/>
           </marker>
         </defs>
 
-        <!-- Steps -->
         <g>
-          <rect x="20" y="80" width="150" height="80" rx="10" fill="var(--c-req-bg)" stroke="var(--c-req)" stroke-width="2"/>
-          <text x="95" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="var(--c-req)">1. input_port</text>
-          <text x="95" y="130" text-anchor="middle" font-size="11" fill="var(--c-req)">decode channel</text>
-          <text x="95" y="146" text-anchor="middle" font-size="11" fill="var(--c-req)">push into VC FIFO</text>
+          <rect x="20" y="80" width="150" height="80" rx="10" fill="rgba(96, 165, 250, 0.15)" stroke="#60a5fa" stroke-width="2"/>
+          <text x="95" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="#60a5fa">1. input_port</text>
+          <text x="95" y="130" text-anchor="middle" font-size="11" fill="#93c5fd">decode channel</text>
+          <text x="95" y="146" text-anchor="middle" font-size="11" fill="#93c5fd">push into VC FIFO</text>
         </g>
         <g>
-          <rect x="200" y="80" width="150" height="80" rx="10" fill="var(--c-snp-bg)" stroke="var(--c-snp)" stroke-width="2"/>
-          <text x="275" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="var(--c-snp)">2. RC + VA + SA</text>
-          <text x="275" y="130" text-anchor="middle" font-size="11" fill="var(--c-snp)">compute out_port</text>
-          <text x="275" y="146" text-anchor="middle" font-size="11" fill="var(--c-snp)">arbitrate crossbar</text>
+          <rect x="200" y="80" width="150" height="80" rx="10" fill="rgba(251, 191, 36, 0.15)" stroke="#fbbf24" stroke-width="2"/>
+          <text x="275" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="#fbbf24">2. RC + VA + SA</text>
+          <text x="275" y="130" text-anchor="middle" font-size="11" fill="#fde68a">compute out_port</text>
+          <text x="275" y="146" text-anchor="middle" font-size="11" fill="#fde68a">arbitrate crossbar</text>
         </g>
         <g>
-          <rect x="380" y="80" width="150" height="80" rx="10" fill="var(--c-rsp-bg)" stroke="var(--c-rsp)" stroke-width="2"/>
-          <text x="455" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="var(--c-rsp)">3. crossbar</text>
-          <text x="455" y="130" text-anchor="middle" font-size="11" fill="var(--c-rsp)">5×5 mux</text>
-          <text x="455" y="146" text-anchor="middle" font-size="11" fill="var(--c-rsp)">in_port → out_port</text>
+          <rect x="380" y="80" width="150" height="80" rx="10" fill="rgba(74, 222, 128, 0.15)" stroke="#4ade80" stroke-width="2"/>
+          <text x="455" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="#4ade80">3. crossbar</text>
+          <text x="455" y="130" text-anchor="middle" font-size="11" fill="#86efac">5×5 mux</text>
+          <text x="455" y="146" text-anchor="middle" font-size="11" fill="#86efac">in_port → out_port</text>
         </g>
         <g>
-          <rect x="560" y="80" width="150" height="80" rx="10" fill="var(--c-dat-bg)" stroke="var(--c-dat)" stroke-width="2"/>
-          <text x="635" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="var(--c-dat)">4. output_port</text>
-          <text x="635" y="130" text-anchor="middle" font-size="11" fill="var(--c-dat)">VC3&gt;2&gt;1&gt;0 arb</text>
-          <text x="635" y="146" text-anchor="middle" font-size="11" fill="var(--c-dat)">credit gate</text>
+          <rect x="560" y="80" width="150" height="80" rx="10" fill="rgba(192, 132, 252, 0.15)" stroke="#c084fc" stroke-width="2"/>
+          <text x="635" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="#c084fc">4. output_port</text>
+          <text x="635" y="130" text-anchor="middle" font-size="11" fill="#d8b4fe">VC3&gt;2&gt;1&gt;0 arb</text>
+          <text x="635" y="146" text-anchor="middle" font-size="11" fill="#d8b4fe">credit gate</text>
         </g>
         <g>
-          <rect x="740" y="80" width="140" height="80" rx="10" fill="var(--surface-2)" stroke="var(--text)" stroke-width="2"/>
-          <text x="810" y="110" text-anchor="middle" font-size="13" font-weight="600">5. next router</text>
-          <text x="810" y="130" text-anchor="middle" font-size="11" fill="var(--text-muted)">link_flit / valid</text>
-          <text x="810" y="146" text-anchor="middle" font-size="11" fill="var(--text-muted)">lcrd return</text>
+          <rect x="740" y="80" width="140" height="80" rx="10" fill="#27272a" stroke="#fafafa" stroke-width="2"/>
+          <text x="810" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="#fafafa">5. next router</text>
+          <text x="810" y="130" text-anchor="middle" font-size="11" fill="#a1a1aa">link_flit / valid</text>
+          <text x="810" y="146" text-anchor="middle" font-size="11" fill="#a1a1aa">lcrd return</text>
         </g>
 
-        <!-- Arrows -->
-        <line x1="170" y1="120" x2="200" y2="120" stroke="#0f172a" stroke-width="2" marker-end="url(#chainArrow)"/>
-        <line x1="350" y1="120" x2="380" y2="120" stroke="#0f172a" stroke-width="2" marker-end="url(#chainArrow)"/>
-        <line x1="530" y1="120" x2="560" y2="120" stroke="#0f172a" stroke-width="2" marker-end="url(#chainArrow)"/>
-        <line x1="710" y1="120" x2="740" y2="120" stroke="#0f172a" stroke-width="2" marker-end="url(#chainArrow)"/>
+        <line x1="170" y1="120" x2="200" y2="120" stroke="#fafafa" stroke-width="2" marker-end="url(#chainArrow)"/>
+        <line x1="350" y1="120" x2="380" y2="120" stroke="#fafafa" stroke-width="2" marker-end="url(#chainArrow)"/>
+        <line x1="530" y1="120" x2="560" y2="120" stroke="#fafafa" stroke-width="2" marker-end="url(#chainArrow)"/>
+        <line x1="710" y1="120" x2="740" y2="120" stroke="#fafafa" stroke-width="2" marker-end="url(#chainArrow)"/>
 
-        <!-- Side note: virtual_channel_mgr observes everything -->
-        <rect x="200" y="180" width="510" height="32" rx="6" fill="white" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="4,3"/>
-        <text x="455" y="200" text-anchor="middle" font-size="11" fill="var(--text-muted)">virtual_channel_mgr observes every (port, VC) for occupancy + deadlock</text>
+        <rect x="200" y="180" width="510" height="32" rx="6" fill="#18181b" stroke="#71717a" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="455" y="200" text-anchor="middle" font-size="11" fill="#a1a1aa">virtual_channel_mgr observes every (port, VC) for occupancy + deadlock</text>
       </svg>
     </div>
   </section>
 
-  <!-- ============ CODE MAP ============ -->
   <section id="code">
     <h2><span class="num">5</span>Code map</h2>
     <table class="code-table">
       <thead><tr><th>Concept</th><th>File</th><th>Line</th><th>What's there</th></tr></thead>
       <tbody>
-        <tr><td>VC select from channel</td><td class="path">rtl/interconnect/router/input_port.sv</td><td class="line">42</td><td>channel_to_vc() applied to flit_in[20:18]</td></tr>
-        <tr><td>Per-VC FIFO instantiate</td><td class="path">rtl/interconnect/router/input_port.sv</td><td class="line">49</td><td>generate loop, one FIFO per VC</td></tr>
-        <tr><td>Backpressure (ready_out)</td><td class="path">rtl/interconnect/router/input_port.sv</td><td class="line">76</td><td>Ready only if selected VC is not full</td></tr>
-        <tr><td>4× flit_buffer instances</td><td class="path">rtl/interconnect/router/output_port.sv</td><td class="line">59</td><td>One per VC in gen_vc_buf</td></tr>
-        <tr><td>Per-VC credit counters</td><td class="path">rtl/interconnect/router/output_port.sv</td><td class="line">87</td><td>credit_q[NUM_VC] update FSM</td></tr>
-        <tr><td>Strict-priority VC arb</td><td class="path">rtl/interconnect/router/output_port.sv</td><td class="line">116</td><td>VC3 → VC2 → VC1 → VC0 reverse scan</td></tr>
-        <tr><td>Output dequeue gate</td><td class="path">rtl/interconnect/router/output_port.sv</td><td class="line">128</td><td>any_grant &amp;&amp; grant_vc match &amp;&amp; link_ready</td></tr>
-        <tr><td>Occupancy tracking</td><td class="path">rtl/interconnect/flow_control/virtual_channel_mgr.sv</td><td class="line">59</td><td>buf_count[port][vc] update</td></tr>
-        <tr><td>VC allocation rule</td><td class="path">rtl/interconnect/flow_control/virtual_channel_mgr.sv</td><td class="line">82</td><td>alloc_vc = channel_to_vc(alloc_ch)</td></tr>
-        <tr><td>Deadlock watchdog</td><td class="path">rtl/interconnect/flow_control/virtual_channel_mgr.sv</td><td class="line">100</td><td>stall_counter, 16'hFFFF threshold</td></tr>
+        <tr><td>VC select from channel</td><td class="path">rtl/interconnect/router/input_port.sv</td><td class="line">42</td><td>channel_to_vc() on flit_in[20:18]</td></tr>
+        <tr><td>Per-VC FIFO instantiate</td><td class="path">rtl/interconnect/router/input_port.sv</td><td class="line">49</td><td>generate loop</td></tr>
+        <tr><td>Backpressure (ready_out)</td><td class="path">rtl/interconnect/router/input_port.sv</td><td class="line">76</td><td>Selected VC not full</td></tr>
+        <tr><td>4× flit_buffer instances</td><td class="path">rtl/interconnect/router/output_port.sv</td><td class="line">59</td><td>gen_vc_buf</td></tr>
+        <tr><td>Per-VC credit counters</td><td class="path">rtl/interconnect/router/output_port.sv</td><td class="line">87</td><td>credit_q update</td></tr>
+        <tr><td>Strict-priority VC arb</td><td class="path">rtl/interconnect/router/output_port.sv</td><td class="line">116</td><td>VC3→VC0 reverse scan</td></tr>
+        <tr><td>Output dequeue gate</td><td class="path">rtl/interconnect/router/output_port.sv</td><td class="line">128</td><td>any_grant &amp;&amp; match &amp;&amp; link_ready</td></tr>
+        <tr><td>Occupancy tracking</td><td class="path">rtl/interconnect/flow_control/virtual_channel_mgr.sv</td><td class="line">59</td><td>buf_count update</td></tr>
+        <tr><td>VC allocation rule</td><td class="path">rtl/interconnect/flow_control/virtual_channel_mgr.sv</td><td class="line">82</td><td>channel_to_vc(alloc_ch)</td></tr>
+        <tr><td>Deadlock watchdog</td><td class="path">rtl/interconnect/flow_control/virtual_channel_mgr.sv</td><td class="line">100</td><td>stall_counter, 0xFFFF threshold</td></tr>
         <tr><td>Response-class assertion</td><td class="path">rtl/interconnect/flow_control/virtual_channel_mgr.sv</td><td class="line">132</td><td>a_rsp_vc_never_full_due_to_req</td></tr>
       </tbody>
     </table>
   </section>
 
-  <!-- ============ QUIZ ============ -->
   <section id="quiz">
     <h2><span class="num">6</span>Check yourself</h2>
     <div class="quiz">
       <div class="q">
-        <div class="question">Q1. Why does <code>input_port</code> have four separate FIFOs instead of one shared FIFO with VC tags?</div>
+        <div class="question">Q1. Why does <code>input_port</code> have four separate FIFOs instead of one shared with VC tags?</div>
         <button class="reveal">Show answer</button>
-        <div class="answer">
-          Head-of-line blocking. If a REQ flit at the front can't make forward
-          progress (its output port is congested), a single FIFO would also block
-          the RSP and DAT flits queued behind it — even if their output ports were
-          wide open. Separate per-VC FIFOs let each channel make progress
-          independently. This is fundamental to deadlock freedom.
-        </div>
+        <div class="answer">Head-of-line blocking. A single FIFO would block flits behind a stuck one even if their output ports were free. Per-VC FIFOs let each channel make independent progress.</div>
       </div>
       <div class="q">
         <div class="question">Q2. <code>output_port</code> uses strict priority (VC3 &gt; VC2 &gt; VC1 &gt; VC0). Could VC0 ever starve?</div>
         <button class="reveal">Show answer</button>
-        <div class="answer">
-          In theory yes — if VC1/2/3 always have something to send. In practice
-          the upstream protocol guarantees a finite supply: each transaction
-          generates a bounded number of higher-VC flits per REQ. The Hi-VC (VC3)
-          is reserved for retry traffic specifically so normal Hi-priority bursts
-          don't choke REQ/SNP forever. The DV plan checks this in TC-STRESS-002.
-        </div>
+        <div class="answer">In theory yes. In practice the upstream protocol provides a bounded supply per transaction. VC3 (retry) is bounded by transactions in flight. DV plan TC-STRESS-002 checks this.</div>
       </div>
       <div class="q">
-        <div class="question">Q3. The dequeue condition is <code>any_grant &amp;&amp; (grant_vc == g) &amp;&amp; link_ready</code>. Why include <code>link_ready</code>?</div>
+        <div class="question">Q3. Why include <code>link_ready</code> in the dequeue condition when we already have credits?</div>
         <button class="reveal">Show answer</button>
-        <div class="answer">
-          The downstream link or next router could be back-pressuring even if we
-          have credits available. <code>link_ready</code> is the immediate
-          handshake from the next module saying "I can accept a flit this cycle."
-          Without it we'd dequeue from our FIFO with nowhere to send the flit —
-          losing data. Credits are upstream flow control; <code>link_ready</code>
-          is downstream readiness.
-        </div>
+        <div class="answer">Downstream can back-pressure for one cycle even with credits available. Without link_ready we'd dequeue from FIFO with nowhere to send — data lost. Credits are upstream flow control; link_ready is downstream readiness.</div>
       </div>
       <div class="q">
-        <div class="question">Q4. The deadlock watchdog uses a 16-bit stall counter. With 1 GHz clock, how long before it trips?</div>
+        <div class="question">Q4. The deadlock watchdog uses a 16-bit stall counter at 1 GHz. How long before it trips?</div>
         <button class="reveal">Show answer</button>
-        <div class="answer">
-          2¹⁶ = 65,536 cycles at 1 GHz ≈ <b>65 microseconds</b>. That's
-          aggressively long for a fabric event — by then either real traffic has
-          unblocked or there's a genuine cycle. It's an intentional choice: short
-          enough to catch silicon bugs, long enough to never false-fire on
-          legitimate congestion bursts.
-        </div>
+        <div class="answer">2¹⁶ = 65,536 cycles at 1 GHz ≈ <b>65 microseconds</b>. Aggressively long for a fabric event — by then either real traffic has unblocked or there's a genuine cycle.</div>
       </div>
     </div>
   </section>
@@ -428,50 +440,38 @@
   <div class="next-card">
     <div class="eyebrow">Lesson 5 — Up next</div>
     <h3>router_top — the full 5-stage pipeline</h3>
-    <p>
-      The capstone. All three building blocks from this lesson, all five primitives
-      from Lessons 2 and 3, wired together into the 5-port wormhole router with the
-      RC → VA → SA → ST → LT pipeline. You'll see how one flit walks through every
-      stage and meets every block you've read so far.
-    </p>
-    <div class="files">
-      <span class="file-chip">router_top.sv</span>
-    </div>
+    <p>The capstone. All three building blocks from this lesson, all primitives from Lessons 2 and 3, wired into the 5-port wormhole router with RC → VA → SA → ST → LT.</p>
+    <div class="files"><span class="file-chip">router_top.sv</span></div>
   </div>
 
 </div>
 
-<footer>
-  <div class="container">Lesson 4 of 10 · hanuma SoC learning track</div>
-</footer>
+<footer><div class="container">Lesson 4 of 10 · hanuma SoC learning track</div></footer>
 
 <script>
-  // ---------- Input port animation ----------
-  const ch2vc = {req: 0, snp: 0, rsp: 1, dat: 2};
-  const chColor = {req: 'var(--c-req)', rsp: 'var(--c-rsp)', snp: 'var(--c-snp)', dat: 'var(--c-dat)'};
-  const vcFill = [0, 0, 0, 0];
-  const DEPTH = 8;
-  let flitCounter = 0;
+  var ch2vc = {req: 0, snp: 0, rsp: 1, dat: 2};
+  var chColor = {req: '#60a5fa', rsp: '#4ade80', snp: '#fbbf24', dat: '#c084fc'};
+  var vcFill = [0, 0, 0, 0];
+  var DEPTH = 8;
+  var flitCounter = 0;
 
   function renderVcFills() {
-    for (let v = 0; v < 4; v++) {
+    for (var v = 0; v < 4; v++) {
       document.getElementById('vc' + v + 'Fill').textContent = vcFill[v];
-      // Draw stored flits as little rectangles
-      const g = document.getElementById('vc' + v + 'Cells');
+      var g = document.getElementById('vc' + v + 'Cells');
       g.innerHTML = '';
-      const baseX = 450, baseY = 30 + v * 60;
-      for (let i = 0; i < vcFill[v]; i++) {
-        const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      var baseX = 450, baseY = 30 + v * 60;
+      for (var i = 0; i < vcFill[v]; i++) {
+        var r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         r.setAttribute('x', baseX + i * 22);
         r.setAttribute('y', baseY);
         r.setAttribute('width', 18);
         r.setAttribute('height', 30);
         r.setAttribute('rx', 3);
-        let fill = 'var(--c-req)';
-        if (v === 0) fill = 'var(--c-req)';
-        else if (v === 1) fill = 'var(--c-rsp)';
-        else if (v === 2) fill = 'var(--c-dat)';
-        else fill = 'var(--text-muted)';
+        var fill = '#60a5fa';
+        if (v === 1) fill = '#4ade80';
+        else if (v === 2) fill = '#c084fc';
+        else if (v === 3) fill = '#a1a1aa';
         r.setAttribute('fill', fill);
         g.appendChild(r);
       }
@@ -479,170 +479,156 @@
   }
 
   function animateFlit(ch) {
-    if (vcFill[ch2vc[ch]] >= DEPTH) {
-      // backpressure!
-      return;
-    }
-    const grp = document.getElementById('incomingFlit');
-    const rect = document.getElementById('incomingRect');
-    const txt = document.getElementById('incomingTxt');
+    if (vcFill[ch2vc[ch]] >= DEPTH) return;
+    var grp = document.getElementById('incomingFlit');
+    var rect = document.getElementById('incomingRect');
+    var txt = document.getElementById('incomingTxt');
     rect.setAttribute('fill', chColor[ch]);
     rect.setAttribute('stroke', chColor[ch]);
     txt.textContent = ch.toUpperCase() + '·F' + (++flitCounter);
-    // start position
     rect.setAttribute('x', 20);
     txt.setAttribute('x', 50);
     grp.style.transition = 'none';
     grp.style.opacity = '1';
-    // animate via attribute change
-    setTimeout(() => {
+    setTimeout(function() {
       grp.style.transition = 'opacity 0.4s';
       rect.style.transition = 'x 0.5s ease';
       txt.style.transition = 'x 0.5s ease';
       rect.setAttribute('x', 140);
       txt.setAttribute('x', 170);
     }, 30);
-    setTimeout(() => {
-      // jump to target VC row
-      const targetY = 30 + ch2vc[ch] * 60 + 15;
+    setTimeout(function() {
+      var targetY = 30 + ch2vc[ch] * 60 + 15;
       rect.setAttribute('x', 350);
       txt.setAttribute('x', 380);
       rect.setAttribute('y', targetY - 15);
       txt.setAttribute('y', targetY + 5);
     }, 550);
-    setTimeout(() => {
+    setTimeout(function() {
       grp.style.opacity = '0';
       vcFill[ch2vc[ch]]++;
       renderVcFills();
     }, 1000);
   }
 
-  document.getElementById('sendReq').addEventListener('click', () => animateFlit('req'));
-  document.getElementById('sendRsp').addEventListener('click', () => animateFlit('rsp'));
-  document.getElementById('sendSnp').addEventListener('click', () => animateFlit('snp'));
-  document.getElementById('sendDat').addEventListener('click', () => animateFlit('dat'));
-  document.getElementById('drainAll').addEventListener('click', () => {
-    for (let v = 0; v < 4; v++) if (vcFill[v] > 0) vcFill[v]--;
+  document.getElementById('sendReq').addEventListener('click', function() { animateFlit('req'); });
+  document.getElementById('sendRsp').addEventListener('click', function() { animateFlit('rsp'); });
+  document.getElementById('sendSnp').addEventListener('click', function() { animateFlit('snp'); });
+  document.getElementById('sendDat').addEventListener('click', function() { animateFlit('dat'); });
+  document.getElementById('drainAll').addEventListener('click', function() {
+    for (var v = 0; v < 4; v++) if (vcFill[v] > 0) vcFill[v]--;
     renderVcFills();
   });
-  document.getElementById('ipReset').addEventListener('click', () => {
+  document.getElementById('ipReset').addEventListener('click', function() {
     vcFill[0] = vcFill[1] = vcFill[2] = vcFill[3] = 0;
     renderVcFills();
   });
   renderVcFills();
 
-  // ---------- Output port arbitration ----------
-  const opVcFill = [0, 0, 0, 0];
-  const opCredit = [8, 8, 8, 8];
+  var opVcFill = [0, 0, 0, 0];
+  var opCredit = [8, 8, 8, 8];
 
   function renderOp() {
-    const rows = document.getElementById('opRows');
+    var rows = document.getElementById('opRows');
     rows.innerHTML = '';
-    // Find grant
-    let grantVc = -1;
-    for (let v = 3; v >= 0; v--) {
-      if (opVcFill[v] > 0 && opCredit[v] > 0) { grantVc = v; break; }
+    var grantVc = -1;
+    for (var vg = 3; vg >= 0; vg--) {
+      if (opVcFill[vg] > 0 && opCredit[vg] > 0) { grantVc = vg; break; }
     }
-    for (let v = 3; v >= 0; v--) {
-      const row = document.createElement('div');
+    for (var v = 3; v >= 0; v--) {
+      var row = document.createElement('div');
       row.className = 'out-vc-row';
       if (v === grantVc) row.classList.add('granted');
-      const lbl = document.createElement('div');
+      var lbl = document.createElement('div');
       lbl.className = 'out-vc-label';
-      lbl.innerHTML = 'VC ' + v +
-        (v === 3 ? '<br><span style="font-size: 10px; color: var(--text-muted)">Hi-pri</span>' :
-         v === 2 ? '<br><span style="font-size: 10px; color: var(--text-muted)">DAT</span>' :
-         v === 1 ? '<br><span style="font-size: 10px; color: var(--text-muted)">RSP</span>' :
-                   '<br><span style="font-size: 10px; color: var(--text-muted)">REQ/SNP</span>');
-      const bar = document.createElement('div');
+      var sub = (v === 3) ? 'Hi-pri' : (v === 2) ? 'DAT' : (v === 1) ? 'RSP' : 'REQ/SNP';
+      lbl.innerHTML = 'VC ' + v + '<br><span style="font-size: 10px; color: var(--text-muted)">' + sub + '</span>';
+      var bar = document.createElement('div');
       bar.className = 'out-vc-bar';
-      for (let i = 0; i < DEPTH; i++) {
-        const s = document.createElement('div');
+      for (var i = 0; i < DEPTH; i++) {
+        var s = document.createElement('div');
         s.className = 'slot';
         if (i < opVcFill[v]) s.classList.add('full');
         bar.appendChild(s);
       }
-      const stat = document.createElement('div');
+      var stat = document.createElement('div');
       stat.className = 'out-vc-status';
-      const credClass = opCredit[v] === 0 ? 'credit-bad' : (opCredit[v] <= 2 ? 'credit-bad' : 'credit-ok');
+      var credClass = opCredit[v] === 0 ? 'credit-bad' : (opCredit[v] <= 2 ? 'credit-bad' : 'credit-ok');
       stat.innerHTML = 'fill ' + opVcFill[v] + '/8<br><span class="' + credClass + '">cred ' + opCredit[v] + '</span>';
       row.appendChild(lbl); row.appendChild(bar); row.appendChild(stat);
       rows.appendChild(row);
     }
   }
 
-  document.getElementById('opTick').addEventListener('click', () => {
-    for (let v = 3; v >= 0; v--) {
+  document.getElementById('opTick').addEventListener('click', function() {
+    for (var v = 3; v >= 0; v--) {
       if (opVcFill[v] > 0 && opCredit[v] > 0) {
-        opVcFill[v]--;
-        opCredit[v]--;
+        opVcFill[v]--; opCredit[v]--;
         break;
       }
     }
     renderOp();
   });
-  document.getElementById('opEnqAll').addEventListener('click', () => {
-    for (let v = 0; v < 4; v++) if (opVcFill[v] < DEPTH) opVcFill[v]++;
+  document.getElementById('opEnqAll').addEventListener('click', function() {
+    for (var v = 0; v < 4; v++) if (opVcFill[v] < DEPTH) opVcFill[v]++;
     renderOp();
   });
-  document.getElementById('opRtnAll').addEventListener('click', () => {
-    for (let v = 0; v < 4; v++) if (opCredit[v] < DEPTH) opCredit[v]++;
+  document.getElementById('opRtnAll').addEventListener('click', function() {
+    for (var v = 0; v < 4; v++) if (opCredit[v] < DEPTH) opCredit[v]++;
     renderOp();
   });
-  document.getElementById('opReset').addEventListener('click', () => {
-    for (let v = 0; v < 4; v++) { opVcFill[v] = 0; opCredit[v] = 8; }
+  document.getElementById('opReset').addEventListener('click', function() {
+    for (var v = 0; v < 4; v++) { opVcFill[v] = 0; opCredit[v] = 8; }
     renderOp();
   });
   renderOp();
 
-  // ---------- VC occupancy grid ----------
-  const NUM_PORTS = 5;
-  const PORT_NAMES = ['N', 'S', 'E', 'W', 'Local'];
-  const VC_NAMES = ['VC0 (REQ)', 'VC1 (RSP)', 'VC2 (DAT)', 'VC3 (Hi)'];
-  const occ = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+  var NUM_PORTS = 5;
+  var PORT_NAMES = ['N', 'S', 'E', 'W', 'Local'];
+  var VC_NAMES = ['VC0 (REQ)', 'VC1 (RSP)', 'VC2 (DAT)', 'VC3 (Hi)'];
+  var occ = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
 
   function renderVcGrid() {
-    const grid = document.getElementById('vcGrid');
+    var grid = document.getElementById('vcGrid');
     grid.innerHTML = '';
-    // Header
-    const corner = document.createElement('div');
+    var corner = document.createElement('div');
     corner.className = 'vc-cell row-header'; corner.textContent = 'Port \\ VC';
     grid.appendChild(corner);
-    VC_NAMES.forEach(n => {
-      const h = document.createElement('div');
+    VC_NAMES.forEach(function(n) {
+      var h = document.createElement('div');
       h.className = 'vc-cell header'; h.textContent = n;
       grid.appendChild(h);
     });
-    for (let p = 0; p < NUM_PORTS; p++) {
-      const rh = document.createElement('div');
+    for (var p = 0; p < NUM_PORTS; p++) {
+      var rh = document.createElement('div');
       rh.className = 'vc-cell row-header'; rh.textContent = PORT_NAMES[p];
       grid.appendChild(rh);
-      for (let v = 0; v < 4; v++) {
-        const c = document.createElement('div');
-        c.className = 'vc-cell normal';
+      for (var v = 0; v < 4; v++) {
+        var c = document.createElement('div');
+        c.className = 'vc-cell';
         c.textContent = occ[p][v] + '/8';
         if (occ[p][v] === DEPTH) c.classList.add('full');
         else if (occ[p][v] >= DEPTH - 1) c.classList.add('almost');
-        c.addEventListener('click', () => {
-          occ[p][v] = (occ[p][v] + 1) % (DEPTH + 1);
-          renderVcGrid();
-        });
+        (function(pv, vv) {
+          c.addEventListener('click', function() {
+            occ[pv][vv] = (occ[pv][vv] + 1) % (DEPTH + 1);
+            renderVcGrid();
+          });
+        })(p, v);
         c.style.cursor = 'pointer';
         grid.appendChild(c);
       }
     }
-    // Deadlock check
-    let anyFull = false;
-    for (let p = 0; p < NUM_PORTS; p++)
-      for (let v = 0; v < 4; v++)
-        if (occ[p][v] === DEPTH) anyFull = true;
+    var anyFull = false;
+    for (var pp = 0; pp < NUM_PORTS; pp++)
+      for (var vv2 = 0; vv2 < 4; vv2++)
+        if (occ[pp][vv2] === DEPTH) anyFull = true;
     document.getElementById('deadlockAlert').classList.toggle('show', anyFull);
   }
   renderVcGrid();
 
-  // Quiz
-  document.querySelectorAll('.quiz .reveal').forEach(btn => {
-    btn.addEventListener('click', () => btn.parentElement.classList.add('open'));
+  document.querySelectorAll('.quiz .reveal').forEach(function(btn) {
+    btn.addEventListener('click', function() { btn.parentElement.classList.add('open'); });
   });
 </script>
 </body>

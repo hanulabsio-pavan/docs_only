@@ -4,105 +4,159 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lesson 5 — router_top · hanuma</title>
-<link rel="stylesheet" href="_shared.css">
 <style>
-  .hero .eyebrow { color: #be123c; background: #fff1f2; }
+  :root {
+    --bg: #0a0a0b; --surface: #18181b; --surface-2: #27272a;
+    --text: #fafafa; --text-muted: #a1a1aa; --text-dim: #71717a;
+    --border: #27272a; --border-strong: #3f3f46; --accent: #fafafa;
+    --c-req: #60a5fa; --c-rsp: #4ade80; --c-snp: #fbbf24; --c-dat: #c084fc;
+    --c-req-bg: rgba(96, 165, 250, 0.12);
+    --c-rsp-bg: rgba(74, 222, 128, 0.12);
+    --c-snp-bg: rgba(251, 191, 36, 0.12);
+    --c-dat-bg: rgba(192, 132, 252, 0.12);
+    --c-hn: #fb7185;
+    --c-hn-bg: rgba(251, 113, 133, 0.12);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --radius: 10px; --radius-lg: 16px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.6; }
+  code { color: var(--text); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 0.92em; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top { position: sticky; top: 0; z-index: 100;
+    background: rgba(10, 10, 11, 0.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border); }
+  nav.top .inner { display: flex; align-items: center; justify-content: space-between;
+    height: 56px; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top .brand { font-weight: 600; font-size: 15px; }
+  nav.top .brand span.dim { color: var(--text-dim); font-weight: 400; }
+  nav.top ul { display: flex; gap: 22px; list-style: none; padding: 0; margin: 0; }
+  nav.top a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+  nav.top a:hover { color: var(--text); }
+  .hero { padding: 64px 0 48px; }
+  .hero .eyebrow { display: inline-block; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 16px;
+    color: var(--c-hn); background: var(--c-hn-bg); }
+  .hero h1 { font-size: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 0 0 16px; line-height: 1.15; }
+  .hero p.lead { font-size: 18px; color: var(--text-muted); max-width: 720px; margin: 0 0 32px; }
+  .hero .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 720px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat .v { font-size: 22px; font-weight: 600; }
+  .stat .l { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  section h2 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; }
+  section h2 .num { display: inline-block; width: 32px; height: 32px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted);
+    font-size: 14px; font-weight: 500; text-align: center; line-height: 30px;
+    margin-right: 12px; vertical-align: 2px; }
+  section .sub { color: var(--text-muted); margin: 0 0 32px; font-size: 16px; max-width: 720px; }
+  h3 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+  .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); cursor: pointer; font-size: 14px;
+    font-weight: 500; transition: all 0.15s; color: var(--text); font-family: inherit; }
+  .btn:hover { background: var(--border-strong); }
+  .btn.primary { background: var(--c-req); color: #000; border-color: var(--c-req); }
+  .btn.primary:hover { background: #93c5fd; }
+  .code-table { width: 100%; border-collapse: collapse; font-size: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; }
+  .code-table th, .code-table td { text-align: left; padding: 12px 16px;
+    border-bottom: 1px solid var(--border); color: var(--text); }
+  .code-table tr:last-child td { border-bottom: none; }
+  .code-table th { font-size: 12px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface-2); }
+  .code-table td.path { font-family: var(--mono); font-size: 12px; }
+  .code-table td.line { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+  .quiz { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; }
+  .quiz .q { margin-bottom: 24px; }
+  .quiz .q:last-child { margin-bottom: 0; }
+  .quiz .q .question { font-weight: 500; margin-bottom: 8px; }
+  .quiz .q .reveal { padding: 6px 12px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    background: var(--surface-2); color: var(--text-muted); font-family: inherit; }
+  .quiz .q .reveal:hover { background: var(--border-strong); color: var(--text); }
+  .quiz .q .answer { display: none; margin-top: 12px; padding: 14px;
+    background: var(--c-rsp-bg); border-left: 3px solid var(--c-rsp);
+    border-radius: 4px; font-size: 14px; }
+  .quiz .q.open .answer { display: block; }
+  .quiz .q.open .reveal { display: none; }
+  .next-card { background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+    color: white; border-radius: var(--radius-lg); padding: 32px; margin: 32px 0;
+    border: 1px solid var(--border-strong); }
+  .next-card .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--c-req); font-weight: 600; }
+  .next-card h3 { margin: 8px 0 12px; color: white; font-size: 24px; }
+  .next-card p { color: #d4d4d8; margin: 0 0 16px; }
+  .next-card .files { display: flex; gap: 8px; flex-wrap: wrap; }
+  .next-card .file-chip { background: rgba(255,255,255,0.08); padding: 6px 12px;
+    border-radius: 4px; font-family: var(--mono); font-size: 12px; color: #e4e4e7; }
+  footer { padding: 32px 0; color: var(--text-muted); font-size: 13px; text-align: center; }
+  @media (max-width: 720px) {
+    .hero h1 { font-size: 30px; }
+    .hero .stats { grid-template-columns: repeat(2, 1fr); }
+    nav.top ul { display: none; }
+  }
 
-  /* Pipeline visualizer */
-  .pipe-card { padding: 24px; }
-  .pipe-controls {
-    display: flex; gap: 8px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;
-  }
-  .pipe-stages {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
-    margin: 16px 0 24px;
-  }
-  .pipe-stage {
-    padding: 16px 12px; border-radius: 10px;
+  /* Lesson-specific */
+  .pipe-controls { display: flex; gap: 8px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .pipe-stages { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 16px 0 24px; }
+  .pipe-stage { padding: 16px 12px; border-radius: 10px;
     background: var(--surface-2); border: 2px solid var(--border-strong);
-    text-align: center; transition: all 0.3s ease;
-    position: relative;
-  }
-  .pipe-stage.active {
-    border-color: var(--c-req); background: var(--c-req-bg);
+    text-align: center; transition: all 0.3s ease; position: relative; }
+  .pipe-stage.active { border-color: var(--c-req); background: var(--c-req-bg);
     transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
-  }
+    box-shadow: 0 8px 20px rgba(96, 165, 250, 0.2); }
   .pipe-stage.done { border-color: var(--c-rsp); background: var(--c-rsp-bg); }
-  .pipe-stage .num {
-    display: inline-block; width: 24px; height: 24px;
-    background: white; border: 1px solid var(--border-strong);
+  .pipe-stage .num { display: inline-block; width: 24px; height: 24px;
+    background: var(--surface); border: 1px solid var(--border-strong);
     border-radius: 50%; font-size: 11px; font-weight: 600;
-    line-height: 22px; color: var(--text-muted);
-    margin-bottom: 8px;
-  }
-  .pipe-stage.active .num { background: var(--c-req); color: white; border-color: var(--c-req); }
-  .pipe-stage.done .num { background: var(--c-rsp); color: white; border-color: var(--c-rsp); }
-  .pipe-stage .lbl {
-    font-family: var(--mono); font-size: 13px; font-weight: 600;
-    color: var(--text); display: block; margin-bottom: 4px;
-  }
+    line-height: 22px; color: var(--text-muted); margin-bottom: 8px; }
+  .pipe-stage.active .num { background: var(--c-req); color: #000; border-color: var(--c-req); }
+  .pipe-stage.done .num { background: var(--c-rsp); color: #000; border-color: var(--c-rsp); }
+  .pipe-stage .lbl { font-family: var(--mono); font-size: 13px; font-weight: 600;
+    color: var(--text); display: block; margin-bottom: 4px; }
   .pipe-stage .desc { font-size: 11px; color: var(--text-muted); }
 
-  .pipe-explainer {
-    padding: 16px 18px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; min-height: 80px; font-size: 14px;
-  }
+  .pipe-explainer { padding: 16px 18px; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; min-height: 80px; font-size: 14px; color: var(--text); }
   .pipe-explainer .lead { font-weight: 500; margin-bottom: 6px; }
-  .pipe-explainer code {
-    background: var(--surface-2); padding: 2px 6px; border-radius: 4px;
-    font-family: var(--mono); font-size: 12px;
-  }
+  .pipe-explainer code { background: var(--bg); }
 
-  /* Router internal SVG */
   .router-svg { width: 100%; height: auto; }
-  .port-block {
-    fill: var(--surface); stroke: var(--text-dim); stroke-width: 1.5;
-  }
-  .port-block.input { fill: var(--c-req-bg); stroke: var(--c-req); stroke-width: 2; }
-  .port-block.output { fill: var(--c-dat-bg); stroke: var(--c-dat); stroke-width: 2; }
-  .port-block.xbar { fill: var(--c-snp-bg); stroke: var(--c-snp); stroke-width: 2; }
-  .port-block.arb { fill: var(--c-rsp-bg); stroke: var(--c-rsp); stroke-width: 2; }
   .router-label { font-family: var(--mono); font-size: 12px; fill: var(--text); }
   .router-sub { font-size: 10px; fill: var(--text-muted); }
   .router-wire { stroke: var(--text-dim); stroke-width: 1; fill: none; }
 
-  /* Composition table */
-  .compo-grid {
-    display: grid; grid-template-columns: 1fr; gap: 12px;
-  }
-  .compo-row {
-    display: grid; grid-template-columns: 200px 1fr;
-    gap: 16px; padding: 14px 16px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 8px;
-  }
-  .compo-row .stage {
-    font-family: var(--mono); font-size: 13px; font-weight: 600;
-  }
+  .compo-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .compo-row { display: grid; grid-template-columns: 200px 1fr; gap: 16px;
+    padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  .compo-row .stage { font-family: var(--mono); font-size: 13px; font-weight: 600; }
   .compo-row.rc .stage { color: var(--c-req); }
   .compo-row.va .stage { color: var(--c-snp); }
   .compo-row.sa .stage { color: var(--c-rsp); }
   .compo-row.st .stage { color: var(--c-dat); }
-  .compo-row.lt .stage { color: var(--accent); }
-  .compo-row .files {
-    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;
-  }
-  .compo-row .file-chip {
-    background: var(--surface-2); padding: 3px 8px; border-radius: 4px;
+  .compo-row.lt .stage { color: var(--text); }
+  .compo-row .files { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .compo-row .file-chip { background: var(--surface-2); padding: 3px 8px; border-radius: 4px;
     font-family: var(--mono); font-size: 11px; color: var(--text);
-    border: 1px solid var(--border);
-  }
+    border: 1px solid var(--border-strong); }
   .compo-row .desc { color: var(--text-muted); font-size: 13px; }
 
-  /* Status/bugs callouts */
-  .bug-card {
-    padding: 18px; border-radius: 10px; margin-bottom: 12px;
-    background: #fffbeb; border-left: 4px solid #d97706;
-  }
-  .bug-card.crit { background: #fef2f2; border-left-color: #ef4444; }
-  .bug-card .head { font-weight: 600; margin-bottom: 4px; font-size: 14px; }
+  .bug-card { padding: 18px; border-radius: 10px; margin-bottom: 12px;
+    background: rgba(251, 191, 36, 0.1); border-left: 4px solid var(--c-snp); }
+  .bug-card.crit { background: rgba(239, 68, 68, 0.12); border-left-color: #ef4444; }
+  .bug-card .head { font-weight: 600; margin-bottom: 4px; font-size: 14px; color: var(--text); }
   .bug-card .body { font-size: 13px; color: var(--text-muted); }
-  .bug-card .body code { background: white; padding: 1px 6px; border-radius: 4px; font-family: var(--mono); }
+  .bug-card .body code { background: var(--bg); }
 </style>
 </head>
 <body>
@@ -128,8 +182,7 @@
     <p class="lead">
       The capstone. Every primitive from Lessons 2 and 3 and every building block
       from Lesson 4 is instantiated and wired inside <code>router_top.sv</code>.
-      The router has five pipeline stages — RC, VA, SA, ST, LT — and once you can
-      walk one flit through all five, the rest of the NoC is just <i>more of these</i>.
+      Five pipeline stages — RC, VA, SA, ST, LT.
     </p>
     <div class="stats">
       <div class="stat"><div class="v">5</div><div class="l">Pipeline stages</div></div>
@@ -139,17 +192,14 @@
     </div>
   </header>
 
-  <!-- ============ PIPELINE WALKTHROUGH ============ -->
   <section id="pipeline">
     <h2><span class="num">1</span>The pipeline — RC → VA → SA → ST → LT</h2>
     <p class="sub">
-      A single flit's life from "I just arrived at this router" to "I'm on the wire
-      to the next router." Five stages, one cycle each, so a flit traverses one
-      router in 5 cycles (plus link-traversal cycles between routers). Press
-      <b>Step</b> to advance stage by stage.
+      A single flit's life from "I just arrived at this router" to "I'm on the
+      wire to the next router." Press Step to advance.
     </p>
 
-    <div class="card pipe-card">
+    <div class="card">
       <div class="pipe-controls">
         <button class="btn primary" id="pipeStep">Step ▶</button>
         <button class="btn" id="pipeReset">Reset</button>
@@ -160,147 +210,101 @@
       </div>
 
       <div class="pipe-stages" id="pipeStages">
-        <div class="pipe-stage" data-stage="0">
-          <div class="num">1</div>
-          <div class="lbl">RC</div>
-          <div class="desc">Route Compute</div>
-        </div>
-        <div class="pipe-stage" data-stage="1">
-          <div class="num">2</div>
-          <div class="lbl">VA</div>
-          <div class="desc">VC Allocation</div>
-        </div>
-        <div class="pipe-stage" data-stage="2">
-          <div class="num">3</div>
-          <div class="lbl">SA</div>
-          <div class="desc">Switch Allocation</div>
-        </div>
-        <div class="pipe-stage" data-stage="3">
-          <div class="num">4</div>
-          <div class="lbl">ST</div>
-          <div class="desc">Switch Traversal</div>
-        </div>
-        <div class="pipe-stage" data-stage="4">
-          <div class="num">5</div>
-          <div class="lbl">LT</div>
-          <div class="desc">Link Traversal</div>
-        </div>
+        <div class="pipe-stage" data-stage="0"><div class="num">1</div><div class="lbl">RC</div><div class="desc">Route Compute</div></div>
+        <div class="pipe-stage" data-stage="1"><div class="num">2</div><div class="lbl">VA</div><div class="desc">VC Allocation</div></div>
+        <div class="pipe-stage" data-stage="2"><div class="num">3</div><div class="lbl">SA</div><div class="desc">Switch Allocation</div></div>
+        <div class="pipe-stage" data-stage="3"><div class="num">4</div><div class="lbl">ST</div><div class="desc">Switch Traversal</div></div>
+        <div class="pipe-stage" data-stage="4"><div class="num">5</div><div class="lbl">LT</div><div class="desc">Link Traversal</div></div>
       </div>
 
       <div class="pipe-explainer" id="pipeExplain">
         <div class="lead">Click <b>Step ▶</b> to walk a flit through the router.</div>
         <span>
           At t=0 a REQ flit destined for tile (3,2) sits in this router's North
-          input port, VC0. This router is at tile (1,2). The flit just arrived
-          last cycle; the pipeline is about to begin.
+          input port, VC0. This router is at tile (1,2).
         </span>
       </div>
     </div>
   </section>
 
-  <!-- ============ ROUTER INTERNALS ============ -->
   <section id="internal">
     <h2><span class="num">2</span>Internals — what's inside the box</h2>
     <p class="sub">
-      The full router floor-plan. Five input ports feed into the RC/VA/SA logic,
-      which drives a 5×5 crossbar, which feeds the LT registers that drive the
-      five output links. All instantiated inside <code>router_top.sv</code>.
+      Full router floor-plan. Five input ports feed RC/VA/SA logic, which drives
+      a 5×5 crossbar, which feeds the LT registers that drive the five outputs.
     </p>
     <div class="card">
       <svg class="router-svg" viewBox="0 0 900 460" xmlns="http://www.w3.org/2000/svg">
-        <!-- Input ports column -->
         <g>
-          <rect class="port-block input" x="20" y="30" width="180" height="50" rx="8"/>
-          <text class="router-label" x="110" y="52" text-anchor="middle">input_port [N]</text>
+          <rect x="20" y="30" width="180" height="50" rx="8" fill="rgba(96, 165, 250, 0.15)" stroke="#60a5fa" stroke-width="2"/>
+          <text class="router-label" x="110" y="52" text-anchor="middle" fill="#60a5fa">input_port [N]</text>
           <text class="router-sub" x="110" y="68" text-anchor="middle">4 × flit FIFOs</text>
-
-          <rect class="port-block input" x="20" y="110" width="180" height="50" rx="8"/>
-          <text class="router-label" x="110" y="132" text-anchor="middle">input_port [S]</text>
+          <rect x="20" y="110" width="180" height="50" rx="8" fill="rgba(96, 165, 250, 0.15)" stroke="#60a5fa" stroke-width="2"/>
+          <text class="router-label" x="110" y="132" text-anchor="middle" fill="#60a5fa">input_port [S]</text>
           <text class="router-sub" x="110" y="148" text-anchor="middle">4 × flit FIFOs</text>
-
-          <rect class="port-block input" x="20" y="190" width="180" height="50" rx="8"/>
-          <text class="router-label" x="110" y="212" text-anchor="middle">input_port [E]</text>
+          <rect x="20" y="190" width="180" height="50" rx="8" fill="rgba(96, 165, 250, 0.15)" stroke="#60a5fa" stroke-width="2"/>
+          <text class="router-label" x="110" y="212" text-anchor="middle" fill="#60a5fa">input_port [E]</text>
           <text class="router-sub" x="110" y="228" text-anchor="middle">4 × flit FIFOs</text>
-
-          <rect class="port-block input" x="20" y="270" width="180" height="50" rx="8"/>
-          <text class="router-label" x="110" y="292" text-anchor="middle">input_port [W]</text>
+          <rect x="20" y="270" width="180" height="50" rx="8" fill="rgba(96, 165, 250, 0.15)" stroke="#60a5fa" stroke-width="2"/>
+          <text class="router-label" x="110" y="292" text-anchor="middle" fill="#60a5fa">input_port [W]</text>
           <text class="router-sub" x="110" y="308" text-anchor="middle">4 × flit FIFOs</text>
-
-          <rect class="port-block input" x="20" y="350" width="180" height="50" rx="8"/>
-          <text class="router-label" x="110" y="372" text-anchor="middle">input_port [L]</text>
-          <text class="router-sub" x="110" y="388" text-anchor="middle">to/from local CHI node</text>
+          <rect x="20" y="350" width="180" height="50" rx="8" fill="rgba(96, 165, 250, 0.15)" stroke="#60a5fa" stroke-width="2"/>
+          <text class="router-label" x="110" y="372" text-anchor="middle" fill="#60a5fa">input_port [L]</text>
+          <text class="router-sub" x="110" y="388" text-anchor="middle">to/from local node</text>
         </g>
 
-        <!-- RC + VA combined -->
         <g>
-          <rect class="port-block" x="240" y="30" width="120" height="200" rx="8"
-                fill="var(--c-req-bg)" stroke="var(--c-req)" stroke-width="2"/>
-          <text class="router-label" x="300" y="55" text-anchor="middle">RC + VA</text>
+          <rect x="240" y="30" width="120" height="200" rx="8" fill="rgba(96, 165, 250, 0.15)" stroke="#60a5fa" stroke-width="2"/>
+          <text class="router-label" x="300" y="55" text-anchor="middle" fill="#60a5fa">RC + VA</text>
           <text class="router-sub" x="300" y="75" text-anchor="middle">5 × route_compute_unit</text>
           <text class="router-sub" x="300" y="92" text-anchor="middle">tgt_id → out_port</text>
           <text class="router-sub" x="300" y="115" text-anchor="middle">alloc_vc per input</text>
-          <text class="router-sub" x="300" y="180" text-anchor="middle" font-size="9" fill="var(--c-req)" font-weight="600">
-            stage 1 + stage 2
-          </text>
+          <text class="router-sub" x="300" y="180" text-anchor="middle" font-size="9" fill="#60a5fa" font-weight="600">stage 1 + 2</text>
         </g>
 
-        <!-- SA (per-output arbiters) -->
         <g>
-          <rect class="port-block arb" x="400" y="30" width="120" height="200" rx="8"/>
-          <text class="router-label" x="460" y="55" text-anchor="middle">SA</text>
+          <rect x="400" y="30" width="120" height="200" rx="8" fill="rgba(74, 222, 128, 0.15)" stroke="#4ade80" stroke-width="2"/>
+          <text class="router-label" x="460" y="55" text-anchor="middle" fill="#4ade80">SA</text>
           <text class="router-sub" x="460" y="75" text-anchor="middle">5 × arb_unit</text>
-          <text class="router-sub" x="460" y="92" text-anchor="middle">round-robin per out_port</text>
+          <text class="router-sub" x="460" y="92" text-anchor="middle">round-robin per out</text>
           <text class="router-sub" x="460" y="115" text-anchor="middle">sa_grant[op][ip]</text>
-          <text class="router-sub" x="460" y="180" text-anchor="middle" font-size="9" fill="var(--c-rsp)" font-weight="600">
-            stage 3
-          </text>
+          <text class="router-sub" x="460" y="180" text-anchor="middle" font-size="9" fill="#4ade80" font-weight="600">stage 3</text>
         </g>
 
-        <!-- Crossbar -->
         <g>
-          <rect class="port-block xbar" x="560" y="30" width="120" height="200" rx="8"/>
-          <text class="router-label" x="620" y="55" text-anchor="middle">crossbar</text>
+          <rect x="560" y="30" width="120" height="200" rx="8" fill="rgba(251, 191, 36, 0.15)" stroke="#fbbf24" stroke-width="2"/>
+          <text class="router-label" x="620" y="55" text-anchor="middle" fill="#fbbf24">crossbar</text>
           <text class="router-sub" x="620" y="75" text-anchor="middle">5×5 non-blocking</text>
           <text class="router-sub" x="620" y="92" text-anchor="middle">sel[op][ip] = grant</text>
-          <text class="router-sub" x="620" y="180" text-anchor="middle" font-size="9" fill="var(--c-snp)" font-weight="600">
-            stage 4
-          </text>
+          <text class="router-sub" x="620" y="180" text-anchor="middle" font-size="9" fill="#fbbf24" font-weight="600">stage 4</text>
         </g>
 
-        <!-- Output ports column -->
         <g>
-          <rect class="port-block output" x="720" y="30" width="160" height="50" rx="8"/>
-          <text class="router-label" x="800" y="52" text-anchor="middle">LT [N]</text>
+          <rect x="720" y="30" width="160" height="50" rx="8" fill="rgba(192, 132, 252, 0.15)" stroke="#c084fc" stroke-width="2"/>
+          <text class="router-label" x="800" y="52" text-anchor="middle" fill="#c084fc">LT [N]</text>
           <text class="router-sub" x="800" y="68" text-anchor="middle">registered output</text>
-
-          <rect class="port-block output" x="720" y="110" width="160" height="50" rx="8"/>
-          <text class="router-label" x="800" y="132" text-anchor="middle">LT [S]</text>
+          <rect x="720" y="110" width="160" height="50" rx="8" fill="rgba(192, 132, 252, 0.15)" stroke="#c084fc" stroke-width="2"/>
+          <text class="router-label" x="800" y="132" text-anchor="middle" fill="#c084fc">LT [S]</text>
           <text class="router-sub" x="800" y="148" text-anchor="middle">registered output</text>
-
-          <rect class="port-block output" x="720" y="190" width="160" height="50" rx="8"/>
-          <text class="router-label" x="800" y="212" text-anchor="middle">LT [E]</text>
+          <rect x="720" y="190" width="160" height="50" rx="8" fill="rgba(192, 132, 252, 0.15)" stroke="#c084fc" stroke-width="2"/>
+          <text class="router-label" x="800" y="212" text-anchor="middle" fill="#c084fc">LT [E]</text>
           <text class="router-sub" x="800" y="228" text-anchor="middle">registered output</text>
-
-          <rect class="port-block output" x="720" y="270" width="160" height="50" rx="8"/>
-          <text class="router-label" x="800" y="292" text-anchor="middle">LT [W]</text>
+          <rect x="720" y="270" width="160" height="50" rx="8" fill="rgba(192, 132, 252, 0.15)" stroke="#c084fc" stroke-width="2"/>
+          <text class="router-label" x="800" y="292" text-anchor="middle" fill="#c084fc">LT [W]</text>
           <text class="router-sub" x="800" y="308" text-anchor="middle">registered output</text>
-
-          <rect class="port-block output" x="720" y="350" width="160" height="50" rx="8"/>
-          <text class="router-label" x="800" y="372" text-anchor="middle">LT [L]</text>
-          <text class="router-sub" x="800" y="388" text-anchor="middle">eject to local node</text>
+          <rect x="720" y="350" width="160" height="50" rx="8" fill="rgba(192, 132, 252, 0.15)" stroke="#c084fc" stroke-width="2"/>
+          <text class="router-label" x="800" y="372" text-anchor="middle" fill="#c084fc">LT [L]</text>
+          <text class="router-sub" x="800" y="388" text-anchor="middle">eject to local</text>
         </g>
 
-        <!-- Wires -->
         <g>
           <line class="router-wire" x1="200" y1="55" x2="240" y2="120"/>
           <line class="router-wire" x1="200" y1="135" x2="240" y2="130"/>
           <line class="router-wire" x1="200" y1="215" x2="240" y2="135"/>
           <line class="router-wire" x1="200" y1="295" x2="240" y2="140"/>
           <line class="router-wire" x1="200" y1="375" x2="240" y2="150"/>
-
           <line class="router-wire" x1="360" y1="130" x2="400" y2="130"/>
           <line class="router-wire" x1="520" y1="130" x2="560" y2="130"/>
-
           <line class="router-wire" x1="680" y1="55" x2="720" y2="55"/>
           <line class="router-wire" x1="680" y1="100" x2="720" y2="135"/>
           <line class="router-wire" x1="680" y1="130" x2="720" y2="215"/>
@@ -308,35 +312,28 @@
           <line class="router-wire" x1="680" y1="190" x2="720" y2="375"/>
         </g>
 
-        <!-- Status & assertions footer -->
         <g>
-          <rect class="port-block" x="240" y="290" width="440" height="80" rx="8" fill="var(--surface)" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="6,4"/>
+          <rect x="240" y="290" width="440" height="80" rx="8" fill="#18181b" stroke="#71717a" stroke-width="1" stroke-dasharray="6,4"/>
           <text class="router-label" x="460" y="315" text-anchor="middle">Status &amp; assertions</text>
           <text class="router-sub" x="460" y="335" text-anchor="middle">noc_router_status_t : buf_almost_full, credit_low, arb_stall, err_code, flit_count</text>
-          <text class="router-sub" x="460" y="355" text-anchor="middle" font-family="ui-monospace, monospace" fill="var(--c-rsp)">a_xbar_one_hot — $onehot0(sa_grant[op]) per output</text>
+          <text class="router-sub" x="460" y="355" text-anchor="middle" font-family="ui-monospace, monospace" fill="#4ade80">a_xbar_one_hot — $onehot0(sa_grant[op]) per output</text>
         </g>
       </svg>
     </div>
   </section>
 
-  <!-- ============ COMPOSITION ============ -->
   <section id="composition">
     <h2><span class="num">3</span>How earlier lessons compose</h2>
     <p class="sub">
-      Each stage maps to specific modules you've already read. This is the moment
-      everything clicks: <code>router_top</code> isn't doing anything new — it's
-      just orchestrating modules from Lessons 2, 3, and 4 in a 5-stage pipeline.
+      Each stage maps to specific modules from earlier lessons. <code>router_top</code>
+      orchestrates them in a 5-stage pipeline.
     </p>
 
     <div class="compo-grid">
       <div class="compo-row rc">
         <div class="stage">Stage 1 — RC</div>
         <div>
-          <div class="desc">
-            For each input port, instantiate one <code>route_compute_unit</code>
-            parameterized with <code>MY_X, MY_Y</code>. Feed the flit's
-            <code>tgt_node_id</code>; receive an <code>out_port</code> direction.
-          </div>
+          <div class="desc">For each input port, one <code>route_compute_unit</code> parameterized with <code>MY_X, MY_Y</code>. Feed <code>tgt_node_id</code>; receive <code>out_port</code>.</div>
           <div class="files">
             <span class="file-chip">route_compute_unit.sv</span>
             <span class="file-chip">chi_pkg::node_id_to_x/y</span>
@@ -346,12 +343,7 @@
       <div class="compo-row va">
         <div class="stage">Stage 2 — VA</div>
         <div>
-          <div class="desc">
-            Currently a static <code>alloc_vc[ip] = ip % NUM_VC</code> placeholder
-            in <code>router_top:154</code> (flagged 🔶 Partial in the DV tracker).
-            Production version uses <code>channel_to_vc()</code> + the
-            <code>virtual_channel_mgr</code> from Lesson 4.
-          </div>
+          <div class="desc">Static <code>alloc_vc[ip] = ip % NUM_VC</code> placeholder in <code>router_top:154</code> (🔶 Partial). Production uses <code>channel_to_vc()</code> via <code>virtual_channel_mgr</code>.</div>
           <div class="files">
             <span class="file-chip">virtual_channel_mgr.sv</span>
             <span class="file-chip">noc_pkg::channel_to_vc</span>
@@ -361,11 +353,7 @@
       <div class="compo-row sa">
         <div class="stage">Stage 3 — SA</div>
         <div>
-          <div class="desc">
-            One <code>arb_unit</code> per output port, in <code>gen_sa_arb</code>.
-            Each gathers <code>sa_req[op][ip]</code> from inputs whose RC chose
-            this op, runs round-robin, produces a one-hot <code>sa_grant</code>.
-          </div>
+          <div class="desc">One <code>arb_unit</code> per output port in <code>gen_sa_arb</code>. Gathers <code>sa_req[op][ip]</code> from inputs whose RC chose this op, runs round-robin.</div>
           <div class="files">
             <span class="file-chip">arb_unit.sv</span>
             <span class="file-chip">round_robin_arb.sv</span>
@@ -375,11 +363,7 @@
       <div class="compo-row st">
         <div class="stage">Stage 4 — ST</div>
         <div>
-          <div class="desc">
-            Single <code>crossbar</code> instance. <code>sa_grant</code> wires
-            directly to <code>sel[op][ip]</code>. <code>xbar_in[ip]</code> comes
-            from the head of the chosen VC's FIFO in input_port.
-          </div>
+          <div class="desc">Single <code>crossbar</code>. <code>sa_grant</code> wires directly to <code>sel[op][ip]</code>. <code>xbar_in[ip]</code> comes from the head of the chosen VC's FIFO.</div>
           <div class="files">
             <span class="file-chip">crossbar.sv</span>
             <span class="file-chip">input_port.sv</span>
@@ -389,13 +373,7 @@
       <div class="compo-row lt">
         <div class="stage">Stage 5 — LT</div>
         <div>
-          <div class="desc">
-            Pure flip-flop stage (<code>ff_lt</code> block). Registers
-            <code>xbar_out</code> into the five
-            <code>{n,s,e,w,local}_flit_out</code> ports. The <code>valid_out</code>
-            is ANDed with <code>ready_out</code> — that's the back-pressure
-            from the next router.
-          </div>
+          <div class="desc">Pure flip-flop stage (<code>ff_lt</code>). Registers <code>xbar_out</code> into the five output ports. <code>valid_out</code> is ANDed with <code>ready_out</code>.</div>
           <div class="files">
             <span class="file-chip">router_top.sv :: ff_lt</span>
           </div>
@@ -416,132 +394,110 @@
     </table>
   </section>
 
-  <!-- ============ KNOWN BUGS ============ -->
   <section id="bugs">
     <h2><span class="num">4</span>Known issues — from the DV tracker</h2>
     <p class="sub">
-      Reading the RTL alongside the DV tracker (<code>docs/verification/noc_dv_tracker_and_testplan.md</code>),
-      these are the items in <code>router_top.sv</code> and its instances that
-      need fixes before Phase 1 sign-off. Knowing them now means you won't be
-      surprised when sim breaks.
+      Items in <code>router_top.sv</code> (and one in noc_mesh) needing fixes
+      before Phase 1 sign-off. Knowing them now means you won't be surprised
+      when sim breaks.
     </p>
 
     <div class="bug-card">
       <div class="head">🔶 VA stage is a placeholder</div>
       <div class="body">
-        <code>router_top.sv:154</code> assigns
-        <code>alloc_vc[ip] = 2'(ip % NUM_VC)</code> — a static modulo mapping that
-        ignores the actual channel of the incoming flit. Real VA must use
-        <code>channel_to_vc(flit_channel)</code> via the
-        <code>virtual_channel_mgr</code> instance. Flagged in DV tracker §1.2.2.
+        <code>router_top.sv:154</code> assigns <code>alloc_vc[ip] = 2'(ip % NUM_VC)</code>
+        — static modulo, ignores the flit's actual channel. Real VA must use
+        <code>channel_to_vc(flit_channel)</code>. Flagged in DV §1.2.2.
       </div>
     </div>
     <div class="bug-card">
       <div class="head">🔶 Input port VC decode misaligned</div>
       <div class="body">
         <code>input_port.sv:42</code> extracts <code>vc_sel</code> from
-        <code>flit_in[20:18]</code>. The actual channel field offset in
-        <code>chi_flit_hdr_t</code> is different — needs to align with the
-        packed-struct field layout. P1.1 in the DV plan.
+        <code>flit_in[20:18]</code>. Actual offset in <code>chi_flit_hdr_t</code>
+        differs — needs to align with packed-struct layout. P1.1 in the DV plan.
       </div>
     </div>
     <div class="bug-card crit">
       <div class="head">⚠ noc_mesh wiring (one level up)</div>
       <div class="body">
-        Not in <code>router_top</code> itself, but worth flagging: the parent
+        Not in <code>router_top</code> itself, but worth flagging: parent
         <code>noc_mesh.sv:79–104</code> shares the same wire for both
         <code>north_flit_in</code> and <code>north_flit_out</code> on adjacent
-        routers. Inputs and outputs must be on <i>separate</i> nets. This bug
-        means simulation will see undefined behavior on every inter-router link
-        until fixed.
+        routers. Inputs and outputs must be on separate nets. Until fixed,
+        simulation sees undefined behavior on every inter-router link.
       </div>
     </div>
     <div class="bug-card">
       <div class="head">Status counter not a true counter</div>
       <div class="body">
         <code>status.flit_count</code> in <code>comb_status</code> sums
-        <code>ibuf_valid</code> bits combinationally each cycle — that's an
-        instantaneous occupancy, not a cumulative flit count. Likely fine as a
-        debug snapshot, but rename or rewire if a real cumulative counter is
-        wanted.
+        <code>ibuf_valid</code> bits each cycle — an instantaneous occupancy,
+        not a cumulative count.
       </div>
     </div>
   </section>
 
-  <!-- ============ CODE MAP ============ -->
   <section id="code">
     <h2><span class="num">5</span>Code map</h2>
     <table class="code-table">
       <thead><tr><th>Concept</th><th>File</th><th>Line</th><th>What's there</th></tr></thead>
       <tbody>
-        <tr><td>Module + parameters</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">30</td><td>MY_NODE_ID, MY_X, MY_Y, NUM_VC, ARB_POLICY</td></tr>
-        <tr><td>5 input port instances</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">256</td><td>u_ibuf_n / s / e / w / l</td></tr>
-        <tr><td>RC generate</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">129</td><td>gen_rc — one RCU per input port</td></tr>
-        <tr><td>VA placeholder</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">154</td><td>Static modulo mapping (TODO)</td></tr>
-        <tr><td>SA request build</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">168</td><td>sa_req[op][ip] = valid &amp;&amp; (rc_out == op)</td></tr>
-        <tr><td>SA arbiters generate</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">180</td><td>gen_sa_arb — one arb_unit per output</td></tr>
+        <tr><td>Module + parameters</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">30</td><td>MY_NODE_ID, MY_X, MY_Y, NUM_VC</td></tr>
+        <tr><td>5 input port instances</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">256</td><td>u_ibuf_n/s/e/w/l</td></tr>
+        <tr><td>RC generate</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">129</td><td>gen_rc — one RCU per input</td></tr>
+        <tr><td>VA placeholder</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">154</td><td>Static modulo (TODO)</td></tr>
+        <tr><td>SA request build</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">168</td><td>sa_req[op][ip]</td></tr>
+        <tr><td>SA arbiters generate</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">180</td><td>gen_sa_arb</td></tr>
         <tr><td>Crossbar instance</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">213</td><td>u_crossbar (5×5)</td></tr>
-        <tr><td>LT registered output</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">228</td><td>ff_lt — 5 output registers with ready gating</td></tr>
+        <tr><td>LT registered output</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">228</td><td>ff_lt</td></tr>
         <tr><td>Status aggregation</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">290</td><td>comb_status</td></tr>
         <tr><td>Crossbar one-hot assertion</td><td class="path">rtl/interconnect/router/router_top.sv</td><td class="line">309</td><td>a_xbar_one_hot per output</td></tr>
       </tbody>
     </table>
   </section>
 
-  <!-- ============ QUIZ ============ -->
   <section id="quiz">
     <h2><span class="num">6</span>Check yourself</h2>
     <div class="quiz">
       <div class="q">
-        <div class="question">Q1. A flit arrives at this router's North port at cycle 0. Which cycle does it appear on the output link (assuming nothing stalls)?</div>
+        <div class="question">Q1. A flit arrives at North port at cycle 0. Which cycle does it appear on the output link (no stalls)?</div>
         <button class="reveal">Show answer</button>
         <div class="answer">
-          5 cycles. RC (1) → VA (2) → SA (3) → ST (4) → LT (5). LT is the only
-          registered stage in this RTL — the others are combinational, so they
-          actually share a single clock cycle's worth of logic. In production
-          silicon, you'd register between each stage to hit 1 GHz; the current
-          RTL collapses RC/VA/SA into one clock and registers only LT, so a flit
-          really only spends 2 cycles in the router. (The DV tracker mentions
-          <code>NOC_PIPELINE_STAGES = 3</code> as the eventual target.)
+          Conceptually 5 cycles (RC, VA, SA, ST, LT). In the current RTL only LT
+          is registered, so a flit really spends 2 cycles. The DV tracker
+          mentions <code>NOC_PIPELINE_STAGES = 3</code> as the eventual target.
         </div>
       </div>
       <div class="q">
-        <div class="question">Q2. Two input ports both want the same output port in the same cycle. Walk through what happens.</div>
+        <div class="question">Q2. Two input ports both want the same output port in the same cycle. Walk through.</div>
         <button class="reveal">Show answer</button>
         <div class="answer">
-          (1) RC computes the same <code>out_port</code> for both input flits.
-          (2) <code>sa_req[op]</code> has two bits set. (3) The
-          <code>arb_unit</code> for that output picks one winner via round-robin —
-          one-hot <code>sa_grant</code>. (4) The crossbar passes the winner's flit
-          through. (5) The loser's flit stays in its input port FIFO, waiting for
-          the next arbitration cycle. <code>$onehot0(sa_grant[op])</code> fires if
-          the arbiter ever messes up.
+          (1) RC computes the same <code>out_port</code> for both. (2)
+          <code>sa_req[op]</code> has two bits set. (3) <code>arb_unit</code>
+          picks one winner — one-hot <code>sa_grant</code>. (4) Crossbar passes
+          winner's flit through. (5) Loser stays in input FIFO for next cycle.
+          <code>$onehot0(sa_grant[op])</code> fires if the arbiter messes up.
         </div>
       </div>
       <div class="q">
-        <div class="question">Q3. What happens to <code>valid_out</code> if the downstream router asserts <code>ready_out = 0</code>?</div>
+        <div class="question">Q3. What happens to <code>valid_out</code> if downstream asserts <code>ready_out = 0</code>?</div>
         <button class="reveal">Show answer</button>
         <div class="answer">
-          Look at <code>ff_lt</code>: <code>north_valid_out &lt;= xbar_out_v[PORT_NORTH] &amp; north_ready_out</code>.
-          If <code>ready_out</code> is 0, <code>valid_out</code> stays 0 — the
-          flit is dropped from the LT register. This is OK <i>only</i> because
-          the input-side FIFO still holds the flit (SA didn't actually dequeue
-          it from <code>ibuf</code>). The credit accounting upstream prevents
-          another flit from coming in.
+          <code>ff_lt</code>: <code>north_valid_out &lt;= xbar_out_v[PORT_NORTH] &amp; north_ready_out</code>.
+          If ready_out is 0, valid_out stays 0 — flit dropped from LT register.
+          OK only because input-side FIFO still holds it (SA didn't actually
+          dequeue from ibuf).
         </div>
       </div>
       <div class="q">
-        <div class="question">Q4. Where in the file does <code>router_top</code> instantiate <code>flit_buffer</code>?</div>
+        <div class="question">Q4. Where does <code>router_top</code> instantiate <code>flit_buffer</code>?</div>
         <button class="reveal">Show answer</button>
         <div class="answer">
-          It doesn't directly. <code>flit_buffer</code> is instantiated inside
-          <code>output_port</code> (via <code>gen_vc_buf</code>) — but
-          <code>router_top.sv</code> as currently written doesn't even instantiate
+          It doesn't directly. <code>flit_buffer</code> is in <code>output_port</code>
+          — but <code>router_top.sv</code> as currently written doesn't instantiate
           <code>output_port</code>! It has a custom <code>ff_lt</code> block that
-          registers crossbar outputs directly. That's why the credit-management
-          logic from Lesson 4's output_port is also missing here — it's a known
-          gap that will be addressed when output_port is wired in. The DV tracker
-          covers this in §1.2.5.
+          registers crossbar outputs directly. Known gap, DV tracker §1.2.5.
         </div>
       </div>
     </div>
@@ -550,12 +506,7 @@
   <div class="next-card">
     <div class="eyebrow">Lesson 6 — Up next</div>
     <h3>NoC fabric: noc_mesh &amp; noc_top</h3>
-    <p>
-      Sixteen <code>router_top</code> instances wired in a 4×4 generate loop, with
-      boundary terminations on the edges. Pure structural code — the hard part is
-      the wiring topology and getting the edge cases right. This is where the bug
-      flagged in §4 above lives.
-    </p>
+    <p>Sixteen <code>router_top</code> instances wired in a 4×4 generate loop with boundary terminations on the edges. Pure structural code — where the bug flagged in §4 lives.</p>
     <div class="files">
       <span class="file-chip">noc_mesh.sv</span>
       <span class="file-chip">noc_top.sv</span>
@@ -564,71 +515,46 @@
 
 </div>
 
-<footer>
-  <div class="container">Lesson 5 of 10 · hanuma SoC learning track</div>
-</footer>
+<footer><div class="container">Lesson 5 of 10 · hanuma SoC learning track</div></footer>
 
 <script>
-  // ---------- Pipeline walkthrough ----------
-  const stages = [
-    {
-      name: 'Idle (t=0)',
-      explain: {
-        lead: 'Setup',
-        body: 'A REQ flit destined for tile (3,2) sits in this router\'s North input port, VC0. This router is at tile (1,2). The pipeline hasn\'t started yet.'
-      }
+  var stages = [
+    { name: 'Idle (t=0)',
+      explain: { lead: 'Setup',
+        body: 'A REQ flit destined for tile (3,2) sits in this router\'s North input port, VC0. This router is at tile (1,2). The pipeline hasn\'t started yet.' }
     },
-    {
-      name: 'RC — Route Compute',
-      stage: 0,
-      explain: {
-        lead: 'Stage 1: Route Compute',
-        body: 'route_compute_unit reads tgt_node_id from the flit, decodes (dst_x=3, dst_y=2). Compares to MY_X=1, MY_Y=2. Since dst_x > MY_X, output direction is <code>PORT_EAST</code>. Pure combinational — no clock edge needed.'
-      }
+    { name: 'RC — Route Compute', stage: 0,
+      explain: { lead: 'Stage 1: Route Compute',
+        body: 'route_compute_unit reads tgt_node_id, decodes (dst_x=3, dst_y=2). Compares to MY_X=1, MY_Y=2. Since dst_x &gt; MY_X, output direction is <code>PORT_EAST</code>. Pure combinational.' }
     },
-    {
-      name: 'VA — VC Allocation',
-      stage: 1,
-      explain: {
-        lead: 'Stage 2: VC Allocation',
-        body: 'Map the flit\'s channel (REQ) to its VC class: <code>channel_to_vc(CHI_CH_REQ) = VC_REQ = 0</code>. The flit will leave on VC0 of the East output. Reservation succeeds because the East-VC0 buffer at the downstream router has credits available.'
-      }
+    { name: 'VA — VC Allocation', stage: 1,
+      explain: { lead: 'Stage 2: VC Allocation',
+        body: 'Map the flit\'s channel (REQ) to its VC class: <code>channel_to_vc(CHI_CH_REQ) = VC_REQ = 0</code>. Flit leaves on VC0 of East. Reservation succeeds because the East-VC0 buffer downstream has credits.' }
     },
-    {
-      name: 'SA — Switch Allocation',
-      stage: 2,
-      explain: {
-        lead: 'Stage 3: Switch Allocation',
-        body: 'For the East output port, gather requests: <code>sa_req[EAST][NORTH] = 1</code>. Suppose Local and South are also requesting East — three-way contention. arb_unit\'s round-robin picks one winner. Say North wins this cycle. <code>sa_grant[EAST] = 5\\'b00001</code> (one-hot on North).'
-      }
+    { name: 'SA — Switch Allocation', stage: 2,
+      explain: { lead: 'Stage 3: Switch Allocation',
+        body: 'For the East output, gather: <code>sa_req[EAST][NORTH] = 1</code>. Suppose Local and South also want East — three-way contention. Round-robin picks one. Say North wins. <code>sa_grant[EAST] = 5\'b00001</code>.' }
     },
-    {
-      name: 'ST — Switch Traversal',
-      stage: 3,
-      explain: {
-        lead: 'Stage 4: Switch Traversal',
-        body: 'crossbar\'s <code>sel[EAST]</code> = sa_grant[EAST] = North bit. The mux drives <code>xbar_out[EAST] = ibuf_data[NORTH][VC0][head]</code>. The flit\'s 368-bit payload is now on the East output bus, still combinationally — no clock edge yet.'
-      }
+    { name: 'ST — Switch Traversal', stage: 3,
+      explain: { lead: 'Stage 4: Switch Traversal',
+        body: 'crossbar <code>sel[EAST] = sa_grant[EAST]</code>. Mux drives <code>xbar_out[EAST] = ibuf_data[NORTH][VC0][head]</code>. 368-bit payload is now on the East output bus, combinationally.' }
     },
-    {
-      name: 'LT — Link Traversal',
-      stage: 4,
-      explain: {
-        lead: 'Stage 5: Link Traversal',
-        body: 'On the next posedge clk, <code>ff_lt</code> registers <code>xbar_out[EAST]</code> into <code>east_flit_out</code>. <code>east_valid_out &lt;= xbar_out_v[EAST] &amp; east_ready_out</code>. The flit is on the wire to router (2,2). The North input port pops the flit from VC0\'s FIFO (rd_ptr advances), and a credit is returned upstream.'
-      }
+    { name: 'LT — Link Traversal', stage: 4,
+      explain: { lead: 'Stage 5: Link Traversal',
+        body: 'On the next posedge clk, <code>ff_lt</code> registers <code>xbar_out[EAST]</code> into <code>east_flit_out</code>. <code>east_valid_out &lt;= xbar_out_v[EAST] &amp; east_ready_out</code>. Flit is on the wire to router (2,2). North input port pops VC0 (rd_ptr advances) and returns a credit upstream.' }
     }
   ];
 
-  let curStep = 0;
-  let autoTimer = null;
+  var curStep = 0;
+  var autoTimer = null;
 
   function renderPipe() {
-    document.querySelectorAll('.pipe-stage').forEach(s => s.classList.remove('active', 'done'));
-    const stageInfo = stages[curStep];
+    document.querySelectorAll('.pipe-stage').forEach(function(s) {
+      s.classList.remove('active', 'done');
+    });
+    var stageInfo = stages[curStep];
     if (stageInfo.stage !== undefined) {
-      // Mark earlier as done, current as active
-      for (let i = 0; i < stageInfo.stage; i++) {
+      for (var i = 0; i < stageInfo.stage; i++) {
         document.querySelector('.pipe-stage[data-stage="' + i + '"]').classList.add('done');
       }
       document.querySelector('.pipe-stage[data-stage="' + stageInfo.stage + '"]').classList.add('active');
@@ -638,24 +564,24 @@
       '<div class="lead">' + stageInfo.explain.lead + '</div><span>' + stageInfo.explain.body + '</span>';
   }
 
-  document.getElementById('pipeStep').addEventListener('click', () => {
+  document.getElementById('pipeStep').addEventListener('click', function() {
     if (curStep < stages.length - 1) curStep++;
     renderPipe();
   });
-  document.getElementById('pipeReset').addEventListener('click', () => {
+  document.getElementById('pipeReset').addEventListener('click', function() {
     if (autoTimer) { clearInterval(autoTimer); autoTimer = null; document.getElementById('pipeAuto').textContent = 'Auto-play'; }
     curStep = 0;
     renderPipe();
   });
-  document.getElementById('pipeAuto').addEventListener('click', () => {
-    const btn = document.getElementById('pipeAuto');
+  document.getElementById('pipeAuto').addEventListener('click', function() {
+    var btn = document.getElementById('pipeAuto');
     if (autoTimer) {
       clearInterval(autoTimer); autoTimer = null; btn.textContent = 'Auto-play';
       return;
     }
     if (curStep >= stages.length - 1) curStep = 0;
     btn.textContent = 'Pause';
-    autoTimer = setInterval(() => {
+    autoTimer = setInterval(function() {
       if (curStep >= stages.length - 1) {
         clearInterval(autoTimer); autoTimer = null; btn.textContent = 'Auto-play';
         return;
@@ -666,9 +592,8 @@
   });
   renderPipe();
 
-  // Quiz
-  document.querySelectorAll('.quiz .reveal').forEach(btn => {
-    btn.addEventListener('click', () => btn.parentElement.classList.add('open'));
+  document.querySelectorAll('.quiz .reveal').forEach(function(btn) {
+    btn.addEventListener('click', function() { btn.parentElement.classList.add('open'); });
   });
 </script>
 </body>
