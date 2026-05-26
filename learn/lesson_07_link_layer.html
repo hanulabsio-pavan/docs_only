@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 7 — Link Layer · hanuma</title>
+<style>
+  :root {
+    --bg: #0a0a0b; --surface: #18181b; --surface-2: #27272a;
+    --text: #fafafa; --text-muted: #a1a1aa; --text-dim: #71717a;
+    --border: #27272a; --border-strong: #3f3f46;
+    --c-req: #60a5fa; --c-rsp: #4ade80; --c-snp: #fbbf24; --c-dat: #c084fc;
+    --c-req-bg: rgba(96, 165, 250, 0.12);
+    --c-rsp-bg: rgba(74, 222, 128, 0.12);
+    --c-snp-bg: rgba(251, 191, 36, 0.12);
+    --c-dat-bg: rgba(192, 132, 252, 0.12);
+    --c-hn: #fb7185;
+    --c-hn-bg: rgba(251, 113, 133, 0.12);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --radius: 10px; --radius-lg: 16px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.6; }
+  code { color: var(--text); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 0.92em; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top { position: sticky; top: 0; z-index: 100;
+    background: rgba(10, 10, 11, 0.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border); }
+  nav.top .inner { display: flex; align-items: center; justify-content: space-between;
+    height: 56px; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top .brand { font-weight: 600; font-size: 15px; }
+  nav.top .brand span.dim { color: var(--text-dim); font-weight: 400; }
+  nav.top ul { display: flex; gap: 22px; list-style: none; padding: 0; margin: 0; }
+  nav.top a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+  nav.top a:hover { color: var(--text); }
+  .hero { padding: 64px 0 48px; }
+  .hero .eyebrow { display: inline-block; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 16px;
+    color: var(--c-snp); background: var(--c-snp-bg); }
+  .hero h1 { font-size: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 0 0 16px; line-height: 1.15; }
+  .hero p.lead { font-size: 18px; color: var(--text-muted); max-width: 720px; margin: 0 0 32px; }
+  .hero .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 720px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat .v { font-size: 22px; font-weight: 600; }
+  .stat .l { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  section h2 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; }
+  section h2 .num { display: inline-block; width: 32px; height: 32px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted);
+    font-size: 14px; font-weight: 500; text-align: center; line-height: 30px;
+    margin-right: 12px; vertical-align: 2px; }
+  section .sub { color: var(--text-muted); margin: 0 0 32px; font-size: 16px; max-width: 720px; }
+  h3 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+  .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); cursor: pointer; font-size: 14px;
+    font-weight: 500; transition: all 0.15s; color: var(--text); font-family: inherit; }
+  .btn:hover { background: var(--border-strong); }
+  .btn.primary { background: var(--c-req); color: #000; border-color: var(--c-req); }
+  .btn.primary:hover { background: #93c5fd; }
+  .code-table { width: 100%; border-collapse: collapse; font-size: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; }
+  .code-table th, .code-table td { text-align: left; padding: 12px 16px;
+    border-bottom: 1px solid var(--border); color: var(--text); }
+  .code-table tr:last-child td { border-bottom: none; }
+  .code-table th { font-size: 12px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface-2); }
+  .code-table td.path { font-family: var(--mono); font-size: 12px; }
+  .code-table td.line { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+  .quiz { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; }
+  .quiz .q { margin-bottom: 24px; }
+  .quiz .q:last-child { margin-bottom: 0; }
+  .quiz .q .question { font-weight: 500; margin-bottom: 8px; }
+  .quiz .q .reveal { padding: 6px 12px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    background: var(--surface-2); color: var(--text-muted); font-family: inherit; }
+  .quiz .q .reveal:hover { background: var(--border-strong); color: var(--text); }
+  .quiz .q .answer { display: none; margin-top: 12px; padding: 14px;
+    background: var(--c-rsp-bg); border-left: 3px solid var(--c-rsp);
+    border-radius: 4px; font-size: 14px; }
+  .quiz .q.open .answer { display: block; }
+  .quiz .q.open .reveal { display: none; }
+  .next-card { background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+    color: white; border-radius: var(--radius-lg); padding: 32px; margin: 32px 0;
+    border: 1px solid var(--border-strong); }
+  .next-card .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--c-dat); font-weight: 600; }
+  .next-card h3 { margin: 8px 0 12px; color: white; font-size: 24px; }
+  .next-card p { color: #d4d4d8; margin: 0 0 16px; }
+  .next-card .files { display: flex; gap: 8px; flex-wrap: wrap; }
+  .next-card .file-chip { background: rgba(255,255,255,0.08); padding: 6px 12px;
+    border-radius: 4px; font-family: var(--mono); font-size: 12px; color: #e4e4e7; }
+  footer { padding: 32px 0; color: var(--text-muted); font-size: 13px; text-align: center; }
+  @media (max-width: 720px) {
+    .hero h1 { font-size: 30px; }
+    .hero .stats { grid-template-columns: repeat(2, 1fr); }
+    nav.top ul { display: none; }
+  }
+
+  /* Lesson-specific */
+  .fsm-svg { width: 100%; height: auto; }
+  .fsm-state { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1.5;
+    transition: all 0.3s ease; }
+  .fsm-state.active { fill: var(--c-snp); stroke: var(--c-snp); stroke-width: 3; }
+  .fsm-state.error { fill: rgba(239, 68, 68, 0.4); stroke: #ef4444; stroke-width: 3; }
+  .fsm-state.terminal { fill: var(--c-rsp-bg); stroke: var(--c-rsp); }
+  .fsm-label { font-family: var(--mono); font-size: 12px; fill: var(--text); pointer-events: none; font-weight: 500; }
+  .fsm-label.active { fill: #000; }
+  .fsm-arrow { stroke: var(--text-dim); stroke-width: 1.5; fill: none; transition: stroke 0.3s ease; }
+  .fsm-arrow.active { stroke: var(--c-snp); stroke-width: 2.5; }
+  .fsm-arrow.error { stroke: #ef4444; stroke-width: 2.5; }
+  .fsm-arrow-lbl { font-family: var(--mono); font-size: 10px; fill: var(--text-muted); pointer-events: none; }
+
+  .fsm-controls { display: flex; gap: 8px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .fsm-controls .lbl { font-size: 13px; color: var(--text-muted); }
+
+  .signal-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;
+    padding: 16px; background: var(--surface-2); border-radius: 8px; font-size: 13px; }
+  .signal-panel .sig { display: flex; justify-content: space-between; padding: 4px 0; }
+  .signal-panel .sig .nm { font-family: var(--mono); color: var(--text-muted); }
+  .signal-panel .sig .vl { font-family: var(--mono); font-weight: 500; }
+  .signal-panel .sig .vl.hi { color: var(--c-rsp); }
+  .signal-panel .sig .vl.lo { color: var(--text-dim); }
+  .signal-panel .sig .vl.err { color: #ef4444; }
+
+  .explain-panel { padding: 14px 18px; background: var(--surface-2);
+    border-radius: 8px; font-size: 14px; color: var(--text); margin-top: 16px; min-height: 70px; }
+  .explain-panel .lead { font-weight: 500; margin-bottom: 4px; }
+  .explain-panel code { background: var(--bg); }
+
+  /* TX channel gating viz */
+  .tx-row { display: grid; grid-template-columns: 110px 1fr 1fr 1fr 110px; gap: 10px;
+    align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .tx-row:last-child { border-bottom: none; }
+  .tx-row .ch { font-family: var(--mono); font-weight: 600; font-size: 13px; }
+  .tx-row .ch.req { color: var(--c-req); }
+  .tx-row .ch.rsp { color: var(--c-rsp); }
+  .tx-row .ch.dat { color: var(--c-dat); }
+  .tx-cell { padding: 8px; border-radius: 6px; text-align: center;
+    font-family: var(--mono); font-size: 12px;
+    background: var(--surface-2); color: var(--text-muted);
+    border: 1px solid var(--border-strong); cursor: pointer;
+    transition: all 0.15s; }
+  .tx-cell:hover { background: var(--border-strong); }
+  .tx-cell.on { background: var(--c-rsp); color: #000; border-color: var(--c-rsp); }
+  .tx-cell.off { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: #ef4444; }
+  .tx-result { font-family: var(--mono); font-weight: 600; font-size: 13px; text-align: right; }
+  .tx-result.go { color: var(--c-rsp); }
+  .tx-result.stall { color: #fca5a5; }
+  .tx-controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+
+  /* Channel routing diagram */
+  .route-svg { width: 100%; height: auto; }
+  .route-label { font-family: var(--mono); font-size: 11px; fill: var(--text); font-weight: 500; }
+  .route-sub { font-size: 10px; fill: var(--text-muted); }
+
+  /* Known bug callout */
+  .bug-card { padding: 18px; border-radius: 10px; margin-bottom: 12px;
+    background: rgba(251, 191, 36, 0.1); border-left: 4px solid var(--c-snp); }
+  .bug-card.crit { background: rgba(239, 68, 68, 0.12); border-left-color: #ef4444; }
+  .bug-card .head { font-weight: 600; margin-bottom: 4px; font-size: 14px; color: var(--text); }
+  .bug-card .body { font-size: 13px; color: var(--text-muted); }
+  .bug-card .body code { background: var(--bg); }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="inner">
+    <div class="brand">hanuma <span class="dim">/ learning / lesson 07</span></div>
+    <ul>
+      <li><a href="#why">Why a link layer</a></li>
+      <li><a href="#fsm">Link FSM</a></li>
+      <li><a href="#gating">TX gating</a></li>
+      <li><a href="#routing">Channel routing</a></li>
+      <li><a href="#bugs">Known bugs</a></li>
+      <li><a href="#code">Code map</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <header class="hero">
+    <span class="eyebrow">Lesson 7 of 10</span>
+    <h1>Link Layer — activate, credit, gate</h1>
+    <p class="lead">
+      The plumbing between transport logic and the physical CHI link wires. Owns
+      the link activation FSM, initializes credit pools per channel, gates TX
+      flits on link-up + credits, and pipes RX flits back to transport. Two
+      files: a slim integrated <code>chi_link_layer</code> and a more detailed
+      <code>chi_link_training</code> standalone trainer.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="v">2</div><div class="l">Files</div></div>
+      <div class="stat"><div class="v">8</div><div class="l">FSM states</div></div>
+      <div class="stat"><div class="v">3</div><div class="l">Credit pools</div></div>
+      <div class="stat"><div class="v">~30 min</div><div class="l">To finish</div></div>
+    </div>
+  </header>
+
+  <section id="why">
+    <h2><span class="num">1</span>Why a link layer at all?</h2>
+    <p class="sub">
+      The transport layer above produces logical CHI flits; the physical CHI
+      interface below is just wires. The link layer in between handles three
+      things transport shouldn't have to think about.
+    </p>
+
+    <div class="card">
+      <table class="code-table">
+        <thead><tr><th>Responsibility</th><th>What it does</th><th>Without it…</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>Link activation</b></td>
+            <td>Drives <code>txlinkactivereq</code> and waits for <code>txlinkactiveack</code> before any traffic flows.</td>
+            <td>Flits sent into an un-trained link silently disappear.</td>
+          </tr>
+          <tr>
+            <td><b>Credit accounting</b></td>
+            <td>Maintains per-channel credit pools. Gates <code>tx_*_ready</code> on credit availability.</td>
+            <td>Sender overruns the receiver's buffer and data is lost.</td>
+          </tr>
+          <tr>
+            <td><b>Channel multiplexing</b></td>
+            <td>Routes the four CHI channels (REQ/RSP/SNP/DAT) onto / off the physical interface.</td>
+            <td>Transport would have to know modport details (which signal goes which way for which node type).</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size: 14px; color: var(--text-muted); margin-top: 16px;">
+        Note that hanuma has <i>two</i> implementations here. <code>chi_link_layer.sv</code>
+        is the integrated version actually wired into the data path — it has a
+        compact 3-state FSM (RESET → ACTIVATE → ACTIVE) and instantiates three
+        <code>credit_manager</code>s directly. <code>chi_link_training.sv</code>
+        is a more thorough standalone trainer with the full 8-state FSM including
+        deactivation handshake and timeout-to-error, intended to be plugged into
+        a future revision of <code>chi_link_layer</code>.
+      </p>
+    </div>
+  </section>
+
+  <section id="fsm">
+    <h2><span class="num">2</span>The link state machine</h2>
+    <p class="sub">
+      Step through the full <code>chi_link_training</code> FSM. Drive
+      <code>txlinkactiveack</code> from outside, request deactivation, or let
+      the activate timeout trip to see the ERROR state. The active state lights
+      up in yellow; transitions show in orange.
+    </p>
+
+    <div class="card">
+      <div class="fsm-controls">
+        <button class="btn primary" id="fsmStep">Step ▶</button>
+        <button class="btn" id="fsmAck">Toggle <code>txlinkactiveack</code></button>
+        <button class="btn" id="fsmDeact">Request deact</button>
+        <button class="btn" id="fsmTimeout">Trip ACTIVATE timeout</button>
+        <button class="btn" id="fsmReset">Reset</button>
+      </div>
+
+      <svg class="fsm-svg" viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="fsm-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#a1a1aa"/>
+          </marker>
+          <marker id="fsm-arr-act" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#fbbf24"/>
+          </marker>
+          <marker id="fsm-arr-err" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#ef4444"/>
+          </marker>
+        </defs>
+
+        <!-- States -->
+        <g>
+          <rect class="fsm-state" id="st-LT_RESET" x="30" y="160" width="120" height="60" rx="10"/>
+          <text class="fsm-label" id="lbl-LT_RESET" x="90" y="195" text-anchor="middle">LT_RESET</text>
+
+          <rect class="fsm-state" id="st-LT_ACTIVATE" x="200" y="160" width="120" height="60" rx="10"/>
+          <text class="fsm-label" id="lbl-LT_ACTIVATE" x="260" y="195" text-anchor="middle">LT_ACTIVATE</text>
+
+          <rect class="fsm-state" id="st-LT_CRD_INIT" x="370" y="160" width="120" height="60" rx="10"/>
+          <text class="fsm-label" id="lbl-LT_CRD_INIT" x="430" y="195" text-anchor="middle">LT_CRD_INIT</text>
+
+          <rect class="fsm-state" id="st-LT_ACTIVE" x="540" y="160" width="120" height="60" rx="10"/>
+          <text class="fsm-label" id="lbl-LT_ACTIVE" x="600" y="195" text-anchor="middle">LT_ACTIVE</text>
+
+          <rect class="fsm-state" id="st-LT_DEACT_REQ" x="540" y="280" width="120" height="60" rx="10"/>
+          <text class="fsm-label" id="lbl-LT_DEACT_REQ" x="600" y="315" text-anchor="middle">LT_DEACT_REQ</text>
+
+          <rect class="fsm-state" id="st-LT_DEACT_ACK" x="370" y="280" width="120" height="60" rx="10"/>
+          <text class="fsm-label" id="lbl-LT_DEACT_ACK" x="430" y="315" text-anchor="middle">LT_DEACT_ACK</text>
+
+          <rect class="fsm-state terminal" id="st-LT_STOP" x="200" y="280" width="120" height="60" rx="10"/>
+          <text class="fsm-label" id="lbl-LT_STOP" x="260" y="315" text-anchor="middle">LT_STOP</text>
+
+          <rect class="fsm-state" id="st-LT_ERROR" x="730" y="160" width="120" height="60" rx="10"/>
+          <text class="fsm-label" id="lbl-LT_ERROR" x="790" y="195" text-anchor="middle">LT_ERROR</text>
+        </g>
+
+        <!-- Transitions -->
+        <g>
+          <line class="fsm-arrow" id="t-reset-act" x1="150" y1="190" x2="200" y2="190" marker-end="url(#fsm-arr)"/>
+          <text class="fsm-arrow-lbl" x="175" y="180" text-anchor="middle">auto</text>
+
+          <line class="fsm-arrow" id="t-act-crd" x1="320" y1="190" x2="370" y2="190" marker-end="url(#fsm-arr)"/>
+          <text class="fsm-arrow-lbl" x="345" y="180" text-anchor="middle">ack</text>
+
+          <line class="fsm-arrow" id="t-crd-active" x1="490" y1="190" x2="540" y2="190" marker-end="url(#fsm-arr)"/>
+          <text class="fsm-arrow-lbl" x="515" y="180" text-anchor="middle">auto</text>
+
+          <line class="fsm-arrow" id="t-active-deact" x1="600" y1="220" x2="600" y2="280" marker-end="url(#fsm-arr)"/>
+          <text class="fsm-arrow-lbl" x="615" y="255" text-anchor="start">deact_req</text>
+
+          <line class="fsm-arrow" id="t-deactreq-deactack" x1="540" y1="310" x2="490" y2="310" marker-end="url(#fsm-arr)"/>
+          <text class="fsm-arrow-lbl" x="515" y="300" text-anchor="middle">!ack</text>
+
+          <line class="fsm-arrow" id="t-deactack-stop" x1="370" y1="310" x2="320" y2="310" marker-end="url(#fsm-arr)"/>
+          <text class="fsm-arrow-lbl" x="345" y="300" text-anchor="middle">!req</text>
+
+          <path class="fsm-arrow" id="t-stop-reset" d="M260,280 Q90,280 90,220" fill="none" marker-end="url(#fsm-arr)"/>
+          <text class="fsm-arrow-lbl" x="175" y="255" text-anchor="middle">re-arm</text>
+
+          <line class="fsm-arrow" id="t-act-err" x1="320" y1="170" x2="730" y2="180" marker-end="url(#fsm-arr-err)"/>
+          <text class="fsm-arrow-lbl" x="525" y="160" text-anchor="middle">timeout (1000 cyc)</text>
+        </g>
+      </svg>
+
+      <div class="signal-panel">
+        <div>
+          <div class="sig"><span class="nm">state_q</span><span class="vl" id="sig-state">LT_RESET</span></div>
+          <div class="sig"><span class="nm">txlinkactivereq</span><span class="vl" id="sig-tareq">0</span></div>
+          <div class="sig"><span class="nm">rxlinkactiveack (driven by us)</span><span class="vl" id="sig-rxaack">0</span></div>
+        </div>
+        <div>
+          <div class="sig"><span class="nm">txlinkactiveack (from peer)</span><span class="vl" id="sig-taack">0</span></div>
+          <div class="sig"><span class="nm">link_up</span><span class="vl" id="sig-up">0</span></div>
+          <div class="sig"><span class="nm">link_error</span><span class="vl" id="sig-err">0</span></div>
+        </div>
+      </div>
+
+      <div class="explain-panel" id="fsmExplain">
+        <div class="lead">FSM in <code>LT_RESET</code>.</div>
+        <span>The link starts cold after reset. Press <b>Step ▶</b> to advance one
+        cycle. The FSM will auto-transition to <code>LT_ACTIVATE</code> and start
+        driving <code>txlinkactivereq</code> until the peer asserts
+        <code>txlinkactiveack</code>.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="gating">
+    <h2><span class="num">3</span>TX channel gating</h2>
+    <p class="sub">
+      A flit only flows out of the link layer when three conditions are all true.
+      Click any cell to toggle that condition. The right-hand result tells you
+      whether <code>txreqflitv</code> (or its RSP/DAT siblings) would actually
+      assert.
+    </p>
+
+    <div class="card">
+      <div class="tx-controls">
+        <span style="font-size: 13px; color: var(--text-muted);">Click cells to toggle conditions.</span>
+        <button class="btn" id="txReset" style="margin-left: auto;">Reset</button>
+      </div>
+
+      <div class="tx-row" style="border-bottom: 1px solid var(--border-strong);">
+        <div></div>
+        <div style="font-size: 11px; color: var(--text-muted); text-align: center; text-transform: uppercase; letter-spacing: 0.05em;">tx_valid</div>
+        <div style="font-size: 11px; color: var(--text-muted); text-align: center; text-transform: uppercase; letter-spacing: 0.05em;">link_up</div>
+        <div style="font-size: 11px; color: var(--text-muted); text-align: center; text-transform: uppercase; letter-spacing: 0.05em;">credit_avail</div>
+        <div style="font-size: 11px; color: var(--text-muted); text-align: right; text-transform: uppercase; letter-spacing: 0.05em;">txflitv</div>
+      </div>
+
+      <div class="tx-row" id="txr-req">
+        <div class="ch req">REQ</div>
+        <div class="tx-cell" data-ch="req" data-cond="valid">0</div>
+        <div class="tx-cell" data-ch="req" data-cond="up">0</div>
+        <div class="tx-cell" data-ch="req" data-cond="crd">0</div>
+        <div class="tx-result stall" id="res-req">stall</div>
+      </div>
+      <div class="tx-row" id="txr-rsp">
+        <div class="ch rsp">RSP</div>
+        <div class="tx-cell" data-ch="rsp" data-cond="valid">0</div>
+        <div class="tx-cell" data-ch="rsp" data-cond="up">0</div>
+        <div class="tx-cell" data-ch="rsp" data-cond="crd">0</div>
+        <div class="tx-result stall" id="res-rsp">stall</div>
+      </div>
+      <div class="tx-row" id="txr-dat">
+        <div class="ch dat">DAT</div>
+        <div class="tx-cell" data-ch="dat" data-cond="valid">0</div>
+        <div class="tx-cell" data-ch="dat" data-cond="up">0</div>
+        <div class="tx-cell" data-ch="dat" data-cond="crd">0</div>
+        <div class="tx-result stall" id="res-dat">stall</div>
+      </div>
+
+      <div class="explain-panel" style="margin-top: 24px;">
+        The RTL assignments (from <code>chi_link_layer.sv:164</code>):<br>
+        <code>tx_req_ready = link_up && req_crd_avail;</code><br>
+        <code>phys_link.txreqflitv = tx_req_valid && tx_req_ready;</code><br>
+        — collapsed: <code>txreqflitv = tx_req_valid && link_up && req_crd_avail</code>.
+      </div>
+
+      <h3>Initial credit pools (from parameters)</h3>
+      <table class="code-table">
+        <thead><tr><th>Channel</th><th>Parameter</th><th>Default</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>REQ</td><td class="path">INIT_REQ_CREDITS</td><td>8</td><td>Matches input-port buffer depth</td></tr>
+          <tr><td>RSP</td><td class="path">INIT_RSP_CREDITS</td><td>8</td><td>Same as REQ — short flits</td></tr>
+          <tr><td>SNP</td><td class="path">INIT_SNP_CREDITS</td><td>8</td><td>Declared but no credit_manager for SNP — RX-only on requester side</td></tr>
+          <tr><td>DAT</td><td class="path">INIT_DAT_CREDITS</td><td>4</td><td>Lower — DAT flits are 368 bits, larger storage</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="routing">
+    <h2><span class="num">4</span>Channel routing — TX vs RX</h2>
+    <p class="sub">
+      The link layer routes four CHI channels in two directions on the physical
+      <code>chi_link_if</code>. The requester modport drives REQ/RSP/DAT out and
+      receives SNP/RSP/DAT in. The signal naming is dense — here's the map.
+    </p>
+
+    <div class="card">
+      <svg class="route-svg" viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="r-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#fafafa"/>
+          </marker>
+          <marker id="r-arr-req" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#60a5fa"/>
+          </marker>
+          <marker id="r-arr-rsp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#4ade80"/>
+          </marker>
+          <marker id="r-arr-snp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#fbbf24"/>
+          </marker>
+          <marker id="r-arr-dat" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#c084fc"/>
+          </marker>
+        </defs>
+
+        <!-- Transport layer (left) -->
+        <rect x="30" y="40" width="180" height="300" rx="10" fill="#27272a" stroke="#3f3f46" stroke-width="2"/>
+        <text class="route-label" x="120" y="65" text-anchor="middle" font-weight="700">Transport layer</text>
+
+        <text class="route-label" x="60" y="110" font-size="11" fill="#60a5fa">TX REQ</text>
+        <text class="route-sub" x="60" y="124">tx_req_valid/ready/flit</text>
+        <text class="route-label" x="60" y="160" font-size="11" fill="#4ade80">TX RSP</text>
+        <text class="route-sub" x="60" y="174">tx_rsp_valid/ready/flit</text>
+        <text class="route-label" x="60" y="210" font-size="11" fill="#c084fc">TX DAT</text>
+        <text class="route-sub" x="60" y="224">tx_dat_valid/ready/flit</text>
+
+        <text class="route-label" x="60" y="255" font-size="11" fill="#4ade80">RX RSP</text>
+        <text class="route-sub" x="60" y="269">rx_rsp_valid/ready/flit</text>
+        <text class="route-label" x="60" y="290" font-size="11" fill="#fbbf24">RX SNP</text>
+        <text class="route-sub" x="60" y="304">rx_snp_valid/ready/flit</text>
+        <text class="route-label" x="60" y="325" font-size="11" fill="#c084fc">RX DAT</text>
+        <text class="route-sub" x="60" y="339">rx_dat_valid/ready/flit</text>
+
+        <!-- chi_link_layer (middle) -->
+        <rect x="320" y="40" width="260" height="300" rx="10" fill="rgba(251, 191, 36, 0.12)" stroke="#fbbf24" stroke-width="2.5"/>
+        <text class="route-label" x="450" y="65" text-anchor="middle" font-weight="700">chi_link_layer</text>
+        <text class="route-sub" x="450" y="84" text-anchor="middle">FSM + 3× credit_manager</text>
+
+        <text class="route-label" x="450" y="120" text-anchor="middle" font-size="11">link_up ∧ req_crd_avail</text>
+        <text class="route-sub" x="450" y="135" text-anchor="middle">gates tx_*_ready</text>
+
+        <text class="route-label" x="450" y="180" text-anchor="middle" font-size="11">channel routing</text>
+        <text class="route-sub" x="450" y="195" text-anchor="middle">requester/completer modport</text>
+
+        <text class="route-label" x="450" y="240" text-anchor="middle" font-size="11">RX pass-through</text>
+        <text class="route-sub" x="450" y="255" text-anchor="middle">gated by link_up</text>
+
+        <text class="route-label" x="450" y="305" text-anchor="middle" font-size="11">lcrd return</text>
+        <text class="route-sub" x="450" y="320" text-anchor="middle">on each rx consume</text>
+
+        <!-- chi_link_if (right) -->
+        <rect x="690" y="40" width="180" height="300" rx="10" fill="rgba(96, 165, 250, 0.12)" stroke="#60a5fa" stroke-width="2"/>
+        <text class="route-label" x="780" y="65" text-anchor="middle" font-weight="700">chi_link_if</text>
+        <text class="route-sub" x="780" y="84" text-anchor="middle">physical signals</text>
+
+        <text class="route-sub" x="720" y="120">txreqflitv/flit/pend</text>
+        <text class="route-sub" x="720" y="160">txrspflitv/flit/pend</text>
+        <text class="route-sub" x="720" y="200">txdatflitv/flit/pend</text>
+        <text class="route-sub" x="720" y="250">rxrspflitv/flit · rxrsplcrdv</text>
+        <text class="route-sub" x="720" y="285">txsnpflitv (RX side via modport)</text>
+        <text class="route-sub" x="720" y="320">rxdatflitv/flit · rxdatlcrdv</text>
+
+        <!-- Arrows: TX (left to right) -->
+        <line x1="210" y1="115" x2="320" y2="115" stroke="#60a5fa" stroke-width="2" marker-end="url(#r-arr-req)"/>
+        <line x1="210" y1="165" x2="320" y2="165" stroke="#4ade80" stroke-width="2" marker-end="url(#r-arr-rsp)"/>
+        <line x1="210" y1="215" x2="320" y2="215" stroke="#c084fc" stroke-width="2" marker-end="url(#r-arr-dat)"/>
+        <line x1="580" y1="120" x2="690" y2="120" stroke="#60a5fa" stroke-width="2" marker-end="url(#r-arr-req)"/>
+        <line x1="580" y1="160" x2="690" y2="160" stroke="#4ade80" stroke-width="2" marker-end="url(#r-arr-rsp)"/>
+        <line x1="580" y1="200" x2="690" y2="200" stroke="#c084fc" stroke-width="2" marker-end="url(#r-arr-dat)"/>
+
+        <!-- Arrows: RX (right to left) -->
+        <line x1="690" y1="250" x2="580" y2="250" stroke="#4ade80" stroke-width="2" marker-end="url(#r-arr-rsp)"/>
+        <line x1="690" y1="285" x2="580" y2="285" stroke="#fbbf24" stroke-width="2" marker-end="url(#r-arr-snp)"/>
+        <line x1="690" y1="320" x2="580" y2="320" stroke="#c084fc" stroke-width="2" marker-end="url(#r-arr-dat)"/>
+        <line x1="320" y1="260" x2="210" y2="260" stroke="#4ade80" stroke-width="2" marker-end="url(#r-arr-rsp)"/>
+        <line x1="320" y1="295" x2="210" y2="295" stroke="#fbbf24" stroke-width="2" marker-end="url(#r-arr-snp)"/>
+        <line x1="320" y1="330" x2="210" y2="330" stroke="#c084fc" stroke-width="2" marker-end="url(#r-arr-dat)"/>
+      </svg>
+
+      <h3>The full TX assignment chain (REQ example)</h3>
+      <table class="code-table">
+        <thead><tr><th>Assignment</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td class="path">tx_req_ready = link_up &amp;&amp; req_crd_avail</td><td>Tell transport whether it may present a flit</td></tr>
+          <tr><td class="path">phys_link.txreqflitv = tx_req_valid &amp;&amp; tx_req_ready</td><td>Drive the physical valid only when transport says yes <i>and</i> we said ready</td></tr>
+          <tr><td class="path">phys_link.txreqflit = tx_req_flit</td><td>Pass the payload straight through</td></tr>
+          <tr><td class="path">phys_link.txreqflitpend = tx_req_valid</td><td>Pend signal — one cycle early hint to receiver</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="bugs">
+    <h2><span class="num">5</span>Known issues</h2>
+    <p class="sub">
+      Items flagged in the DV tracker for the link-layer files. Several are
+      stubs awaiting full implementation; one was a real bug.
+    </p>
+
+    <div class="bug-card">
+      <div class="head">🔶 Deactivation logic is a stub in chi_link_layer</div>
+      <div class="body">
+        The compact FSM in <code>chi_link_layer.sv</code> has only 3 reachable
+        states (RESET → ACTIVATE → ACTIVE); <code>LINK_ST_DEACT_REQ</code> and
+        <code>DEACT_ACK</code> are enum-declared but never entered. The full
+        deactivation path lives in <code>chi_link_training.sv</code> instead and
+        needs to be merged in. DV tracker §1.4.
+      </div>
+    </div>
+
+    <div class="bug-card">
+      <div class="head">⚠ RX channel sourcing was originally wrong</div>
+      <div class="body">
+        The DV tracker noted at one point that <code>chi_link_layer.sv:184</code>
+        had <code>rx_rsp_valid = phys_link.txrspflitv</code> — sourcing from the
+        TX signals on the requester modport. Current RTL fixes RSP and DAT to
+        use <code>rxrspflitv</code> / <code>rxdatflitv</code> correctly. SNP
+        remains on <code>txsnpflitv</code> because on the requester modport, SNP
+        is RX (the completer drives the wire as <i>its</i> TX). Worth re-reading
+        the comment in <code>chi_link_layer.sv:185</code> to internalize the
+        modport orientation.
+      </div>
+    </div>
+
+    <div class="bug-card">
+      <div class="head">🔶 SNP credit pool not instantiated</div>
+      <div class="body">
+        Parameter <code>INIT_SNP_CREDITS</code> exists but no
+        <code>credit_manager</code> instance for SNP in the requester-side
+        <code>chi_link_layer</code>. That's deliberate — the requester doesn't
+        send SNP, only receives — but the parameter is dead. Either remove it or
+        wire it for the completer-side version.
+      </div>
+    </div>
+  </section>
+
+  <section id="code">
+    <h2><span class="num">6</span>Code map</h2>
+    <table class="code-table">
+      <thead><tr><th>Concept</th><th>File</th><th>Line</th><th>What's there</th></tr></thead>
+      <tbody>
+        <tr><td>Link state enum (3 used, 8 declared)</td><td class="path">rtl/interconnect/link/chi_link_layer.sv</td><td class="line">74</td><td>LINK_ST_RESET / ACTIVATE / ACTIVE / DEACT_*  / STOP / ERROR</td></tr>
+        <tr><td>FSM next-state comb</td><td class="path">rtl/interconnect/link/chi_link_layer.sv</td><td class="line">91</td><td>comb_state — auto, ack-driven, deact TODO</td></tr>
+        <tr><td>link_up / link_error outputs</td><td class="path">rtl/interconnect/link/chi_link_layer.sv</td><td class="line">118</td><td>Direct decode of state_q</td></tr>
+        <tr><td>3× credit_manager (REQ/RSP/DAT)</td><td class="path">rtl/interconnect/link/chi_link_layer.sv</td><td class="line">127</td><td>u_crd_req, u_crd_rsp, u_crd_dat</td></tr>
+        <tr><td>TX gating expressions</td><td class="path">rtl/interconnect/link/chi_link_layer.sv</td><td class="line">164</td><td>tx_*_ready = link_up &amp;&amp; *_crd_avail</td></tr>
+        <tr><td>RX pass-through + lcrd return</td><td class="path">rtl/interconnect/link/chi_link_layer.sv</td><td class="line">187</td><td>rx_*_valid, rx*_lcrdv assignments</td></tr>
+        <tr><td>sactive / link active ack</td><td class="path">rtl/interconnect/link/chi_link_layer.sv</td><td class="line">201</td><td>txsactive = link_up; rxlinkactiveack = rxlinkactivereq</td></tr>
+        <tr><td>Full training FSM (8 states)</td><td class="path">rtl/interconnect/link/chi_link_training.sv</td><td class="line">61</td><td>lt_state_e enum</td></tr>
+        <tr><td>Activation timeout counter</td><td class="path">rtl/interconnect/link/chi_link_training.sv</td><td class="line">74</td><td>timeout_q, ACTIVATE_TIMEOUT = 1000</td></tr>
+        <tr><td>Credit-init 1-cycle pulse</td><td class="path">rtl/interconnect/link/chi_link_training.sv</td><td class="line">92</td><td>crd_init_valid edge generator</td></tr>
+        <tr><td>Training FSM logic</td><td class="path">rtl/interconnect/link/chi_link_training.sv</td><td class="line">98</td><td>comb_state — full state graph including deact</td></tr>
+        <tr><td>Anti-error assertion</td><td class="path">rtl/interconnect/link/chi_link_training.sv</td><td class="line">169</td><td>a_no_lt_error</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="quiz">
+    <h2><span class="num">7</span>Check yourself</h2>
+    <div class="quiz">
+      <div class="q">
+        <div class="question">Q1. Transport drives <code>tx_req_valid = 1</code> immediately after reset. Why does the flit not flow?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          <code>tx_req_ready = link_up &amp;&amp; req_crd_avail</code>. At reset both are
+          0 — the FSM is in <code>LINK_ST_RESET</code>, so <code>link_up</code>
+          is 0; and credit_manager's <code>credit_count</code> hasn't been
+          initialized yet, so <code>req_crd_avail</code> is also 0. Once the FSM
+          reaches <code>ACTIVATE</code> and the peer acks, the link-training
+          pulse initializes credits and <code>link_up</code> goes high.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q2. Why does <code>chi_link_training</code> have 8 states but <code>chi_link_layer</code> only really uses 3?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          They are two implementations at different maturity levels.
+          <code>chi_link_layer</code> is the integrated path-of-least-resistance —
+          enough to bring up traffic but no graceful shutdown.
+          <code>chi_link_training</code> is the future replacement with full
+          deactivation handshake (DEACT_REQ → DEACT_ACK → STOP → re-RESET) and
+          a timeout-to-ERROR path. The plan is to merge them.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q3. On the requester modport, why does the link layer read RX SNP from <code>phys_link.txsnpflitv</code> instead of an <code>rxsnp*</code> signal?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          Modport orientation. The <code>requester</code> modport in
+          <code>chi_link_if</code> declares SNP as an <i>input</i> direction —
+          but the underlying wires keep the name from the completer's TX
+          perspective. So on the requester side, <code>txsnpflitv</code> is
+          what comes <i>in</i> on the SNP channel. REQ/RSP/DAT have separate
+          rx*-named wires for each direction; SNP is asymmetric (only completer
+          ever sends it).
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q4. The credit-init pulse must fire for exactly one cycle. How is that guaranteed?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          <code>chi_link_training.sv:93</code>:
+          <code>crd_init_valid &lt;= (state_d == LT_CRD_INIT) &amp;&amp; (state_q != LT_CRD_INIT)</code>
+          — that's a rising-edge detector. <code>state_d == LT_CRD_INIT &amp;&amp; state_q != LT_CRD_INIT</code>
+          is true only on the cycle the FSM enters CRD_INIT. The next cycle
+          <code>state_q == LT_CRD_INIT</code> too, so the condition is false
+          and the pulse falls. The FSM then immediately advances to ACTIVE.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="next-card">
+    <div class="eyebrow">Lesson 8 — Up next</div>
+    <h3>Transport &amp; packetization</h3>
+    <p>The translators that convert CHI semantic flits ↔ router-internal flits with route_mask. Packetizer wraps CHI flits into <code>noc_flit_ctrl_t</code>; depacketizer reverses. Plus the transport-layer transaction ordering and replay logic.</p>
+    <div class="files">
+      <span class="file-chip">chi_packetizer.sv</span>
+      <span class="file-chip">chi_depacketizer.sv</span>
+      <span class="file-chip">chi_transport_layer.sv</span>
+      <span class="file-chip">chi_protocol_layer.sv</span>
+    </div>
+  </div>
+
+</div>
+
+<footer><div class="container">Lesson 7 of 10 · hanuma SoC learning track</div></footer>
+
+<script>
+  // -------- Link FSM simulator --------
+  var STATE = {
+    RESET:     { next: 'ACTIVATE', auto: true },
+    ACTIVATE:  { next: 'CRD_INIT', requires: 'ack' },
+    CRD_INIT:  { next: 'ACTIVE',   auto: true },
+    ACTIVE:    { next: 'DEACT_REQ', requires: 'deact' },
+    DEACT_REQ: { next: 'DEACT_ACK', requires: '!ack' },
+    DEACT_ACK: { next: 'STOP', requires: '!req' },
+    STOP:      { next: 'RESET', auto: true },
+    ERROR:     { next: null }
+  };
+
+  var fsm = {
+    state: 'RESET',
+    ack: false,           // txlinkactiveack from peer
+    deact: false,         // request deactivation
+    timeoutCounter: 1000,
+    timeoutTripped: false
+  };
+
+  function stateColor(s) {
+    if (s === 'ACTIVE') return 'terminal';
+    if (s === 'ERROR') return 'error';
+    return '';
+  }
+
+  function renderFsm() {
+    // Highlight active state
+    var allStates = ['LT_RESET', 'LT_ACTIVATE', 'LT_CRD_INIT', 'LT_ACTIVE',
+                     'LT_DEACT_REQ', 'LT_DEACT_ACK', 'LT_STOP', 'LT_ERROR'];
+    allStates.forEach(function(s) {
+      var rect = document.getElementById('st-' + s);
+      var lbl = document.getElementById('lbl-' + s);
+      if (!rect) return;
+      rect.classList.remove('active', 'error', 'terminal');
+      lbl.classList.remove('active');
+      var stateName = s.replace('LT_', '');
+      if (stateName === fsm.state) {
+        if (stateName === 'ERROR') rect.classList.add('error');
+        else rect.classList.add('active');
+        lbl.classList.add('active');
+      } else if (stateName === 'ACTIVE') {
+        rect.classList.add('terminal');
+      } else if (stateName === 'ERROR') {
+        // dim
+      }
+    });
+
+    // Signals
+    document.getElementById('sig-state').textContent = 'LT_' + fsm.state;
+    var ifActive = (fsm.state === 'ACTIVATE' || fsm.state === 'CRD_INIT' || fsm.state === 'ACTIVE');
+    var ifReq = ifActive && fsm.state !== 'DEACT_REQ';
+    document.getElementById('sig-tareq').textContent = ifReq ? '1' : '0';
+    document.getElementById('sig-tareq').className = 'vl ' + (ifReq ? 'hi' : 'lo');
+    document.getElementById('sig-rxaack').textContent = (fsm.state === 'ACTIVE') ? '(echo)' : '0';
+    document.getElementById('sig-rxaack').className = 'vl ' + ((fsm.state === 'ACTIVE') ? 'hi' : 'lo');
+    document.getElementById('sig-taack').textContent = fsm.ack ? '1' : '0';
+    document.getElementById('sig-taack').className = 'vl ' + (fsm.ack ? 'hi' : 'lo');
+    document.getElementById('sig-up').textContent = (fsm.state === 'ACTIVE') ? '1' : '0';
+    document.getElementById('sig-up').className = 'vl ' + ((fsm.state === 'ACTIVE') ? 'hi' : 'lo');
+    document.getElementById('sig-err').textContent = (fsm.state === 'ERROR') ? '1' : '0';
+    document.getElementById('sig-err').className = 'vl ' + ((fsm.state === 'ERROR') ? 'err' : 'lo');
+
+    // Explainer
+    var explain = '';
+    switch (fsm.state) {
+      case 'RESET':
+        explain = '<div class="lead">LT_RESET — cold start.</div><span>Will auto-transition to LT_ACTIVATE next cycle.</span>'; break;
+      case 'ACTIVATE':
+        explain = '<div class="lead">LT_ACTIVATE — requesting link bring-up.</div><span>Driving <code>txlinkactivereq = 1</code>. Waiting for peer to assert <code>txlinkactiveack</code>. Will trip to LT_ERROR if no ack within 1000 cycles.</span>'; break;
+      case 'CRD_INIT':
+        explain = '<div class="lead">LT_CRD_INIT — credit initialization pulse.</div><span>Single-cycle. <code>crd_init_valid</code> fires, loading <code>INIT_REQ_CREDITS = 8</code> etc. into each credit_manager. Auto-transitions to LT_ACTIVE.</span>'; break;
+      case 'ACTIVE':
+        explain = '<div class="lead">LT_ACTIVE — link fully operational.</div><span><code>link_up = 1</code>. Flits flow when transport drives <code>tx_*_valid</code> and credits are available. Echo back any <code>rxlinkactivereq</code> from peer.</span>'; break;
+      case 'DEACT_REQ':
+        explain = '<div class="lead">LT_DEACT_REQ — gracefully deactivating.</div><span>Drop <code>txlinkactivereq</code>. Wait for peer to drop its ack.</span>'; break;
+      case 'DEACT_ACK':
+        explain = '<div class="lead">LT_DEACT_ACK — waiting for peer to confirm.</div><span>Once peer drops <code>rxlinkactivereq</code> too, transition to LT_STOP.</span>'; break;
+      case 'STOP':
+        explain = '<div class="lead">LT_STOP — link off.</div><span>Auto re-arms to LT_RESET, ready to re-activate.</span>'; break;
+      case 'ERROR':
+        explain = '<div class="lead">LT_ERROR — activation timed out.</div><span>Peer never acked within 1000 cycles. Stays in ERROR until reset. <code>a_no_lt_error</code> assertion fires.</span>'; break;
+    }
+    document.getElementById('fsmExplain').innerHTML = explain;
+  }
+
+  function fsmStep() {
+    var s = fsm.state;
+    if (s === 'ERROR') return;
+    if (s === 'RESET') { fsm.state = 'ACTIVATE'; fsm.timeoutCounter = 1000; }
+    else if (s === 'ACTIVATE') {
+      if (fsm.timeoutTripped) { fsm.state = 'ERROR'; fsm.timeoutTripped = false; return renderFsm(); }
+      if (fsm.ack) fsm.state = 'CRD_INIT';
+      else fsm.timeoutCounter = Math.max(0, fsm.timeoutCounter - 1);
+    }
+    else if (s === 'CRD_INIT') fsm.state = 'ACTIVE';
+    else if (s === 'ACTIVE') {
+      if (fsm.deact) { fsm.state = 'DEACT_REQ'; fsm.deact = false; }
+    }
+    else if (s === 'DEACT_REQ') {
+      if (!fsm.ack) fsm.state = 'DEACT_ACK';
+    }
+    else if (s === 'DEACT_ACK') fsm.state = 'STOP';
+    else if (s === 'STOP') fsm.state = 'RESET';
+    renderFsm();
+  }
+
+  document.getElementById('fsmStep').addEventListener('click', fsmStep);
+  document.getElementById('fsmAck').addEventListener('click', function() {
+    fsm.ack = !fsm.ack;
+    renderFsm();
+  });
+  document.getElementById('fsmDeact').addEventListener('click', function() {
+    fsm.deact = true;
+    renderFsm();
+  });
+  document.getElementById('fsmTimeout').addEventListener('click', function() {
+    fsm.timeoutTripped = true;
+    fsm.state = 'ERROR';
+    renderFsm();
+  });
+  document.getElementById('fsmReset').addEventListener('click', function() {
+    fsm = { state: 'RESET', ack: false, deact: false, timeoutCounter: 1000, timeoutTripped: false };
+    renderFsm();
+  });
+  renderFsm();
+
+  // -------- TX gating --------
+  var txConds = {
+    req: { valid: 0, up: 0, crd: 0 },
+    rsp: { valid: 0, up: 0, crd: 0 },
+    dat: { valid: 0, up: 0, crd: 0 }
+  };
+
+  function renderTx() {
+    ['req', 'rsp', 'dat'].forEach(function(ch) {
+      ['valid', 'up', 'crd'].forEach(function(cond) {
+        var cell = document.querySelector('.tx-cell[data-ch="' + ch + '"][data-cond="' + cond + '"]');
+        var v = txConds[ch][cond];
+        cell.classList.remove('on', 'off');
+        cell.textContent = v;
+        if (v) cell.classList.add('on');
+        else cell.classList.add('off');
+      });
+      var go = txConds[ch].valid && txConds[ch].up && txConds[ch].crd;
+      var res = document.getElementById('res-' + ch);
+      res.textContent = go ? 'flit sent (1)' : 'stall (0)';
+      res.classList.remove('go', 'stall');
+      res.classList.add(go ? 'go' : 'stall');
+    });
+  }
+  document.querySelectorAll('.tx-cell').forEach(function(c) {
+    c.addEventListener('click', function() {
+      var ch = c.getAttribute('data-ch');
+      var cond = c.getAttribute('data-cond');
+      txConds[ch][cond] = txConds[ch][cond] ? 0 : 1;
+      renderTx();
+    });
+  });
+  document.getElementById('txReset').addEventListener('click', function() {
+    ['req', 'rsp', 'dat'].forEach(function(ch) {
+      txConds[ch] = { valid: 0, up: 0, crd: 0 };
+    });
+    renderTx();
+  });
+  renderTx();
+
+  // Quiz reveals
+  document.querySelectorAll('.quiz .reveal').forEach(function(btn) {
+    btn.addEventListener('click', function() { btn.parentElement.classList.add('open'); });
+  });
+</script>
+</body>
+</html>

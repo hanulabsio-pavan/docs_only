@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 8 — Transport &amp; Packetization · hanuma</title>
+<style>
+  :root {
+    --bg: #0a0a0b; --surface: #18181b; --surface-2: #27272a;
+    --text: #fafafa; --text-muted: #a1a1aa; --text-dim: #71717a;
+    --border: #27272a; --border-strong: #3f3f46;
+    --c-req: #60a5fa; --c-rsp: #4ade80; --c-snp: #fbbf24; --c-dat: #c084fc;
+    --c-req-bg: rgba(96, 165, 250, 0.12);
+    --c-rsp-bg: rgba(74, 222, 128, 0.12);
+    --c-snp-bg: rgba(251, 191, 36, 0.12);
+    --c-dat-bg: rgba(192, 132, 252, 0.12);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --radius: 10px; --radius-lg: 16px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.6; }
+  code { color: var(--text); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 0.92em; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top { position: sticky; top: 0; z-index: 100;
+    background: rgba(10, 10, 11, 0.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border); }
+  nav.top .inner { display: flex; align-items: center; justify-content: space-between;
+    height: 56px; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top .brand { font-weight: 600; font-size: 15px; }
+  nav.top .brand span.dim { color: var(--text-dim); font-weight: 400; }
+  nav.top ul { display: flex; gap: 22px; list-style: none; padding: 0; margin: 0; }
+  nav.top a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+  nav.top a:hover { color: var(--text); }
+  .hero { padding: 64px 0 48px; }
+  .hero .eyebrow { display: inline-block; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 16px;
+    color: var(--c-dat); background: var(--c-dat-bg); }
+  .hero h1 { font-size: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 0 0 16px; line-height: 1.15; }
+  .hero p.lead { font-size: 18px; color: var(--text-muted); max-width: 720px; margin: 0 0 32px; }
+  .hero .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 720px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat .v { font-size: 22px; font-weight: 600; }
+  .stat .l { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  section h2 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; }
+  section h2 .num { display: inline-block; width: 32px; height: 32px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted);
+    font-size: 14px; font-weight: 500; text-align: center; line-height: 30px;
+    margin-right: 12px; vertical-align: 2px; }
+  section .sub { color: var(--text-muted); margin: 0 0 32px; font-size: 16px; max-width: 720px; }
+  h3 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+  .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); cursor: pointer; font-size: 14px;
+    font-weight: 500; transition: all 0.15s; color: var(--text); font-family: inherit; }
+  .btn:hover { background: var(--border-strong); }
+  .btn.primary { background: var(--c-req); color: #000; border-color: var(--c-req); }
+  .btn.primary:hover { background: #93c5fd; }
+  .code-table { width: 100%; border-collapse: collapse; font-size: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; }
+  .code-table th, .code-table td { text-align: left; padding: 12px 16px;
+    border-bottom: 1px solid var(--border); color: var(--text); }
+  .code-table tr:last-child td { border-bottom: none; }
+  .code-table th { font-size: 12px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface-2); }
+  .code-table td.path { font-family: var(--mono); font-size: 12px; }
+  .code-table td.line { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+  .quiz { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; }
+  .quiz .q { margin-bottom: 24px; }
+  .quiz .q:last-child { margin-bottom: 0; }
+  .quiz .q .question { font-weight: 500; margin-bottom: 8px; }
+  .quiz .q .reveal { padding: 6px 12px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    background: var(--surface-2); color: var(--text-muted); font-family: inherit; }
+  .quiz .q .reveal:hover { background: var(--border-strong); color: var(--text); }
+  .quiz .q .answer { display: none; margin-top: 12px; padding: 14px;
+    background: var(--c-rsp-bg); border-left: 3px solid var(--c-rsp);
+    border-radius: 4px; font-size: 14px; }
+  .quiz .q.open .answer { display: block; }
+  .quiz .q.open .reveal { display: none; }
+  .next-card { background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+    color: white; border-radius: var(--radius-lg); padding: 32px; margin: 32px 0;
+    border: 1px solid var(--border-strong); }
+  .next-card .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #fb7185; font-weight: 600; }
+  .next-card h3 { margin: 8px 0 12px; color: white; font-size: 24px; }
+  .next-card p { color: #d4d4d8; margin: 0 0 16px; }
+  .next-card .files { display: flex; gap: 8px; flex-wrap: wrap; }
+  .next-card .file-chip { background: rgba(255,255,255,0.08); padding: 6px 12px;
+    border-radius: 4px; font-family: var(--mono); font-size: 12px; color: #e4e4e7; }
+  footer { padding: 32px 0; color: var(--text-muted); font-size: 13px; text-align: center; }
+  @media (max-width: 720px) {
+    .hero h1 { font-size: 30px; }
+    .hero .stats { grid-template-columns: repeat(2, 1fr); }
+    nav.top ul { display: none; }
+  }
+
+  /* Packetizer */
+  .pkt-ch-row { display: grid; grid-template-columns: 120px 1fr 100px;
+    gap: 12px; align-items: center; padding: 10px 0;
+    border-bottom: 1px solid var(--border); }
+  .pkt-ch-row:last-child { border-bottom: none; }
+  .pkt-ch-row.winner { background: var(--c-rsp-bg); border-radius: 8px; padding: 10px; margin: 0 -10px; }
+  .pkt-ch-label { font-family: var(--mono); font-weight: 600; font-size: 13px; }
+  .pkt-ch-label.req { color: var(--c-req); }
+  .pkt-ch-label.rsp { color: var(--c-rsp); }
+  .pkt-ch-label.snp { color: var(--c-snp); }
+  .pkt-ch-label.dat { color: var(--c-dat); }
+  .pkt-toggle { padding: 8px 14px; border-radius: 6px; cursor: pointer;
+    background: var(--surface-2); color: var(--text-muted); font-family: var(--mono);
+    font-size: 12px; border: 1px solid var(--border-strong); transition: all 0.15s; }
+  .pkt-toggle.on { background: var(--c-rsp); color: #000; border-color: var(--c-rsp); }
+  .pkt-result { font-family: var(--mono); font-size: 12px; color: var(--text-muted); text-align: right; }
+  .pkt-result.win { color: var(--c-rsp); font-weight: 600; }
+  .pkt-out-panel { padding: 16px; background: var(--surface-2);
+    border-radius: 8px; margin-top: 16px; font-family: var(--mono); font-size: 13px; }
+  .pkt-out-panel .lbl { color: var(--text-muted); }
+  .pkt-out-panel .val { color: var(--text); font-weight: 500; }
+  .pkt-bytes { display: flex; gap: 2px; margin-top: 12px; height: 30px; }
+  .pkt-bytes .seg { display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border-strong); border-radius: 3px;
+    font-family: var(--mono); font-size: 10px; color: var(--text-muted);
+    background: var(--surface); }
+  .pkt-bytes .seg.payload { background: var(--c-rsp); color: #000; border-color: var(--c-rsp); }
+  .pkt-bytes .seg.padding { background: rgba(113, 113, 122, 0.2); border-color: var(--border); }
+
+  /* Depacketizer */
+  .depkt-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .depkt-svg { width: 100%; height: auto; }
+  .depkt-out-line { stroke: var(--text-dim); stroke-width: 1.5;
+    fill: none; transition: stroke 0.3s, stroke-width 0.3s; opacity: 0.3; }
+  .depkt-out-line.active { stroke-width: 3; opacity: 1; }
+  .depkt-out-line.req.active { stroke: var(--c-req); }
+  .depkt-out-line.rsp.active { stroke: var(--c-rsp); }
+  .depkt-out-line.snp.active { stroke: var(--c-snp); }
+  .depkt-out-line.dat.active { stroke: var(--c-dat); }
+  .depkt-out-box { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1.5;
+    transition: all 0.3s; }
+  .depkt-out-box.active.req { fill: var(--c-req-bg); stroke: var(--c-req); stroke-width: 2.5; }
+  .depkt-out-box.active.rsp { fill: var(--c-rsp-bg); stroke: var(--c-rsp); stroke-width: 2.5; }
+  .depkt-out-box.active.snp { fill: var(--c-snp-bg); stroke: var(--c-snp); stroke-width: 2.5; }
+  .depkt-out-box.active.dat { fill: var(--c-dat-bg); stroke: var(--c-dat); stroke-width: 2.5; }
+  .depkt-label { font-family: var(--mono); font-size: 12px; fill: var(--text); }
+  .depkt-sub { font-size: 10px; fill: var(--text-muted); }
+
+  /* TXNID bitmap */
+  .txnid-grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px;
+    max-width: 600px; margin: 0 auto; }
+  .txnid-cell { aspect-ratio: 1; border: 1px solid var(--border-strong);
+    border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+    background: var(--surface-2); cursor: pointer; transition: all 0.15s; }
+  .txnid-cell:hover { background: var(--border-strong); color: var(--text); }
+  .txnid-cell.active { background: var(--c-req); color: #000; border-color: var(--c-req); }
+  .txnid-cell.retry { background: var(--c-snp); color: #000; border-color: var(--c-snp); }
+  .txnid-cell.pcrd { background: var(--c-rsp); color: #000; border-color: var(--c-rsp); }
+  .txnid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    margin-top: 20px; padding: 14px; background: var(--surface-2); border-radius: 8px;
+    font-size: 13px; }
+  .txnid-stats .s { text-align: center; }
+  .txnid-stats .s .lbl { color: var(--text-muted); font-size: 11px; }
+  .txnid-stats .s .v { font-family: var(--mono); font-size: 18px; font-weight: 600; }
+  .txnid-stats .s .v.full { color: #ef4444; }
+
+  /* MSHR walker */
+  .mshr-stages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0 24px; }
+  .mshr-stage { padding: 14px 10px; border-radius: 8px;
+    background: var(--surface-2); border: 2px solid var(--border-strong);
+    text-align: center; transition: all 0.3s; }
+  .mshr-stage.active { border-color: var(--c-req); background: var(--c-req-bg);
+    transform: translateY(-3px); box-shadow: 0 6px 16px rgba(96, 165, 250, 0.18); }
+  .mshr-stage.done { border-color: var(--c-rsp); background: var(--c-rsp-bg); }
+  .mshr-stage .num { display: inline-block; width: 22px; height: 22px;
+    background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: 50%; font-size: 10px; font-weight: 600;
+    line-height: 20px; color: var(--text-muted); margin-bottom: 6px; }
+  .mshr-stage.active .num { background: var(--c-req); color: #000; border-color: var(--c-req); }
+  .mshr-stage.done .num { background: var(--c-rsp); color: #000; border-color: var(--c-rsp); }
+  .mshr-stage .lbl { font-family: var(--mono); font-size: 12px; font-weight: 600; display: block; }
+  .mshr-stage .desc { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .mshr-explain { padding: 14px 18px; background: var(--surface-2);
+    border-radius: 8px; min-height: 70px; font-size: 14px; }
+  .mshr-explain .lead { font-weight: 500; margin-bottom: 4px; }
+  .mshr-explain code { background: var(--bg); }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="inner">
+    <div class="brand">hanuma <span class="dim">/ learning / lesson 08</span></div>
+    <ul>
+      <li><a href="#why">Why translate</a></li>
+      <li><a href="#packetizer">Packetizer</a></li>
+      <li><a href="#depacketizer">Depacketizer</a></li>
+      <li><a href="#transport">Transport</a></li>
+      <li><a href="#protocol">Protocol (RN-F)</a></li>
+      <li><a href="#code">Code map</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <header class="hero">
+    <span class="eyebrow">Lesson 8 of 10</span>
+    <h1>Transport &amp; Packetization</h1>
+    <p class="lead">
+      Four modules that handle the impedance mismatch between CHI protocol flits
+      and router-internal flits, manage transaction state across the network, and
+      implement coherency on the RN-F side. By the end you'll know how a
+      <code>ReadShared</code> becomes routed bytes and how a returning
+      <code>CompData</code> becomes a cache fill.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="v">4</div><div class="l">Files</div></div>
+      <div class="stat"><div class="v">~1100</div><div class="l">Lines of RTL</div></div>
+      <div class="stat"><div class="v">2</div><div class="l">Translation directions</div></div>
+      <div class="stat"><div class="v">~35 min</div><div class="l">To finish</div></div>
+    </div>
+  </header>
+
+  <section id="why">
+    <h2><span class="num">1</span>Why translate at all?</h2>
+    <p class="sub">
+      The protocol layer thinks in <code>chi_req_flit_t</code>,
+      <code>chi_rsp_flit_t</code>, <code>chi_snp_flit_t</code>,
+      <code>chi_dat_flit_t</code> — four differently-sized packed structs full of
+      CHI semantics. The router thinks in <code>noc_flit_ctrl_t</code> — a single
+      uniform 368-bit struct with head/tail/route_mask/VC metadata. These two
+      blocks bridge that gap.
+    </p>
+
+    <div class="card">
+      <table class="code-table">
+        <thead><tr><th>Layer</th><th>Type</th><th>Sees</th><th>Doesn't care about</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Protocol</td>
+            <td class="path">chi_req_flit_t etc.</td>
+            <td>opcodes, txn_id, address, MOESI state</td>
+            <td>VCs, routing, head/tail markers</td>
+          </tr>
+          <tr>
+            <td>Packetizer / Depacketizer</td>
+            <td class="path">chi_*_flit_t ⇄ noc_flit_ctrl_t</td>
+            <td>both representations</td>
+            <td>nothing in the payload — just translation</td>
+          </tr>
+          <tr>
+            <td>Router</td>
+            <td class="path">noc_flit_ctrl_t</td>
+            <td>channel, VC, QoS, head/tail, route_mask</td>
+            <td>CHI opcodes, what the payload <i>means</i></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>The four-module stack</h3>
+      <table class="code-table">
+        <thead><tr><th>Module</th><th>Sits between</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td class="path">chi_protocol_layer</td><td>cache controller ⇄ transport</td><td>MOESI state machine, MSHR</td></tr>
+          <tr><td class="path">chi_transport_layer</td><td>protocol ⇄ link layer</td><td>TXNID allocator, retry queue, PCrd</td></tr>
+          <tr><td class="path">chi_packetizer</td><td>4 typed flits → 1 noc_flit_ctrl_t</td><td>multiplex CHI channels onto router</td></tr>
+          <tr><td class="path">chi_depacketizer</td><td>1 noc_flit_ctrl_t → 4 typed flits</td><td>demultiplex router back into CHI</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="packetizer">
+    <h2><span class="num">2</span>chi_packetizer — 4 channels merge into 1 wire</h2>
+    <p class="sub">
+      The packetizer wraps the four CHI flits into the uniform
+      <code>noc_flit_ctrl_t</code> structure. When more than one channel has a
+      flit at the same cycle, strict priority decides: DAT &gt; SNP &gt; RSP &gt;
+      REQ (chosen to match CHI's deadlock-free VC rules). Toggle channels below.
+    </p>
+
+    <div class="card">
+      <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+        Click channel toggles to set <code>*_valid</code>. The winner gets the
+        output register on the next cycle.
+      </div>
+
+      <div class="pkt-ch-row" id="pktrow-dat">
+        <div class="pkt-ch-label dat">DAT</div>
+        <div><button class="pkt-toggle" data-ch="dat">dat_valid = 0</button></div>
+        <div class="pkt-result" id="pktres-dat">—</div>
+      </div>
+      <div class="pkt-ch-row" id="pktrow-snp">
+        <div class="pkt-ch-label snp">SNP</div>
+        <div><button class="pkt-toggle" data-ch="snp">snp_valid = 0</button></div>
+        <div class="pkt-result" id="pktres-snp">—</div>
+      </div>
+      <div class="pkt-ch-row" id="pktrow-rsp">
+        <div class="pkt-ch-label rsp">RSP</div>
+        <div><button class="pkt-toggle" data-ch="rsp">rsp_valid = 0</button></div>
+        <div class="pkt-result" id="pktres-rsp">—</div>
+      </div>
+      <div class="pkt-ch-row" id="pktrow-req">
+        <div class="pkt-ch-label req">REQ</div>
+        <div><button class="pkt-toggle" data-ch="req">req_valid = 0</button></div>
+        <div class="pkt-result" id="pktres-req">—</div>
+      </div>
+
+      <div class="pkt-out-panel" id="pktOut">
+        <div><span class="lbl">pkt_out.valid</span> = <span class="val">0</span></div>
+        <div><span class="lbl">pkt_out.channel</span> = <span class="val">—</span></div>
+        <div><span class="lbl">pkt_out.vc</span> = <span class="val">—</span></div>
+        <div><span class="lbl">pkt_out.qos</span> = <span class="val">—</span></div>
+        <div><span class="lbl">pkt_out.head / tail</span> = <span class="val">1 / 1</span> (single-flit packet)</div>
+        <div style="margin-top: 12px;"><span class="lbl">pkt_out.data (368 bits)</span> — payload zero-padded up to widest:</div>
+        <div class="pkt-bytes" id="pktBytes"></div>
+        <div id="pktByteLegend" style="font-size: 11px; color: var(--text-muted); margin-top: 8px;"></div>
+      </div>
+
+      <h3>The priority rule (chi_packetizer.sv:66)</h3>
+      <table class="code-table">
+        <thead><tr><th>Priority</th><th>Channel</th><th>VC</th><th>Why this rank</th></tr></thead>
+        <tbody>
+          <tr><td>1 (highest)</td><td class="path">CH_DAT</td><td class="path">VC_DAT</td><td>Data class — large payload, can't back up safely</td></tr>
+          <tr><td>2</td><td class="path">CH_SNP</td><td class="path">VC_REQ</td><td>Snoop class — outbound from HN, time-critical</td></tr>
+          <tr><td>3</td><td class="path">CH_RSP</td><td class="path">VC_RSP</td><td>Response class — drains transactions</td></tr>
+          <tr><td>4 (lowest)</td><td class="path">CH_REQ</td><td class="path">VC_REQ</td><td>Request — origin of all activity, fine to delay one cycle</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="depacketizer">
+    <h2><span class="num">3</span>chi_depacketizer — 1 wire fans out to 4 channels</h2>
+    <p class="sub">
+      The reverse direction. A <code>noc_flit_ctrl_t</code> arrives from the
+      router; the depacketizer reads its <code>channel</code> field and routes
+      the payload (truncated to the right typed-flit width) into REQ, RSP, SNP,
+      or DAT outputs. Pick a channel below to see the routing light up.
+    </p>
+
+    <div class="card">
+      <div class="depkt-controls">
+        <span style="font-size: 13px; color: var(--text-muted);">Set <code>pkt_in.channel</code>:</span>
+        <button class="btn" data-dch="req" style="border-color: var(--c-req); color: var(--c-req);">CHI_CH_REQ</button>
+        <button class="btn" data-dch="rsp" style="border-color: var(--c-rsp); color: var(--c-rsp);">CHI_CH_RSP</button>
+        <button class="btn" data-dch="snp" style="border-color: var(--c-snp); color: var(--c-snp);">CHI_CH_SNP</button>
+        <button class="btn" data-dch="dat" style="border-color: var(--c-dat); color: var(--c-dat);">CHI_CH_DAT</button>
+      </div>
+
+      <svg class="depkt-svg" viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="dpkt-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#71717a"/>
+          </marker>
+        </defs>
+
+        <rect x="20" y="120" width="180" height="60" rx="8" fill="rgba(251, 191, 36, 0.15)" stroke="#fbbf24" stroke-width="2"/>
+        <text class="depkt-label" x="110" y="145" text-anchor="middle" fill="#fbbf24">pkt_in</text>
+        <text class="depkt-sub" x="110" y="162" text-anchor="middle">noc_flit_ctrl_t · 368 bits</text>
+
+        <rect x="260" y="120" width="180" height="60" rx="8" fill="#27272a" stroke="#3f3f46" stroke-width="2"/>
+        <text class="depkt-label" x="350" y="145" text-anchor="middle">channel decode</text>
+        <text class="depkt-sub" x="350" y="162" text-anchor="middle">unique case (ch)</text>
+
+        <rect class="depkt-out-box req" id="dbox-req" x="540" y="20" width="200" height="50" rx="8"/>
+        <text class="depkt-label" id="dlbl-req" x="640" y="42" text-anchor="middle">REQ output</text>
+        <text class="depkt-sub" x="640" y="58" text-anchor="middle">req_valid / req_flit (88 bits)</text>
+
+        <rect class="depkt-out-box rsp" id="dbox-rsp" x="540" y="90" width="200" height="50" rx="8"/>
+        <text class="depkt-label" id="dlbl-rsp" x="640" y="112" text-anchor="middle">RSP output</text>
+        <text class="depkt-sub" x="640" y="128" text-anchor="middle">rsp_valid / rsp_flit (46 bits)</text>
+
+        <rect class="depkt-out-box snp" id="dbox-snp" x="540" y="160" width="200" height="50" rx="8"/>
+        <text class="depkt-label" id="dlbl-snp" x="640" y="182" text-anchor="middle">SNP output</text>
+        <text class="depkt-sub" x="640" y="198" text-anchor="middle">snp_valid / snp_flit (84 bits)</text>
+
+        <rect class="depkt-out-box dat" id="dbox-dat" x="540" y="230" width="200" height="50" rx="8"/>
+        <text class="depkt-label" id="dlbl-dat" x="640" y="252" text-anchor="middle">DAT output</text>
+        <text class="depkt-sub" x="640" y="268" text-anchor="middle">dat_valid / dat_flit (368 bits)</text>
+
+        <line x1="200" y1="150" x2="260" y2="150" stroke="#71717a" stroke-width="2" marker-end="url(#dpkt-arr)"/>
+
+        <path class="depkt-out-line req" id="dline-req" d="M440,150 L440,45 L540,45" marker-end="url(#dpkt-arr)"/>
+        <path class="depkt-out-line rsp" id="dline-rsp" d="M440,150 L440,115 L540,115" marker-end="url(#dpkt-arr)"/>
+        <path class="depkt-out-line snp" id="dline-snp" d="M440,150 L440,185 L540,185" marker-end="url(#dpkt-arr)"/>
+        <path class="depkt-out-line dat" id="dline-dat" d="M440,150 L440,255 L540,255" marker-end="url(#dpkt-arr)"/>
+      </svg>
+
+      <h3>Why the output register per channel</h3>
+      <p style="font-size: 14px; color: var(--text-muted);">
+        Each output has a registered <code>*_valid_q</code> and <code>*_flit_q</code>
+        because the downstream might not be ready immediately. The depacketizer
+        accepts a new <code>pkt_in</code> only when the relevant output channel
+        is ready (<code>dst_ready</code> selects the right one). On unknown
+        <code>ch</code>, <code>decode_error</code> rises and the
+        <code>a_no_decode_err</code> assertion fires.
+      </p>
+    </div>
+  </section>
+
+  <section id="transport">
+    <h2><span class="num">4</span>chi_transport_layer — TXNIDs &amp; retries</h2>
+    <p class="sub">
+      The transport layer owns the <b>TXNID free-list</b> (64 slots), stamps each
+      new REQ with an allocated ID, and tracks every outstanding transaction.
+      When a <code>RetryAck</code> arrives it queues the transaction for replay;
+      when <code>PCrdGrant</code> arrives it increments the budget; when
+      <code>Comp</code> arrives it frees the slot. Try it below.
+    </p>
+
+    <div class="card">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+        <button class="btn primary" id="txnAlloc">Allocate TXNID</button>
+        <button class="btn" id="txnFree">Free random TXNID (Comp received)</button>
+        <button class="btn" id="txnRetry">RetryAck on random TXNID</button>
+        <button class="btn" id="txnPcrd">PCrdGrant arrives</button>
+        <button class="btn" id="txnReset">Reset</button>
+        <span style="font-size: 13px; color: var(--text-muted); align-self: center; margin-left: auto;">
+          Click cells to set state directly: empty → ACTIVE → RETRY → PCRD → FREE
+        </span>
+      </div>
+
+      <div class="txnid-grid" id="txnGrid"></div>
+
+      <div class="txnid-stats">
+        <div class="s"><div class="lbl">Total slots</div><div class="v">64</div></div>
+        <div class="s"><div class="lbl">In use</div><div class="v" id="txnUsed">0</div></div>
+        <div class="s"><div class="lbl">Awaiting retry</div><div class="v" id="txnRetryCnt">0</div></div>
+        <div class="s"><div class="lbl">txnid_full</div><div class="v" id="txnFull">0</div></div>
+      </div>
+
+      <h3>What happens on RetryAck</h3>
+      <ol style="font-size: 14px; color: var(--text-muted); padding-left: 24px;">
+        <li>Detect <code>retryack_hit</code> on a received RSP (<code>chi_transport_layer.sv:204</code>).</li>
+        <li>Move the matching transaction tracker state to <code>TXN_RETRY</code>; remember the <code>pcrd_type</code> requested.</li>
+        <li>Push the TXNID to the <code>retry_q</code> (depth-8 FIFO).</li>
+        <li>Wait for a <code>PCrdGrant</code> with matching pcrd_type — that increments <code>pcrd_budget[type]</code>.</li>
+        <li>When the head of <code>retry_q</code> has matching budget &amp; link credits, replay: pop, decrement budget, move to <code>TXN_ACTIVE</code>, restart timeout.</li>
+      </ol>
+      <h3>Filtering internal-only RSPs out of the protocol path</h3>
+      <p style="font-size: 14px; color: var(--text-muted);">
+        <code>RetryAck</code> and <code>PCrdGrant</code> are link-flow-control
+        responses — the protocol layer should never see them. Line 290 ensures
+        only the meaningful RSPs (Comp, CompDBIDResp, DBIDResp, etc.) propagate up:
+        <code>rsp_to_proto = ll_rx_rsp_valid &amp;&amp; opcode != RetryAck &amp;&amp; opcode != PCrdGrant</code>.
+      </p>
+    </div>
+  </section>
+
+  <section id="protocol">
+    <h2><span class="num">5</span>chi_protocol_layer — the MSHR lifecycle</h2>
+    <p class="sub">
+      Where coherency lives. Each cache miss allocates a <b>Miss Status Holding
+      Register (MSHR)</b> that walks a state machine until the transaction
+      completes. Step through one <code>ReadShared</code> below.
+    </p>
+
+    <div class="card">
+      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
+        <button class="btn primary" id="mshrStep">Step ▶</button>
+        <button class="btn" id="mshrReset">Reset</button>
+        <span style="margin-left: auto; font-size: 13px; color: var(--text-muted);">
+          State: <span style="font-family: var(--mono); color: var(--text);" id="mshrState">FREE</span>
+        </span>
+      </div>
+
+      <div class="mshr-stages">
+        <div class="mshr-stage" data-st="SEND_REQ"><div class="num">1</div><div class="lbl">SEND_REQ</div><div class="desc">queue REQ</div></div>
+        <div class="mshr-stage" data-st="WAIT_GRANT"><div class="num">2</div><div class="lbl">WAIT_GRANT</div><div class="desc">REQ sent, wait</div></div>
+        <div class="mshr-stage" data-st="WAIT_DATA"><div class="num">3</div><div class="lbl">WAIT_DATA</div><div class="desc">CompData arriving</div></div>
+        <div class="mshr-stage" data-st="SEND_CACK"><div class="num">4</div><div class="lbl">SEND_CACK</div><div class="desc">CompAck back</div></div>
+      </div>
+
+      <div class="mshr-explain" id="mshrExplain">
+        <div class="lead">MSHR is FREE.</div>
+        <span>Cache controller requests a line that misses. Press <b>Step</b> to allocate an MSHR and walk through the protocol.</span>
+      </div>
+
+      <h3>The full MSHR state machine</h3>
+      <table class="code-table">
+        <thead><tr><th>State</th><th>Code</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td class="path">MSHR_FREE</td><td class="path">4'h0</td><td>Slot unused</td></tr>
+          <tr><td class="path">MSHR_SEND_REQ</td><td class="path">4'h1</td><td>Waiting to transmit REQ flit on tx_req channel</td></tr>
+          <tr><td class="path">MSHR_WAIT_GRANT</td><td class="path">4'h2</td><td>REQ sent, awaiting DBIDResp/Comp from HN</td></tr>
+          <tr><td class="path">MSHR_WAIT_DATA</td><td class="path">4'h3</td><td>Waiting for CompData on RX DAT</td></tr>
+          <tr><td class="path">MSHR_SEND_CACK</td><td class="path">4'h4</td><td>Have data + Comp, need to send CompAck</td></tr>
+          <tr><td class="path">MSHR_SEND_WDATA</td><td class="path">4'h5</td><td>Write transaction: send DAT to HN with DBID</td></tr>
+          <tr><td class="path">MSHR_WAIT_COMP</td><td class="path">4'h6</td><td>Write: wait for final Comp before freeing</td></tr>
+          <tr><td class="path">MSHR_DONE</td><td class="path">4'h7</td><td>About to return to FREE</td></tr>
+          <tr><td class="path">MSHR_ERROR</td><td class="path">4'hF</td><td>Protocol violation captured</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Snoop handling — the parallel pipeline</h3>
+      <p style="font-size: 14px; color: var(--text-muted);">
+        Snoops arrive asynchronously from CompData/Comp. The
+        <code>ff_snp_pipe</code> block (line 339) forwards every incoming SNP to
+        the cache controller, then constructs either a plain <code>SnpResp</code>
+        (clean line) or a <code>SnpRespData</code> with the cache line payload
+        (dirty line). To prevent deadlock, the snoop response can't block REQ
+        traffic — that's why CHI mandates separate VCs and why the protocol
+        layer prioritizes SnpResp ahead of CompAck on the TX RSP channel
+        (<code>chi_protocol_layer.sv:258</code>).
+      </p>
+    </div>
+  </section>
+
+  <section id="code">
+    <h2><span class="num">6</span>Code map</h2>
+    <table class="code-table">
+      <thead><tr><th>Concept</th><th>File</th><th>Line</th><th>What's there</th></tr></thead>
+      <tbody>
+        <tr><td>Channel priority arbiter</td><td class="path">rtl/interconnect/packetizer/chi_packetizer.sv</td><td class="line">66</td><td>DAT &gt; SNP &gt; RSP &gt; REQ</td></tr>
+        <tr><td>Payload zero-pad pack</td><td class="path">rtl/interconnect/packetizer/chi_packetizer.sv</td><td class="line">87</td><td>Per-channel <code>noc_flit_ctrl_t</code> construct</td></tr>
+        <tr><td>Output register stage</td><td class="path">rtl/interconnect/packetizer/chi_packetizer.sv</td><td class="line">133</td><td>1-cycle pkt_out + back-pressure</td></tr>
+        <tr><td>Per-channel ready_out</td><td class="path">rtl/interconnect/packetizer/chi_packetizer.sv</td><td class="line">144</td><td>req_ready / rsp_ready / etc.</td></tr>
+        <tr><td>Channel decode select</td><td class="path">rtl/interconnect/depacketizer/chi_depacketizer.sv</td><td class="line">59</td><td>ch = pkt_in.channel</td></tr>
+        <tr><td>dst_ready selector</td><td class="path">rtl/interconnect/depacketizer/chi_depacketizer.sv</td><td class="line">64</td><td>Picks downstream ready per channel</td></tr>
+        <tr><td>Per-channel output register</td><td class="path">rtl/interconnect/depacketizer/chi_depacketizer.sv</td><td class="line">89</td><td>req_flit_q / rsp_flit_q / etc.</td></tr>
+        <tr><td>decode_error assertion</td><td class="path">rtl/interconnect/depacketizer/chi_depacketizer.sv</td><td class="line">137</td><td>a_no_decode_err</td></tr>
+        <tr><td>TXNID free-list bitmap</td><td class="path">rtl/interconnect/transport/chi_transport_layer.sv</td><td class="line">108</td><td>txnid_free_q — 64 bits</td></tr>
+        <tr><td>Priority-encode alloc</td><td class="path">rtl/interconnect/transport/chi_transport_layer.sv</td><td class="line">114</td><td>comb_alloc</td></tr>
+        <tr><td>Transaction tracker table</td><td class="path">rtl/interconnect/transport/chi_transport_layer.sv</td><td class="line">149</td><td>txn_entry_t with state, req, pcrd_type, timeout</td></tr>
+        <tr><td>RetryAck detection</td><td class="path">rtl/interconnect/transport/chi_transport_layer.sv</td><td class="line">204</td><td>retryack_hit / pcrdgrant_hit</td></tr>
+        <tr><td>Retry queue (depth-8)</td><td class="path">rtl/interconnect/transport/chi_transport_layer.sv</td><td class="line">186</td><td>retry_q + wr/rd_ptr</td></tr>
+        <tr><td>PCrd budget per type</td><td class="path">rtl/interconnect/transport/chi_transport_layer.sv</td><td class="line">162</td><td>pcrd_budget[NUM_PCRD_TYPE]</td></tr>
+        <tr><td>Internal-only RSP filter</td><td class="path">rtl/interconnect/transport/chi_transport_layer.sv</td><td class="line">290</td><td>Hide RetryAck/PCrdGrant from protocol</td></tr>
+        <tr><td>MSHR state enum</td><td class="path">rtl/interconnect/protocol/chi_protocol_layer.sv</td><td class="line">124</td><td>9 states</td></tr>
+        <tr><td>MSHR allocator</td><td class="path">rtl/interconnect/protocol/chi_protocol_layer.sv</td><td class="line">161</td><td>comb_mshr_alloc</td></tr>
+        <tr><td>REQ flit builder</td><td class="path">rtl/interconnect/protocol/chi_protocol_layer.sv</td><td class="line">216</td><td>comb_req_flit</td></tr>
+        <tr><td>Snoop response pipeline</td><td class="path">rtl/interconnect/protocol/chi_protocol_layer.sv</td><td class="line">339</td><td>ff_snp_pipe</td></tr>
+        <tr><td>MSHR sequential update</td><td class="path">rtl/interconnect/protocol/chi_protocol_layer.sv</td><td class="line">386</td><td>ff_mshr — the big block</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="quiz">
+    <h2><span class="num">7</span>Check yourself</h2>
+    <div class="quiz">
+      <div class="q">
+        <div class="question">Q1. Why is DAT the highest priority in <code>chi_packetizer</code>'s arbitration?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          DAT flits are the wide ones (368 bits including a full cache line). If
+          DAT backs up at the packetizer it implies a stalled response path,
+          which means transactions can't complete, which means upstream traffic
+          (REQ) eventually deadlocks. Draining DAT first matches CHI's
+          deadlock-freedom requirement that response classes must never be
+          blocked by request classes.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q2. The packetizer zero-pads narrower flits up to <code>NOC_FLIT_WIDTH = 368</code>. Why not use four different-sized buses?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          Because the router only knows about a single uniform flit type. Routers
+          parameterize <code>FLIT_W</code> to the widest channel; building one
+          fabric per channel would multiply gate count 4× and quadruple the
+          assertion / verification surface. Zero-padding wastes a few bits of
+          buffer per non-DAT cycle but keeps the router parametric.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q3. A transaction gets <code>RetryAck</code>'d. What three things must happen before it can re-issue?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          (1) Transaction moves to <code>TXN_RETRY</code> state; (2) it's pushed
+          to the head of <code>retry_q</code>; (3) a <code>PCrdGrant</code> with
+          matching <code>pcrd_type</code> arrives, incrementing the budget. Then
+          the replay condition fires: head of queue has matching budget AND link
+          credits available — pop, decrement budget, move back to TXN_ACTIVE.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q4. The protocol layer's snoop response is prioritized ahead of CompAck on the TX RSP channel. Why?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          Snoop deadlock prevention. A pending CompAck is part of <i>my</i>
+          transaction completing — I can wait. A pending SnpResp is blocking
+          some <i>other</i> transaction at the HN; if I sit on it, that HN
+          transaction can't complete, which prevents the HN from accepting new
+          REQs, which prevents me from sending my next request. Always drain
+          snoop responses first.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="next-card">
+    <div class="eyebrow">Lesson 9 — Up next</div>
+    <h3>CHI Nodes — RN, HN, SN</h3>
+    <p>The actual agents on the fabric. Request Node (CPU/IO initiator), Home Node (LLC + directory + snoop orchestrator), Slave Node (memory controller). Where everything you've learned in Lessons 1-8 finally talks to silicon.</p>
+    <div class="files">
+      <span class="file-chip">chi_rn.sv</span>
+      <span class="file-chip">chi_hn.sv</span>
+      <span class="file-chip">chi_sn.sv</span>
+    </div>
+  </div>
+
+</div>
+
+<footer><div class="container">Lesson 8 of 10 · hanuma SoC learning track</div></footer>
+
+<script>
+  // ---------- Packetizer arbitration ----------
+  var pktState = { req: 0, rsp: 0, snp: 0, dat: 0 };
+  var pktChMeta = {
+    dat: { vc: 'VC_DAT', width: 368 },
+    snp: { vc: 'VC_REQ', width: 84  },
+    rsp: { vc: 'VC_RSP', width: 46  },
+    req: { vc: 'VC_REQ', width: 88  }
+  };
+
+  function pktPriority() {
+    if (pktState.dat) return 'dat';
+    if (pktState.snp) return 'snp';
+    if (pktState.rsp) return 'rsp';
+    if (pktState.req) return 'req';
+    return null;
+  }
+
+  function renderPkt() {
+    ['req', 'rsp', 'snp', 'dat'].forEach(function(ch) {
+      var btn = document.querySelector('.pkt-toggle[data-ch="' + ch + '"]');
+      btn.textContent = ch + '_valid = ' + pktState[ch];
+      btn.classList.toggle('on', !!pktState[ch]);
+      document.getElementById('pktres-' + ch).textContent = '—';
+      document.getElementById('pktres-' + ch).classList.remove('win');
+      document.getElementById('pktrow-' + ch).classList.remove('winner');
+    });
+    var win = pktPriority();
+    var out = document.getElementById('pktOut');
+    var bytes = document.getElementById('pktBytes');
+    var legend = document.getElementById('pktByteLegend');
+    bytes.innerHTML = '';
+    if (!win) {
+      out.innerHTML = '<div><span class="lbl">pkt_out.valid</span> = <span class="val">0</span></div>' +
+        '<div><span class="lbl">pkt_out.channel</span> = <span class="val">—</span></div>' +
+        '<div><span class="lbl">pkt_out.vc</span> = <span class="val">—</span></div>' +
+        '<div><span class="lbl">pkt_out.qos</span> = <span class="val">—</span></div>' +
+        '<div><span class="lbl">pkt_out.head / tail</span> = <span class="val">1 / 1</span> (single-flit packet)</div>' +
+        '<div style="margin-top: 12px;"><span class="lbl">pkt_out.data (368 bits)</span> — no flit selected</div>' +
+        '<div class="pkt-bytes" id="pktBytes"></div>' +
+        '<div id="pktByteLegend" style="font-size: 11px; color: var(--text-muted); margin-top: 8px;"></div>';
+      return;
+    }
+    document.getElementById('pktres-' + win).textContent = 'WIN ▶ output';
+    document.getElementById('pktres-' + win).classList.add('win');
+    document.getElementById('pktrow-' + win).classList.add('winner');
+
+    var ch = win.toUpperCase();
+    var meta = pktChMeta[win];
+    out.innerHTML = '<div><span class="lbl">pkt_out.valid</span> = <span class="val">1</span></div>' +
+      '<div><span class="lbl">pkt_out.channel</span> = <span class="val">CHI_CH_' + ch + '</span></div>' +
+      '<div><span class="lbl">pkt_out.vc</span> = <span class="val">' + meta.vc + '</span></div>' +
+      '<div><span class="lbl">pkt_out.qos</span> = <span class="val">' + win + '_flit.qos</span></div>' +
+      '<div><span class="lbl">pkt_out.head / tail</span> = <span class="val">1 / 1</span> (single-flit packet)</div>' +
+      '<div style="margin-top: 12px;"><span class="lbl">pkt_out.data (368 bits)</span> — ' +
+        meta.width + ' bits payload + ' + (368 - meta.width) + ' bits zero-pad:</div>' +
+      '<div class="pkt-bytes" id="pktBytes"></div>' +
+      '<div id="pktByteLegend" style="font-size: 11px; color: var(--text-muted); margin-top: 8px;"></div>';
+    var newBytes = document.getElementById('pktBytes');
+    var newLegend = document.getElementById('pktByteLegend');
+    var payload = document.createElement('div');
+    payload.className = 'pkt-bytes seg payload';
+    payload.style.flex = meta.width;
+    payload.style.display = 'flex';
+    payload.style.alignItems = 'center';
+    payload.style.justifyContent = 'center';
+    payload.textContent = win + '_flit (' + meta.width + ' bits)';
+    payload.style.border = '1px solid var(--c-rsp)';
+    payload.style.borderRadius = '3px';
+    payload.style.background = 'var(--c-rsp)';
+    payload.style.color = '#000';
+    payload.style.fontFamily = 'var(--mono)';
+    payload.style.fontSize = '10px';
+    newBytes.appendChild(payload);
+    if (meta.width < 368) {
+      var pad = document.createElement('div');
+      pad.className = 'pkt-bytes seg padding';
+      pad.style.flex = (368 - meta.width);
+      pad.style.display = 'flex';
+      pad.style.alignItems = 'center';
+      pad.style.justifyContent = 'center';
+      pad.textContent = 'zero-pad (' + (368 - meta.width) + ' bits)';
+      pad.style.border = '1px solid var(--border)';
+      pad.style.borderRadius = '3px';
+      pad.style.background = 'rgba(113, 113, 122, 0.2)';
+      pad.style.color = 'var(--text-muted)';
+      pad.style.fontFamily = 'var(--mono)';
+      pad.style.fontSize = '10px';
+      newBytes.appendChild(pad);
+    }
+  }
+
+  document.querySelectorAll('.pkt-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var ch = btn.getAttribute('data-ch');
+      pktState[ch] = pktState[ch] ? 0 : 1;
+      renderPkt();
+    });
+  });
+  renderPkt();
+
+  // ---------- Depacketizer ----------
+  function setDepktCh(dch) {
+    ['req', 'rsp', 'snp', 'dat'].forEach(function(c) {
+      var line = document.getElementById('dline-' + c);
+      var box = document.getElementById('dbox-' + c);
+      line.classList.remove('active', 'req', 'rsp', 'snp', 'dat');
+      line.classList.add(c);
+      box.classList.remove('active', 'req', 'rsp', 'snp', 'dat');
+      box.classList.add(c);
+      if (c === dch) {
+        line.classList.add('active');
+        box.classList.add('active');
+      }
+    });
+  }
+  document.querySelectorAll('[data-dch]').forEach(function(btn) {
+    btn.addEventListener('click', function() { setDepktCh(btn.getAttribute('data-dch')); });
+  });
+  setDepktCh('req');
+
+  // ---------- TXNID free-list ----------
+  var NUM_TXNID = 64;
+  // states: 'free', 'active', 'retry', 'pcrd'
+  var txnSt = new Array(NUM_TXNID).fill('free');
+
+  function renderTxn() {
+    var grid = document.getElementById('txnGrid');
+    grid.innerHTML = '';
+    var used = 0, retry = 0;
+    for (var i = 0; i < NUM_TXNID; i++) {
+      var c = document.createElement('div');
+      c.className = 'txnid-cell';
+      c.textContent = i;
+      if (txnSt[i] === 'active') { c.classList.add('active'); used++; }
+      else if (txnSt[i] === 'retry') { c.classList.add('retry'); used++; retry++; }
+      else if (txnSt[i] === 'pcrd') { c.classList.add('pcrd'); used++; }
+      (function(idx) {
+        c.addEventListener('click', function() {
+          if (txnSt[idx] === 'free') txnSt[idx] = 'active';
+          else if (txnSt[idx] === 'active') txnSt[idx] = 'retry';
+          else if (txnSt[idx] === 'retry') txnSt[idx] = 'pcrd';
+          else txnSt[idx] = 'free';
+          renderTxn();
+        });
+      })(i);
+      grid.appendChild(c);
+    }
+    document.getElementById('txnUsed').textContent = used;
+    document.getElementById('txnRetryCnt').textContent = retry;
+    var full = (used === NUM_TXNID);
+    var fullEl = document.getElementById('txnFull');
+    fullEl.textContent = full ? '1' : '0';
+    fullEl.classList.toggle('full', full);
+  }
+  document.getElementById('txnAlloc').addEventListener('click', function() {
+    for (var i = 0; i < NUM_TXNID; i++) {
+      if (txnSt[i] === 'free') { txnSt[i] = 'active'; renderTxn(); return; }
+    }
+  });
+  document.getElementById('txnFree').addEventListener('click', function() {
+    var active = [];
+    for (var i = 0; i < NUM_TXNID; i++) if (txnSt[i] === 'active') active.push(i);
+    if (active.length) { txnSt[active[Math.floor(Math.random() * active.length)]] = 'free'; renderTxn(); }
+  });
+  document.getElementById('txnRetry').addEventListener('click', function() {
+    var active = [];
+    for (var i = 0; i < NUM_TXNID; i++) if (txnSt[i] === 'active') active.push(i);
+    if (active.length) { txnSt[active[Math.floor(Math.random() * active.length)]] = 'retry'; renderTxn(); }
+  });
+  document.getElementById('txnPcrd').addEventListener('click', function() {
+    var retry = [];
+    for (var i = 0; i < NUM_TXNID; i++) if (txnSt[i] === 'retry') retry.push(i);
+    if (retry.length) { txnSt[retry[Math.floor(Math.random() * retry.length)]] = 'pcrd'; renderTxn(); }
+    else {
+      var pcrd = [];
+      for (var j = 0; j < NUM_TXNID; j++) if (txnSt[j] === 'pcrd') pcrd.push(j);
+      if (pcrd.length) { txnSt[pcrd[0]] = 'active'; renderTxn(); }
+    }
+  });
+  document.getElementById('txnReset').addEventListener('click', function() {
+    txnSt = new Array(NUM_TXNID).fill('free');
+    renderTxn();
+  });
+  renderTxn();
+
+  // ---------- MSHR walker ----------
+  var mshrSteps = [
+    { state: 'FREE',       active: null,         explain: { lead: 'MSHR is FREE.', body: 'Cache controller asserts <code>cache_rd_valid</code> for a missed line. Press <b>Step</b> to allocate.' } },
+    { state: 'SEND_REQ',   active: 'SEND_REQ',   explain: { lead: 'MSHR_SEND_REQ — allocated.', body: 'Cache miss for 0x4000 with <code>excl=0</code>. MSHR allocator finds slot 3, stores opcode <code>REQ_ReadShared</code>, addr, home_nid. Waiting for tx_req mux to win.' } },
+    { state: 'WAIT_GRANT', active: 'WAIT_GRANT', explain: { lead: 'MSHR_WAIT_GRANT — REQ on the wire.', body: '<code>tx_req_valid &amp;&amp; tx_req_ready</code> handshakes. REQ flit sent to HN with <code>txn_id = 3</code>. Now waiting for Comp or CompData from the HN.' } },
+    { state: 'WAIT_DATA',  active: 'WAIT_DATA',  explain: { lead: 'MSHR_WAIT_DATA — Comp arrived, data still coming.', body: 'HN sent <code>RSP_Comp</code> first (cache state hint). <code>comp_rcvd = 1</code>. DAT channel will deliver <code>CompData</code> next.' } },
+    { state: 'SEND_CACK',  active: 'SEND_CACK',  explain: { lead: 'MSHR_SEND_CACK — both arrived.', body: 'CompData received, <code>data_rcvd = 1</code>. Both flags set, transition to SEND_CACK. Now must echo a <code>RSP_CompAck</code> back to HN so it can free its transaction slot.' } },
+    { state: 'DONE',       active: null,         explain: { lead: 'CompAck sent — MSHR freed.', body: 'Cache controller gets <code>cache_rd_resp_valid = 1</code> with the data and new state (likely <code>UC</code> for ReadShared with no sharers). MSHR returns to FREE. Transaction complete.' } }
+  ];
+  var mshrIdx = 0;
+
+  function renderMshr() {
+    var step = mshrSteps[mshrIdx];
+    document.getElementById('mshrState').textContent = step.state;
+    document.querySelectorAll('.mshr-stage').forEach(function(s) {
+      s.classList.remove('active', 'done');
+    });
+    // Mark earlier as done up to active
+    var order = ['SEND_REQ', 'WAIT_GRANT', 'WAIT_DATA', 'SEND_CACK'];
+    var activeIdx = step.active ? order.indexOf(step.active) : -1;
+    for (var i = 0; i < order.length; i++) {
+      var el = document.querySelector('.mshr-stage[data-st="' + order[i] + '"]');
+      if (!el) continue;
+      if (step.state === 'DONE') el.classList.add('done');
+      else if (activeIdx >= 0 && i < activeIdx) el.classList.add('done');
+      else if (activeIdx >= 0 && i === activeIdx) el.classList.add('active');
+    }
+    document.getElementById('mshrExplain').innerHTML =
+      '<div class="lead">' + step.explain.lead + '</div><span>' + step.explain.body + '</span>';
+  }
+  document.getElementById('mshrStep').addEventListener('click', function() {
+    if (mshrIdx < mshrSteps.length - 1) mshrIdx++;
+    renderMshr();
+  });
+  document.getElementById('mshrReset').addEventListener('click', function() {
+    mshrIdx = 0; renderMshr();
+  });
+  renderMshr();
+
+  // Quiz reveals
+  document.querySelectorAll('.quiz .reveal').forEach(function(btn) {
+    btn.addEventListener('click', function() { btn.parentElement.classList.add('open'); });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 6 — NoC Fabric · hanuma</title>
+<style>
+  :root {
+    --bg: #0a0a0b; --surface: #18181b; --surface-2: #27272a;
+    --text: #fafafa; --text-muted: #a1a1aa; --text-dim: #71717a;
+    --border: #27272a; --border-strong: #3f3f46;
+    --c-req: #60a5fa; --c-rsp: #4ade80; --c-snp: #fbbf24; --c-dat: #c084fc;
+    --c-req-bg: rgba(96, 165, 250, 0.12);
+    --c-rsp-bg: rgba(74, 222, 128, 0.12);
+    --c-snp-bg: rgba(251, 191, 36, 0.12);
+    --c-dat-bg: rgba(192, 132, 252, 0.12);
+    --c-rn: #22d3ee; --c-hn: #fb7185; --c-sn: #818cf8;
+    --c-rn-bg: rgba(34, 211, 238, 0.15);
+    --c-hn-bg: rgba(251, 113, 133, 0.15);
+    --c-sn-bg: rgba(129, 140, 248, 0.15);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --radius: 10px; --radius-lg: 16px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.6; }
+  code { color: var(--text); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 0.92em; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top { position: sticky; top: 0; z-index: 100;
+    background: rgba(10, 10, 11, 0.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border); }
+  nav.top .inner { display: flex; align-items: center; justify-content: space-between;
+    height: 56px; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top .brand { font-weight: 600; font-size: 15px; }
+  nav.top .brand span.dim { color: var(--text-dim); font-weight: 400; }
+  nav.top ul { display: flex; gap: 22px; list-style: none; padding: 0; margin: 0; }
+  nav.top a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+  nav.top a:hover { color: var(--text); }
+  .hero { padding: 64px 0 48px; }
+  .hero .eyebrow { display: inline-block; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 16px;
+    color: var(--c-rn); background: var(--c-rn-bg); }
+  .hero h1 { font-size: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 0 0 16px; line-height: 1.15; }
+  .hero p.lead { font-size: 18px; color: var(--text-muted); max-width: 720px; margin: 0 0 32px; }
+  .hero .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 720px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat .v { font-size: 22px; font-weight: 600; }
+  .stat .l { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  section h2 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; }
+  section h2 .num { display: inline-block; width: 32px; height: 32px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted);
+    font-size: 14px; font-weight: 500; text-align: center; line-height: 30px;
+    margin-right: 12px; vertical-align: 2px; }
+  section .sub { color: var(--text-muted); margin: 0 0 32px; font-size: 16px; max-width: 720px; }
+  h3 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+  .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); cursor: pointer; font-size: 14px;
+    font-weight: 500; transition: all 0.15s; color: var(--text); font-family: inherit; }
+  .btn:hover { background: var(--border-strong); }
+  .btn.primary { background: var(--c-req); color: #000; border-color: var(--c-req); }
+  .btn.primary:hover { background: #93c5fd; }
+  .code-table { width: 100%; border-collapse: collapse; font-size: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; }
+  .code-table th, .code-table td { text-align: left; padding: 12px 16px;
+    border-bottom: 1px solid var(--border); color: var(--text); }
+  .code-table tr:last-child td { border-bottom: none; }
+  .code-table th { font-size: 12px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface-2); }
+  .code-table td.path { font-family: var(--mono); font-size: 12px; }
+  .code-table td.line { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+  .quiz { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; }
+  .quiz .q { margin-bottom: 24px; }
+  .quiz .q:last-child { margin-bottom: 0; }
+  .quiz .q .question { font-weight: 500; margin-bottom: 8px; }
+  .quiz .q .reveal { padding: 6px 12px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    background: var(--surface-2); color: var(--text-muted); font-family: inherit; }
+  .quiz .q .reveal:hover { background: var(--border-strong); color: var(--text); }
+  .quiz .q .answer { display: none; margin-top: 12px; padding: 14px;
+    background: var(--c-rsp-bg); border-left: 3px solid var(--c-rsp);
+    border-radius: 4px; font-size: 14px; }
+  .quiz .q.open .answer { display: block; }
+  .quiz .q.open .reveal { display: none; }
+  .next-card { background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+    color: white; border-radius: var(--radius-lg); padding: 32px; margin: 32px 0;
+    border: 1px solid var(--border-strong); }
+  .next-card .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--c-snp); font-weight: 600; }
+  .next-card h3 { margin: 8px 0 12px; color: white; font-size: 24px; }
+  .next-card p { color: #d4d4d8; margin: 0 0 16px; }
+  .next-card .files { display: flex; gap: 8px; flex-wrap: wrap; }
+  .next-card .file-chip { background: rgba(255,255,255,0.08); padding: 6px 12px;
+    border-radius: 4px; font-family: var(--mono); font-size: 12px; color: #e4e4e7; }
+  footer { padding: 32px 0; color: var(--text-muted); font-size: 13px; text-align: center; }
+  @media (max-width: 720px) {
+    .hero h1 { font-size: 30px; }
+    .hero .stats { grid-template-columns: repeat(2, 1fr); }
+    nav.top ul { display: none; }
+  }
+
+  /* Mesh layout grid */
+  .mesh-svg { width: 100%; height: auto; max-width: 640px; display: block; margin: 0 auto; }
+  .mesh-tile { stroke-width: 1.5; cursor: pointer; transition: all 0.2s; }
+  .mesh-tile.rn { fill: var(--c-rn-bg); stroke: var(--c-rn); }
+  .mesh-tile.hn { fill: var(--c-hn-bg); stroke: var(--c-hn); }
+  .mesh-tile.sn { fill: var(--c-sn-bg); stroke: var(--c-sn); }
+  .mesh-tile.spare { fill: var(--surface-2); stroke: var(--border-strong); }
+  .mesh-tile.src { stroke-width: 3.5; stroke: var(--c-req) !important; }
+  .mesh-tile.dst { stroke-width: 3.5; stroke: var(--c-rsp) !important; }
+  .mesh-tile.path-hop { stroke-width: 3; stroke: var(--c-snp) !important; }
+  .mesh-tile:hover { filter: brightness(1.3); }
+  .mesh-label { font-family: var(--mono); font-size: 10px; fill: var(--text); font-weight: 500; pointer-events: none; }
+  .mesh-id { font-family: var(--mono); font-size: 9px; fill: var(--text-muted); pointer-events: none; }
+  .mesh-edge { stroke: var(--text-dim); stroke-width: 1; }
+  .mesh-edge.dir-n { stroke: var(--c-req); }
+  .mesh-edge.dir-s { stroke: var(--c-rsp); }
+  .mesh-edge.dir-e { stroke: var(--c-snp); }
+  .mesh-edge.dir-w { stroke: var(--c-dat); }
+  .mesh-flit-token {
+    fill: var(--c-snp); stroke: var(--c-snp); stroke-width: 2;
+    transition: cx 0.5s ease, cy 0.5s ease;
+  }
+  .mesh-legend { display: flex; gap: 18px; justify-content: center; margin-top: 16px;
+    font-size: 13px; color: var(--text-muted); flex-wrap: wrap; }
+  .mesh-legend .item { display: flex; align-items: center; gap: 6px; }
+  .mesh-legend .sw { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid; }
+  .mesh-legend .sw.rn { background: var(--c-rn-bg); border-color: var(--c-rn); }
+  .mesh-legend .sw.hn { background: var(--c-hn-bg); border-color: var(--c-hn); }
+  .mesh-legend .sw.sn { background: var(--c-sn-bg); border-color: var(--c-sn); }
+  .mesh-legend .sw.spare { background: var(--surface-2); border-color: var(--border-strong); }
+
+  .info-panel { padding: 14px 18px; background: var(--surface-2);
+    border-radius: 8px; font-size: 14px; color: var(--text-muted); margin-top: 16px; min-height: 60px; }
+  .info-panel .lead { color: var(--text); font-weight: 500; margin-bottom: 4px; }
+  .info-panel code { background: var(--bg); }
+
+  /* Wiring directional toggles */
+  .dir-chips { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; }
+  .dir-chip { padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 500;
+    cursor: pointer; border: 1px solid transparent; user-select: none;
+    background: var(--surface-2); color: var(--text-muted); font-family: inherit; }
+  .dir-chip.all.active { background: var(--text); color: #000; border-color: var(--text); }
+  .dir-chip.dir-n.active { background: var(--c-req); color: #000; border-color: var(--c-req); }
+  .dir-chip.dir-s.active { background: var(--c-rsp); color: #000; border-color: var(--c-rsp); }
+  .dir-chip.dir-e.active { background: var(--c-snp); color: #000; border-color: var(--c-snp); }
+  .dir-chip.dir-w.active { background: var(--c-dat); color: #000; border-color: var(--c-dat); }
+
+  /* noc_top wrapper diagram */
+  .noctop-svg { width: 100%; height: auto; }
+  .noctop-label { font-family: var(--mono); font-size: 12px; fill: var(--text); }
+  .noctop-sub { font-size: 10px; fill: var(--text-muted); }
+
+  .bug-card { padding: 18px; border-radius: 10px; margin-bottom: 12px;
+    background: rgba(239, 68, 68, 0.12); border-left: 4px solid #ef4444; }
+  .bug-card .head { font-weight: 600; margin-bottom: 4px; font-size: 14px; color: var(--text); }
+  .bug-card .body { font-size: 13px; color: var(--text-muted); }
+  .bug-card .body code { background: var(--bg); }
+
+  /* Tile-info table */
+  .placement-table th, .placement-table td { font-family: var(--mono); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="inner">
+    <div class="brand">hanuma <span class="dim">/ learning / lesson 06</span></div>
+    <ul>
+      <li><a href="#layout">Mesh layout</a></li>
+      <li><a href="#wiring">Wiring</a></li>
+      <li><a href="#path">Multi-hop path</a></li>
+      <li><a href="#boundary">Boundary</a></li>
+      <li><a href="#top">noc_top</a></li>
+      <li><a href="#code">Code map</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <header class="hero">
+    <span class="eyebrow">Lesson 6 of 10</span>
+    <h1>NoC Fabric — noc_mesh &amp; noc_top</h1>
+    <p class="lead">
+      Sixteen <code>router_top</code> instances wired in a 4×4 generate loop.
+      Pure structural code — the hard part is naming the wires consistently and
+      terminating the edges. The wrapper above adds packetizers, depacketizers,
+      and decides which tile holds which agent type.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="v">2</div><div class="l">Files</div></div>
+      <div class="stat"><div class="v">16</div><div class="l">Router tiles</div></div>
+      <div class="stat"><div class="v">4</div><div class="l">Directional buses</div></div>
+      <div class="stat"><div class="v">~25 min</div><div class="l">To finish</div></div>
+    </div>
+  </header>
+
+  <section id="layout">
+    <h2><span class="num">1</span>The 4×4 mesh layout</h2>
+    <p class="sub">
+      Sixteen tiles, indexed <code>TILE_IDX = r * COLS + c</code>. The
+      <code>noc_top</code> wrapper assigns specific roles to each tile based on
+      its position. Click any tile to inspect.
+    </p>
+
+    <div class="card">
+      <svg class="mesh-svg" viewBox="0 0 560 560" xmlns="http://www.w3.org/2000/svg" id="layoutSvg"></svg>
+      <div class="mesh-legend">
+        <div class="item"><div class="sw rn"></div> RN-F (Request Node)</div>
+        <div class="item"><div class="sw hn"></div> HN-F (Home Node)</div>
+        <div class="item"><div class="sw sn"></div> SN-F (Slave / DDR)</div>
+        <div class="item"><div class="sw spare"></div> Spare / unused</div>
+      </div>
+      <div class="info-panel" id="tileInfo">
+        <div class="lead">Click any tile to see its details.</div>
+        <span>Coordinates, TILE_IDX, assigned agent, and the values of
+        <code>MY_X</code> / <code>MY_Y</code> passed to <code>router_top</code>.</span>
+      </div>
+    </div>
+
+    <h3>Tile placement (from noc_top.sv comments)</h3>
+    <table class="code-table placement-table">
+      <thead><tr><th>Tile range</th><th>Row (Y)</th><th>Role</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>0 — 3</td><td>0 (bottom)</td><td>RN-F cluster</td><td>CPU compute tiles</td></tr>
+        <tr><td>4 — 7</td><td>1</td><td>RN-F cluster</td><td>CPU compute tiles</td></tr>
+        <tr><td>8</td><td>2</td><td>HN-F 0</td><td>LLC slice + directory</td></tr>
+        <tr><td>9</td><td>2</td><td>HN-F 1</td><td>LLC slice + directory</td></tr>
+        <tr><td>10 — 11</td><td>2</td><td>spare</td><td>Reserved for v2</td></tr>
+        <tr><td>12 — 15</td><td>3 (top)</td><td>SN-F</td><td>DDR memory controllers</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="wiring">
+    <h2><span class="num">2</span>The wiring scheme — four directional buses</h2>
+    <p class="sub">
+      Naïve approach uses one shared net per inter-router link → catastrophe (the
+      bug from the DV tracker). The correct approach used here splits each
+      logical link into <b>four separate unidirectional arrays</b>: vn, vs, he, hw.
+      Click each direction below to highlight where it flows.
+    </p>
+
+    <div class="card">
+      <div class="dir-chips">
+        <button class="dir-chip all active" data-dir="all">All directions</button>
+        <button class="dir-chip dir-n" data-dir="n">vn — northbound</button>
+        <button class="dir-chip dir-s" data-dir="s">vs — southbound</button>
+        <button class="dir-chip dir-e" data-dir="e">he — eastbound</button>
+        <button class="dir-chip dir-w" data-dir="w">hw — westbound</button>
+      </div>
+      <svg class="mesh-svg" viewBox="0 0 560 560" xmlns="http://www.w3.org/2000/svg" id="wireSvg"></svg>
+      <div class="info-panel" id="wireInfo">
+        <div class="lead">All four directional arrays shown.</div>
+        <span>Each colored line is one of the four arrays. The router at
+        <code>(r, c)</code> reads from one set and writes to another — never the
+        same wire for both directions.</span>
+      </div>
+    </div>
+
+    <h3>The signal mapping</h3>
+    <table class="code-table">
+      <thead><tr><th>Port on router(r,c)</th><th>Direction</th><th>Net</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><code>north_flit_in</code></td><td>receive ↓ from above</td><td class="path">vs_flit[r+1][c]</td><td>Southbound from row r+1</td></tr>
+        <tr><td><code>north_flit_out</code></td><td>send ↑ to above</td><td class="path">vn_flit[r+1][c]</td><td>Northbound onto vertical link r+1</td></tr>
+        <tr><td><code>south_flit_in</code></td><td>receive ↑ from below</td><td class="path">vn_flit[r][c]</td><td>Northbound from row r-1</td></tr>
+        <tr><td><code>south_flit_out</code></td><td>send ↓ to below</td><td class="path">vs_flit[r][c]</td><td>Southbound onto vertical link r</td></tr>
+        <tr><td><code>east_flit_in</code></td><td>receive ← from right</td><td class="path">hw_flit[r][c+1]</td><td>Westbound from col c+1</td></tr>
+        <tr><td><code>east_flit_out</code></td><td>send → to right</td><td class="path">he_flit[r][c+1]</td><td>Eastbound onto horizontal link c+1</td></tr>
+        <tr><td><code>west_flit_in</code></td><td>receive → from left</td><td class="path">he_flit[r][c]</td><td>Eastbound from col c-1</td></tr>
+        <tr><td><code>west_flit_out</code></td><td>send ← to left</td><td class="path">hw_flit[r][c]</td><td>Westbound onto horizontal link c</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="path">
+    <h2><span class="num">3</span>Multi-hop XY path</h2>
+    <p class="sub">
+      Watch a single flit travel multiple routers using XY routing. Pick source
+      and destination tiles, then press <b>Send flit</b>. The flit token hops
+      router-to-router one cycle at a time.
+    </p>
+
+    <div class="card">
+      <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap;">
+        <button class="btn primary" id="pathSend">Send flit</button>
+        <button class="btn" id="pathReset">Reset</button>
+        <span style="font-size: 13px; color: var(--text-muted); align-self: center; margin-left: 8px;">
+          Click any tile to set source; another to set destination.
+        </span>
+      </div>
+      <svg class="mesh-svg" viewBox="0 0 560 560" xmlns="http://www.w3.org/2000/svg" id="pathSvg"></svg>
+      <div class="info-panel" id="pathInfo">
+        <div class="lead">Click a tile to start.</div>
+        <span>Source set first, destination second. XY routing: travel East/West
+        until columns match, then North/South until rows match.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="boundary">
+    <h2><span class="num">4</span>Boundary termination — no wrap-around</h2>
+    <p class="sub">
+      A 4×4 mesh has no torus wraparound — the edges genuinely end. For each
+      directional bus the entries <i>outside</i> the mesh are tied off:
+      <code>valid = 0</code> for inbound (no sender exists), <code>ready = 0</code>
+      for outbound (no receiver exists). The generate loop in
+      <code>noc_mesh.sv:78</code> handles this.
+    </p>
+
+    <div class="card">
+      <table class="code-table">
+        <thead><tr><th>Boundary</th><th>Signal</th><th>Tied to</th><th>Reason</th></tr></thead>
+        <tbody>
+          <tr><td>South edge (row 0)</td><td class="path">vn_valid[0][c]</td><td class="path">1'b0</td><td>No router below row 0 to send northward</td></tr>
+          <tr><td>South edge</td><td class="path">vs_ready[0][c]</td><td class="path">1'b0</td><td>No receiver below row 0 for southbound</td></tr>
+          <tr><td>North edge (row ROWS)</td><td class="path">vs_valid[ROWS][c]</td><td class="path">1'b0</td><td>No router above top row to send south</td></tr>
+          <tr><td>North edge</td><td class="path">vn_ready[ROWS][c]</td><td class="path">1'b0</td><td>No receiver above for northbound</td></tr>
+          <tr><td>West edge (col 0)</td><td class="path">he_valid[r][0]</td><td class="path">1'b0</td><td>No router left of col 0</td></tr>
+          <tr><td>East edge (col COLS)</td><td class="path">hw_valid[r][COLS]</td><td class="path">1'b0</td><td>No router right of last col</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size: 14px; color: var(--text-muted); margin-top: 16px;">
+        Boundary tiles still <b>route</b> correctly — <code>route_compute_unit</code>
+        will never select a direction that points off the mesh, thanks to its
+        translate_off assertions. The boundary terminations are belt-and-braces
+        for cases where buggy logic might try.
+      </p>
+    </div>
+  </section>
+
+  <section id="top">
+    <h2><span class="num">5</span>noc_top — the wrapper</h2>
+    <p class="sub">
+      <code>noc_top.sv</code> sits one level above <code>noc_mesh</code>. It
+      packetizes CHI flits arriving from external CHI links into router-internal
+      flits, drives mesh injection ports, depacketizes ejection ports back into
+      CHI flits, and aggregates error/status signals.
+    </p>
+
+    <div class="card">
+      <svg class="noctop-svg" viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="nt-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#fafafa"/>
+          </marker>
+        </defs>
+        <g>
+          <rect x="20" y="30" width="150" height="60" rx="8" fill="rgba(34, 211, 238, 0.15)" stroke="#22d3ee" stroke-width="2"/>
+          <text class="noctop-label" x="95" y="52" text-anchor="middle" fill="#22d3ee">RN agent ×4</text>
+          <text class="noctop-sub" x="95" y="70" text-anchor="middle">chi_link_if</text>
+
+          <rect x="20" y="150" width="150" height="60" rx="8" fill="rgba(251, 113, 133, 0.15)" stroke="#fb7185" stroke-width="2"/>
+          <text class="noctop-label" x="95" y="172" text-anchor="middle" fill="#fb7185">HN agent ×2</text>
+          <text class="noctop-sub" x="95" y="190" text-anchor="middle">chi_link_if</text>
+
+          <rect x="20" y="270" width="150" height="60" rx="8" fill="rgba(129, 140, 248, 0.15)" stroke="#818cf8" stroke-width="2"/>
+          <text class="noctop-label" x="95" y="292" text-anchor="middle" fill="#818cf8">SN agent ×1</text>
+          <text class="noctop-sub" x="95" y="310" text-anchor="middle">chi_link_if</text>
+        </g>
+
+        <g>
+          <rect x="220" y="20" width="170" height="120" rx="8" fill="rgba(96, 165, 250, 0.15)" stroke="#60a5fa" stroke-width="2"/>
+          <text class="noctop-label" x="305" y="48" text-anchor="middle" fill="#60a5fa">chi_packetizer ×N</text>
+          <text class="noctop-sub" x="305" y="68" text-anchor="middle">REQ/RSP/DAT/SNP</text>
+          <text class="noctop-sub" x="305" y="84" text-anchor="middle">→ noc_flit_ctrl_t</text>
+          <text class="noctop-sub" x="305" y="106" text-anchor="middle">channel + vc + qos</text>
+          <text class="noctop-sub" x="305" y="124" text-anchor="middle">+ flit payload</text>
+
+          <rect x="220" y="160" width="170" height="120" rx="8" fill="rgba(74, 222, 128, 0.15)" stroke="#4ade80" stroke-width="2"/>
+          <text class="noctop-label" x="305" y="188" text-anchor="middle" fill="#4ade80">chi_depacketizer ×N</text>
+          <text class="noctop-sub" x="305" y="208" text-anchor="middle">noc_flit_ctrl_t →</text>
+          <text class="noctop-sub" x="305" y="224" text-anchor="middle">REQ/RSP/DAT/SNP</text>
+          <text class="noctop-sub" x="305" y="246" text-anchor="middle">tied off per node type</text>
+          <text class="noctop-sub" x="305" y="264" text-anchor="middle">(RN gets no REQ in)</text>
+        </g>
+
+        <g>
+          <rect x="450" y="60" width="250" height="240" rx="12" fill="rgba(251, 191, 36, 0.1)" stroke="#fbbf24" stroke-width="2.5"/>
+          <text class="noctop-label" x="575" y="90" text-anchor="middle" fill="#fbbf24" font-weight="700">noc_mesh — 4×4 routers</text>
+          <text class="noctop-sub" x="575" y="108" text-anchor="middle">inject_flit[16]</text>
+          <text class="noctop-sub" x="575" y="124" text-anchor="middle">eject_flit[16]</text>
+          <g transform="translate(490, 140)">
+            <rect x="0" y="0" width="40" height="40" rx="4" fill="rgba(34, 211, 238, 0.15)" stroke="#22d3ee"/>
+            <rect x="45" y="0" width="40" height="40" rx="4" fill="rgba(34, 211, 238, 0.15)" stroke="#22d3ee"/>
+            <rect x="90" y="0" width="40" height="40" rx="4" fill="rgba(34, 211, 238, 0.15)" stroke="#22d3ee"/>
+            <rect x="135" y="0" width="40" height="40" rx="4" fill="rgba(34, 211, 238, 0.15)" stroke="#22d3ee"/>
+            <rect x="0" y="45" width="40" height="40" rx="4" fill="rgba(34, 211, 238, 0.15)" stroke="#22d3ee"/>
+            <rect x="45" y="45" width="40" height="40" rx="4" fill="rgba(34, 211, 238, 0.15)" stroke="#22d3ee"/>
+            <rect x="90" y="45" width="40" height="40" rx="4" fill="rgba(34, 211, 238, 0.15)" stroke="#22d3ee"/>
+            <rect x="135" y="45" width="40" height="40" rx="4" fill="rgba(34, 211, 238, 0.15)" stroke="#22d3ee"/>
+            <rect x="0" y="90" width="40" height="40" rx="4" fill="rgba(251, 113, 133, 0.15)" stroke="#fb7185"/>
+            <rect x="45" y="90" width="40" height="40" rx="4" fill="rgba(251, 113, 133, 0.15)" stroke="#fb7185"/>
+            <rect x="90" y="90" width="40" height="40" rx="4" fill="#27272a" stroke="#3f3f46"/>
+            <rect x="135" y="90" width="40" height="40" rx="4" fill="#27272a" stroke="#3f3f46"/>
+            <rect x="0" y="135" width="40" height="40" rx="4" fill="rgba(129, 140, 248, 0.15)" stroke="#818cf8"/>
+            <rect x="45" y="135" width="40" height="40" rx="4" fill="rgba(129, 140, 248, 0.15)" stroke="#818cf8"/>
+            <rect x="90" y="135" width="40" height="40" rx="4" fill="rgba(129, 140, 248, 0.15)" stroke="#818cf8"/>
+            <rect x="135" y="135" width="40" height="40" rx="4" fill="rgba(129, 140, 248, 0.15)" stroke="#818cf8"/>
+          </g>
+        </g>
+
+        <g>
+          <rect x="740" y="150" width="140" height="60" rx="8" fill="#27272a" stroke="#71717a" stroke-width="1.5" stroke-dasharray="6,4"/>
+          <text class="noctop-label" x="810" y="172" text-anchor="middle">error_handler</text>
+          <text class="noctop-sub" x="810" y="190" text-anchor="middle">err_in[8]</text>
+          <text class="noctop-sub" x="810" y="204" text-anchor="middle">→ irq_fatal / error / warning</text>
+        </g>
+
+        <line x1="170" y1="60" x2="220" y2="60" stroke="#fafafa" stroke-width="1.5" marker-end="url(#nt-arrow)"/>
+        <line x1="170" y1="180" x2="220" y2="180" stroke="#fafafa" stroke-width="1.5" marker-end="url(#nt-arrow)"/>
+        <line x1="170" y1="300" x2="220" y2="220" stroke="#fafafa" stroke-width="1.5" marker-end="url(#nt-arrow)"/>
+        <line x1="390" y1="80" x2="450" y2="120" stroke="#fafafa" stroke-width="1.5" marker-end="url(#nt-arrow)"/>
+        <line x1="390" y1="220" x2="450" y2="220" stroke="#fafafa" stroke-width="1.5" marker-end="url(#nt-arrow)"/>
+        <line x1="700" y1="180" x2="740" y2="180" stroke="#fafafa" stroke-width="1.5" marker-end="url(#nt-arrow)"/>
+      </svg>
+
+      <h3>Flow on the RN-port path</h3>
+      <table class="code-table">
+        <thead><tr><th>Step</th><th>Where</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>RN agent</td><td>Drives <code>txreqflitv + txreqflit</code> on its CHI link</td></tr>
+          <tr><td>2</td><td>chi_packetizer</td><td>Reads all 4 channels, picks one, builds <code>noc_flit_ctrl_t</code></td></tr>
+          <tr><td>3</td><td>noc_top</td><td>Drives <code>inject_flit[rn] = rn_pkt.data</code></td></tr>
+          <tr><td>4</td><td>noc_mesh</td><td>Routes through routers to the destination tile</td></tr>
+          <tr><td>5</td><td>noc_top</td><td>Receives on <code>eject_flit[rn]</code> from mesh</td></tr>
+          <tr><td>6</td><td>chi_depacketizer</td><td>Decodes channel from low bits, drives RSP/SNP/DAT back to RN</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="bugs">
+    <h2><span class="num">6</span>Critical bug from the DV tracker</h2>
+    <p class="sub">
+      The DV tracker flagged this with ⚠ severity — it's the one that prevents
+      simulation from making forward progress. The current RTL already shows the
+      fixed version (four directional arrays), but worth understanding what
+      could go wrong.
+    </p>
+    <div class="bug-card">
+      <div class="head">⚠ Inputs and outputs must be on separate nets</div>
+      <div class="body">
+        The original report flagged that <code>north_flit_in</code> and
+        <code>north_flit_out</code> shared the same wire. Two routers each driving
+        the same net = X propagation in sim, fight + short in synthesis. The fix
+        (now in <code>noc_mesh.sv:59-73</code>) declares four separate arrays —
+        <code>vn_flit</code>, <code>vs_flit</code>, <code>he_flit</code>,
+        <code>hw_flit</code> — one per direction. Each router writes onto its
+        outbound array and reads from its inbound array.
+      </div>
+    </div>
+  </section>
+
+  <section id="code">
+    <h2><span class="num">7</span>Code map</h2>
+    <table class="code-table">
+      <thead><tr><th>Concept</th><th>File</th><th>Line</th><th>What's there</th></tr></thead>
+      <tbody>
+        <tr><td>vn/vs arrays declared</td><td class="path">rtl/interconnect/noc/noc_mesh.sv</td><td class="line">59</td><td>Vertical northbound + southbound</td></tr>
+        <tr><td>he/hw arrays declared</td><td class="path">rtl/interconnect/noc/noc_mesh.sv</td><td class="line">67</td><td>Horizontal eastbound + westbound</td></tr>
+        <tr><td>Boundary termination loop</td><td class="path">rtl/interconnect/noc/noc_mesh.sv</td><td class="line">78</td><td>gen_v_term + gen_h_term</td></tr>
+        <tr><td>Router instantiate generate</td><td class="path">rtl/interconnect/noc/noc_mesh.sv</td><td class="line">100</td><td>gen_row × gen_col — 16 routers</td></tr>
+        <tr><td>Port mapping per direction</td><td class="path">rtl/interconnect/noc/noc_mesh.sv</td><td class="line">115</td><td>north_*, south_*, east_*, west_*</td></tr>
+        <tr><td>Tile assignment comments</td><td class="path">rtl/interconnect/noc/noc_top.sv</td><td class="line">12</td><td>Per-tile role placement</td></tr>
+        <tr><td>Idle tile default</td><td class="path">rtl/interconnect/noc/noc_top.sv</td><td class="line">68</td><td>Unused tiles → inject_valid = 0</td></tr>
+        <tr><td>RN port packetizer</td><td class="path">rtl/interconnect/noc/noc_top.sv</td><td class="line">110</td><td>chi_packetizer instance</td></tr>
+        <tr><td>RN port depacketizer</td><td class="path">rtl/interconnect/noc/noc_top.sv</td><td class="line">139</td><td>chi_depacketizer instance</td></tr>
+        <tr><td>Error aggregation</td><td class="path">rtl/interconnect/noc/noc_top.sv</td><td class="line">176</td><td>error_handler instance</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="quiz">
+    <h2><span class="num">8</span>Check yourself</h2>
+    <div class="quiz">
+      <div class="q">
+        <div class="question">Q1. Router at (r=1, c=2) sends a flit out its East port. Which array does it write?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          <code>he_flit[1][3]</code>. East output of router (r, c) writes
+          <code>he_flit[r][c+1]</code> — the eastbound link <i>between</i> columns c
+          and c+1. The destination router (r, c+1) reads its West input from the
+          same net, <code>he_flit[r][c]</code>.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q2. Why does the mesh need <i>four</i> directional arrays instead of two (one per axis)?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          Because each axis has two opposite traffic flows that need independent
+          buses. Northbound flits at link r+1 are not the same as southbound flits
+          at link r+1 — they go in opposite directions, driven by different
+          routers. Putting them on one shared net = collision. Four arrays
+          (vn, vs, he, hw) = four logically independent unidirectional buses.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q3. Tiles 10 and 11 are marked spare. What does <code>noc_top</code> do with their injection/ejection ports?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          See <code>gen_idle_tiles</code> in <code>noc_top.sv:68</code>: it ties
+          <code>inject_flit[t] = 0</code>, <code>inject_valid[t] = 0</code>, and
+          <code>eject_ready[t] = 0</code>. The routers at those tiles still exist
+          and still route traffic that needs to pass through; only the local
+          inject/eject is silenced.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q4. Why does <code>noc_top</code> need a packetizer and depacketizer per CHI port?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          The mesh internally moves <code>noc_flit_ctrl_t</code> — a router-friendly
+          struct with channel, VC, QoS, head/tail bits, route_mask. The external
+          CHI links use the four protocol-defined flit types (REQ/RSP/SNP/DAT).
+          Packetizer translates outbound (CHI → internal), depacketizer translates
+          inbound (internal → CHI). The router doesn't care about CHI semantics
+          and the CHI agents don't care about router internals.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="next-card">
+    <div class="eyebrow">Lesson 7 — Up next</div>
+    <h3>Link Layer — activation, credits, channel gating</h3>
+    <p>The plumbing that sits between transport logic and the physical CHI link signals. Manages the link FSM (RESET → ACTIVATE → ACTIVE), initializes credit pools per channel, gates TX flits on link_up + credit_avail, and routes RX flits back to transport.</p>
+    <div class="files">
+      <span class="file-chip">chi_link_layer.sv</span>
+      <span class="file-chip">chi_link_training.sv</span>
+    </div>
+  </div>
+
+</div>
+
+<footer><div class="container">Lesson 6 of 10 · hanuma SoC learning track</div></footer>
+
+<script>
+  // -------- Tile placement model --------
+  var ROWS = 4, COLS = 4;
+  var TILE = 110, PAD = 60;
+  // Map tile index → role
+  function tileRole(t) {
+    if (t >= 0 && t <= 7) return 'rn';
+    if (t === 8 || t === 9) return 'hn';
+    if (t === 10 || t === 11) return 'spare';
+    if (t >= 12 && t <= 15) return 'sn';
+    return 'spare';
+  }
+  function tileLabel(t) {
+    var role = tileRole(t);
+    if (role === 'rn') return 'RN-F';
+    if (role === 'hn') return 'HN-F ' + (t - 8);
+    if (role === 'sn') return 'SN-F ' + (t - 12);
+    return 'spare';
+  }
+  function tileCoord(t) {
+    var r = Math.floor(t / COLS), c = t % COLS;
+    return { r: r, c: c };
+  }
+  function rcToTile(r, c) { return r * COLS + c; }
+
+  // -------- Layout SVG (Section 1) --------
+  function buildLayout(svgId, onClick) {
+    var svg = document.getElementById(svgId);
+    svg.innerHTML = '';
+    // Draw edges
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        var x = PAD + c * TILE + TILE/2;
+        var y = PAD + (ROWS - 1 - r) * TILE + TILE/2;
+        if (c < COLS - 1) {
+          var ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          ln.setAttribute('x1', x); ln.setAttribute('y1', y);
+          ln.setAttribute('x2', x + TILE); ln.setAttribute('y2', y);
+          ln.setAttribute('class', 'mesh-edge');
+          svg.appendChild(ln);
+        }
+        if (r < ROWS - 1) {
+          var ln2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          ln2.setAttribute('x1', x); ln2.setAttribute('y1', y);
+          ln2.setAttribute('x2', x); ln2.setAttribute('y2', y - TILE);
+          ln2.setAttribute('class', 'mesh-edge');
+          svg.appendChild(ln2);
+        }
+      }
+    }
+    // Tiles
+    for (var rr = 0; rr < ROWS; rr++) {
+      for (var cc = 0; cc < COLS; cc++) {
+        var t = rcToTile(rr, cc);
+        var role = tileRole(t);
+        var x2 = PAD + cc * TILE;
+        var y2 = PAD + (ROWS - 1 - rr) * TILE;
+        var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', x2 + 15); rect.setAttribute('y', y2 + 15);
+        rect.setAttribute('width', TILE - 30); rect.setAttribute('height', TILE - 30);
+        rect.setAttribute('rx', 8);
+        rect.setAttribute('class', 'mesh-tile ' + role);
+        rect.setAttribute('data-tile', t);
+        (function(tv) {
+          rect.addEventListener('click', function() { onClick(tv); });
+        })(t);
+        svg.appendChild(rect);
+        var lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        lbl.setAttribute('x', x2 + TILE/2);
+        lbl.setAttribute('y', y2 + TILE/2);
+        lbl.setAttribute('text-anchor', 'middle');
+        lbl.setAttribute('class', 'mesh-label');
+        lbl.textContent = tileLabel(t);
+        svg.appendChild(lbl);
+        var id = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        id.setAttribute('x', x2 + TILE/2);
+        id.setAttribute('y', y2 + TILE/2 + 14);
+        id.setAttribute('text-anchor', 'middle');
+        id.setAttribute('class', 'mesh-id');
+        id.textContent = '#' + t + '  (' + cc + ',' + rr + ')';
+        svg.appendChild(id);
+      }
+    }
+  }
+
+  buildLayout('layoutSvg', function(t) {
+    document.querySelectorAll('#layoutSvg .mesh-tile').forEach(function(r) {
+      r.classList.remove('src', 'dst', 'path-hop');
+    });
+    document.querySelector('#layoutSvg .mesh-tile[data-tile="' + t + '"]').classList.add('src');
+    var c = tileCoord(t);
+    var role = tileRole(t).toUpperCase();
+    var roleDesc = '';
+    if (role === 'RN') roleDesc = 'Request Node — CPU cluster';
+    else if (role === 'HN') roleDesc = 'Home Node — LLC slice + directory';
+    else if (role === 'SN') roleDesc = 'Slave Node — DDR memory controller';
+    else roleDesc = 'Spare / reserved for v2';
+    document.getElementById('tileInfo').innerHTML =
+      '<div class="lead">Tile #' + t + ' &nbsp;·&nbsp; (' + c.c + ', ' + c.r + ') &nbsp;·&nbsp; ' + tileLabel(t) + '</div>' +
+      '<span>' + roleDesc + '<br>' +
+      'Instantiated as <code>router_top #(.MY_NODE_ID(' + t + '), .MY_X(' + c.c + '), .MY_Y(' + c.r + '))</code><br>' +
+      'Local injection bus: <code>inject_flit[' + t + ']</code>, ejection: <code>eject_flit[' + t + ']</code></span>';
+  });
+
+  // -------- Wiring SVG (Section 2) --------
+  function buildWiring(svgId) {
+    var svg = document.getElementById(svgId);
+    svg.innerHTML = '';
+    // Draw directional wires (offset slightly from grid center per direction)
+    var OFF = 6;
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        var x = PAD + c * TILE + TILE/2;
+        var y = PAD + (ROWS - 1 - r) * TILE + TILE/2;
+        // Northbound (vn): from this tile, up to neighbor above (if exists)
+        if (r < ROWS - 1) {
+          // vn line goes from (x-OFF, y) → (x-OFF, y - TILE)
+          var lnN = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          lnN.setAttribute('x1', x - OFF); lnN.setAttribute('y1', y);
+          lnN.setAttribute('x2', x - OFF); lnN.setAttribute('y2', y - TILE);
+          lnN.setAttribute('class', 'mesh-edge dir-n');
+          lnN.setAttribute('data-dir', 'n');
+          svg.appendChild(lnN);
+        }
+        // Southbound (vs): from this tile, down to neighbor below
+        if (r > 0) {
+          var lnS = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          lnS.setAttribute('x1', x + OFF); lnS.setAttribute('y1', y);
+          lnS.setAttribute('x2', x + OFF); lnS.setAttribute('y2', y + TILE);
+          lnS.setAttribute('class', 'mesh-edge dir-s');
+          lnS.setAttribute('data-dir', 's');
+          svg.appendChild(lnS);
+        }
+        // Eastbound (he): from this tile to neighbor right
+        if (c < COLS - 1) {
+          var lnE = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          lnE.setAttribute('x1', x); lnE.setAttribute('y1', y - OFF);
+          lnE.setAttribute('x2', x + TILE); lnE.setAttribute('y2', y - OFF);
+          lnE.setAttribute('class', 'mesh-edge dir-e');
+          lnE.setAttribute('data-dir', 'e');
+          svg.appendChild(lnE);
+        }
+        // Westbound (hw): from this tile to neighbor left
+        if (c > 0) {
+          var lnW = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          lnW.setAttribute('x1', x); lnW.setAttribute('y1', y + OFF);
+          lnW.setAttribute('x2', x - TILE); lnW.setAttribute('y2', y + OFF);
+          lnW.setAttribute('class', 'mesh-edge dir-w');
+          lnW.setAttribute('data-dir', 'w');
+          svg.appendChild(lnW);
+        }
+      }
+    }
+    // Tiles on top
+    for (var rr = 0; rr < ROWS; rr++) {
+      for (var cc = 0; cc < COLS; cc++) {
+        var t = rcToTile(rr, cc);
+        var role = tileRole(t);
+        var x2 = PAD + cc * TILE;
+        var y2 = PAD + (ROWS - 1 - rr) * TILE;
+        var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', x2 + 25); rect.setAttribute('y', y2 + 25);
+        rect.setAttribute('width', TILE - 50); rect.setAttribute('height', TILE - 50);
+        rect.setAttribute('rx', 6);
+        rect.setAttribute('class', 'mesh-tile ' + role);
+        rect.setAttribute('data-tile', t);
+        svg.appendChild(rect);
+        var id = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        id.setAttribute('x', x2 + TILE/2);
+        id.setAttribute('y', y2 + TILE/2 + 4);
+        id.setAttribute('text-anchor', 'middle');
+        id.setAttribute('class', 'mesh-id');
+        id.textContent = '#' + t;
+        svg.appendChild(id);
+      }
+    }
+  }
+
+  buildWiring('wireSvg');
+
+  function setWireDir(dir) {
+    document.querySelectorAll('#wireSvg .mesh-edge').forEach(function(ln) {
+      var d = ln.getAttribute('data-dir');
+      if (dir === 'all') {
+        ln.style.opacity = '1';
+        ln.style.strokeWidth = '1.5';
+      } else if (d === dir) {
+        ln.style.opacity = '1';
+        ln.style.strokeWidth = '3';
+      } else {
+        ln.style.opacity = '0.15';
+        ln.style.strokeWidth = '1';
+      }
+    });
+    var info = document.getElementById('wireInfo');
+    var msg = {
+      all: '<div class="lead">All four directional arrays shown.</div><span>Each colored line is one of vn/vs/he/hw. Inputs and outputs never share a wire.</span>',
+      n:   '<div class="lead">vn_flit — northbound, vertical.</div><span>Router (r, c) writes <code>vn[r+1][c]</code>; router (r+1, c) reads it as its <code>south_flit_in</code>.</span>',
+      s:   '<div class="lead">vs_flit — southbound, vertical.</div><span>Router (r, c) writes <code>vs[r][c]</code>; router (r-1, c) reads it as its <code>north_flit_in</code>.</span>',
+      e:   '<div class="lead">he_flit — eastbound, horizontal.</div><span>Router (r, c) writes <code>he[r][c+1]</code>; router (r, c+1) reads it as its <code>west_flit_in</code>.</span>',
+      w:   '<div class="lead">hw_flit — westbound, horizontal.</div><span>Router (r, c) writes <code>hw[r][c]</code>; router (r, c-1) reads it as its <code>east_flit_in</code>.</span>'
+    };
+    info.innerHTML = msg[dir];
+  }
+  document.querySelectorAll('.dir-chip').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      document.querySelectorAll('.dir-chip').forEach(function(c) { c.classList.remove('active'); });
+      chip.classList.add('active');
+      setWireDir(chip.getAttribute('data-dir'));
+    });
+  });
+  setWireDir('all');
+
+  // -------- Path animator (Section 3) --------
+  var pathSrc = null, pathDst = null, pathTimer = null;
+  var pathToken = null;
+
+  function pathTileXY(t) {
+    var c = tileCoord(t);
+    return {
+      x: PAD + c.c * TILE + TILE/2,
+      y: PAD + (ROWS - 1 - c.r) * TILE + TILE/2
+    };
+  }
+
+  function xyPath(src, dst) {
+    var pts = [src];
+    var cur = { r: src.r, c: src.c };
+    while (cur.c !== dst.c) {
+      cur = { r: cur.r, c: cur.c + (dst.c > cur.c ? 1 : -1) };
+      pts.push({ r: cur.r, c: cur.c });
+    }
+    while (cur.r !== dst.r) {
+      cur = { r: cur.r + (dst.r > cur.r ? 1 : -1), c: cur.c };
+      pts.push({ r: cur.r, c: cur.c });
+    }
+    return pts;
+  }
+
+  buildLayout('pathSvg', function(t) {
+    if (pathTimer) { clearInterval(pathTimer); pathTimer = null; }
+    if (pathToken) { pathToken.remove(); pathToken = null; }
+    if (!pathSrc) {
+      pathSrc = t; pathDst = null;
+    } else if (!pathDst) {
+      pathDst = t;
+    } else {
+      pathSrc = t; pathDst = null;
+    }
+    renderPath();
+  });
+
+  function renderPath() {
+    document.querySelectorAll('#pathSvg .mesh-tile').forEach(function(r) {
+      r.classList.remove('src', 'dst', 'path-hop');
+    });
+    if (pathToken) { pathToken.remove(); pathToken = null; }
+    if (pathSrc !== null) {
+      var s = document.querySelector('#pathSvg .mesh-tile[data-tile="' + pathSrc + '"]');
+      if (s) s.classList.add('src');
+    }
+    if (pathDst !== null) {
+      var d = document.querySelector('#pathSvg .mesh-tile[data-tile="' + pathDst + '"]');
+      if (d) d.classList.add('dst');
+      var sc = tileCoord(pathSrc), dc = tileCoord(pathDst);
+      var pts = xyPath(sc, dc);
+      pts.forEach(function(p, i) {
+        if (i === 0 || i === pts.length - 1) return;
+        var ti = rcToTile(p.r, p.c);
+        var rect = document.querySelector('#pathSvg .mesh-tile[data-tile="' + ti + '"]');
+        if (rect) rect.classList.add('path-hop');
+      });
+      document.getElementById('pathInfo').innerHTML =
+        '<div class="lead">' + (pts.length - 1) + ' hops from #' + pathSrc +
+        ' (' + sc.c + ',' + sc.r + ') to #' + pathDst +
+        ' (' + dc.c + ',' + dc.r + ')</div>' +
+        '<span>Press <b>Send flit</b> to animate.</span>';
+    } else if (pathSrc !== null) {
+      var sc2 = tileCoord(pathSrc);
+      document.getElementById('pathInfo').innerHTML =
+        '<div class="lead">Source set: tile #' + pathSrc + ' (' + sc2.c + ',' + sc2.r + ').</div>' +
+        '<span>Click another tile for destination.</span>';
+    } else {
+      document.getElementById('pathInfo').innerHTML =
+        '<div class="lead">Click a tile to start.</div>' +
+        '<span>Source set first, destination second.</span>';
+    }
+  }
+
+  document.getElementById('pathSend').addEventListener('click', function() {
+    if (pathSrc === null || pathDst === null) return;
+    if (pathTimer) { clearInterval(pathTimer); pathTimer = null; }
+    if (pathToken) { pathToken.remove(); pathToken = null; }
+    var sc = tileCoord(pathSrc), dc = tileCoord(pathDst);
+    var pts = xyPath(sc, dc);
+    var svg = document.getElementById('pathSvg');
+    var start = pathTileXY(rcToTile(pts[0].r, pts[0].c));
+    pathToken = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    pathToken.setAttribute('cx', start.x);
+    pathToken.setAttribute('cy', start.y);
+    pathToken.setAttribute('r', '12');
+    pathToken.setAttribute('class', 'mesh-flit-token');
+    svg.appendChild(pathToken);
+    var idx = 0;
+    pathTimer = setInterval(function() {
+      idx++;
+      if (idx >= pts.length) {
+        clearInterval(pathTimer); pathTimer = null;
+        document.getElementById('pathInfo').innerHTML =
+          '<div class="lead">Flit ejected at destination tile #' + pathDst + '.</div>' +
+          '<span>Total hops: ' + (pts.length - 1) + '. Each hop = one routing decision + crossbar traversal + LT register cycle in the next router.</span>';
+        return;
+      }
+      var pt = pathTileXY(rcToTile(pts[idx].r, pts[idx].c));
+      pathToken.setAttribute('cx', pt.x);
+      pathToken.setAttribute('cy', pt.y);
+      document.getElementById('pathInfo').innerHTML =
+        '<div class="lead">Hop ' + idx + ' / ' + (pts.length - 1) + ' — at tile #' +
+        rcToTile(pts[idx].r, pts[idx].c) + '</div>' +
+        '<span>XY: ' + (pts[idx].c !== pts[idx-1].c ? (pts[idx].c > pts[idx-1].c ? 'East' : 'West') :
+                       (pts[idx].r > pts[idx-1].r ? 'North' : 'South')) +
+        ' from previous tile.</span>';
+    }, 600);
+  });
+  document.getElementById('pathReset').addEventListener('click', function() {
+    if (pathTimer) { clearInterval(pathTimer); pathTimer = null; }
+    if (pathToken) { pathToken.remove(); pathToken = null; }
+    pathSrc = null; pathDst = null; renderPath();
+  });
+  // Default example
+  pathSrc = 0; pathDst = 14; renderPath();
+
+  // Quiz reveals
+  document.querySelectorAll('.quiz .reveal').forEach(function(btn) {
+    btn.addEventListener('click', function() { btn.parentElement.classList.add('open'); });
+  });
+</script>
+</body>
+</html>

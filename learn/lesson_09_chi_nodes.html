@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 9 — CHI Nodes · hanuma</title>
+<style>
+  :root {
+    --bg: #0a0a0b; --surface: #18181b; --surface-2: #27272a;
+    --text: #fafafa; --text-muted: #a1a1aa; --text-dim: #71717a;
+    --border: #27272a; --border-strong: #3f3f46;
+    --c-req: #60a5fa; --c-rsp: #4ade80; --c-snp: #fbbf24; --c-dat: #c084fc;
+    --c-req-bg: rgba(96, 165, 250, 0.12);
+    --c-rsp-bg: rgba(74, 222, 128, 0.12);
+    --c-snp-bg: rgba(251, 191, 36, 0.12);
+    --c-dat-bg: rgba(192, 132, 252, 0.12);
+    --c-rn: #22d3ee; --c-hn: #fb7185; --c-sn: #818cf8;
+    --c-rn-bg: rgba(34, 211, 238, 0.15);
+    --c-hn-bg: rgba(251, 113, 133, 0.15);
+    --c-sn-bg: rgba(129, 140, 248, 0.15);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --radius: 10px; --radius-lg: 16px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.6; }
+  code { color: var(--text); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 0.92em; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top { position: sticky; top: 0; z-index: 100;
+    background: rgba(10, 10, 11, 0.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border); }
+  nav.top .inner { display: flex; align-items: center; justify-content: space-between;
+    height: 56px; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top .brand { font-weight: 600; font-size: 15px; }
+  nav.top .brand span.dim { color: var(--text-dim); font-weight: 400; }
+  nav.top ul { display: flex; gap: 22px; list-style: none; padding: 0; margin: 0; }
+  nav.top a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+  nav.top a:hover { color: var(--text); }
+  .hero { padding: 64px 0 48px; }
+  .hero .eyebrow { display: inline-block; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 16px;
+    color: var(--c-hn); background: var(--c-hn-bg); }
+  .hero h1 { font-size: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 0 0 16px; line-height: 1.15; }
+  .hero p.lead { font-size: 18px; color: var(--text-muted); max-width: 720px; margin: 0 0 32px; }
+  .hero .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 720px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat .v { font-size: 22px; font-weight: 600; }
+  .stat .l { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  section h2 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; }
+  section h2 .num { display: inline-block; width: 32px; height: 32px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted);
+    font-size: 14px; font-weight: 500; text-align: center; line-height: 30px;
+    margin-right: 12px; vertical-align: 2px; }
+  section .sub { color: var(--text-muted); margin: 0 0 32px; font-size: 16px; max-width: 720px; }
+  h3 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+  .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); cursor: pointer; font-size: 14px;
+    font-weight: 500; transition: all 0.15s; color: var(--text); font-family: inherit; }
+  .btn:hover { background: var(--border-strong); }
+  .btn.primary { background: var(--c-req); color: #000; border-color: var(--c-req); }
+  .btn.primary:hover { background: #93c5fd; }
+  .code-table { width: 100%; border-collapse: collapse; font-size: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; }
+  .code-table th, .code-table td { text-align: left; padding: 12px 16px;
+    border-bottom: 1px solid var(--border); color: var(--text); }
+  .code-table tr:last-child td { border-bottom: none; }
+  .code-table th { font-size: 12px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface-2); }
+  .code-table td.path { font-family: var(--mono); font-size: 12px; }
+  .code-table td.line { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+  .quiz { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; }
+  .quiz .q { margin-bottom: 24px; }
+  .quiz .q:last-child { margin-bottom: 0; }
+  .quiz .q .question { font-weight: 500; margin-bottom: 8px; }
+  .quiz .q .reveal { padding: 6px 12px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    background: var(--surface-2); color: var(--text-muted); font-family: inherit; }
+  .quiz .q .reveal:hover { background: var(--border-strong); color: var(--text); }
+  .quiz .q .answer { display: none; margin-top: 12px; padding: 14px;
+    background: var(--c-rsp-bg); border-left: 3px solid var(--c-rsp);
+    border-radius: 4px; font-size: 14px; }
+  .quiz .q.open .answer { display: block; }
+  .quiz .q.open .reveal { display: none; }
+  .next-card { background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+    color: white; border-radius: var(--radius-lg); padding: 32px; margin: 32px 0;
+    border: 1px solid var(--border-strong); }
+  .next-card .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--c-rsp); font-weight: 600; }
+  .next-card h3 { margin: 8px 0 12px; color: white; font-size: 24px; }
+  .next-card p { color: #d4d4d8; margin: 0 0 16px; }
+  .next-card .files { display: flex; gap: 8px; flex-wrap: wrap; }
+  .next-card .file-chip { background: rgba(255,255,255,0.08); padding: 6px 12px;
+    border-radius: 4px; font-family: var(--mono); font-size: 12px; color: #e4e4e7; }
+  footer { padding: 32px 0; color: var(--text-muted); font-size: 13px; text-align: center; }
+  @media (max-width: 720px) {
+    .hero h1 { font-size: 30px; }
+    .hero .stats { grid-template-columns: repeat(2, 1fr); }
+    nav.top ul { display: none; }
+  }
+
+  /* Three-node overview */
+  .ensemble-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .ensemble-card { background: var(--surface-2); border: 1px solid var(--border-strong);
+    border-radius: var(--radius); padding: 18px; border-top-width: 4px; }
+  .ensemble-card.rn { border-top-color: var(--c-rn); }
+  .ensemble-card.hn { border-top-color: var(--c-hn); }
+  .ensemble-card.sn { border-top-color: var(--c-sn); }
+  .ensemble-card h4 { margin: 0 0 4px; font-size: 17px; }
+  .ensemble-card.rn h4 { color: var(--c-rn); }
+  .ensemble-card.hn h4 { color: var(--c-hn); }
+  .ensemble-card.sn h4 { color: var(--c-sn); }
+  .ensemble-card .role { font-size: 13px; color: var(--text-muted); margin: 0 0 12px; }
+  .ensemble-card .meta { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px;
+    font-size: 12px; color: var(--text-muted); }
+  .ensemble-card .meta .k { font-weight: 500; color: var(--text); }
+  .ensemble-card .meta .v { font-family: var(--mono); }
+
+  /* TXNID bitmap (smaller, 16 slots) */
+  .txnid-grid-16 { display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px;
+    max-width: 500px; margin: 0 auto; }
+  .txnid-cell-16 { aspect-ratio: 1; border: 1px solid var(--border-strong);
+    border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+    background: var(--surface-2); cursor: pointer; transition: all 0.15s; }
+  .txnid-cell-16:hover { background: var(--border-strong); color: var(--text); }
+  .txnid-cell-16.used { background: var(--c-rn); color: #000; border-color: var(--c-rn); }
+
+  /* RN state walker */
+  .rn-state-walker { padding: 16px; background: var(--surface-2); border-radius: 8px; margin-top: 16px; }
+  .rn-state-row { display: grid; grid-template-columns: 200px 1fr;
+    gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .rn-state-row:last-child { border-bottom: none; }
+  .rn-state-row .nm { font-family: var(--mono); color: var(--text-muted); font-weight: 600; }
+  .rn-state-row .nm.active { color: var(--c-rn); }
+  .rn-state-row .desc { color: var(--text-muted); }
+
+  /* HN FSM grid */
+  .hn-fsm-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .hn-fsm-cell { padding: 10px 8px; border-radius: 6px;
+    background: var(--surface-2); border: 1.5px solid var(--border-strong);
+    text-align: center; font-family: var(--mono); font-size: 11px; cursor: pointer;
+    transition: all 0.2s; color: var(--text-muted); }
+  .hn-fsm-cell:hover { background: var(--border-strong); color: var(--text); }
+  .hn-fsm-cell.active { background: var(--c-hn); color: #000; border-color: var(--c-hn);
+    transform: translateY(-2px); box-shadow: 0 4px 12px rgba(251, 113, 133, 0.25); }
+  .hn-fsm-cell.error { background: rgba(239, 68, 68, 0.15); border-color: #ef4444; color: #fca5a5; }
+  .hn-fsm-desc { padding: 14px 18px; background: var(--surface-2);
+    border-radius: 8px; margin-top: 16px; font-size: 14px; min-height: 70px; }
+  .hn-fsm-desc .lead { font-weight: 500; margin-bottom: 4px; }
+  .hn-fsm-desc code { background: var(--bg); }
+
+  /* Directory inspector */
+  .dir-row { display: grid; grid-template-columns: 100px 1fr; gap: 12px;
+    padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; align-items: center; }
+  .dir-row:last-child { border-bottom: none; }
+  .dir-row .nm { font-family: var(--mono); color: var(--text-muted); font-weight: 600; }
+  .dir-row .v { font-family: var(--mono); color: var(--text); }
+  .dir-state-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .dir-chip { padding: 5px 10px; border-radius: 6px; font-family: var(--mono);
+    font-size: 12px; cursor: pointer; border: 1px solid var(--border-strong);
+    background: var(--surface-2); color: var(--text-muted); transition: all 0.15s; }
+  .dir-chip:hover { background: var(--border-strong); color: var(--text); }
+  .dir-chip.sel { background: var(--c-hn); color: #000; border-color: var(--c-hn); }
+  .dir-sharers { display: flex; gap: 4px; }
+  .dir-sharer { width: 28px; height: 28px; border: 1px solid var(--border-strong);
+    border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px; color: var(--text-muted);
+    cursor: pointer; background: var(--surface-2); transition: all 0.15s; }
+  .dir-sharer.set { background: var(--c-rn); color: #000; border-color: var(--c-rn); }
+
+  /* SN FSM */
+  .sn-fsm-row { display: grid; grid-template-columns: 200px 1fr;
+    gap: 12px; padding: 10px 14px; background: var(--surface-2);
+    border: 1.5px solid var(--border-strong); border-radius: 6px;
+    margin-bottom: 6px; font-size: 13px; align-items: center; transition: all 0.2s; }
+  .sn-fsm-row.active { background: var(--c-sn); color: #000; border-color: var(--c-sn); }
+  .sn-fsm-row .nm { font-family: var(--mono); font-weight: 600; }
+  .sn-fsm-row.active .nm { color: #000; }
+  .sn-fsm-row .desc { font-size: 12px; opacity: 0.85; }
+
+  /* Lifecycle simulator */
+  .life-svg { width: 100%; height: auto; }
+  .life-node { transition: all 0.3s; }
+  .life-node-rect.rn { fill: var(--c-rn-bg); stroke: var(--c-rn); stroke-width: 2; }
+  .life-node-rect.hn { fill: var(--c-hn-bg); stroke: var(--c-hn); stroke-width: 2; }
+  .life-node-rect.sn { fill: var(--c-sn-bg); stroke: var(--c-sn); stroke-width: 2; }
+  .life-node-rect.active { stroke-width: 4;
+    filter: drop-shadow(0 0 8px currentColor); }
+  .life-arrow { stroke: var(--text-dim); stroke-width: 1.5; fill: none; opacity: 0.3;
+    transition: all 0.3s; }
+  .life-arrow.active { opacity: 1; stroke-width: 3; stroke-dasharray: 8 4;
+    animation: dash 1s linear infinite; }
+  .life-arrow.req.active { stroke: var(--c-req); }
+  .life-arrow.rsp.active { stroke: var(--c-rsp); }
+  .life-arrow.snp.active { stroke: var(--c-snp); }
+  .life-arrow.dat.active { stroke: var(--c-dat); }
+  @keyframes dash { to { stroke-dashoffset: -24; } }
+  .life-arrow-lbl { font-family: var(--mono); font-size: 11px; fill: var(--text-muted);
+    opacity: 0.4; transition: all 0.3s; }
+  .life-arrow-lbl.active { opacity: 1; }
+  .life-arrow-lbl.req.active { fill: var(--c-req); font-weight: 600; }
+  .life-arrow-lbl.rsp.active { fill: var(--c-rsp); font-weight: 600; }
+  .life-arrow-lbl.snp.active { fill: var(--c-snp); font-weight: 600; }
+  .life-arrow-lbl.dat.active { fill: var(--c-dat); font-weight: 600; }
+  .life-label { font-family: var(--mono); font-size: 13px; fill: var(--text); font-weight: 600; pointer-events: none; }
+  .life-sub { font-size: 10px; fill: var(--text-muted); pointer-events: none; }
+  .life-explainer { padding: 16px 18px; background: var(--surface-2);
+    border-radius: 8px; min-height: 100px; font-size: 14px; margin-top: 16px; }
+  .life-explainer .step-num { display: inline-block; padding: 2px 8px;
+    background: var(--c-hn); color: #000; border-radius: 4px; font-family: var(--mono);
+    font-size: 11px; margin-right: 8px; font-weight: 600; }
+  .life-explainer .lead { font-weight: 500; margin-bottom: 6px; }
+  .life-explainer code { background: var(--bg); }
+
+  /* Known bugs */
+  .bug-card { padding: 18px; border-radius: 10px; margin-bottom: 12px;
+    background: rgba(251, 191, 36, 0.1); border-left: 4px solid var(--c-snp); }
+  .bug-card.crit { background: rgba(239, 68, 68, 0.12); border-left-color: #ef4444; }
+  .bug-card .head { font-weight: 600; margin-bottom: 4px; font-size: 14px; color: var(--text); }
+  .bug-card .body { font-size: 13px; color: var(--text-muted); }
+  .bug-card .body code { background: var(--bg); }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="inner">
+    <div class="brand">hanuma <span class="dim">/ learning / lesson 09</span></div>
+    <ul>
+      <li><a href="#ensemble">Three nodes</a></li>
+      <li><a href="#rn">chi_rn</a></li>
+      <li><a href="#hn">chi_hn</a></li>
+      <li><a href="#sn">chi_sn</a></li>
+      <li><a href="#lifecycle">Lifecycle</a></li>
+      <li><a href="#code">Code map</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <header class="hero">
+    <span class="eyebrow">Lesson 9 of 10</span>
+    <h1>CHI Nodes — RN, HN, SN</h1>
+    <p class="lead">
+      The actual agents on the fabric. The Request Node initiates transactions;
+      the Home Node enforces coherency and owns the directory; the Slave Node
+      bridges to memory. Everything from Lessons 1-8 finally produces silicon
+      that does work.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="v">3</div><div class="l">Node types</div></div>
+      <div class="stat"><div class="v">~1000</div><div class="l">Lines of RTL</div></div>
+      <div class="stat"><div class="v">15</div><div class="l">HN states</div></div>
+      <div class="stat"><div class="v">~40 min</div><div class="l">To finish</div></div>
+    </div>
+  </header>
+
+  <section id="ensemble">
+    <h2><span class="num">1</span>The three-node ensemble</h2>
+    <p class="sub">
+      Every transaction on a CHI fabric flows through exactly these three node
+      families. Each speaks the same protocol but plays a different role.
+    </p>
+    <div class="ensemble-grid">
+      <div class="ensemble-card rn">
+        <h4>chi_rn</h4>
+        <p class="role">The initiator. CPU clusters, DMA engines, accelerators.</p>
+        <div class="meta">
+          <span class="k">Channels TX:</span><span class="v">REQ · RSP · DAT</span>
+          <span class="k">Channels RX:</span><span class="v">SNP · RSP · DAT</span>
+          <span class="k">TXNIDs:</span><span class="v">16 outstanding</span>
+          <span class="k">Snoop queue:</span><span class="v">8 deep</span>
+          <span class="k">FSM states:</span><span class="v">9 + ERROR</span>
+        </div>
+      </div>
+      <div class="ensemble-card hn">
+        <h4>chi_hn</h4>
+        <p class="role">Coherency arbiter. Owns directory + last-level cache slice.</p>
+        <div class="meta">
+          <span class="k">Channels TX:</span><span class="v">RSP · SNP · DAT</span>
+          <span class="k">Channels RX:</span><span class="v">REQ · RSP · DAT</span>
+          <span class="k">Slots:</span><span class="v">64 outstanding</span>
+          <span class="k">Directory:</span><span class="v">1024 × 4-way</span>
+          <span class="k">FSM states:</span><span class="v">14 + ERROR</span>
+        </div>
+      </div>
+      <div class="ensemble-card sn">
+        <h4>chi_sn</h4>
+        <p class="role">Memory endpoint. DDR/HBM controllers, peripherals.</p>
+        <div class="meta">
+          <span class="k">Channels TX:</span><span class="v">RSP · DAT</span>
+          <span class="k">Channels RX:</span><span class="v">REQ · DAT</span>
+          <span class="k">Slots:</span><span class="v">32 outstanding</span>
+          <span class="k">Backend:</span><span class="v">AXI4 (5 channels)</span>
+          <span class="k">FSM states:</span><span class="v">7 + ERROR</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="rn">
+    <h2><span class="num">2</span>chi_rn — Request Node</h2>
+    <p class="sub">
+      The simplest of the three. Translates cache controller requests into REQ
+      flits, allocates TXNIDs, receives SNP/RSP/DAT, and forwards snoops to the
+      local cache. The TXNID bitmap below is interactive — click slots to
+      allocate/free.
+    </p>
+
+    <div class="card">
+      <h3 style="margin-top: 0">TXNID allocator — 16 outstanding</h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+        <code>txnid_used[16]</code> bitmap. The combinational allocator
+        (<code>comb_txnid_alloc</code>) scans for the lowest free bit and
+        produces <code>next_txnid</code>. Click any cell to toggle it.
+      </p>
+      <div class="txnid-grid-16" id="rnTxnGrid"></div>
+      <div style="text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-muted);">
+        <span>txnid_avail = <span id="rnAvail" style="font-family: var(--mono); color: var(--text);">1</span></span>
+        &nbsp;·&nbsp;
+        <span>next_txnid = <span id="rnNext" style="font-family: var(--mono); color: var(--text);">0</span></span>
+        &nbsp;·&nbsp;
+        <span>idle = <span id="rnIdle" style="font-family: var(--mono); color: var(--text);">1</span></span>
+      </div>
+
+      <h3>Per-transaction FSM states</h3>
+      <div class="rn-state-walker">
+        <div class="rn-state-row"><div class="nm">ST_IDLE</div><div class="desc">Slot is free; no pending transaction.</div></div>
+        <div class="rn-state-row"><div class="nm">ST_SEND_REQ</div><div class="desc">Cache requested a line, TXNID allocated. Drive <code>txreqflitv</code> when credit available.</div></div>
+        <div class="rn-state-row"><div class="nm">ST_WAIT_GRANT</div><div class="desc">Got RetryAck — waiting for PCrdGrant before re-issuing.</div></div>
+        <div class="rn-state-row"><div class="nm">ST_WAIT_DATA</div><div class="desc">REQ sent. Waiting for CompData on RX DAT channel.</div></div>
+        <div class="rn-state-row"><div class="nm">ST_WAIT_COMP</div><div class="desc">Data received. Waiting for Comp on RX RSP channel.</div></div>
+        <div class="rn-state-row"><div class="nm">ST_SEND_COMP_ACK</div><div class="desc">Both arrived. Drive CompAck on TX RSP to let HN free its slot.</div></div>
+        <div class="rn-state-row"><div class="nm">ST_SEND_WDATA</div><div class="desc">Write transaction: got DBID, send CopyBackWrData on TX DAT.</div></div>
+        <div class="rn-state-row"><div class="nm">ST_WAIT_DBID</div><div class="desc">Write transaction: waiting for DBIDResp from HN.</div></div>
+        <div class="rn-state-row"><div class="nm">ST_WAIT_PERSIST</div><div class="desc">Persistent CMO completion (future).</div></div>
+      </div>
+
+      <h3>The four input channels (from CHI link)</h3>
+      <table class="code-table">
+        <thead><tr><th>Direction</th><th>Sig name</th><th>What RN does</th></tr></thead>
+        <tbody>
+          <tr><td>RX REQ ← (n/a)</td><td class="path">—</td><td>RN never receives REQ</td></tr>
+          <tr><td>RX RSP ← HN</td><td class="path">link.txrspflitv</td><td>Decode Comp/CompDBIDResp/RetryAck/PCrdGrant; update tracker</td></tr>
+          <tr><td>RX SNP ← HN</td><td class="path">link.txsnpflitv</td><td>Push to <code>snp_queue</code> (depth 8), forward to cache controller</td></tr>
+          <tr><td>RX DAT ← HN</td><td class="path">link.txdatflitv</td><td>Drive <code>cache_rdata_valid</code> + data + resp</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Critical assertions</h3>
+      <table class="code-table">
+        <thead><tr><th>Assertion</th><th>Condition</th><th>Catches</th></tr></thead>
+        <tbody>
+          <tr><td class="path">a_rn_req_credit</td><td>!(send_req &amp;&amp; req_crd_count == 0)</td><td>Sending REQ without a link credit</td></tr>
+          <tr><td class="path">a_rn_snp_overflow</td><td>!(snp_recv &amp;&amp; snp_queue_full)</td><td>Snoop queue overflow — silent data drop</td></tr>
+          <tr><td class="path">a_rn_txnid_avail</td><td>!(send_req &amp;&amp; !txnid_avail)</td><td>REQ sent without an allocated TXNID</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="hn">
+    <h2><span class="num">3</span>chi_hn — Home Node, the coherency arbiter</h2>
+    <p class="sub">
+      The biggest module in the codebase by FSM complexity. Receives REQ from up
+      to 4 RNs, looks up the directory, decides whether to snoop / serve from
+      LLC / fetch from SN, fans out snoops, gathers responses, and finally
+      responds to the requester. Click any state below to see what it does.
+    </p>
+
+    <div class="card">
+      <h3 style="margin-top: 0">The 15-state transaction FSM</h3>
+      <div class="hn-fsm-grid" id="hnFsmGrid">
+        <div class="hn-fsm-cell" data-st="HN_ST_IDLE">IDLE</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_DIR_LOOKUP">DIR_LOOKUP</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_LLC_CHECK">LLC_CHECK</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_ISSUE_SNOOP">ISSUE_SNOOP</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_WAIT_SNP_RSP">WAIT_SNP_RSP</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_WAIT_SNP_DATA">WAIT_SNP_DATA</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_FETCH_MEM">FETCH_MEM</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_WAIT_MEM_DATA">WAIT_MEM_DATA</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_SEND_DATA_RN">SEND_DATA_RN</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_SEND_COMP_RN">SEND_COMP_RN</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_WAIT_COMP_ACK">WAIT_COMP_ACK</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_WRITE_LLC">WRITE_LLC</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_WRITE_MEM">WRITE_MEM</div>
+        <div class="hn-fsm-cell" data-st="HN_ST_ISSUE_PCRD">ISSUE_PCRD</div>
+        <div class="hn-fsm-cell error" data-st="HN_ST_ERROR">ERROR</div>
+      </div>
+      <div class="hn-fsm-desc" id="hnFsmDesc">
+        <div class="lead">Click any state above to see its role.</div>
+        <span>The transaction lifecycle is roughly: IDLE → DIR_LOOKUP → either
+        LLC_CHECK (read hit) or ISSUE_SNOOP (need other RNs' data) or FETCH_MEM
+        (line evicted). Eventually SEND_DATA_RN or SEND_COMP_RN, then
+        WAIT_COMP_ACK before freeing the slot.</span>
+      </div>
+
+      <h3>Directory entry inspector</h3>
+      <p style="font-size: 14px; color: var(--text-muted);">
+        <code>dir_mem[1024]</code> array. Each entry tracks one cache line: which
+        RNs are caching it (<code>sharers</code> bitmap), what state, and whether
+        it's dirty.
+      </p>
+      <div style="padding: 16px; background: var(--surface-2); border-radius: 8px;">
+        <div class="dir-row"><div class="nm">valid</div><div class="v">1</div></div>
+        <div class="dir-row"><div class="nm">tag</div><div class="v">0x4000_0000_0000</div></div>
+        <div class="dir-row">
+          <div class="nm">state</div>
+          <div class="dir-state-chips">
+            <button class="dir-chip" data-state="I">CACHE_I</button>
+            <button class="dir-chip sel" data-state="SC">CACHE_S</button>
+            <button class="dir-chip" data-state="UC">CACHE_E</button>
+            <button class="dir-chip" data-state="O">CACHE_O</button>
+            <button class="dir-chip" data-state="M">CACHE_M</button>
+          </div>
+        </div>
+        <div class="dir-row">
+          <div class="nm">sharers</div>
+          <div class="dir-sharers" id="dirSharers">
+            <div class="dir-sharer set" data-rn="0">RN0</div>
+            <div class="dir-sharer set" data-rn="1">RN1</div>
+            <div class="dir-sharer" data-rn="2">RN2</div>
+            <div class="dir-sharer" data-rn="3">RN3</div>
+          </div>
+        </div>
+        <div class="dir-row"><div class="nm">dirty</div><div class="v" id="dirDirty">0</div></div>
+      </div>
+      <div style="margin-top: 12px; padding: 12px 16px; background: var(--c-hn-bg); border-left: 3px solid var(--c-hn); border-radius: 4px; font-size: 13px;" id="dirImpact">
+        <b>Implication:</b> RN0 and RN1 hold this line in Shared state. A
+        ReadShared request from RN2 can be served by snooping one of them or
+        from LLC; a ReadUnique would force snoops to <b>invalidate</b> both RN0
+        and RN1.
+      </div>
+
+      <h3>Snoop fan-out tracking</h3>
+      <p style="font-size: 14px; color: var(--text-muted);">
+        Each transaction slot carries two bitmaps:
+        <code>snp_pending_bitmap[NUM_RN_PORTS]</code> for snoops issued, and
+        <code>snp_done_bitmap[NUM_RN_PORTS]</code> for responses received. The
+        HN advances state only when <code>(pending &amp; ~done) == 0</code> —
+        i.e. all snoops have been answered.
+      </p>
+    </div>
+  </section>
+
+  <section id="sn">
+    <h2><span class="num">4</span>chi_sn — Slave Node, the memory bridge</h2>
+    <p class="sub">
+      The simplest of the three FSMs. Receives REQ from HN, issues DBIDResp/Comp
+      back, drives the AXI4 backend, and returns CompData with the read payload.
+      Click states below.
+    </p>
+
+    <div class="card">
+      <h3 style="margin-top: 0">The 7-state SN FSM</h3>
+      <div class="sn-fsm-row" data-sst="IDLE"><div class="nm">SN_ST_IDLE</div><div class="desc">No active transaction in this slot.</div></div>
+      <div class="sn-fsm-row" data-sst="ISSUE_DBID"><div class="nm">SN_ST_ISSUE_DBID</div><div class="desc">REQ arrived. Drive <code>RSP_DBIDResp</code> (write) or <code>RSP_Comp</code> (read) on TX RSP.</div></div>
+      <div class="sn-fsm-row" data-sst="WAIT_WDATA"><div class="nm">SN_ST_WAIT_WDATA</div><div class="desc">Write: waiting for <code>CopyBackWrData</code> from HN.</div></div>
+      <div class="sn-fsm-row" data-sst="MEM_WRITE"><div class="nm">SN_ST_MEM_WRITE</div><div class="desc">Drive AXI4 AW + W channels (currently stubbed in RTL).</div></div>
+      <div class="sn-fsm-row" data-sst="MEM_READ"><div class="nm">SN_ST_MEM_READ</div><div class="desc">Drive AXI4 AR channel; wait for R data (currently stubbed).</div></div>
+      <div class="sn-fsm-row" data-sst="WAIT_MEM"><div class="nm">SN_ST_WAIT_MEM</div><div class="desc">Memory latency wait (typical ~120 cycles).</div></div>
+      <div class="sn-fsm-row" data-sst="SEND_COMP"><div class="nm">SN_ST_SEND_COMP</div><div class="desc">Drive <code>DAT_CompData</code> with the read line back to HN.</div></div>
+
+      <h3>The AXI4 backend (5 channels)</h3>
+      <table class="code-table">
+        <thead><tr><th>Channel</th><th>Direction</th><th>Used for</th></tr></thead>
+        <tbody>
+          <tr><td class="path">AR</td><td>SN → mem</td><td>Read address (memory fetch)</td></tr>
+          <tr><td class="path">R</td><td>mem → SN</td><td>Read data — drives <code>DAT_CompData</code></td></tr>
+          <tr><td class="path">AW</td><td>SN → mem</td><td>Write address</td></tr>
+          <tr><td class="path">W</td><td>SN → mem</td><td>Write data</td></tr>
+          <tr><td class="path">B</td><td>mem → SN</td><td>Write response (B-channel)</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size: 14px; color: var(--text-muted); margin-top: 12px;">
+        Note: in the current RTL, <code>mem_arvalid</code> and
+        <code>mem_awvalid</code> are tied to <code>1'b0</code> (lines 232–246)
+        with TODO comments. The DV tracker (P2.1) flags wiring these up as a
+        prerequisite for Phase 2 directed tests.
+      </p>
+    </div>
+  </section>
+
+  <section id="lifecycle">
+    <h2><span class="num">5</span>Full transaction lifecycle</h2>
+    <p class="sub">
+      The capstone interactive. Walk through a complete <code>ReadShared</code>
+      from RN0 that misses both directory and LLC, forcing a memory fetch from
+      SN. Watch every flit traverse the three nodes.
+    </p>
+
+    <div class="card">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center;">
+        <button class="btn primary" id="lifeStep">Step ▶</button>
+        <button class="btn" id="lifeReset">Reset</button>
+        <button class="btn" id="lifeAuto">Auto-play</button>
+        <span style="font-size: 13px; color: var(--text-muted); margin-left: auto;">
+          Step <span style="font-family: var(--mono); color: var(--text);" id="lifeStepN">0</span> / <span style="font-family: var(--mono);">10</span>
+        </span>
+      </div>
+
+      <svg class="life-svg" viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="lf-arr-req" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#60a5fa"/></marker>
+          <marker id="lf-arr-rsp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#4ade80"/></marker>
+          <marker id="lf-arr-snp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#fbbf24"/></marker>
+          <marker id="lf-arr-dat" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#c084fc"/></marker>
+        </defs>
+
+        <g class="life-node">
+          <rect class="life-node-rect rn" id="lfn-rn" x="40" y="80" width="180" height="120" rx="12"/>
+          <text class="life-label" x="130" y="110" text-anchor="middle" fill="#22d3ee">RN-F</text>
+          <text class="life-sub" x="130" y="128" text-anchor="middle">Request Node</text>
+          <text class="life-sub" x="130" y="146" text-anchor="middle">node_id = 0</text>
+          <text class="life-sub" x="130" y="166" text-anchor="middle" id="lfn-rn-state" style="font-weight: 600;">IDLE</text>
+        </g>
+
+        <g class="life-node">
+          <rect class="life-node-rect hn" id="lfn-hn" x="360" y="80" width="180" height="120" rx="12"/>
+          <text class="life-label" x="450" y="110" text-anchor="middle" fill="#fb7185">HN-F</text>
+          <text class="life-sub" x="450" y="128" text-anchor="middle">Home Node</text>
+          <text class="life-sub" x="450" y="146" text-anchor="middle">node_id = 8</text>
+          <text class="life-sub" x="450" y="166" text-anchor="middle" id="lfn-hn-state" style="font-weight: 600;">IDLE</text>
+        </g>
+
+        <g class="life-node">
+          <rect class="life-node-rect sn" id="lfn-sn" x="680" y="80" width="180" height="120" rx="12"/>
+          <text class="life-label" x="770" y="110" text-anchor="middle" fill="#818cf8">SN-F</text>
+          <text class="life-sub" x="770" y="128" text-anchor="middle">Slave Node</text>
+          <text class="life-sub" x="770" y="146" text-anchor="middle">node_id = 12</text>
+          <text class="life-sub" x="770" y="166" text-anchor="middle" id="lfn-sn-state" style="font-weight: 600;">IDLE</text>
+        </g>
+
+        <!-- RN ↔ HN arrows -->
+        <path class="life-arrow req" id="lfa-req-rn-hn" d="M220,105 L360,105" marker-end="url(#lf-arr-req)"/>
+        <text class="life-arrow-lbl req" id="lfl-req-rn-hn" x="290" y="98" text-anchor="middle">REQ</text>
+
+        <path class="life-arrow rsp" id="lfa-rsp-hn-rn" d="M360,135 L220,135" marker-end="url(#lf-arr-rsp)"/>
+        <text class="life-arrow-lbl rsp" id="lfl-rsp-hn-rn" x="290" y="128" text-anchor="middle">RSP</text>
+
+        <path class="life-arrow snp" id="lfa-snp-hn-rn" d="M360,170 L220,170" marker-end="url(#lf-arr-snp)"/>
+        <text class="life-arrow-lbl snp" id="lfl-snp-hn-rn" x="290" y="163" text-anchor="middle">SNP</text>
+
+        <path class="life-arrow dat" id="lfa-dat-hn-rn" d="M360,200 L220,200" marker-end="url(#lf-arr-dat)"/>
+        <text class="life-arrow-lbl dat" id="lfl-dat-hn-rn" x="290" y="193" text-anchor="middle">DAT</text>
+
+        <!-- HN ↔ SN arrows -->
+        <path class="life-arrow req" id="lfa-req-hn-sn" d="M540,105 L680,105" marker-end="url(#lf-arr-req)"/>
+        <text class="life-arrow-lbl req" id="lfl-req-hn-sn" x="610" y="98" text-anchor="middle">REQ</text>
+
+        <path class="life-arrow rsp" id="lfa-rsp-sn-hn" d="M680,135 L540,135" marker-end="url(#lf-arr-rsp)"/>
+        <text class="life-arrow-lbl rsp" id="lfl-rsp-sn-hn" x="610" y="128" text-anchor="middle">RSP</text>
+
+        <path class="life-arrow dat" id="lfa-dat-sn-hn" d="M680,200 L540,200" marker-end="url(#lf-arr-dat)"/>
+        <text class="life-arrow-lbl dat" id="lfl-dat-sn-hn" x="610" y="193" text-anchor="middle">DAT</text>
+      </svg>
+
+      <div class="life-explainer" id="lifeExplain">
+        <div class="lead">Step 0 — Setup.</div>
+        <span>RN0's L2 cache misses on address <code>0x4000</code> and asks for
+        a <code>ReadShared</code>. The directory entry for this line is
+        <code>Invalid</code>: no RN holds a copy and LLC has no data. Press
+        <b>Step</b> to begin.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="bugs">
+    <h2><span class="num">6</span>Known issues — from the DV tracker</h2>
+    <p class="sub">
+      The CHI nodes have the most outstanding TODOs in the codebase — full
+      protocol implementation is a multi-quarter effort. These are the items to
+      know about.
+    </p>
+
+    <div class="bug-card">
+      <div class="head">🔶 RN — RSP opcode dispatch not implemented</div>
+      <div class="body">
+        <code>chi_rn.sv:222</code> is a stub. RSP flits arrive (link credit is
+        returned), but the actual opcode decode logic that would update tracker
+        state on Comp / CompDBIDResp / RetryAck / PCrdGrant is a comment block.
+      </div>
+    </div>
+
+    <div class="bug-card">
+      <div class="head">🔶 RN — TXNID never freed</div>
+      <div class="body">
+        <code>chi_rn.sv:296</code>: TXNIDs are allocated on send_req but
+        <code>txnid_used[i] &lt;= 1'b0</code> on transaction completion is a
+        TODO. After 16 transactions the RN deadlocks — first
+        <code>NUM_TXNID</code> tests pass, then never another.
+      </div>
+    </div>
+
+    <div class="bug-card">
+      <div class="head">🔶 HN — Snoop opcode hardcoded</div>
+      <div class="body">
+        <code>chi_hn.sv:255</code>: <code>snp_flit_d.opcode = SNP_SnpShared</code>
+        always. Real implementation must derive opcode from the requesting REQ
+        opcode (ReadUnique → SnpUnique, etc.) and current directory state.
+      </div>
+    </div>
+
+    <div class="bug-card">
+      <div class="head">🔶 HN — Round-robin REQ arb is priority encoder</div>
+      <div class="body">
+        <code>chi_hn.sv:172</code> uses <code>break</code> on first hit, which
+        is strict-priority not round-robin. RN0 will starve RN1-3 under load.
+        Needs an <code>arb_unit</code> instance instead.
+      </div>
+    </div>
+
+    <div class="bug-card">
+      <div class="head">🔶 HN — SN request drive is tied off</div>
+      <div class="body">
+        <code>chi_hn.sv:270</code>: <code>sn_link.txreqflitv = 1'b0</code>. The
+        path from HN to memory controller is not wired — any directory miss that
+        needs <code>FETCH_MEM</code> stalls forever.
+      </div>
+    </div>
+
+    <div class="bug-card crit">
+      <div class="head">⚠ SN — AXI4 backend stubbed</div>
+      <div class="body">
+        <code>chi_sn.sv:232–246</code>: <code>mem_arvalid</code> and
+        <code>mem_awvalid</code> are tied to <code>1'b0</code>. The SN can
+        receive REQs and allocate slots, but never actually drives memory. No
+        reads complete. Listed as P2.1 (Phase 2 prerequisite) in the DV plan.
+      </div>
+    </div>
+  </section>
+
+  <section id="code">
+    <h2><span class="num">7</span>Code map</h2>
+    <table class="code-table">
+      <thead><tr><th>Concept</th><th>File</th><th>Line</th><th>What's there</th></tr></thead>
+      <tbody>
+        <tr><td>RN per-txn state enum</td><td class="path">rtl/interconnect/chi/chi_rn.sv</td><td class="line">99</td><td>9 states + ERROR</td></tr>
+        <tr><td>TXNID allocator</td><td class="path">rtl/interconnect/chi/chi_rn.sv</td><td class="line">146</td><td>comb_txnid_alloc — lowest free bit</td></tr>
+        <tr><td>REQ flit construction</td><td class="path">rtl/interconnect/chi/chi_rn.sv</td><td class="line">165</td><td>comb_req_flit</td></tr>
+        <tr><td>REQ credit FSM</td><td class="path">rtl/interconnect/chi/chi_rn.sv</td><td class="line">193</td><td>ff_req_credits — 4-case update</td></tr>
+        <tr><td>Snoop queue push</td><td class="path">rtl/interconnect/chi/chi_rn.sv</td><td class="line">241</td><td>ff_snp_queue_push</td></tr>
+        <tr><td>Snoop forwarding to cache</td><td class="path">rtl/interconnect/chi/chi_rn.sv</td><td class="line">257</td><td>snp_req_valid drive</td></tr>
+        <tr><td>DAT receive → cache</td><td class="path">rtl/interconnect/chi/chi_rn.sv</td><td class="line">272</td><td>cache_rdata_* assignments</td></tr>
+        <tr><td>HN big FSM enum</td><td class="path">rtl/interconnect/chi/chi_hn.sv</td><td class="line">99</td><td>15 states</td></tr>
+        <tr><td>Transaction slot struct</td><td class="path">rtl/interconnect/chi/chi_hn.sv</td><td class="line">121</td><td>hn_txn_slot_t with snp bitmaps</td></tr>
+        <tr><td>Directory entry struct</td><td class="path">rtl/interconnect/chi/chi_hn.sv</td><td class="line">145</td><td>dir_entry_t with sharers bitmap</td></tr>
+        <tr><td>REQ port arbitration</td><td class="path">rtl/interconnect/chi/chi_hn.sv</td><td class="line">172</td><td>comb_req_arb (currently priority enc)</td></tr>
+        <tr><td>Slot allocator</td><td class="path">rtl/interconnect/chi/chi_hn.sv</td><td class="line">193</td><td>comb_slot_alloc</td></tr>
+        <tr><td>Directory lookup pipeline</td><td class="path">rtl/interconnect/chi/chi_hn.sv</td><td class="line">217</td><td>ff_dir_pipe — 4-stage</td></tr>
+        <tr><td>Snoop flit builder</td><td class="path">rtl/interconnect/chi/chi_hn.sv</td><td class="line">248</td><td>comb_snp_flit (opcode hardcoded)</td></tr>
+        <tr><td>Slot transition + timeout</td><td class="path">rtl/interconnect/chi/chi_hn.sv</td><td class="line">278</td><td>ff_txn_alloc</td></tr>
+        <tr><td>REQ credit return to RNs</td><td class="path">rtl/interconnect/chi/chi_hn.sv</td><td class="line">322</td><td>gen_req_credit_return</td></tr>
+        <tr><td>SN per-txn FSM enum</td><td class="path">rtl/interconnect/chi/chi_sn.sv</td><td class="line">95</td><td>7 states</td></tr>
+        <tr><td>REQ receive + slot alloc</td><td class="path">rtl/interconnect/chi/chi_sn.sv</td><td class="line">152</td><td>ff_req_alloc</td></tr>
+        <tr><td>RSP flit (DBIDResp/Comp)</td><td class="path">rtl/interconnect/chi/chi_sn.sv</td><td class="line">188</td><td>comb_rsp_flit</td></tr>
+        <tr><td>DAT flit (CompData)</td><td class="path">rtl/interconnect/chi/chi_sn.sv</td><td class="line">212</td><td>comb_dat_flit</td></tr>
+        <tr><td>AXI4 backend ports</td><td class="path">rtl/interconnect/chi/chi_sn.sv</td><td class="line">47</td><td>AR/R/AW/W/B declarations</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="quiz">
+    <h2><span class="num">8</span>Check yourself</h2>
+    <div class="quiz">
+      <div class="q">
+        <div class="question">Q1. RN0 issues a <code>ReadShared</code>. The directory at the HN shows the line is in <code>Shared</code> state with RN1 holding a copy. Walk through what happens next.</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          HN looks up directory (<code>DIR_LOOKUP</code> → <code>LLC_CHECK</code>).
+          Since the line is Shared and LLC may have a clean copy, HN can serve
+          from LLC <i>without</i> snooping RN1 — but it still updates the
+          directory to add RN0 to the sharers bitmap. Sends <code>DAT_CompData</code>
+          (with resp = SC) on the DAT channel and <code>RSP_Comp</code> on RSP.
+          RN0 caches the line as Shared Clean, sends <code>RSP_CompAck</code>,
+          and the HN frees its slot. RN1 is undisturbed.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q2. Why does the HN have 64 transaction slots but each RN has only 16 TXNIDs?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          A single HN can have 4 RNs talking to it (in this design). If each
+          RN has 16 outstanding, that's 64 transactions the HN needs to track —
+          one slot per (RN, RN_TXNID) pair. Plus internal snoop fan-outs and SN
+          requests. 64 is the minimum to avoid being the bottleneck under
+          worst-case load. The DV plan's TC-STRESS-001 exercises this.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q3. The SN's RSP opcode is decided by <code>(opcode == REQ_WriteNoSnpFull || opcode == REQ_WriteNoSnpPtl) ? RSP_DBIDResp : RSP_Comp</code>. Why?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          For write requests, the SN must first tell the HN "I'm ready to receive
+          the data, send it with this DBID" — that's <code>DBIDResp</code>. The
+          actual Comp comes after the write completes (line 196 sends DBIDResp,
+          and a separate Comp follows once <code>mem_bvalid</code> arrives in a
+          full implementation). For read requests, no data transfer is needed
+          from the requester, so the SN can immediately signal <code>Comp</code>
+          alongside returning the read data.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q4. The HN has both <code>llc_*</code> ports (to LLC slice) and <code>sn_link</code> (to memory). When does each get used?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          <code>llc_*</code> is hit by every directory lookup that needs cache
+          data — the directory says the line is Shared (or somewhere in LLC),
+          read LLC, return that data. <code>sn_link</code> is used only on a
+          full miss: directory says nothing has the line, LLC says no data,
+          so HN promotes the request to <code>REQ_ReadNoSnp</code> and forwards
+          to SN. Writes go to LLC first (to update the directory and capture
+          modified data) and eventually to SN via writeback.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="next-card">
+    <div class="eyebrow">Lesson 10 — Up next</div>
+    <h3>Support modules — monitoring, QoS, errors</h3>
+    <p>The cross-cutting helpers. Performance counters, QoS managers, error aggregators, timeout watchdogs, and power management. Read once you understand the data path — they sit on the side, observing.</p>
+    <div class="files">
+      <span class="file-chip">flow_control_unit.sv</span>
+      <span class="file-chip">qos_manager.sv</span>
+      <span class="file-chip">perf_monitor.sv</span>
+      <span class="file-chip">error_handler.sv</span>
+      <span class="file-chip">timeout_mgr.sv</span>
+      <span class="file-chip">power_mgmt.sv</span>
+    </div>
+  </div>
+
+</div>
+
+<footer><div class="container">Lesson 9 of 10 · hanuma SoC learning track</div></footer>
+
+<script>
+  // ---------- RN TXNID grid ----------
+  var RN_NUM_TXN = 16;
+  var rnTxn = new Array(RN_NUM_TXN).fill(false);
+  function renderRnTxn() {
+    var grid = document.getElementById('rnTxnGrid');
+    grid.innerHTML = '';
+    for (var i = 0; i < RN_NUM_TXN; i++) {
+      var c = document.createElement('div');
+      c.className = 'txnid-cell-16';
+      if (rnTxn[i]) c.classList.add('used');
+      c.textContent = i;
+      (function(idx) {
+        c.addEventListener('click', function() {
+          rnTxn[idx] = !rnTxn[idx];
+          renderRnTxn();
+        });
+      })(i);
+      grid.appendChild(c);
+    }
+    // Find next_txnid
+    var next = -1;
+    for (var j = 0; j < RN_NUM_TXN; j++) {
+      if (!rnTxn[j]) { next = j; break; }
+    }
+    document.getElementById('rnAvail').textContent = (next >= 0) ? '1' : '0';
+    document.getElementById('rnNext').textContent = (next >= 0) ? next : '—';
+    var anyUsed = rnTxn.some(function(x) { return x; });
+    document.getElementById('rnIdle').textContent = anyUsed ? '0' : '1';
+  }
+  renderRnTxn();
+
+  // ---------- HN FSM ----------
+  var hnDescriptions = {
+    'HN_ST_IDLE': {
+      lead: 'HN_ST_IDLE — slot is free.',
+      body: 'Awaiting REQ from any RN port. Slot allocator stands by.'
+    },
+    'HN_ST_DIR_LOOKUP': {
+      lead: 'HN_ST_DIR_LOOKUP — issued directory read.',
+      body: '4-stage pipeline reads <code>dir_mem[addr]</code>. Latency from <code>DIR_LOOKUP_LATENCY</code> param.'
+    },
+    'HN_ST_LLC_CHECK': {
+      lead: 'HN_ST_LLC_CHECK — directory result in, querying LLC.',
+      body: 'Decide path based on directory state and sharers. If LLC has clean data and no snoops needed → SEND_DATA_RN. Otherwise → ISSUE_SNOOP or FETCH_MEM.'
+    },
+    'HN_ST_ISSUE_SNOOP': {
+      lead: 'HN_ST_ISSUE_SNOOP — fanning out snoops.',
+      body: 'Build SNP flit per target RN in sharers bitmap. <code>snp_pending_bitmap</code> tracks who must respond. <code>snp_flit_d.opcode</code> currently hardcoded to <code>SNP_SnpShared</code> — DV §1.5.2 TODO.'
+    },
+    'HN_ST_WAIT_SNP_RSP': {
+      lead: 'HN_ST_WAIT_SNP_RSP — collecting snoop responses.',
+      body: 'Wait until <code>snp_done_bitmap == snp_pending_bitmap</code>. Each SnpResp marks done; <code>SnpRespData</code> additionally sets <code>snp_has_data</code>.'
+    },
+    'HN_ST_WAIT_SNP_DATA': {
+      lead: 'HN_ST_WAIT_SNP_DATA — at least one snoopee had dirty data.',
+      body: 'Buffer the snoop data into the slot, then proceed to forward to requester.'
+    },
+    'HN_ST_FETCH_MEM': {
+      lead: 'HN_ST_FETCH_MEM — clean miss path.',
+      body: 'Convert to ReadNoSnp + tgt_id = SN_NODE_ID. Drive <code>sn_link.txreqflitv</code> (currently tied to 0 — DV TODO).'
+    },
+    'HN_ST_WAIT_MEM_DATA': {
+      lead: 'HN_ST_WAIT_MEM_DATA — DDR latency.',
+      body: 'Wait for CompData from SN — typically 100+ cycles. Slot timer counts up; <code>SNP_TIMEOUT</code> watchdog protects.'
+    },
+    'HN_ST_SEND_DATA_RN': {
+      lead: 'HN_ST_SEND_DATA_RN — drive CompData to requester.',
+      body: 'Build <code>DAT_CompData</code> with the buffered data and the appropriate <code>resp</code> field (cache state hint).'
+    },
+    'HN_ST_SEND_COMP_RN': {
+      lead: 'HN_ST_SEND_COMP_RN — final completion.',
+      body: 'For dataless transactions (e.g. CleanUnique), send <code>RSP_Comp</code> directly. For data transactions, Comp is combined with the data path.'
+    },
+    'HN_ST_WAIT_COMP_ACK': {
+      lead: 'HN_ST_WAIT_COMP_ACK — waiting for RN.',
+      body: 'RN must acknowledge receipt with <code>RSP_CompAck</code> so HN can update directory and free the slot.'
+    },
+    'HN_ST_WRITE_LLC': {
+      lead: 'HN_ST_WRITE_LLC — install new line.',
+      body: 'For misses that fetched from SN, write the line into LLC for future hits. Update directory sharers + state.'
+    },
+    'HN_ST_WRITE_MEM': {
+      lead: 'HN_ST_WRITE_MEM — flush to memory.',
+      body: 'For evictions or write-backs, push dirty line to SN via <code>REQ_WriteNoSnpFull</code>.'
+    },
+    'HN_ST_ISSUE_PCRD': {
+      lead: 'HN_ST_ISSUE_PCRD — protocol credit issue.',
+      body: 'After a RetryAck-rejected transaction was queued, grant a PCrd to the requester so it can re-issue. Carries <code>pcrd_type</code> matching the original request.'
+    },
+    'HN_ST_ERROR': {
+      lead: 'HN_ST_ERROR — fatal protocol violation.',
+      body: 'Latched if a transaction state transition fires unexpectedly. <code>error_handler</code> escalates to <code>irq_fatal</code>.'
+    }
+  };
+  document.querySelectorAll('.hn-fsm-cell').forEach(function(c) {
+    c.addEventListener('click', function() {
+      document.querySelectorAll('.hn-fsm-cell').forEach(function(x) { x.classList.remove('active'); });
+      c.classList.add('active');
+      var d = hnDescriptions[c.getAttribute('data-st')];
+      document.getElementById('hnFsmDesc').innerHTML =
+        '<div class="lead">' + d.lead + '</div><span>' + d.body + '</span>';
+    });
+  });
+
+  // ---------- Directory inspector ----------
+  var dirState = 'SC';
+  var dirSharers = [true, true, false, false];
+  function renderDir() {
+    document.querySelectorAll('[data-state]').forEach(function(c) {
+      c.classList.toggle('sel', c.getAttribute('data-state') === dirState);
+    });
+    document.querySelectorAll('[data-rn]').forEach(function(c) {
+      var idx = +c.getAttribute('data-rn');
+      c.classList.toggle('set', dirSharers[idx]);
+    });
+    var dirty = (dirState === 'O' || dirState === 'M');
+    document.getElementById('dirDirty').textContent = dirty ? '1' : '0';
+    var implication = '';
+    var sharerCount = dirSharers.filter(function(x) { return x; }).length;
+    var sharerNames = dirSharers.map(function(s, i) { return s ? 'RN' + i : null; }).filter(function(x) { return x; });
+    if (dirState === 'I') {
+      implication = 'Line is invalid. Any request requires a fetch from memory via SN.';
+    } else if (dirState === 'SC') {
+      implication = sharerCount + ' RN(s) hold the line clean (' + sharerNames.join(', ') + '). A new ReadShared can be served from LLC without snooping. A ReadUnique must invalidate all sharers via SnpUnique.';
+    } else if (dirState === 'UC') {
+      implication = 'Exactly one RN (' + (sharerNames[0] || 'none') + ') has the line in Unique state, clean. Most requests will require a snoop to that RN.';
+    } else if (dirState === 'O') {
+      implication = '<b>Owned (Shared Dirty).</b> ' + (sharerNames[0] || 'A node') + ' has the canonical copy and is responsible for writeback. Other readers must snoop the owner for data.';
+    } else if (dirState === 'M') {
+      implication = '<b>Modified.</b> ' + (sharerNames[0] || 'A node') + ' holds the only writable copy with stale memory. Any read must snoop and the snoopee provides the dirty data.';
+    }
+    document.getElementById('dirImpact').innerHTML = '<b>Implication:</b> ' + implication;
+  }
+  document.querySelectorAll('[data-state]').forEach(function(c) {
+    c.addEventListener('click', function() {
+      dirState = c.getAttribute('data-state');
+      renderDir();
+    });
+  });
+  document.querySelectorAll('[data-rn]').forEach(function(c) {
+    c.addEventListener('click', function() {
+      var idx = +c.getAttribute('data-rn');
+      dirSharers[idx] = !dirSharers[idx];
+      renderDir();
+    });
+  });
+  renderDir();
+
+  // ---------- SN FSM ----------
+  document.querySelectorAll('[data-sst]').forEach(function(r) {
+    r.addEventListener('click', function() {
+      document.querySelectorAll('[data-sst]').forEach(function(x) { x.classList.remove('active'); });
+      r.classList.add('active');
+    });
+  });
+
+  // ---------- Lifecycle simulator ----------
+  var lifeSteps = [
+    {
+      explain: { lead: 'Step 0 — Setup.', body: 'RN0 cache misses on <code>0x4000</code>. Directory says no copy anywhere; LLC empty. SN will be involved.' },
+      nodes: { rn: 'IDLE', hn: 'IDLE', sn: 'IDLE' },
+      arrows: []
+    },
+    {
+      explain: { lead: 'Step 1 — RN0 issues REQ_ReadShared.', body: '<code>send_req</code> goes high. TXNID 0 allocated. REQ flit on the wire, routed through NoC to HN.' },
+      nodes: { rn: 'SEND_REQ', hn: 'IDLE', sn: 'IDLE' },
+      arrows: ['req-rn-hn']
+    },
+    {
+      explain: { lead: 'Step 2 — HN receives REQ, allocates slot 5.', body: 'Slot allocator picks lowest free index. Slot stores src_id = 0, addr = 0x4000, opcode = ReadShared. Transition to DIR_LOOKUP. Credit returned to RN0 via <code>rxreqlcrdv</code>.' },
+      nodes: { rn: 'WAIT_DATA', hn: 'DIR_LOOKUP', sn: 'IDLE' },
+      arrows: []
+    },
+    {
+      explain: { lead: 'Step 3 — Directory lookup completes (4 cycles).', body: 'Result: entry invalid, no sharers, no LLC data. Need to fetch from SN. State advances to FETCH_MEM.' },
+      nodes: { rn: 'WAIT_DATA', hn: 'FETCH_MEM', sn: 'IDLE' },
+      arrows: []
+    },
+    {
+      explain: { lead: 'Step 4 — HN issues REQ_ReadNoSnp to SN.', body: 'New REQ flit with HN as src_id, SN as tgt_id. Note in current RTL <code>sn_link.txreqflitv</code> is tied to 0 (HN TODO) — this step is the unimplemented gap.' },
+      nodes: { rn: 'WAIT_DATA', hn: 'WAIT_MEM_DATA', sn: 'ISSUE_DBID' },
+      arrows: ['req-hn-sn']
+    },
+    {
+      explain: { lead: 'Step 5 — SN responds with RSP_Comp + drives AXI4 AR.', body: 'For a read, SN sends Comp immediately. <code>mem_arvalid</code> goes high (TODO in current RTL). DDR latency ~120 cycles.' },
+      nodes: { rn: 'WAIT_DATA', hn: 'WAIT_MEM_DATA', sn: 'MEM_READ' },
+      arrows: ['rsp-sn-hn']
+    },
+    {
+      explain: { lead: 'Step 6 — Memory returns data. SN sends DAT_CompData to HN.', body: 'AXI4 R channel fires <code>mem_rvalid</code>. SN packs <code>mem_rdata</code> into a DAT_CompData flit and sends to HN.' },
+      nodes: { rn: 'WAIT_DATA', hn: 'WAIT_MEM_DATA', sn: 'SEND_COMP' },
+      arrows: ['dat-sn-hn']
+    },
+    {
+      explain: { lead: 'Step 7 — HN forwards CompData to RN0 + updates directory.', body: 'DAT_CompData with resp = SC (Shared Clean). Sharers bitmap updated: RN0 now a sharer. State transitions to SEND_DATA_RN, then WAIT_COMP_ACK.' },
+      nodes: { rn: 'WAIT_DATA', hn: 'WAIT_COMP_ACK', sn: 'IDLE' },
+      arrows: ['dat-hn-rn']
+    },
+    {
+      explain: { lead: 'Step 8 — RN0 receives CompData. Drives cache_rdata_valid.', body: 'L2 cache fills the line in SC state. RN0 transitions to SEND_COMP_ACK.' },
+      nodes: { rn: 'SEND_COMP_ACK', hn: 'WAIT_COMP_ACK', sn: 'IDLE' },
+      arrows: []
+    },
+    {
+      explain: { lead: 'Step 9 — RN0 sends RSP_CompAck.', body: 'Acknowledgement back to HN. HN can now free slot 5 and the directory entry is committed.' },
+      nodes: { rn: 'IDLE', hn: 'IDLE', sn: 'IDLE' },
+      arrows: ['rsp-hn-rn']
+    },
+    {
+      explain: { lead: 'Step 10 — Transaction complete.', body: 'RN0 has the line in SC. HN slot freed. SN slot freed. RN0\'s TXNID 0 freed (in correct RTL — currently leaks per <code>chi_rn.sv:296</code> TODO). 9 cycles end-to-end ignoring memory and NoC hop latency.' },
+      nodes: { rn: 'IDLE', hn: 'IDLE', sn: 'IDLE' },
+      arrows: []
+    }
+  ];
+
+  var lifeIdx = 0;
+  var lifeTimer = null;
+
+  function renderLife() {
+    var step = lifeSteps[lifeIdx];
+    document.getElementById('lifeStepN').textContent = lifeIdx;
+    document.getElementById('lfn-rn-state').textContent = step.nodes.rn;
+    document.getElementById('lfn-hn-state').textContent = step.nodes.hn;
+    document.getElementById('lfn-sn-state').textContent = step.nodes.sn;
+    document.getElementById('lfn-rn').classList.toggle('active', step.nodes.rn !== 'IDLE');
+    document.getElementById('lfn-hn').classList.toggle('active', step.nodes.hn !== 'IDLE');
+    document.getElementById('lfn-sn').classList.toggle('active', step.nodes.sn !== 'IDLE');
+
+    ['req-rn-hn', 'rsp-hn-rn', 'snp-hn-rn', 'dat-hn-rn',
+     'req-hn-sn', 'rsp-sn-hn', 'dat-sn-hn'].forEach(function(id) {
+      var arr = document.getElementById('lfa-' + id);
+      var lbl = document.getElementById('lfl-' + id);
+      var active = step.arrows.indexOf(id) >= 0;
+      arr.classList.toggle('active', active);
+      lbl.classList.toggle('active', active);
+    });
+
+    document.getElementById('lifeExplain').innerHTML =
+      '<div><span class="step-num">step ' + lifeIdx + '</span><span class="lead" style="display: inline;">' + step.explain.lead + '</span></div>' +
+      '<span style="display: block; margin-top: 8px;">' + step.explain.body + '</span>';
+  }
+
+  document.getElementById('lifeStep').addEventListener('click', function() {
+    if (lifeIdx < lifeSteps.length - 1) lifeIdx++;
+    renderLife();
+  });
+  document.getElementById('lifeReset').addEventListener('click', function() {
+    if (lifeTimer) { clearInterval(lifeTimer); lifeTimer = null; document.getElementById('lifeAuto').textContent = 'Auto-play'; }
+    lifeIdx = 0; renderLife();
+  });
+  document.getElementById('lifeAuto').addEventListener('click', function() {
+    var btn = document.getElementById('lifeAuto');
+    if (lifeTimer) {
+      clearInterval(lifeTimer); lifeTimer = null; btn.textContent = 'Auto-play';
+      return;
+    }
+    if (lifeIdx >= lifeSteps.length - 1) lifeIdx = 0;
+    btn.textContent = 'Pause';
+    lifeTimer = setInterval(function() {
+      if (lifeIdx >= lifeSteps.length - 1) {
+        clearInterval(lifeTimer); lifeTimer = null; btn.textContent = 'Auto-play';
+        return;
+      }
+      lifeIdx++;
+      renderLife();
+    }, 1800);
+  });
+  renderLife();
+
+  // Quiz reveals
+  document.querySelectorAll('.quiz .reveal').forEach(function(btn) {
+    btn.addEventListener('click', function() { btn.parentElement.classList.add('open'); });
+  });
+</script>
+</body>
+</html>
