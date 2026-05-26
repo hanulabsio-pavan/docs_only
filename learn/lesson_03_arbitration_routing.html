@@ -476,8 +476,8 @@
       ptr = winner;
       document.getElementById('rrValid').textContent = '1';
       document.getElementById('rrSummary').innerHTML =
-        'Search from <code>(ptr_q + 1) % N = ' + ((ptr + 1) % NUM_REQ +
-        ')</code>. Granted port <b>' + winner + '</b>. Pointer advances to <b>' + winner + '</b>.';
+        'Search from <code>(ptr_q + 1) % N = ' + ((ptr + 1) % NUM_REQ) +
+        '</code>. Granted port <b>' + winner + '</b>. Pointer advances to <b>' + winner + '</b>.';
     } else {
       document.getElementById('rrValid').textContent = '0';
       document.getElementById('rrSummary').textContent = 'No requests — no grant issued.';
