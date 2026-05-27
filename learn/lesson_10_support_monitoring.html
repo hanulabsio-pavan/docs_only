@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 10 — Support &amp; Monitoring · hanuma</title>
+<style>
+  :root {
+    --bg: #0a0a0b; --surface: #18181b; --surface-2: #27272a;
+    --text: #fafafa; --text-muted: #a1a1aa; --text-dim: #71717a;
+    --border: #27272a; --border-strong: #3f3f46;
+    --c-req: #60a5fa; --c-rsp: #4ade80; --c-snp: #fbbf24; --c-dat: #c084fc;
+    --c-req-bg: rgba(96, 165, 250, 0.12);
+    --c-rsp-bg: rgba(74, 222, 128, 0.12);
+    --c-snp-bg: rgba(251, 191, 36, 0.12);
+    --c-dat-bg: rgba(192, 132, 252, 0.12);
+    --c-rn: #22d3ee;
+    --c-err: #ef4444;
+    --c-err-bg: rgba(239, 68, 68, 0.15);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --radius: 10px; --radius-lg: 16px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.6; }
+  code { color: var(--text); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 0.92em; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top { position: sticky; top: 0; z-index: 100;
+    background: rgba(10, 10, 11, 0.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border); }
+  nav.top .inner { display: flex; align-items: center; justify-content: space-between;
+    height: 56px; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  nav.top .brand { font-weight: 600; font-size: 15px; }
+  nav.top .brand span.dim { color: var(--text-dim); font-weight: 400; }
+  nav.top ul { display: flex; gap: 22px; list-style: none; padding: 0; margin: 0; }
+  nav.top a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+  nav.top a:hover { color: var(--text); }
+  .hero { padding: 64px 0 48px; }
+  .hero .eyebrow { display: inline-block; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 16px;
+    color: var(--c-rsp); background: var(--c-rsp-bg); }
+  .hero h1 { font-size: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 0 0 16px; line-height: 1.15; }
+  .hero p.lead { font-size: 18px; color: var(--text-muted); max-width: 720px; margin: 0 0 32px; }
+  .hero .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 720px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat .v { font-size: 22px; font-weight: 600; }
+  .stat .l { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  section h2 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; }
+  section h2 .num { display: inline-block; width: 32px; height: 32px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted);
+    font-size: 14px; font-weight: 500; text-align: center; line-height: 30px;
+    margin-right: 12px; vertical-align: 2px; }
+  section .sub { color: var(--text-muted); margin: 0 0 32px; font-size: 16px; max-width: 720px; }
+  h3 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+  .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); cursor: pointer; font-size: 14px;
+    font-weight: 500; transition: all 0.15s; color: var(--text); font-family: inherit; }
+  .btn:hover { background: var(--border-strong); }
+  .btn.primary { background: var(--c-req); color: #000; border-color: var(--c-req); }
+  .btn.primary:hover { background: #93c5fd; }
+  .code-table { width: 100%; border-collapse: collapse; font-size: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; }
+  .code-table th, .code-table td { text-align: left; padding: 12px 16px;
+    border-bottom: 1px solid var(--border); color: var(--text); }
+  .code-table tr:last-child td { border-bottom: none; }
+  .code-table th { font-size: 12px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface-2); }
+  .code-table td.path { font-family: var(--mono); font-size: 12px; }
+  .code-table td.line { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+  .quiz { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; }
+  .quiz .q { margin-bottom: 24px; }
+  .quiz .q:last-child { margin-bottom: 0; }
+  .quiz .q .question { font-weight: 500; margin-bottom: 8px; }
+  .quiz .q .reveal { padding: 6px 12px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    background: var(--surface-2); color: var(--text-muted); font-family: inherit; }
+  .quiz .q .reveal:hover { background: var(--border-strong); color: var(--text); }
+  .quiz .q .answer { display: none; margin-top: 12px; padding: 14px;
+    background: var(--c-rsp-bg); border-left: 3px solid var(--c-rsp);
+    border-radius: 4px; font-size: 14px; }
+  .quiz .q.open .answer { display: block; }
+  .quiz .q.open .reveal { display: none; }
+  .finale-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: white; border-radius: var(--radius-lg); padding: 40px; margin: 32px 0;
+    border: 1px solid var(--border-strong); text-align: center; }
+  .finale-card .eyebrow { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--c-rsp); font-weight: 600; }
+  .finale-card h3 { margin: 12px 0 16px; color: white; font-size: 28px;
+    letter-spacing: -0.02em; font-weight: 600; }
+  .finale-card p { color: #d4d4d8; margin: 0 0 20px; max-width: 600px;
+    margin-left: auto; margin-right: auto; }
+  .finale-card .lesson-list { display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px; margin-top: 20px; text-align: left; }
+  .finale-card .lesson-item { background: rgba(255,255,255,0.05);
+    padding: 12px 14px; border-radius: 8px; font-size: 13px;
+    border: 1px solid rgba(255,255,255,0.1); }
+  .finale-card .lesson-item .n { font-family: var(--mono); color: var(--c-rsp);
+    font-size: 11px; font-weight: 600; }
+  .finale-card .lesson-item .t { color: white; margin-top: 2px; }
+  footer { padding: 32px 0; color: var(--text-muted); font-size: 13px; text-align: center; }
+  @media (max-width: 720px) {
+    .hero h1 { font-size: 30px; }
+    .hero .stats { grid-template-columns: repeat(2, 1fr); }
+    nav.top ul { display: none; }
+  }
+
+  /* perf_monitor */
+  .pm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .pm-counter { background: var(--surface-2); border: 1px solid var(--border-strong);
+    border-radius: 8px; padding: 14px; text-align: center; cursor: pointer;
+    transition: all 0.15s; }
+  .pm-counter:hover { background: var(--border-strong); }
+  .pm-counter.firing { background: var(--c-rsp-bg); border-color: var(--c-rsp);
+    transform: scale(1.03); }
+  .pm-counter .ev { font-family: var(--mono); font-size: 10px;
+    color: var(--text-muted); margin-bottom: 4px; }
+  .pm-counter .val { font-family: var(--mono); font-size: 18px; font-weight: 600;
+    color: var(--text); }
+  .pm-counter .en { display: inline-block; padding: 2px 6px;
+    background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: 4px; font-family: var(--mono); font-size: 9px;
+    color: var(--text-dim); margin-top: 4px; }
+  .pm-counter.firing .en { background: var(--c-rsp); color: #000; border-color: var(--c-rsp); }
+  .pm-readout { display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    padding: 14px; background: var(--surface-2); border-radius: 8px; margin-top: 16px;
+    font-size: 13px; }
+  .pm-readout .lbl { color: var(--text-muted); }
+  .pm-readout .vl { font-family: var(--mono); font-weight: 600; color: var(--text); }
+  .pm-readout select { background: var(--surface); color: var(--text);
+    border: 1px solid var(--border-strong); padding: 4px 8px; border-radius: 4px;
+    font-family: var(--mono); font-size: 12px; }
+
+  /* error_handler */
+  .err-srcs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    margin-bottom: 16px; }
+  .err-src { padding: 12px; border-radius: 8px; cursor: pointer;
+    background: var(--surface-2); border: 1px solid var(--border-strong);
+    transition: all 0.15s; }
+  .err-src:hover { background: var(--border-strong); }
+  .err-src .idx { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+  .err-src .nm { font-family: var(--mono); font-size: 12px; color: var(--text); margin-top: 2px; }
+  .err-src .sev { font-size: 10px; color: var(--text-muted); margin-top: 4px;
+    text-transform: uppercase; letter-spacing: 0.05em; }
+  .err-src.firing { background: var(--c-err-bg); border-color: var(--c-err); }
+  .err-src.firing .nm { color: var(--c-err); font-weight: 600; }
+  .err-status-row { display: grid; grid-template-columns: 130px 1fr; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; align-items: center; }
+  .err-status-row:last-child { border-bottom: none; }
+  .err-status-row .nm { font-family: var(--mono); color: var(--text-muted); font-weight: 600; }
+  .err-status-row .v { font-family: var(--mono); color: var(--text); }
+  .err-status-row .v.hi { color: var(--c-rsp); }
+  .err-status-row .v.lo { color: var(--text-dim); }
+  .err-status-row .v.fatal { color: var(--c-err); font-weight: 600; }
+  .err-bits { display: flex; gap: 4px; }
+  .err-bit { width: 28px; height: 28px; border: 1px solid var(--border-strong);
+    border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.15s;
+    background: var(--surface-2); color: var(--text-dim); }
+  .err-bit:hover { background: var(--border-strong); }
+  .err-bit.set { background: var(--c-err); color: #fff; border-color: var(--c-err); }
+
+  /* timeout_mgr */
+  .to-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .to-slot { background: var(--surface-2); border: 1.5px solid var(--border-strong);
+    border-radius: 8px; padding: 12px; transition: all 0.2s; }
+  .to-slot.active { border-color: var(--c-snp); background: var(--c-snp-bg); }
+  .to-slot.expired { border-color: var(--c-err); background: var(--c-err-bg); }
+  .to-slot .idx { font-family: var(--mono); font-size: 10px; color: var(--text-muted); }
+  .to-slot .txn { font-family: var(--mono); font-size: 12px; color: var(--text); margin-top: 4px; }
+  .to-slot .timer { font-family: var(--mono); font-size: 18px; font-weight: 600;
+    color: var(--text); margin-top: 4px; }
+  .to-slot.expired .timer { color: var(--c-err); }
+  .to-bar { display: flex; height: 4px; background: var(--border);
+    border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .to-bar .fill { height: 100%; background: var(--c-snp);
+    transition: width 0.3s; }
+  .to-slot.expired .to-bar .fill { background: var(--c-err); }
+
+  /* qos_manager */
+  .qos-agents { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .qos-agent { padding: 14px; background: var(--surface-2);
+    border-radius: 8px; border: 1px solid var(--border-strong); }
+  .qos-agent.granted { border-color: var(--c-rsp); background: var(--c-rsp-bg); }
+  .qos-agent .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .qos-agent .nm { font-family: var(--mono); font-weight: 600; }
+  .qos-agent .cls { font-family: var(--mono); font-size: 11px; padding: 2px 8px;
+    border-radius: 4px; background: var(--surface); border: 1px solid var(--border-strong);
+    color: var(--text-muted); }
+  .qos-agent .cls.HI { background: var(--c-err-bg); color: var(--c-err); border-color: var(--c-err); }
+  .qos-agent .cls.ME { background: var(--c-snp-bg); color: var(--c-snp); border-color: var(--c-snp); }
+  .qos-agent .cls.LE { background: var(--c-dat-bg); color: var(--c-dat); border-color: var(--c-dat); }
+  .qos-agent .cls.BE { background: var(--surface); color: var(--text-muted); }
+  .qos-slider-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .qos-slider-row label { font-size: 12px; color: var(--text-muted); width: 60px; }
+  .qos-slider-row input[type="range"] { flex: 1; }
+  .qos-slider-row .val { font-family: var(--mono); width: 24px; text-align: center;
+    color: var(--text); font-weight: 600; }
+  .qos-valid-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 13px; }
+  .qos-valid-row .v { font-family: var(--mono); font-weight: 600; color: var(--text); }
+  .qos-tokens-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    padding: 14px; background: var(--surface-2); border-radius: 8px; margin-top: 16px; }
+  .qos-tok-cls { text-align: center; padding: 10px; border-radius: 6px;
+    background: var(--surface); border: 1px solid var(--border-strong); }
+  .qos-tok-cls.granted { border-color: var(--c-rsp); background: var(--c-rsp-bg); }
+  .qos-tok-cls .nm { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+  .qos-tok-cls .v { font-family: var(--mono); font-size: 18px; font-weight: 600; }
+  .qos-out { padding: 14px; background: var(--surface-2); border-radius: 8px;
+    margin-top: 16px; font-family: var(--mono); font-size: 13px; }
+
+  /* flow_control_unit */
+  .fc-rows { display: grid; gap: 8px; }
+  .fc-row { display: grid; grid-template-columns: 80px 1fr 90px 130px 130px;
+    gap: 12px; align-items: center; padding: 12px 14px;
+    background: var(--surface-2); border: 1px solid var(--border-strong);
+    border-radius: 8px; }
+  .fc-row .ch { font-family: var(--mono); font-weight: 600; font-size: 13px; }
+  .fc-row .ch.req { color: var(--c-req); }
+  .fc-row .ch.rsp { color: var(--c-rsp); }
+  .fc-row .ch.snp { color: var(--c-snp); }
+  .fc-row .ch.dat { color: var(--c-dat); }
+  .fc-row .bar { height: 24px; border-radius: 4px; background: var(--surface);
+    border: 1px solid var(--border-strong); position: relative; overflow: hidden; }
+  .fc-row .bar .fill { height: 100%; transition: width 0.3s; }
+  .fc-row .bar.req .fill { background: var(--c-req); }
+  .fc-row .bar.rsp .fill { background: var(--c-rsp); }
+  .fc-row .bar.snp .fill { background: var(--c-snp); }
+  .fc-row .bar.dat .fill { background: var(--c-dat); }
+  .fc-row .count { font-family: var(--mono); font-size: 14px; text-align: center;
+    font-weight: 600; }
+  .fc-row .stall { font-family: var(--mono); font-size: 11px; text-align: center;
+    padding: 4px; border-radius: 4px; }
+  .fc-row .stall.ok { background: var(--c-rsp-bg); color: var(--c-rsp); }
+  .fc-row .stall.bad { background: var(--c-err-bg); color: var(--c-err); }
+  .fc-row .actions { display: flex; gap: 4px; }
+  .fc-row .actions button { padding: 4px 8px; font-size: 11px; }
+
+  /* power_mgmt */
+  .pm-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    max-width: 480px; margin: 0 auto; }
+  .pm-tile { aspect-ratio: 1; border-radius: 8px; padding: 8px;
+    background: var(--surface-2); border: 2px solid var(--border-strong);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.2s;
+    text-align: center; }
+  .pm-tile.PM_ACTIVE { background: rgba(74, 222, 128, 0.15); border-color: var(--c-rsp);
+    color: var(--c-rsp); }
+  .pm-tile.PM_IDLE { background: rgba(251, 191, 36, 0.15); border-color: var(--c-snp);
+    color: var(--c-snp); }
+  .pm-tile.PM_GATED { background: var(--surface); border-color: var(--text-dim);
+    color: var(--text-dim); opacity: 0.6; }
+  .pm-tile .st { font-weight: 600; }
+  .pm-tile .ck { font-size: 9px; margin-top: 2px; }
+  .pm-tile .idle { font-size: 9px; margin-top: 2px; }
+  .pm-fsm-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; align-items: center; }
+  .pm-fsm-row:last-child { border-bottom: none; }
+  .pm-fsm-row .nm { font-family: var(--mono); font-weight: 600; }
+  .pm-fsm-row .nm.PM_ACTIVE { color: var(--c-rsp); }
+  .pm-fsm-row .nm.PM_IDLE { color: var(--c-snp); }
+  .pm-fsm-row .nm.PM_GATED { color: var(--text-dim); }
+  .pm-fsm-row .d { color: var(--text-muted); }
+
+  /* Bug callout */
+  .obs-card { padding: 18px; border-radius: 10px; margin-bottom: 12px;
+    background: rgba(74, 222, 128, 0.1); border-left: 4px solid var(--c-rsp); }
+  .obs-card .head { font-weight: 600; margin-bottom: 4px; font-size: 14px; color: var(--text); }
+  .obs-card .body { font-size: 13px; color: var(--text-muted); }
+  .obs-card .body code { background: var(--bg); }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="inner">
+    <div class="brand">hanuma <span class="dim">/ learning / lesson 10</span></div>
+    <ul>
+      <li><a href="#why">Why support</a></li>
+      <li><a href="#perf">perf_monitor</a></li>
+      <li><a href="#err">error_handler</a></li>
+      <li><a href="#to">timeout_mgr</a></li>
+      <li><a href="#qos">qos_manager</a></li>
+      <li><a href="#fc">flow_control</a></li>
+      <li><a href="#pm">power_mgmt</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <header class="hero">
+    <span class="eyebrow">Lesson 10 of 10 · Finale</span>
+    <h1>Support &amp; Monitoring</h1>
+    <p class="lead">
+      Six cross-cutting modules that observe the data path you've spent nine
+      lessons learning. They don't move flits — they count, score, watchdog,
+      arbitrate by QoS, track credits, and gate clocks. Each is small in isolation
+      but together they're how silicon survives in production.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="v">6</div><div class="l">Files</div></div>
+      <div class="stat"><div class="v">~800</div><div class="l">Lines of RTL</div></div>
+      <div class="stat"><div class="v">0</div><div class="l">In the data path</div></div>
+      <div class="stat"><div class="v">~40 min</div><div class="l">To finish</div></div>
+    </div>
+  </header>
+
+  <section id="why">
+    <h2><span class="num">1</span>What "support" means here</h2>
+    <p class="sub">
+      Everything in this lesson is on the <i>side</i> of the data path, observing
+      or controlling it rather than carrying flits. If you removed them all, a
+      flit could still traverse RN → HN → SN. But you'd have no idea how, no
+      protection if something jammed, no fair QoS sharing, and no way to save
+      power when traffic was light.
+    </p>
+    <div class="card">
+      <table class="code-table">
+        <thead><tr><th>Module</th><th>Observes</th><th>Acts on</th><th>If removed</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="path">perf_monitor</td>
+            <td>flit injections, ejections, stalls, retries</td>
+            <td>read-only counters via CSR</td>
+            <td>blind to performance — can't tune the design</td>
+          </tr>
+          <tr>
+            <td class="path">error_handler</td>
+            <td>error pulses from every sub-block</td>
+            <td>sticky status + 3-tier IRQ + first-fault capture</td>
+            <td>errors lost as soon as they fire — unrecoverable</td>
+          </tr>
+          <tr>
+            <td class="path">timeout_mgr</td>
+            <td>arm / disarm pulses, free-running counters</td>
+            <td>timeout_hit pulse with txnid</td>
+            <td>stuck transactions never detected, design hangs forever</td>
+          </tr>
+          <tr>
+            <td class="path">qos_manager</td>
+            <td>per-agent QoS values + valids</td>
+            <td>arbitrated single output, class-weighted</td>
+            <td>FCFS only — no priority for latency-critical traffic</td>
+          </tr>
+          <tr>
+            <td class="path">flow_control_unit</td>
+            <td>flit send / lcrd return per channel</td>
+            <td>stall outputs to SA, credit counters</td>
+            <td>flits sent into receiver overflow → silent data loss</td>
+          </tr>
+          <tr>
+            <td class="path">power_mgmt</td>
+            <td>per-tile activity + idle counter</td>
+            <td>clock-gate enables to ICG cells</td>
+            <td>full power consumption even when idle</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="perf">
+    <h2><span class="num">2</span>perf_monitor — 8 configurable counters per tile</h2>
+    <p class="sub">
+      Each router tile carries one <code>perf_monitor</code> with eight 32-bit
+      counters. Each counter watches one configurable event from
+      <code>noc_pm_event_e</code> (REQ_INJECT, RSP_EJECT, STALL_VC_FULL, etc.).
+      Click an event chip to fire it; pick the readout index to inspect that
+      counter.
+    </p>
+
+    <div class="card">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+        <button class="btn primary" id="pmFire">Fire 1 event on enabled counters</button>
+        <button class="btn" id="pmFire10">Fire 10 events</button>
+        <button class="btn" id="pmClear">clear_all = 1</button>
+      </div>
+      <div class="pm-grid" id="pmGrid"></div>
+      <div class="pm-readout">
+        <span class="lbl">rd_idx:</span>
+        <select id="pmRdIdx">
+          <option value="0">0</option><option value="1">1</option>
+          <option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option>
+          <option value="6">6</option><option value="7">7</option>
+        </select>
+        <span class="lbl">→ rd_count = </span><span class="vl" id="pmRdCount">0</span>
+        <span class="lbl" style="margin-left: 20px;">overflow:</span>
+        <span class="vl" id="pmOvf">0</span>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 16px;">
+        Click any counter card to toggle its enable. The combinational pipe:
+        <code>event_en[i] &amp;&amp; counters[i] != '1</code> →
+        <code>counters[i] &lt;= counters[i] + 1</code>. Saturating at <code>0xFFFFFFFF</code>
+        with sticky <code>ovf[i]</code>.
+      </p>
+    </div>
+  </section>
+
+  <section id="err">
+    <h2><span class="num">3</span>error_handler — aggregate, prioritize, latch</h2>
+    <p class="sub">
+      Errors fire as single-cycle pulses from sub-blocks all over the design. The
+      handler latches them in sticky <code>err_status</code> bits, captures the
+      <code>node_id</code> at first fault, priority-encodes the highest-severity
+      active error into <code>err_code</code>, and groups severity into three
+      IRQ levels.
+    </p>
+
+    <div class="card">
+      <h3 style="margin-top: 0">Click any source to fire / clear</h3>
+      <div class="err-srcs" id="errSrcs"></div>
+
+      <div style="padding: 16px; background: var(--surface-2); border-radius: 8px; margin-top: 16px;">
+        <div class="err-status-row">
+          <div class="nm">err_status[7:0]</div>
+          <div class="err-bits" id="errBits"></div>
+        </div>
+        <div class="err-status-row">
+          <div class="nm">err_code</div>
+          <div class="v" id="errCode">ERR_NONE</div>
+        </div>
+        <div class="err-status-row">
+          <div class="nm">err_capture_id</div>
+          <div class="v" id="errCapId">—</div>
+        </div>
+        <div class="err-status-row">
+          <div class="nm">err_valid</div>
+          <div class="v" id="errValid">0</div>
+        </div>
+        <div class="err-status-row" style="background: var(--bg); border-radius: 6px; padding: 10px 14px; margin: 10px -10px 0;">
+          <div class="nm">IRQ outputs</div>
+          <div style="display: flex; gap: 12px; font-family: var(--mono); font-size: 13px;">
+            <span>fatal = <span id="irqFatal">0</span></span>
+            <span>error = <span id="irqError">0</span></span>
+            <span>warning = <span id="irqWarning">0</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;">
+        <button class="btn" id="errClearAll">Write-1-to-clear all (err_clear = 8'hFF)</button>
+        <button class="btn" id="errReset">Reset</button>
+        <span style="font-size: 12px; color: var(--text-muted); align-self: center; margin-left: auto;">
+          err_status is sticky — cleared only via explicit write-1-to-clear from CSR.
+        </span>
+      </div>
+
+      <h3>Severity grouping (chi_link_layer.sv:106)</h3>
+      <table class="code-table">
+        <thead><tr><th>IRQ output</th><th>Bits</th><th>Sources</th></tr></thead>
+        <tbody>
+          <tr><td class="path">irq_fatal</td><td class="path">err_status[7:5]</td><td>VC overflow · routing · link training timeout</td></tr>
+          <tr><td class="path">irq_error</td><td class="path">err_status[4:3]</td><td>deadlock · transaction timeout</td></tr>
+          <tr><td class="path">irq_warning</td><td class="path">err_status[2:0]</td><td>protocol · ECC correctable · ECC uncorrectable</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="to">
+    <h2><span class="num">4</span>timeout_mgr — 64 watchdog timers in parallel</h2>
+    <p class="sub">
+      A pool of timer slots. <code>start_valid</code> arms a slot with a threshold
+      and a TXNID; the counter decrements every cycle until <code>stop_valid</code>
+      disarms it or it reaches zero (timeout). On expiry, the slot fires
+      <code>timeout_hit</code> with the captured <code>timeout_txnid</code>.
+    </p>
+
+    <div class="card">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center;">
+        <button class="btn primary" id="toTick">Tick (decrement all)</button>
+        <button class="btn" id="toTick10">Tick × 10</button>
+        <button class="btn" id="toArm">Arm random slot (threshold = 8)</button>
+        <button class="btn" id="toStop">Disarm random active</button>
+        <button class="btn" id="toReset">Reset</button>
+        <span style="margin-left: auto; font-size: 13px; color: var(--text-muted);">
+          Showing 8 of 64 slots
+        </span>
+      </div>
+
+      <div class="to-slots" id="toSlots"></div>
+
+      <div style="padding: 14px; background: var(--surface-2); border-radius: 8px;
+                  margin-top: 16px; font-family: var(--mono); font-size: 13px;">
+        <div>timeout_hit = <span id="toHit">0</span></div>
+        <div>timeout_slot = <span id="toSlot">—</span></div>
+        <div>timeout_txnid = <span id="toTxnid">—</span></div>
+      </div>
+
+      <p style="font-size: 14px; color: var(--text-muted); margin-top: 16px;">
+        <b>Why centralized?</b> Every individual transaction tracker (RN MSHR,
+        HN slot, SN slot) could maintain its own timer, but that's 100+ counters
+        ticking every cycle. Centralizing into <code>timeout_mgr</code> lets one
+        comb scan pick the first expiring slot per cycle, share a single
+        CSR-configurable threshold, and capture the offending TXNID for debug.
+      </p>
+    </div>
+  </section>
+
+  <section id="qos">
+    <h2><span class="num">5</span>qos_manager — class-weighted round-robin</h2>
+    <p class="sub">
+      Four agents each present a flit with a 4-bit QoS value (0-15). The manager
+      maps QoS into four classes (BE / LE / ME / HI), runs weighted round-robin
+      across classes (default weights 1 / 2 / 4 / 8), and within each class
+      runs simple round-robin across agents. Adjust the sliders below.
+    </p>
+
+    <div class="card">
+      <div class="qos-agents" id="qosAgents"></div>
+
+      <h3>Per-class token state</h3>
+      <div class="qos-tokens-grid" id="qosTokens"></div>
+
+      <div class="qos-out" id="qosOut">
+        <div>valid_out = 0</div>
+        <div>class_out = —</div>
+        <div>flit_out = (no winner)</div>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;">
+        <button class="btn primary" id="qosTick">Tick (consume tokens)</button>
+        <button class="btn" id="qosReset">Reset</button>
+      </div>
+
+      <h3>QoS → class mapping</h3>
+      <table class="code-table">
+        <thead><tr><th>QoS range</th><th>Class</th><th>Default weight</th><th>Use case</th></tr></thead>
+        <tbody>
+          <tr><td class="path">12-15</td><td>HI</td><td>8</td><td>Latency-critical (cache fills)</td></tr>
+          <tr><td class="path">8-11</td><td>ME</td><td>4</td><td>Coherency snoops</td></tr>
+          <tr><td class="path">4-7</td><td>LE</td><td>2</td><td>Speculative reads</td></tr>
+          <tr><td class="path">0-3</td><td>BE</td><td>1</td><td>Background / DMA writes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="fc">
+    <h2><span class="num">6</span>flow_control_unit — per-channel credit pool</h2>
+    <p class="sub">
+      All four CHI channels on one physical port, gathered into one place. Each
+      channel has a credit counter that decrements on flit-sent and increments on
+      lcrd-return. When a counter hits zero, the matching <code>*_stall</code>
+      output tells SA to stop choosing that channel.
+    </p>
+
+    <div class="card">
+      <div class="fc-rows" id="fcRows"></div>
+
+      <div style="padding: 14px; background: var(--surface-2); border-radius: 8px;
+                  margin-top: 16px; font-size: 13px;">
+        <div style="margin-bottom: 8px;"><b>crd_overflow_err</b> = <span style="font-family: var(--mono); color: var(--c-err);" id="fcOvfErr">0</span></div>
+        <div style="color: var(--text-muted);">
+          Fires if an lcrd_return arrives when the counter is already at
+          <code>max_count</code>. Indicates a programming bug — either the
+          peer returned a credit you never spent, or the init value was wrong.
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;">
+        <button class="btn primary" id="fcInit">Re-init from link training</button>
+        <button class="btn" id="fcSendAll">Send 1 flit on every channel</button>
+        <button class="btn" id="fcReturnAll">Return 1 credit on every channel</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="pm">
+    <h2><span class="num">7</span>power_mgmt — per-tile clock gating FSM</h2>
+    <p class="sub">
+      Each of the 16 router tiles runs an independent 3-state FSM:
+      <b>ACTIVE</b> (clocked, ticking idle counter), <b>IDLE</b> (clocked, safe
+      handoff), <b>GATED</b> (clock off). Click any tile to toggle its activity
+      input. Press <b>Tick</b> to advance counters.
+    </p>
+
+    <div class="card">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+        <button class="btn primary" id="pmgTick">Tick (advance counters)</button>
+        <button class="btn" id="pmgTick10">Tick × 10</button>
+        <button class="btn" id="pmgGlobalSleep">global_sleep = 1</button>
+        <button class="btn" id="pmgGlobalWake">global_wake = 1</button>
+        <button class="btn" id="pmgReset">Reset</button>
+      </div>
+      <div style="font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 12px;">
+        Click a tile to toggle its activity (incoming flit). Yellow = idle counting, dim = gated.
+      </div>
+      <div class="pm-tiles" id="pmgTiles"></div>
+
+      <h3>State definitions</h3>
+      <div style="padding: 14px; background: var(--surface-2); border-radius: 8px;">
+        <div class="pm-fsm-row"><div class="nm PM_ACTIVE">PM_ACTIVE</div><div class="d">Tile clocked, traffic in flight. Idle counter resets to 0 whenever activity is seen. Counts up otherwise; transitions to IDLE at <code>IDLE_THRESHOLD = 256</code>.</div></div>
+        <div class="pm-fsm-row"><div class="nm PM_IDLE">PM_IDLE</div><div class="d">Still clocked (safe handoff). One more cycle of quiescence and we drop to GATED. Any activity returns to ACTIVE immediately.</div></div>
+        <div class="pm-fsm-row"><div class="nm PM_GATED">PM_GATED</div><div class="d"><code>clk_en = 0</code> — flops not toggling, power saved. Wake on any incoming flit or credit return.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="code">
+    <h2><span class="num">8</span>Code map</h2>
+    <table class="code-table">
+      <thead><tr><th>Concept</th><th>File</th><th>Line</th><th>What's there</th></tr></thead>
+      <tbody>
+        <tr><td>8 saturating counters</td><td class="path">rtl/interconnect/monitoring/perf_monitor.sv</td><td class="line">38</td><td>ff_cnt — increments on event_en, sticky ovf at '1</td></tr>
+        <tr><td>Readout mux</td><td class="path">rtl/interconnect/monitoring/perf_monitor.sv</td><td class="line">56</td><td>rd_count = counters[rd_idx]</td></tr>
+        <tr><td>Sticky status register</td><td class="path">rtl/interconnect/monitoring/error_handler.sv</td><td class="line">65</td><td>ff_status — set on err_in, clear via err_clear</td></tr>
+        <tr><td>Priority encode → err_code</td><td class="path">rtl/interconnect/monitoring/error_handler.sv</td><td class="line">89</td><td>comb_code — highest index wins</td></tr>
+        <tr><td>IRQ severity grouping</td><td class="path">rtl/interconnect/monitoring/error_handler.sv</td><td class="line">106</td><td>irq_fatal / irq_error / irq_warning</td></tr>
+        <tr><td>Timer slot struct</td><td class="path">rtl/interconnect/monitoring/timeout_mgr.sv</td><td class="line">55</td><td>to_entry_t with active, count, txn_id</td></tr>
+        <tr><td>Comb scan for expiring slot</td><td class="path">rtl/interconnect/monitoring/timeout_mgr.sv</td><td class="line">72</td><td>comb_scan — picks last hit found</td></tr>
+        <tr><td>Arm / disarm / decrement</td><td class="path">rtl/interconnect/monitoring/timeout_mgr.sv</td><td class="line">96</td><td>ff_timers — interleaved updates</td></tr>
+        <tr><td>QoS → class function</td><td class="path">rtl/interconnect/qos/qos_manager.sv</td><td class="line">57</td><td>qos_to_class (4 ranges)</td></tr>
+        <tr><td>Weighted RR across classes</td><td class="path">rtl/interconnect/qos/qos_manager.sv</td><td class="line">96</td><td>comb_wrr — strict priority while tokens available</td></tr>
+        <tr><td>Token replenishment</td><td class="path">rtl/interconnect/qos/qos_manager.sv</td><td class="line">116</td><td>ff_tokens — full refill when all_drained</td></tr>
+        <tr><td>Per-class agent RR</td><td class="path">rtl/interconnect/qos/qos_manager.sv</td><td class="line">145</td><td>comb_per_class_rr — rotating pointer</td></tr>
+        <tr><td>4-channel credit struct</td><td class="path">rtl/interconnect/flow_control/flow_control_unit.sv</td><td class="line">79</td><td>crd_ch_t with count, max_count, overflow</td></tr>
+        <tr><td>update_crd function</td><td class="path">rtl/interconnect/flow_control/flow_control_unit.sv</td><td class="line">87</td><td>Init / decrement / increment / overflow detect</td></tr>
+        <tr><td>Overflow assertion</td><td class="path">rtl/interconnect/flow_control/flow_control_unit.sv</td><td class="line">149</td><td>a_no_crd_overflow</td></tr>
+        <tr><td>3-state pm_state_e</td><td class="path">rtl/interconnect/power_management/power_mgmt.sv</td><td class="line">53</td><td>PM_ACTIVE / PM_IDLE / PM_GATED</td></tr>
+        <tr><td>Per-tile FSM generate</td><td class="path">rtl/interconnect/power_management/power_mgmt.sv</td><td class="line">63</td><td>gen_tile_pm — 16 independent FSMs</td></tr>
+        <tr><td>Global sleep / wake override</td><td class="path">rtl/interconnect/power_management/power_mgmt.sv</td><td class="line">75</td><td>Highest priority — forces all gated/active</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="quiz">
+    <h2><span class="num">9</span>Check yourself</h2>
+    <div class="quiz">
+      <div class="q">
+        <div class="question">Q1. <code>perf_monitor</code>'s counters saturate at <code>'1</code> (all ones) instead of wrapping. Why?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          Software polling the CSR should never see a non-monotonic counter — if
+          the count went from 0xFFFFFFFE to 0xFFFFFFFF to 0x00000000 mid-poll,
+          the next read would suggest activity went to zero. Saturating preserves
+          monotonicity. The companion <code>ovf</code> bit is the warning that
+          you've lost precision, prompting either a longer counter width or more
+          frequent reads.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q2. The error_handler priority encoder runs <code>if (err_status[7])...if (err_status[0])...</code> in order — but it's structured so the <i>last</i> match wins. Why is that the right priority order?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          Look at the body: <code>if (err_status[0]) err_code = ERR_ECC_UNCORRECTABLE</code>
+          comes last. In SystemVerilog <code>always_comb</code>, the last
+          assignment wins. ECC uncorrectable is the highest severity — silent
+          data corruption — and must win over everything else even if it fires
+          alongside a routing error. The code orders the if-chain from lowest
+          severity to highest so the final assignment is the most severe live
+          error.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q3. In <code>timeout_mgr</code>, what happens if you arm and stop the same slot on the same cycle?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          Both assignments are non-blocking, but order matters within an
+          <code>always_ff</code>: the arm assignment runs first (line 105), then
+          the stop assignment (line 112) — stop wins. The slot ends up with
+          <code>active = 0</code> and <code>count = thr</code>. Whether that's
+          correct depends on intent; in practice arm and stop on the same cycle
+          for the same slot shouldn't happen because they come from different
+          parts of the FSM. If it does, it's a sign of a higher-level bug.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q4. <code>qos_manager</code> replenishes tokens "when all classes with requests are drained". Why that condition instead of "when all classes are drained"?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          If a class has no requesters, it doesn't need tokens — those tokens
+          are wasted. Waiting only for the active classes to drain means we
+          refill as soon as we're truly out of work for everyone <i>currently</i>
+          asking, not pessimistically waiting for hypothetical traffic. Side
+          effect: a class that was inactive starts a round with full tokens,
+          which is the correct behavior — it shouldn't be penalized for being
+          quiet earlier.
+        </div>
+      </div>
+      <div class="q">
+        <div class="question">Q5. <code>power_mgmt</code> keeps the clock on during PM_IDLE. Why not gate immediately when traffic stops?</div>
+        <button class="reveal">Show answer</button>
+        <div class="answer">
+          Safe-state handoff. Gating mid-flit or mid-credit-return would freeze
+          internal state inconsistently. PM_IDLE is a one-cycle "are you really
+          sure?" buffer — if any activity arrives during IDLE, return to ACTIVE
+          without ever having dropped the clock. Only after IDLE confirms no
+          activity for one more cycle do we drop to PM_GATED. The cost is one
+          extra cycle of power; the benefit is correctness.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="finale-card">
+    <div class="eyebrow">Track complete</div>
+    <h3>You finished the hanuma learning track</h3>
+    <p>
+      Across ten lessons you've worked from raw CHI type definitions all the way up
+      to the cross-cutting helpers that keep silicon healthy. You can now read any
+      file in <code>rtl/interconnect/</code> and place it in the bigger picture.
+    </p>
+    <div class="lesson-list">
+      <div class="lesson-item"><div class="n">Lesson 1</div><div class="t">CHI Foundations</div></div>
+      <div class="lesson-item"><div class="n">Lesson 2</div><div class="t">Leaf primitives</div></div>
+      <div class="lesson-item"><div class="n">Lesson 3</div><div class="t">Arbitration &amp; routing</div></div>
+      <div class="lesson-item"><div class="n">Lesson 4</div><div class="t">Router building blocks</div></div>
+      <div class="lesson-item"><div class="n">Lesson 5</div><div class="t">router_top</div></div>
+      <div class="lesson-item"><div class="n">Lesson 6</div><div class="t">NoC fabric</div></div>
+      <div class="lesson-item"><div class="n">Lesson 7</div><div class="t">Link layer</div></div>
+      <div class="lesson-item"><div class="n">Lesson 8</div><div class="t">Transport &amp; packetization</div></div>
+      <div class="lesson-item"><div class="n">Lesson 9</div><div class="t">CHI nodes</div></div>
+      <div class="lesson-item"><div class="n">Lesson 10</div><div class="t">Support &amp; monitoring</div></div>
+    </div>
+    <p style="margin-top: 24px; font-size: 13px; color: #94a3b8;">
+      Next natural step: open <code>docs/verification/noc_dv_tracker_and_testplan.md</code>
+      and start fixing the 🔶 partials and ⚠ bugs you've now seen end-to-end.
+    </p>
+  </div>
+
+</div>
+
+<footer><div class="container">Lesson 10 of 10 · hanuma SoC learning track · complete</div></footer>
+
+<script>
+  // ============ perf_monitor ============
+  var PM_EVENTS = ['REQ_INJECT','RSP_INJECT','SNP_INJECT','DAT_INJECT',
+                   'REQ_EJECT','RSP_EJECT','STALL_VC_FULL','LINK_RETRY'];
+  var pmCounters = [0,0,0,0,0,0,0,0];
+  var pmEn = [true,true,true,true,false,false,false,false];
+  var pmOvfArr = [false,false,false,false,false,false,false,false];
+
+  function renderPm() {
+    var grid = document.getElementById('pmGrid');
+    grid.innerHTML = '';
+    for (var i = 0; i < 8; i++) {
+      var c = document.createElement('div');
+      c.className = 'pm-counter';
+      var ev = document.createElement('div');
+      ev.className = 'ev'; ev.textContent = 'PM_' + PM_EVENTS[i];
+      var v = document.createElement('div');
+      v.className = 'val'; v.textContent = pmCounters[i];
+      var en = document.createElement('div');
+      en.className = 'en'; en.textContent = pmEn[i] ? 'event_en = 1' : 'event_en = 0';
+      c.appendChild(ev); c.appendChild(v); c.appendChild(en);
+      if (pmEn[i]) c.classList.add('firing');
+      (function(idx) {
+        c.addEventListener('click', function() {
+          pmEn[idx] = !pmEn[idx];
+          renderPm();
+        });
+      })(i);
+      grid.appendChild(c);
+    }
+    var rd = +document.getElementById('pmRdIdx').value;
+    document.getElementById('pmRdCount').textContent = pmCounters[rd];
+    document.getElementById('pmOvf').textContent = pmOvfArr.some(function(x){return x;}) ? '1' : '0';
+  }
+  function pmStep() {
+    for (var i = 0; i < 8; i++) {
+      if (pmEn[i]) {
+        if (pmCounters[i] === 0xFFFFFFFF) pmOvfArr[i] = true;
+        else pmCounters[i]++;
+      }
+    }
+    renderPm();
+  }
+  document.getElementById('pmFire').addEventListener('click', pmStep);
+  document.getElementById('pmFire10').addEventListener('click', function() {
+    for (var n = 0; n < 10; n++) pmStep();
+  });
+  document.getElementById('pmClear').addEventListener('click', function() {
+    for (var i = 0; i < 8; i++) { pmCounters[i] = 0; pmOvfArr[i] = false; }
+    renderPm();
+  });
+  document.getElementById('pmRdIdx').addEventListener('change', renderPm);
+  renderPm();
+
+  // ============ error_handler ============
+  var ERR_SOURCES = [
+    { idx: 0, name: 'ECC uncorrectable', sev: 'warning', code: 'ERR_ECC_UNCORRECTABLE' },
+    { idx: 1, name: 'ECC correctable',   sev: 'warning', code: 'ERR_ECC_CORRECTABLE' },
+    { idx: 2, name: 'Protocol violation',sev: 'warning', code: 'ERR_PROTOCOL' },
+    { idx: 3, name: 'Transaction timeout',sev: 'error',  code: 'ERR_TIMEOUT' },
+    { idx: 4, name: 'Deadlock watchdog', sev: 'error',   code: 'ERR_DEADLOCK' },
+    { idx: 5, name: 'VC overflow',       sev: 'fatal',   code: 'ERR_OVERFLOW' },
+    { idx: 6, name: 'Routing error',     sev: 'fatal',   code: 'ERR_ROUTING' },
+    { idx: 7, name: 'Link train timeout',sev: 'fatal',   code: 'ERR_TIMEOUT' }
+  ];
+  var errStatus = [false,false,false,false,false,false,false,false];
+  var errCapId = null;
+
+  function renderErr() {
+    // Render source cards
+    var srcsDiv = document.getElementById('errSrcs');
+    srcsDiv.innerHTML = '';
+    ERR_SOURCES.forEach(function(s) {
+      var card = document.createElement('div');
+      card.className = 'err-src';
+      if (errStatus[s.idx]) card.classList.add('firing');
+      card.innerHTML = '<div class="idx">err_in[' + s.idx + ']</div>' +
+        '<div class="nm">' + s.name + '</div>' +
+        '<div class="sev">' + s.sev + '</div>';
+      (function(idx) {
+        card.addEventListener('click', function() {
+          if (!errStatus[idx]) {
+            errStatus[idx] = true;
+            if (errCapId === null) errCapId = 'node_' + (5 + idx);
+          }
+          renderErr();
+        });
+      })(s.idx);
+      srcsDiv.appendChild(card);
+    });
+    // Render bits
+    var bits = document.getElementById('errBits');
+    bits.innerHTML = '';
+    for (var i = 7; i >= 0; i--) {
+      var b = document.createElement('div');
+      b.className = 'err-bit';
+      if (errStatus[i]) b.classList.add('set');
+      b.textContent = i;
+      bits.appendChild(b);
+    }
+    // Priority-encode err_code (highest active wins by RTL order)
+    var code = 'ERR_NONE';
+    var priOrder = [7, 6, 5, 4, 3, 2, 1, 0];
+    for (var k = 0; k < priOrder.length; k++) {
+      if (errStatus[priOrder[k]]) {
+        code = ERR_SOURCES[priOrder[k]].code;
+        break;
+      }
+    }
+    // RTL has last-match wins, which means index 0 wins — fix to match RTL
+    for (var k2 = 7; k2 >= 0; k2--) {
+      if (errStatus[k2]) code = ERR_SOURCES[k2].code;
+    }
+    document.getElementById('errCode').textContent = code;
+    document.getElementById('errCode').className = (code === 'ERR_NONE') ? 'v lo' : 'v fatal';
+    var anySet = errStatus.some(function(x) { return x; });
+    document.getElementById('errValid').textContent = anySet ? '1' : '0';
+    document.getElementById('errValid').className = 'v ' + (anySet ? 'hi' : 'lo');
+    document.getElementById('errCapId').textContent = errCapId || '—';
+    var fatal = errStatus[5] || errStatus[6] || errStatus[7];
+    var error = errStatus[3] || errStatus[4];
+    var warning = errStatus[0] || errStatus[1] || errStatus[2];
+    document.getElementById('irqFatal').textContent = fatal ? '1' : '0';
+    document.getElementById('irqError').textContent = error ? '1' : '0';
+    document.getElementById('irqWarning').textContent = warning ? '1' : '0';
+  }
+  document.getElementById('errClearAll').addEventListener('click', function() {
+    errStatus = [false,false,false,false,false,false,false,false];
+    if (errStatus.every(function(x){return !x;})) errCapId = null;
+    renderErr();
+  });
+  document.getElementById('errReset').addEventListener('click', function() {
+    errStatus = [false,false,false,false,false,false,false,false];
+    errCapId = null;
+    renderErr();
+  });
+  renderErr();
+
+  // ============ timeout_mgr ============
+  var TO_NUM = 8;
+  var toSlots = [];
+  for (var i = 0; i < TO_NUM; i++) toSlots.push({ active: false, count: 0, threshold: 8, txn: 0 });
+  var lastHit = { slot: null, txnid: null };
+
+  function renderTo() {
+    var div = document.getElementById('toSlots');
+    div.innerHTML = '';
+    for (var i = 0; i < TO_NUM; i++) {
+      var s = toSlots[i];
+      var c = document.createElement('div');
+      c.className = 'to-slot';
+      if (s.active && s.count === 0) c.classList.add('expired');
+      else if (s.active) c.classList.add('active');
+      var pct = s.threshold > 0 ? (s.count / s.threshold * 100) : 0;
+      c.innerHTML = '<div class="idx">slot[' + i + ']</div>' +
+        '<div class="txn">' + (s.active ? 'txn_id=' + s.txn : 'inactive') + '</div>' +
+        '<div class="timer">' + (s.active ? s.count : '—') + '</div>' +
+        '<div class="to-bar"><div class="fill" style="width: ' + pct + '%"></div></div>';
+      div.appendChild(c);
+    }
+    document.getElementById('toHit').textContent = lastHit.slot !== null ? '1' : '0';
+    document.getElementById('toSlot').textContent = lastHit.slot !== null ? lastHit.slot : '—';
+    document.getElementById('toTxnid').textContent = lastHit.txnid !== null ? lastHit.txnid : '—';
+  }
+  function toTick() {
+    lastHit = { slot: null, txnid: null };
+    for (var i = 0; i < TO_NUM; i++) {
+      var s = toSlots[i];
+      if (s.active && s.count > 0) s.count--;
+      if (s.active && s.count === 0) {
+        lastHit = { slot: i, txnid: s.txn };
+      }
+    }
+    renderTo();
+  }
+  document.getElementById('toTick').addEventListener('click', toTick);
+  document.getElementById('toTick10').addEventListener('click', function() {
+    for (var i = 0; i < 10; i++) toTick();
+  });
+  document.getElementById('toArm').addEventListener('click', function() {
+    var free = [];
+    for (var i = 0; i < TO_NUM; i++) if (!toSlots[i].active) free.push(i);
+    if (free.length === 0) return;
+    var pick = free[Math.floor(Math.random() * free.length)];
+    toSlots[pick] = { active: true, count: 8, threshold: 8,
+                       txn: Math.floor(Math.random() * 256) };
+    renderTo();
+  });
+  document.getElementById('toStop').addEventListener('click', function() {
+    var act = [];
+    for (var i = 0; i < TO_NUM; i++) if (toSlots[i].active) act.push(i);
+    if (act.length === 0) return;
+    var pick = act[Math.floor(Math.random() * act.length)];
+    toSlots[pick] = { active: false, count: 0, threshold: 8, txn: 0 };
+    renderTo();
+  });
+  document.getElementById('toReset').addEventListener('click', function() {
+    for (var i = 0; i < TO_NUM; i++) toSlots[i] = { active: false, count: 0, threshold: 8, txn: 0 };
+    lastHit = { slot: null, txnid: null };
+    renderTo();
+  });
+  renderTo();
+
+  // ============ qos_manager ============
+  var QOS_AGENTS = 4;
+  var qosAgentSt = [];
+  for (var i = 0; i < QOS_AGENTS; i++) qosAgentSt.push({ valid: i < 3, qos: [2, 6, 10, 14][i] || 0 });
+  var qosTokens = [1, 2, 4, 8]; // BE, LE, ME, HI initial
+  var QOS_W = { 0: 1, 1: 2, 2: 4, 3: 8 };
+
+  function qosClass(q) {
+    if (q >= 12) return 3;
+    if (q >= 8)  return 2;
+    if (q >= 4)  return 1;
+    return 0;
+  }
+  function classNm(c) { return ['BE','LE','ME','HI'][c]; }
+
+  function qosWinner() {
+    // For each class collect requesters
+    var reqs = [[],[],[],[]];
+    for (var a = 0; a < QOS_AGENTS; a++) {
+      if (qosAgentSt[a].valid) reqs[qosClass(qosAgentSt[a].qos)].push(a);
+    }
+    // Strict priority HI > ME > LE > BE while tokens available
+    var gc = -1;
+    for (var c = 3; c >= 0; c--) {
+      if (reqs[c].length > 0 && qosTokens[c] > 0) { gc = c; break; }
+    }
+    if (gc < 0) return null;
+    return { cls: gc, agent: reqs[gc][0] };
+  }
+
+  function renderQos() {
+    var div = document.getElementById('qosAgents');
+    div.innerHTML = '';
+    var win = qosWinner();
+    for (var a = 0; a < QOS_AGENTS; a++) {
+      var s = qosAgentSt[a];
+      var c = qosClass(s.qos);
+      var card = document.createElement('div');
+      card.className = 'qos-agent';
+      if (win && win.agent === a) card.classList.add('granted');
+      card.innerHTML = '<div class="head">' +
+        '<div class="nm">Agent ' + a + '</div>' +
+        '<div class="cls ' + classNm(c) + '">' + classNm(c) + '</div></div>' +
+        '<div class="qos-slider-row"><label>qos[3:0]</label>' +
+        '<input type="range" min="0" max="15" value="' + s.qos + '" data-agent="' + a + '">' +
+        '<div class="val">' + s.qos + '</div></div>' +
+        '<div class="qos-valid-row">' +
+        '<label style="font-size: 12px; color: var(--text-muted);">valid_in:</label>' +
+        '<button class="btn" data-vagent="' + a + '" style="padding: 4px 12px;">' + s.valid + '</button>' +
+        (win && win.agent === a ? '<span style="color: var(--c-rsp); font-size: 12px; margin-left: auto; font-family: var(--mono); font-weight: 600;">WIN ▶</span>' : '') +
+        '</div>';
+      div.appendChild(card);
+    }
+    // Tokens grid
+    var tdiv = document.getElementById('qosTokens');
+    tdiv.innerHTML = '';
+    for (var ci = 0; ci < 4; ci++) {
+      var cell = document.createElement('div');
+      cell.className = 'qos-tok-cls';
+      if (win && win.cls === ci) cell.classList.add('granted');
+      cell.innerHTML = '<div class="nm">' + classNm(ci) + ' (wgt ' + QOS_W[ci] + ')</div>' +
+        '<div class="v">' + qosTokens[ci] + '</div>';
+      tdiv.appendChild(cell);
+    }
+    // Output
+    var out = document.getElementById('qosOut');
+    if (win) {
+      out.innerHTML = '<div>valid_out = 1</div>' +
+        '<div>class_out = ' + win.cls + ' (' + classNm(win.cls) + ')</div>' +
+        '<div>flit_out = flit_in[' + win.agent + ']</div>';
+    } else {
+      out.innerHTML = '<div>valid_out = 0</div>' +
+        '<div>class_out = —</div>' +
+        '<div>flit_out = (no winner — no requests with tokens)</div>';
+    }
+    // Re-bind events
+    document.querySelectorAll('[data-agent]').forEach(function(el) {
+      el.addEventListener('input', function() {
+        qosAgentSt[+el.getAttribute('data-agent')].qos = +el.value;
+        renderQos();
+      });
+    });
+    document.querySelectorAll('[data-vagent]').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var a = +el.getAttribute('data-vagent');
+        qosAgentSt[a].valid = !qosAgentSt[a].valid;
+        renderQos();
+      });
+    });
+  }
+  document.getElementById('qosTick').addEventListener('click', function() {
+    var win = qosWinner();
+    if (win) qosTokens[win.cls]--;
+    // Check if all drained
+    var allDrained = true;
+    var reqs = [false,false,false,false];
+    for (var a = 0; a < QOS_AGENTS; a++) if (qosAgentSt[a].valid) reqs[qosClass(qosAgentSt[a].qos)] = true;
+    for (var c = 0; c < 4; c++) if (reqs[c] && qosTokens[c] > 0) allDrained = false;
+    if (allDrained) { qosTokens = [1, 2, 4, 8]; }
+    renderQos();
+  });
+  document.getElementById('qosReset').addEventListener('click', function() {
+    qosAgentSt = [];
+    for (var i = 0; i < QOS_AGENTS; i++) qosAgentSt.push({ valid: i < 3, qos: [2, 6, 10, 14][i] || 0 });
+    qosTokens = [1, 2, 4, 8];
+    renderQos();
+  });
+  renderQos();
+
+  // ============ flow_control_unit ============
+  var fcInit = { req: 8, rsp: 8, snp: 8, dat: 4 };
+  var fcCrd = { req: 0, rsp: 0, snp: 0, dat: 0 };
+  var fcOvf = false;
+
+  function renderFc() {
+    var rows = document.getElementById('fcRows');
+    rows.innerHTML = '';
+    ['req', 'rsp', 'snp', 'dat'].forEach(function(ch) {
+      var row = document.createElement('div');
+      row.className = 'fc-row';
+      var max = fcInit[ch];
+      var pct = max > 0 ? (fcCrd[ch] / max * 100) : 0;
+      var stall = fcCrd[ch] === 0;
+      row.innerHTML = '<div class="ch ' + ch + '">' + ch.toUpperCase() + '</div>' +
+        '<div class="bar ' + ch + '"><div class="fill" style="width: ' + pct + '%"></div></div>' +
+        '<div class="count">' + fcCrd[ch] + ' / ' + max + '</div>' +
+        '<div class="stall ' + (stall ? 'bad' : 'ok') + '">' +
+          ch + '_stall = ' + (stall ? '1' : '0') + '</div>' +
+        '<div class="actions">' +
+          '<button class="btn" data-fc-send="' + ch + '">send</button>' +
+          '<button class="btn" data-fc-rtn="' + ch + '">+1</button>' +
+        '</div>';
+      rows.appendChild(row);
+    });
+    document.getElementById('fcOvfErr').textContent = fcOvf ? '1' : '0';
+    document.querySelectorAll('[data-fc-send]').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var ch = el.getAttribute('data-fc-send');
+        if (fcCrd[ch] > 0) fcCrd[ch]--;
+        renderFc();
+      });
+    });
+    document.querySelectorAll('[data-fc-rtn]').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var ch = el.getAttribute('data-fc-rtn');
+        if (fcCrd[ch] >= fcInit[ch]) fcOvf = true;
+        else fcCrd[ch]++;
+        renderFc();
+      });
+    });
+  }
+  document.getElementById('fcInit').addEventListener('click', function() {
+    fcCrd = { req: fcInit.req, rsp: fcInit.rsp, snp: fcInit.snp, dat: fcInit.dat };
+    fcOvf = false;
+    renderFc();
+  });
+  document.getElementById('fcSendAll').addEventListener('click', function() {
+    ['req','rsp','snp','dat'].forEach(function(ch) {
+      if (fcCrd[ch] > 0) fcCrd[ch]--;
+    });
+    renderFc();
+  });
+  document.getElementById('fcReturnAll').addEventListener('click', function() {
+    ['req','rsp','snp','dat'].forEach(function(ch) {
+      if (fcCrd[ch] >= fcInit[ch]) fcOvf = true;
+      else fcCrd[ch]++;
+    });
+    renderFc();
+  });
+  renderFc();
+
+  // ============ power_mgmt ============
+  var PMG_NUM = 16;
+  var IDLE_THR = 4; // shorter for demo
+  var pmgTiles = [];
+  for (var i = 0; i < PMG_NUM; i++) {
+    pmgTiles.push({ state: 'PM_ACTIVE', idle: 0, activity: false, clk_en: 1 });
+  }
+  var pmgGlobal = { sleep: false, wake: false };
+
+  function renderPmg() {
+    var div = document.getElementById('pmgTiles');
+    div.innerHTML = '';
+    for (var i = 0; i < PMG_NUM; i++) {
+      var t = pmgTiles[i];
+      var el = document.createElement('div');
+      el.className = 'pm-tile ' + t.state;
+      el.innerHTML = '<div class="st">' + t.state.replace('PM_', '') + '</div>' +
+        '<div class="ck">clk_en=' + t.clk_en + '</div>' +
+        '<div class="idle">cnt=' + t.idle + '</div>';
+      (function(idx) {
+        el.addEventListener('click', function() {
+          pmgTiles[idx].activity = !pmgTiles[idx].activity;
+          renderPmg();
+        });
+      })(i);
+      div.appendChild(el);
+    }
+  }
+  function pmgTick() {
+    for (var i = 0; i < PMG_NUM; i++) {
+      var t = pmgTiles[i];
+      if (pmgGlobal.sleep && !pmgGlobal.wake) {
+        t.state = 'PM_GATED'; t.clk_en = 0;
+        continue;
+      }
+      if (pmgGlobal.wake) {
+        t.state = 'PM_ACTIVE'; t.clk_en = 1; t.idle = 0;
+        continue;
+      }
+      switch (t.state) {
+        case 'PM_ACTIVE':
+          t.clk_en = 1;
+          if (!t.activity) {
+            t.idle++;
+            if (t.idle >= IDLE_THR) t.state = 'PM_IDLE';
+          } else {
+            t.idle = 0;
+          }
+          break;
+        case 'PM_IDLE':
+          t.clk_en = 1;
+          if (t.activity) { t.state = 'PM_ACTIVE'; t.idle = 0; }
+          else { t.state = 'PM_GATED'; t.clk_en = 0; }
+          break;
+        case 'PM_GATED':
+          t.clk_en = 0;
+          if (t.activity) { t.state = 'PM_ACTIVE'; t.idle = 0; t.clk_en = 1; }
+          break;
+      }
+    }
+    pmgGlobal.wake = false;
+    renderPmg();
+  }
+  document.getElementById('pmgTick').addEventListener('click', pmgTick);
+  document.getElementById('pmgTick10').addEventListener('click', function() {
+    for (var i = 0; i < 10; i++) pmgTick();
+  });
+  document.getElementById('pmgGlobalSleep').addEventListener('click', function() {
+    pmgGlobal.sleep = true; pmgGlobal.wake = false; pmgTick();
+    pmgGlobal.sleep = false;
+  });
+  document.getElementById('pmgGlobalWake').addEventListener('click', function() {
+    pmgGlobal.wake = true; pmgGlobal.sleep = false; pmgTick();
+  });
+  document.getElementById('pmgReset').addEventListener('click', function() {
+    for (var i = 0; i < PMG_NUM; i++) {
+      pmgTiles[i] = { state: 'PM_ACTIVE', idle: 0, activity: false, clk_en: 1 };
+    }
+    pmgGlobal = { sleep: false, wake: false };
+    renderPmg();
+  });
+  renderPmg();
+
+  // Quiz reveals
+  document.querySelectorAll('.quiz .reveal').forEach(function(btn) {
+    btn.addEventListener('click', function() { btn.parentElement.classList.add('open'); });
+  });
+</script>
+</body>
+</html>
