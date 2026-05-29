@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMBA 5 CHI — Signal Reference</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@400;700;800&display=swap');
+
+:root {
+  --bg:      #080c10;
+  --surface: #0d1117;
+  --border:  #1c2433;
+  --text:    #d0dce8;
+  --muted:   #4a6080;
+
+  --req:     #3b9eff;
+  --req-bg:  #031528;
+  --req-dim: #0a2040;
+
+  --rsp:     #a78bfa;
+  --rsp-bg:  #0e0818;
+  --rsp-dim: #1a0d30;
+
+  --dat:     #34d399;
+  --dat-bg:  #021510;
+  --dat-dim: #042820;
+
+  --snp:     #fb923c;
+  --snp-bg:  #150800;
+  --snp-dim: #261200;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  padding: 0 0 60px;
+}
+
+/* ── HEADER ── */
+header {
+  padding: 48px 40px 36px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 10% 50%, #3b9eff08 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 90% 30%, #fb923c06 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.header-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+header h1 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+
+.title-amba { color: var(--text); }
+.title-chi  { color: var(--req); }
+
+.header-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  max-width: 560px;
+  line-height: 1.6;
+}
+
+/* ── NAV PILLS ── */
+.nav-pills {
+  display: flex;
+  gap: 10px;
+  padding: 20px 40px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: 1px solid;
+}
+
+.pill-req { color: var(--req); border-color: var(--req); background: var(--req-bg); }
+.pill-rsp { color: var(--rsp); border-color: var(--rsp); background: var(--rsp-bg); }
+.pill-dat { color: var(--dat); border-color: var(--dat); background: var(--dat-bg); }
+.pill-snp { color: var(--snp); border-color: var(--snp); background: var(--snp-bg); }
+
+.pill:hover { filter: brightness(1.3); transform: translateY(-1px); }
+
+.pill-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+}
+.pill-req .pill-dot { background: var(--req); }
+.pill-rsp .pill-dot { background: var(--rsp); }
+.pill-dat .pill-dot { background: var(--dat); }
+.pill-snp .pill-dot { background: var(--snp); }
+
+/* ── MAIN LAYOUT ── */
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 40px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+/* ── CHANNEL SECTION ── */
+.channel {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.channel-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid;
+}
+
+.ch-req .channel-header { background: var(--req-bg); border-color: var(--req); }
+.ch-rsp .channel-header { background: var(--rsp-bg); border-color: var(--rsp); }
+.ch-dat .channel-header { background: var(--dat-bg); border-color: var(--dat); }
+.ch-snp .channel-header { background: var(--snp-bg); border-color: var(--snp); }
+
+.ch-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+}
+.ch-req .ch-badge { color: var(--req); }
+.ch-rsp .ch-badge { color: var(--rsp); }
+.ch-dat .ch-badge { color: var(--dat); }
+.ch-snp .ch-badge { color: var(--snp); }
+
+.ch-meta { flex: 1; }
+.ch-name {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+.ch-req .ch-name { color: var(--req); }
+.ch-rsp .ch-name { color: var(--rsp); }
+.ch-dat .ch-name { color: var(--dat); }
+.ch-snp .ch-name { color: var(--snp); }
+
+.ch-direction {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.ch-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.ch-req .ch-count { background: #3b9eff18; color: var(--req); }
+.ch-rsp .ch-count { background: #a78bfa18; color: var(--rsp); }
+.ch-dat .ch-count { background: #34d39918; color: var(--dat); }
+.ch-snp .ch-count { background: #fb923c18; color: var(--snp); }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  background: var(--surface);
+}
+
+thead tr {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+thead th {
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+tbody tr:last-child { border-bottom: none; }
+
+tbody tr:hover { background: #ffffff04; }
+
+td {
+  padding: 10px 16px;
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+/* col 1 — field name */
+td:first-child {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ch-req td:first-child { color: var(--req); }
+.ch-rsp td:first-child { color: var(--rsp); }
+.ch-dat td:first-child { color: var(--dat); }
+.ch-snp td:first-child { color: var(--snp); }
+
+/* col 2 — bits */
+td:nth-child(2) {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--muted);
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* col 3 — category tag */
+td:nth-child(3) { white-space: nowrap; }
+
+.tag {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.tag-routing  { background: #3b9eff14; color: #7ec8ff; border: 1px solid #3b9eff30; }
+.tag-ctrl     { background: #a78bfa14; color: #c4b5fd; border: 1px solid #a78bfa30; }
+.tag-data     { background: #34d39914; color: #6ee7b7; border: 1px solid #34d39930; }
+.tag-coherency{ background: #fb923c14; color: #fdba74; border: 1px solid #fb923c30; }
+.tag-error    { background: #f4374714; color: #fca5a5; border: 1px solid #f4374730; }
+.tag-debug    { background: #64748b14; color: #94a3b8; border: 1px solid #64748b30; }
+.tag-qos      { background: #eab30814; color: #fde68a; border: 1px solid #eab30830; }
+.tag-memory   { background: #8b5cf614; color: #c4b5fd; border: 1px solid #8b5cf630; }
+
+/* col 4 — description */
+td:nth-child(4) {
+  color: #8a9ab8;
+  font-size: 0.78rem;
+}
+
+/* ── NOTE BOX ── */
+.note-box {
+  margin: 0;
+  padding: 12px 20px;
+  background: #ffffff04;
+  border-top: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.note-icon { font-size: 0.75rem; }
+
+/* ── SUMMARY TABLE ── */
+.summary-section {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.summary-header {
+  padding: 16px 24px;
+  background: #ffffff04;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.72rem;
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.summary-cell {
+  padding: 20px 24px;
+  border-right: 1px solid var(--border);
+  text-align: center;
+}
+
+.summary-cell:last-child { border-right: none; }
+
+.summary-ch {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.summary-full { font-size: 0.7rem; color: var(--muted); margin-bottom: 8px; }
+
+.summary-dir {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.summary-count {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.summary-label { font-size: 0.62rem; color: var(--muted); }
+
+.s-req .summary-ch, .s-req .summary-count { color: var(--req); }
+.s-rsp .summary-ch, .s-rsp .summary-count { color: var(--rsp); }
+.s-dat .summary-ch, .s-dat .summary-count { color: var(--dat); }
+.s-snp .summary-ch, .s-snp .summary-count { color: var(--snp); }
+
+/* ── FOOTER ── */
+footer {
+  margin-top: 60px;
+  padding: 24px 40px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: gap;
+}
+
+.footer-note {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  header, main, .nav-pills, footer { padding-left: 20px; padding-right: 20px; }
+  .summary-grid { grid-template-columns: 1fr 1fr; }
+  .summary-cell:nth-child(2) { border-right: none; }
+  .summary-cell:nth-child(3) { border-top: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-eyebrow">ARM IHI 0050 · AMBA 5 Architecture</div>
+  <h1>
+    <span class="title-amba">CHI Protocol —&nbsp;</span>
+    <span class="title-chi">Channel Signal Reference</span>
+  </h1>
+  <p class="header-desc">
+    Complete flit field definitions for all four CHI channels: REQ, RSP, DAT, and SNP.
+    Each field listed with bit category and functional description.
+  </p>
+</header>
+
+<!-- NAV -->
+<nav class="nav-pills">
+  <a href="#req" class="pill pill-req"><span class="pill-dot"></span>REQ · Request</a>
+  <a href="#rsp" class="pill pill-rsp"><span class="pill-dot"></span>RSP · Response</a>
+  <a href="#dat" class="pill pill-dat"><span class="pill-dot"></span>DAT · Data</a>
+  <a href="#snp" class="pill pill-snp"><span class="pill-dot"></span>SNP · Snoop</a>
+</nav>
+
+<main>
+
+  <!-- SUMMARY -->
+  <div class="summary-section">
+    <div class="summary-header">// Channel Overview</div>
+    <div class="summary-grid">
+      <div class="summary-cell s-req">
+        <div class="summary-ch">REQ</div>
+        <div class="summary-full">Request</div>
+        <div class="summary-dir">RN → HN</div>
+        <div class="summary-count">20</div>
+        <div class="summary-label">fields</div>
+      </div>
+      <div class="summary-cell s-rsp">
+        <div class="summary-ch">RSP</div>
+        <div class="summary-full">Response</div>
+        <div class="summary-dir">HN ↔ RN</div>
+        <div class="summary-count">13</div>
+        <div class="summary-label">fields</div>
+      </div>
+      <div class="summary-cell s-dat">
+        <div class="summary-ch">DAT</div>
+        <div class="summary-full">Data</div>
+        <div class="summary-dir">HN ↔ RN ↔ SN</div>
+        <div class="summary-count">18</div>
+        <div class="summary-label">fields</div>
+      </div>
+      <div class="summary-cell s-snp">
+        <div class="summary-ch">SNP</div>
+        <div class="summary-full">Snoop</div>
+        <div class="summary-dir">HN → RN-F</div>
+        <div class="summary-count">11</div>
+        <div class="summary-label">fields</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REQ CHANNEL -->
+  <section class="channel ch-req" id="req">
+    <div class="channel-header">
+      <div class="ch-badge">REQ</div>
+      <div class="ch-meta">
+        <div class="ch-name">Request Channel</div>
+        <div class="ch-direction">Requester Node (RN) → Home Node (HN) · Initiates all transactions</div>
+      </div>
+      <div class="ch-count">20 fields</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Bits</th>
+            <th>Category</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>QoS</td><td>4</td><td><span class="tag tag-qos">QoS</span></td><td>Quality of Service priority — 0 (lowest) to 15 (highest). Controls arbitration ordering at interconnect.</td></tr>
+          <tr><td>TgtID</td><td>11</td><td><span class="tag tag-routing">Routing</span></td><td>Target Node ID. Physical node ID of the Home Node this request is addressed to. Used by Network Layer for routing.</td></tr>
+          <tr><td>SrcID</td><td>11</td><td><span class="tag tag-routing">Routing</span></td><td>Source Node ID. Identifies the Requester Node sending this flit. Used for routing return traffic.</td></tr>
+          <tr><td>TxnID</td><td>8</td><td><span class="tag tag-routing">Routing</span></td><td>Transaction ID. Unique per source node. Used to correlate all flits belonging to the same transaction.</td></tr>
+          <tr><td>ReturnNID</td><td>11</td><td><span class="tag tag-routing">Routing</span></td><td>Return Node ID. The node ID to which data must be forwarded (used in DMT/DCT snoop forwarding flows).</td></tr>
+          <tr><td>ReturnTxnID</td><td>8</td><td><span class="tag tag-routing">Routing</span></td><td>Return Transaction ID. The TxnID to use in the forwarded data response to ReturnNID.</td></tr>
+          <tr><td>StashNID</td><td>11</td><td><span class="tag tag-routing">Routing</span></td><td>Stash Node ID. Identifies the target node for Stash transactions (prefetch to specific cache).</td></tr>
+          <tr><td>StashNIDValid</td><td>1</td><td><span class="tag tag-ctrl">Control</span></td><td>Indicates StashNID field is valid. If 0, StashNID is not used.</td></tr>
+          <tr><td>StashLPID</td><td>5</td><td><span class="tag tag-routing">Routing</span></td><td>Stash Logical Processor ID. Target LP within the stash node for prefetch hinting.</td></tr>
+          <tr><td>StashLPIDValid</td><td>1</td><td><span class="tag tag-ctrl">Control</span></td><td>Indicates StashLPID is valid.</td></tr>
+          <tr><td>Opcode</td><td>6</td><td><span class="tag tag-ctrl">Control</span></td><td>Request opcode. Defines the transaction type: ReadShared, ReadUnique, WriteBack, WriteClean, MakeUnique, CMO, AtomicStore, etc.</td></tr>
+          <tr><td>Addr</td><td>44–52</td><td><span class="tag tag-ctrl">Control</span></td><td>Physical address of the target cache line. Width is implementation-defined (44–52 bits).</td></tr>
+          <tr><td>Size</td><td>3</td><td><span class="tag tag-ctrl">Control</span></td><td>Transfer size in bytes: 1, 2, 4, 8, 16, 32, or 64 bytes.</td></tr>
+          <tr><td>NS</td><td>1</td><td><span class="tag tag-memory">Memory</span></td><td>Non-Secure. Indicates if the transaction targets the Non-Secure memory space (TrustZone).</td></tr>
+          <tr><td>AllowRetry</td><td>1</td><td><span class="tag tag-ctrl">Control</span></td><td>Permits the target to respond with RetryAck if resources are unavailable, requiring re-issue with a credit.</td></tr>
+          <tr><td>PCrdType</td><td>4</td><td><span class="tag tag-ctrl">Control</span></td><td>Protocol Credit Type. Specifies the credit type being consumed when re-issuing after a RetryAck.</td></tr>
+          <tr><td>ExpCompAck</td><td>1</td><td><span class="tag tag-coherency">Coherency</span></td><td>Expect CompAck. Indicates the requester will send a CompAck response to complete the transaction handshake.</td></tr>
+          <tr><td>MemAttr</td><td>4</td><td><span class="tag tag-memory">Memory</span></td><td>Memory Attributes. Encodes: Allocate, Cacheable, Device, EWA (Early Write Acknowledge) for memory type classification.</td></tr>
+          <tr><td>SnpAttr</td><td>1</td><td><span class="tag tag-coherency">Coherency</span></td><td>Snoop Attribute. Indicates whether the cache line is snoopable by other Requester Nodes.</td></tr>
+          <tr><td>LPID</td><td>5</td><td><span class="tag tag-routing">Routing</span></td><td>Logical Processor ID. Identifies the LP within an RN-F for exclusive access monitoring (load-link/store-conditional).</td></tr>
+          <tr><td>SnoopMe</td><td>1</td><td><span class="tag tag-coherency">Coherency</span></td><td>Requests that the Home Node snoops the requester's own cache as part of this transaction (used with DVM/CMO).</td></tr>
+          <tr><td>RSVDC</td><td>4</td><td><span class="tag tag-debug">Debug</span></td><td>Reserved for Customer Use. Passed through the interconnect untouched; available for system-level tracing or tagging.</td></tr>
+          <tr><td>TraceTag</td><td>1</td><td><span class="tag tag-debug">Debug</span></td><td>Trace Tag. Marks this transaction for hardware trace capture — used in performance analysis and debug tooling.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note-box"><span class="note-icon">ℹ</span> REQ carries no data payload. Addr + Opcode together fully specify what operation is requested and where.</div>
+  </section>
+
+  <!-- RSP CHANNEL -->
+  <section class="channel ch-rsp" id="rsp">
+    <div class="channel-header">
+      <div class="ch-badge">RSP</div>
+      <div class="ch-meta">
+        <div class="ch-name">Response Channel</div>
+        <div class="ch-direction">Home Node (HN) ↔ Requester Node (RN) · Carries completion, retry, and credit responses</div>
+      </div>
+      <div class="ch-count">13 fields</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Bits</th>
+            <th>Category</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>QoS</td><td>4</td><td><span class="tag tag-qos">QoS</span></td><td>Quality of Service priority. Mirrors the QoS of the originating request for consistent prioritisation.</td></tr>
+          <tr><td>TgtID</td><td>11</td><td><span class="tag tag-routing">Routing</span></td><td>Target Node ID. The node to which this response is directed (usually the original requester).</td></tr>
+          <tr><td>SrcID</td><td>11</td><td><span class="tag tag-routing">Routing</span></td><td>Source Node ID. Identifies the node sending this response (Home Node or snoopee).</td></tr>
+          <tr><td>TxnID</td><td>8</td><td><span class="tag tag-routing">Routing</span></td><td>Transaction ID. Matches the TxnID of the originating request to correlate the response.</td></tr>
+          <tr><td>Opcode</td><td>4</td><td><span class="tag tag-ctrl">Control</span></td><td>Response opcode: Comp, CompAck, RetryAck, PCrdGrant, ReadReceipt, SnpResp, DBIDResp, CompDBIDResp, etc.</td></tr>
+          <tr><td>RespErr</td><td>2</td><td><span class="tag tag-error">Error</span></td><td>Response Error status: OK (00), ExOK (01), DataError (10), NonDataError (11). Signals bus faults or access violations.</td></tr>
+          <tr><td>Resp</td><td>3</td><td><span class="tag tag-coherency">Coherency</span></td><td>Cache line state: I (Invalid), SC (Shared Clean), UC (Unique Clean), UD (Unique Dirty), SD (Shared Dirty). MOESI-derived.</td></tr>
+          <tr><td>FwdState</td><td>3</td><td><span class="tag tag-coherency">Coherency</span></td><td>Forward State. The cache state being assigned to the requester when data is forwarded from a snoopee (DCT flows).</td></tr>
+          <tr><td>DataPull</td><td>1</td><td><span class="tag tag-coherency">Coherency</span></td><td>Indicates an implied Read request is embedded in this snoop response — triggers data transfer without a separate REQ.</td></tr>
+          <tr><td>DBID</td><td>8</td><td><span class="tag tag-routing">Routing</span></td><td>Data Buffer ID. The ID the requester must use as TxnID when sending write data back to the Home Node.</td></tr>
+          <tr><td>PCrdType</td><td>4</td><td><span class="tag tag-ctrl">Control</span></td><td>Protocol Credit Type being granted (in PCrdGrant response). Allows the requester to re-issue a previously retried request.</td></tr>
+          <tr><td>TraceTag</td><td>1</td><td><span class="tag tag-debug">Debug</span></td><td>Trace Tag. Propagated from the originating request for end-to-end transaction tracing.</td></tr>
+          <tr><td>RSVDC</td><td>4</td><td><span class="tag tag-debug">Debug</span></td><td>Reserved for Customer Use. Passed through untouched for system-level debug and tagging.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note-box"><span class="note-icon">ℹ</span> RSP carries no data payload. It is the lightest channel — used only for handshaking, credit management, and state signalling.</div>
+  </section>
+
+  <!-- DAT CHANNEL -->
+  <section class="channel ch-dat" id="dat">
+    <div class="channel-header">
+      <div class="ch-badge">DAT</div>
+      <div class="ch-meta">
+        <div class="ch-name">Data Channel</div>
+        <div class="ch-direction">Home Node ↔ Requester Node ↔ Slave Node · Carries actual cache line data payload</div>
+      </div>
+      <div class="ch-count">18 fields</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Bits</th>
+            <th>Category</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>QoS</td><td>4</td><td><span class="tag tag-qos">QoS</span></td><td>Quality of Service priority. Preserves the original request's QoS through the data path.</td></tr>
+          <tr><td>TgtID</td><td>11</td><td><span class="tag tag-routing">Routing</span></td><td>Target Node ID. The node receiving this data flit.</td></tr>
+          <tr><td>SrcID</td><td>11</td><td><span class="tag tag-routing">Routing</span></td><td>Source Node ID. The node transmitting this data flit (Home Node, memory controller, or snoopee).</td></tr>
+          <tr><td>TxnID</td><td>8</td><td><span class="tag tag-routing">Routing</span></td><td>Transaction ID. Correlates this data flit to an outstanding transaction at the target.</td></tr>
+          <tr><td>HomeNID</td><td>11</td><td><span class="tag tag-routing">Routing</span></td><td>Home Node ID. Tells the requester where to send CompAck once the data is accepted — critical for ordering.</td></tr>
+          <tr><td>Opcode</td><td>3</td><td><span class="tag tag-ctrl">Control</span></td><td>Data opcode: CompData, SnpRespData, SnpRespDataPtl, CopyBackWrData, NonCopyBackWrData, NCBWrDataCompAck, etc.</td></tr>
+          <tr><td>RespErr</td><td>2</td><td><span class="tag tag-error">Error</span></td><td>Error status of this data transfer: OK, ExOK, DataError, NonDataError. Signals ECC/bus errors on the data path.</td></tr>
+          <tr><td>Resp</td><td>3</td><td><span class="tag tag-coherency">Coherency</span></td><td>Cache line state associated with this data: I, SC, UC, UD, SD. Tells the receiver what state to install the line in.</td></tr>
+          <tr><td>FwdState</td><td>3</td><td><span class="tag tag-coherency">Coherency</span></td><td>Forward State. Cache state being assigned to a third-party requester when data is forwarded by a snoopee (DCT).</td></tr>
+          <tr><td>DataPull</td><td>1</td><td><span class="tag tag-coherency">Coherency</span></td><td>Implied Read request embedded in snoop data response. Eliminates a round-trip REQ for certain coherency flows.</td></tr>
+          <tr><td>DBID</td><td>8</td><td><span class="tag tag-routing">Routing</span></td><td>Data Buffer ID. Used by the receiver to identify which write buffer this data is associated with.</td></tr>
+          <tr><td>CCID</td><td>2</td><td><span class="tag tag-ctrl">Control</span></td><td>Critical Chunk ID. Identifies which 16-byte sub-chunk of the cache line is critical — returned first for low-latency access.</td></tr>
+          <tr><td>DataID</td><td>2</td><td><span class="tag tag-ctrl">Control</span></td><td>Data chunk index. For narrow buses (128-bit), a 64-byte cache line requires multiple flits; DataID identifies which chunk (0–3) this flit carries.</td></tr>
+          <tr><td>Data</td><td>128–512</td><td><span class="tag tag-data">Data</span></td><td>Actual data payload. Width is implementation-defined: 128, 256, or 512 bits. Matches the interconnect data bus width.</td></tr>
+          <tr><td>BE</td><td>16–64</td><td><span class="tag tag-data">Data</span></td><td>Byte Enable. One bit per byte of Data. Indicates which bytes are valid — essential for partial writes and cache line merges.</td></tr>
+          <tr><td>DataCheck</td><td>8–32</td><td><span class="tag tag-error">Error</span></td><td>Data integrity check bits (ECC or parity). Allows detection and optionally correction of bit errors in the data payload.</td></tr>
+          <tr><td>Poison</td><td>2–8</td><td><span class="tag tag-error">Error</span></td><td>Data Poison flag. One bit per 8 bytes. Marks data as corrupted (propagated ECC error) without raising an immediate fault.</td></tr>
+          <tr><td>TraceTag</td><td>1</td><td><span class="tag tag-debug">Debug</span></td><td>Trace Tag. Enables end-to-end latency measurement from REQ issuance to data receipt.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note-box"><span class="note-icon">ℹ</span> DAT is the widest channel. On a 128-bit bus, one 64-byte cache line = 4 flits (DataID 0–3). CCID ensures the critical chunk is returned first to minimise CPU stall.</div>
+  </section>
+
+  <!-- SNP CHANNEL -->
+  <section class="channel ch-snp" id="snp">
+    <div class="channel-header">
+      <div class="ch-badge">SNP</div>
+      <div class="ch-meta">
+        <div class="ch-name">Snoop Channel</div>
+        <div class="ch-direction">Home Node (HN) → Snoopee (RN-F) · Requests cache state inspection or invalidation</div>
+      </div>
+      <div class="ch-count">11 fields</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Bits</th>
+            <th>Category</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>QoS</td><td>4</td><td><span class="tag tag-qos">QoS</span></td><td>Quality of Service priority. Derived from the originating REQ, propagated to prioritise snoop processing.</td></tr>
+          <tr><td>SrcID</td><td>11</td><td><span class="tag tag-routing">Routing</span></td><td>Source Node ID. Identifies the Home Node issuing the snoop. Used by snoopee to route the SnpResp back.</td></tr>
+          <tr><td>TxnID</td><td>8</td><td><span class="tag tag-routing">Routing</span></td><td>Transaction ID. The snoopee must echo this TxnID in its SnpResp/SnpRespData to correlate with the HN's tracker.</td></tr>
+          <tr><td>FwdNID</td><td>11</td><td><span class="tag tag-routing">Routing</span></td><td>Forward Node ID. In DCT flows, the snoopee must forward data directly to this node ID instead of returning it to HN.</td></tr>
+          <tr><td>FwdTxnID</td><td>8</td><td><span class="tag tag-routing">Routing</span></td><td>Forward Transaction ID. The TxnID the snoopee must use in the forwarded DAT flit sent to FwdNID.</td></tr>
+          <tr><td>Opcode</td><td>5</td><td><span class="tag tag-ctrl">Control</span></td><td>Snoop opcode: SnpShared, SnpUnique, SnpClean, SnpOnce, SnpNotSharedDirty, SnpPreferUnique, SnpUniqueFwd, SnpCleanInvalid, SnpMakeInvalid, SnpDVMOp, etc.</td></tr>
+          <tr><td>Addr</td><td>44–52</td><td><span class="tag tag-ctrl">Control</span></td><td>Cache-line aligned address of the snoop target. Bits [5:0] are always 0 (64-byte aligned). Width matches REQ channel.</td></tr>
+          <tr><td>NS</td><td>1</td><td><span class="tag tag-memory">Memory</span></td><td>Non-Secure. Specifies the security attribute of the target address — snoopee must match its cache tag's NS state.</td></tr>
+          <tr><td>DoNotGoToSD</td><td>1</td><td><span class="tag tag-coherency">Coherency</span></td><td>Prevents the snoopee from transitioning the cache line to Shared Dirty state. Ensures clean response only.</td></tr>
+          <tr><td>RetToSrc</td><td>1</td><td><span class="tag tag-coherency">Coherency</span></td><td>Return to Source. Requests the snoopee to include data in its response even if the line is clean — used for memory updates.</td></tr>
+          <tr><td>TraceTag</td><td>1</td><td><span class="tag tag-debug">Debug</span></td><td>Trace Tag. Propagated from the triggering REQ to enable full transaction tracing across all snoop sub-flows.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note-box"><span class="note-icon">ℹ</span> SNP has <strong>no TgtID field</strong> — the target is implicit from which physical link the flit is dispatched on. The Snoop Filter at HN determines which RN-F nodes to snoop.</div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="footer-note">AMBA 5 CHI Architecture Specification · ARM IHI 0050 · Signal Reference</div>
+  <div class="footer-note">RN = Requester Node · HN = Home Node · SN = Slave Node</div>
+</footer>
+
+</body>
+</html>

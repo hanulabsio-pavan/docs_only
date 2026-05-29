@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHI SNP Channel — Direct Link vs Broadcast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;500;600;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #08090e;
+  --bg1:   #0d0f1a;
+  --bg2:   #111422;
+  --bg3:   #161928;
+  --b1:    #1c2035;
+  --b2:    #252a42;
+  --b3:    #2e3550;
+
+  --text:  #e8edf8;
+  --soft:  #7a88b0;
+  --dim:   #3d4868;
+  --muted: #556080;
+
+  --snp:   #f97316;  /* orange  – SNP channel */
+  --req:   #38bdf8;  /* sky     – REQ channel */
+  --rsp:   #c084fc;  /* purple  – RSP channel */
+  --dat:   #34d399;  /* emerald – DAT channel */
+  --link:  #fbbf24;  /* amber   – link/wire */
+  --hit:   #22c55e;  /* green   – filter hit */
+  --miss:  #ef4444;  /* red     – filter miss */
+
+  --snp-bg: rgba(249,115,22,.07);
+  --req-bg: rgba(56,189,248,.07);
+  --rsp-bg: rgba(192,132,252,.07);
+  --dat-bg: rgba(52,211,153,.07);
+  --hit-bg: rgba(34,197,94,.07);
+  --miss-bg:rgba(239,68,68,.07);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'DM Sans',system-ui,sans-serif;
+  overflow-x:hidden;line-height:1.6;
+}
+.mono{font-family:'Azeret Mono',monospace;}
+.display{font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg1);}
+::-webkit-scrollbar-thumb{background:var(--b3);border-radius:2px;}
+
+/* ── HERO ── */
+.hero{
+  min-height:280px;
+  padding:64px 56px 52px;
+  position:relative;overflow:hidden;
+  border-bottom:1px solid var(--b1);
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 60% 90% at -5% 50%,rgba(249,115,22,.09),transparent 55%),
+    radial-gradient(ellipse 40% 70% at 105% 20%,rgba(56,189,248,.06),transparent 55%),
+    radial-gradient(ellipse 50% 60% at 50% 110%,rgba(251,191,36,.05),transparent 55%);
+}
+/* circuit-board grid */
+.hero::after{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(var(--b1) 1px,transparent 1px),
+    linear-gradient(90deg,var(--b1) 1px,transparent 1px);
+  background-size:48px 48px;
+  opacity:.18;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 10%,transparent 80%);
+}
+.hero-inner{position:relative;z-index:1;}
+.hero-eyebrow{
+  font-family:'Azeret Mono',monospace;
+  font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:12px;
+}
+.hero h1{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(3rem,8vw,5.5rem);
+  line-height:.95;letter-spacing:.03em;
+  margin-bottom:16px;
+}
+.h-snp{color:var(--snp);}
+.h-chi{color:var(--text);}
+.hero-sub{
+  font-size:.9rem;color:var(--soft);
+  max-width:600px;line-height:1.72;margin-bottom:22px;
+}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:'Azeret Mono',monospace;font-size:.6rem;font-weight:600;
+  padding:4px 11px;border-radius:4px;border:1px solid;
+  letter-spacing:.05em;
+}
+.chip-snp{color:var(--snp);border-color:rgba(249,115,22,.3);background:var(--snp-bg);}
+.chip-req{color:var(--req);border-color:rgba(56,189,248,.3);background:var(--req-bg);}
+.chip-link{color:var(--link);border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.06);}
+
+/* ── NAV ── */
+.top-nav{
+  display:flex;gap:0;padding:0 56px;
+  background:var(--bg1);border-bottom:1px solid var(--b1);
+  position:sticky;top:0;z-index:200;overflow-x:auto;
+}
+.top-nav a{
+  font-family:'Azeret Mono',monospace;font-size:.6rem;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);text-decoration:none;
+  padding:13px 16px;border-bottom:2px solid transparent;
+  white-space:nowrap;transition:all .15s;
+}
+.top-nav a:hover{color:var(--text);}
+.top-nav a.active-nav{color:var(--snp);border-bottom-color:var(--snp);}
+
+/* ── LAYOUT ── */
+.wrap{max-width:1180px;margin:0 auto;padding:0 56px;}
+.section{padding:56px 0 0;}
+.section:last-of-type{padding-bottom:60px;}
+
+.sec-eyebrow{
+  font-family:'Azeret Mono',monospace;
+  font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:6px;
+  display:flex;align-items:center;gap:10px;
+}
+.sec-eyebrow::after{content:'';flex:1;height:1px;background:var(--b1);}
+.sec-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(1.6rem,3vw,2.4rem);
+  letter-spacing:.04em;line-height:1.0;
+  margin-bottom:8px;
+}
+.sec-desc{font-size:.84rem;color:var(--soft);max-width:720px;margin-bottom:28px;line-height:1.72;}
+
+/* ── CARDS ── */
+.card{
+  background:var(--bg2);border:1px solid var(--b1);
+  border-radius:10px;padding:22px;
+  transition:border-color .2s;
+}
+.card:hover{border-color:var(--b2);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+
+/* ── CALLOUTS ── */
+.callout{
+  padding:13px 17px;border-radius:7px;border-left:3px solid;
+  font-size:.8rem;line-height:1.65;margin-bottom:16px;
+}
+.co-snp{background:var(--snp-bg);border-color:var(--snp);color:#fed7aa;}
+.co-req{background:var(--req-bg);border-color:var(--req);color:#bae6fd;}
+.co-hit{background:var(--hit-bg);border-color:var(--hit);color:#bbf7d0;}
+.co-miss{background:var(--miss-bg);border-color:var(--miss);color:#fecaca;}
+.co-link{background:rgba(251,191,36,.06);border-color:var(--link);color:#fde68a;}
+
+/* ── CHANNEL BADGE ── */
+.ch{
+  display:inline-block;font-family:'Azeret Mono',monospace;
+  font-size:.6rem;font-weight:700;
+  padding:2px 7px;border-radius:3px;
+  letter-spacing:.06em;
+}
+.ch-snp{color:var(--snp);background:var(--snp-bg);border:1px solid rgba(249,115,22,.3);}
+.ch-req{color:var(--req);background:var(--req-bg);border:1px solid rgba(56,189,248,.3);}
+.ch-rsp{color:var(--rsp);background:var(--rsp-bg);border:1px solid rgba(192,132,252,.3);}
+.ch-dat{color:var(--dat);background:var(--dat-bg);border:1px solid rgba(52,211,153,.3);}
+.ch-hit{color:var(--hit);background:var(--hit-bg);border:1px solid rgba(34,197,94,.3);}
+.ch-miss{color:var(--miss);background:var(--miss-bg);border:1px solid rgba(239,68,68,.3);}
+
+/* ── FORMULA BOX ── */
+.formula{
+  font-family:'Azeret Mono',monospace;font-size:.75rem;
+  background:var(--bg3);border:1px solid var(--b1);
+  border-left:3px solid var(--snp);border-radius:5px;
+  padding:12px 16px;line-height:1.75;color:var(--text);
+  margin:12px 0;overflow-x:auto;white-space:pre;
+}
+
+/* ── TABLES ── */
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--b1);margin-bottom:20px;}
+table{width:100%;border-collapse:collapse;font-size:.78rem;}
+thead th{
+  padding:10px 14px;
+  font-family:'Azeret Mono',monospace;font-size:.58rem;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);background:var(--bg3);
+  border-bottom:1px solid var(--b1);text-align:left;
+  white-space:nowrap;
+}
+tbody td{padding:9px 14px;border-bottom:1px solid var(--b1);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:rgba(255,255,255,.02);}
+
+/* ── INTERACTIVE DEMO ── */
+.demo-btn{
+  font-family:'Azeret Mono',monospace;font-size:.72rem;font-weight:600;
+  padding:9px 20px;border-radius:6px;border:1px solid;
+  cursor:pointer;letter-spacing:.05em;transition:all .2s;
+}
+.btn-snp{
+  color:var(--snp);border-color:rgba(249,115,22,.4);background:var(--snp-bg);
+}
+.btn-snp:hover{background:rgba(249,115,22,.15);transform:translateY(-1px);box-shadow:0 4px 16px rgba(249,115,22,.2);}
+.btn-hit{
+  color:var(--hit);border-color:rgba(34,197,94,.4);background:var(--hit-bg);
+}
+.btn-hit:hover{background:rgba(34,197,94,.15);transform:translateY(-1px);}
+.btn-miss{
+  color:var(--miss);border-color:rgba(239,68,68,.4);background:var(--miss-bg);
+}
+.btn-miss:hover{background:rgba(239,68,68,.15);transform:translateY(-1px);}
+.btn-reset{
+  color:var(--soft);border-color:var(--b2);background:transparent;
+}
+.btn-reset:hover{color:var(--text);border-color:var(--b3);}
+
+/* ── NODE BOXES ── */
+.node-cpu{
+  border-radius:8px;padding:10px 14px;text-align:center;
+  font-family:'Azeret Mono',monospace;font-weight:600;font-size:.78rem;
+  border:1.5px solid;transition:all .35s ease;
+  position:relative;
+}
+.cpu-idle{background:rgba(56,189,248,.06);border-color:rgba(56,189,248,.25);color:var(--req);}
+.cpu-snooped{background:rgba(249,115,22,.12);border-color:var(--snp);color:var(--snp);box-shadow:0 0 14px rgba(249,115,22,.25);}
+.cpu-hit{background:rgba(34,197,94,.12);border-color:var(--hit);color:var(--hit);box-shadow:0 0 14px rgba(34,197,94,.25);}
+.cpu-victim{background:rgba(239,68,68,.12);border-color:var(--miss);color:var(--miss);box-shadow:0 0 14px rgba(239,68,68,.25);}
+
+.node-hn{
+  border-radius:8px;padding:14px 20px;text-align:center;
+  font-family:'Azeret Mono',monospace;font-weight:700;font-size:.85rem;
+  background:rgba(251,191,36,.07);border:2px solid rgba(251,191,36,.4);
+  color:var(--link);transition:all .35s ease;
+  box-shadow:0 0 20px rgba(251,191,36,.1);
+}
+.node-sn{
+  border-radius:8px;padding:10px 14px;text-align:center;
+  font-family:'Azeret Mono',monospace;font-weight:600;font-size:.78rem;
+  background:rgba(52,211,153,.06);border:1.5px solid rgba(52,211,153,.25);
+  color:var(--dat);transition:all .35s ease;
+}
+
+/* ── LINK VISUAL ── */
+.link-wire{
+  height:3px;border-radius:2px;flex:1;
+  background:var(--b2);transition:all .4s ease;position:relative;overflow:hidden;
+}
+.link-wire.active-snp{background:var(--snp);}
+.link-wire.active-hit{background:var(--hit);}
+.link-wire.active-miss{background:var(--miss);}
+.link-wire::after{
+  content:'';position:absolute;top:0;left:-100%;
+  width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+  animation:none;
+}
+.link-wire.pulse::after{animation:shimmer .8s ease-in-out;}
+@keyframes shimmer{from{left:-100%}to{left:200%}}
+
+/* ── LOG ── */
+.log-box{
+  background:var(--bg3);border:1px solid var(--b1);border-radius:8px;
+  padding:14px;min-height:90px;max-height:220px;overflow-y:auto;
+}
+.log-entry{
+  font-family:'Azeret Mono',monospace;font-size:.68rem;
+  padding:4px 8px;border-radius:4px;border-left:2px solid;
+  margin-bottom:4px;animation:fadeIn .3s ease;line-height:1.5;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1}}
+
+/* ── STEP INDICATOR ── */
+.step-tracker{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.step-pip{
+  font-family:'Azeret Mono',monospace;font-size:.62rem;
+  padding:4px 10px;border-radius:4px;border:1px solid var(--b1);
+  color:var(--dim);background:var(--bg3);transition:all .3s;
+  white-space:nowrap;
+}
+.step-pip.done{color:var(--hit);border-color:rgba(34,197,94,.3);background:var(--hit-bg);}
+.step-pip.active{color:var(--snp);border-color:rgba(249,115,22,.4);background:var(--snp-bg);}
+
+/* ── CHANNEL ANATOMY ── */
+.ch-strip{
+  display:flex;border-radius:8px;overflow:hidden;border:1px solid var(--b1);
+  margin-bottom:16px;
+}
+.ch-lane{
+  flex:1;padding:12px 8px;text-align:center;
+  border-right:1px solid var(--b1);
+  font-family:'Azeret Mono',monospace;font-size:.65rem;
+  font-weight:600;transition:all .25s;
+}
+.ch-lane:last-child{border-right:none;}
+.cl-req{background:var(--req-bg);color:var(--req);}
+.cl-rsp{background:var(--rsp-bg);color:var(--rsp);}
+.cl-dat{background:var(--dat-bg);color:var(--dat);}
+.cl-snp{background:var(--snp-bg);color:var(--snp);}
+.cl-wire{
+  background:rgba(251,191,36,.04);
+  border-top:2px solid var(--link);
+  margin-top:8px;padding:6px 4px;
+  font-size:.55rem;color:var(--link);
+  text-align:center;font-family:'Azeret Mono',monospace;
+}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--b2),transparent);margin:48px 0 0;}
+
+/* ── FOOTER ── */
+footer{
+  border-top:1px solid var(--b1);padding:20px 56px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:8px;background:var(--bg1);
+}
+.ft{font-family:'Azeret Mono',monospace;font-size:.58rem;color:var(--dim);}
+
+/* ── FLIT BOX ── */
+.flit-box{
+  font-family:'Azeret Mono',monospace;font-size:.7rem;
+  background:var(--bg3);border:1px solid var(--b2);
+  border-radius:6px;padding:12px 14px;line-height:1.85;
+  overflow-x:auto;white-space:pre;
+}
+.fl-field{color:var(--muted);}
+.fl-val-snp{color:var(--snp);}
+.fl-val-req{color:var(--req);}
+.fl-val-hit{color:var(--hit);}
+.fl-comment{color:var(--dim);font-style:italic;}
+
+/* ── COMPARISON BADGE ── */
+.cmp-val-good{color:var(--hit);font-weight:600;}
+.cmp-val-bad{color:var(--miss);font-weight:600;}
+.cmp-val-mid{color:var(--link);font-weight:600;}
+
+/* ── TOOLTIP ── */
+[data-tip]{position:relative;cursor:help;}
+[data-tip]::after{
+  content:attr(data-tip);
+  position:absolute;bottom:calc(100% + 6px);left:50%;
+  transform:translateX(-50%);
+  background:var(--bg3);border:1px solid var(--b2);
+  color:var(--text);font-size:.68rem;
+  padding:5px 10px;border-radius:5px;
+  white-space:nowrap;pointer-events:none;
+  opacity:0;transition:opacity .15s;z-index:50;
+  font-family:'Azeret Mono',monospace;
+}
+[data-tip]:hover::after{opacity:1;}
+
+@media(max-width:768px){
+  .hero,.wrap,.top-nav,footer{padding-left:18px;padding-right:18px;}
+  .grid2,.grid3{grid-template-columns:1fr;}
+  .hero h1{font-size:3rem;}
+}
+
+/* animations for interactive sim */
+@keyframes packetMove{
+  0%  {opacity:0;transform:translateX(-8px);}
+  15% {opacity:1;}
+  85% {opacity:1;}
+  100%{opacity:0;transform:translateX(8px);}
+}
+.packet-anim{animation:packetMove .9s ease-in-out forwards;}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+<div class="hero-inner wrap">
+  <div class="hero-eyebrow">CHI Protocol · Snoop Channel Architecture · ARM IHI 0050</div>
+  <h1>
+    <span class="h-snp">SNP</span>
+    <span class="h-chi"> Channel</span><br>
+    <span class="h-chi">Direct Link</span><br>
+    <span class="h-snp">vs Broadcast</span>
+  </h1>
+  <p class="hero-sub">
+    Why the Snoop channel carries no TgtID. How HN-F selects a physical link. What happens when the Snoop Filter misses. Complete interactive walkthrough.
+  </p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <span class="chip chip-snp">● SNP — no TgtID</span>
+    <span class="chip chip-req">● REQ/RSP/DAT — need TgtID</span>
+    <span class="chip chip-link">● Link = logical identifier</span>
+  </div>
+</div>
+</header>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <a href="#why">Why No TgtID</a>
+  <a href="#link">What is a Link</a>
+  <a href="#anatomy">Channel Anatomy</a>
+  <a href="#direct">Direct Link Demo</a>
+  <a href="#broadcast">Broadcast Demo</a>
+  <a href="#compare">Comparison</a>
+  <a href="#flit">SNP Flit</a>
+</nav>
+
+<div class="wrap">
+
+<!-- ═══ WHY NO TGTID ═══════════════════════════════════════ -->
+<div class="section" id="why">
+  <div class="sec-eyebrow">Section 01</div>
+  <div class="sec-title" style="color:var(--snp)">Why SNP Has No TgtID</div>
+  <p class="sec-desc">Every other CHI channel carries a TgtID so mesh routers can forward the flit to the right node. SNP drops it entirely — because the link itself identifies the destination.</p>
+
+  <div class="grid2" style="margin-bottom:20px;align-items:start;">
+    <div>
+      <div class="callout co-req">
+        <strong>REQ / RSP / DAT:</strong> Flit enters mesh. Router reads TgtID. Forwards hop-by-hop. Destination unknown without TgtID.
+      </div>
+      <div class="callout co-snp">
+        <strong>SNP:</strong> HN-F looks up Snoop Filter → gets NodeID of sharer → maps NodeID to physical link → puts flit directly on that link. Router not involved. TgtID = redundant = dropped.
+      </div>
+      <div class="callout co-link">
+        <strong>The saving:</strong> TgtID = 11 bits. Every SNP flit shrinks by 11 bits. At thousands of snoops/sec across a 16-core mesh, this is meaningful bandwidth reduction.
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">// Channel Field Comparison</div>
+      <div class="tbl-wrap" style="margin-bottom:0;">
+        <table>
+          <thead>
+            <tr><th>Channel</th><th>TgtID?</th><th>Has Addr?</th><th>Carries Data?</th><th>Routing</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="ch ch-req">REQ</span></td>
+              <td class="cmp-val-good">✔ Yes (11b)</td>
+              <td class="cmp-val-good">✔ Yes</td>
+              <td style="color:var(--muted)">No</td>
+              <td style="font-size:.72rem;color:var(--soft);">Mesh router hops</td>
+            </tr>
+            <tr>
+              <td><span class="ch ch-rsp">RSP</span></td>
+              <td class="cmp-val-good">✔ Yes (11b)</td>
+              <td style="color:var(--muted)">No</td>
+              <td style="color:var(--muted)">No</td>
+              <td style="font-size:.72rem;color:var(--soft);">Mesh router hops</td>
+            </tr>
+            <tr>
+              <td><span class="ch ch-dat">DAT</span></td>
+              <td class="cmp-val-good">✔ Yes (11b)</td>
+              <td style="color:var(--muted)">No</td>
+              <td class="cmp-val-good">✔ Yes</td>
+              <td style="font-size:.72rem;color:var(--soft);">Mesh router hops</td>
+            </tr>
+            <tr style="background:rgba(249,115,22,.04);">
+              <td><span class="ch ch-snp">SNP</span></td>
+              <td class="cmp-val-bad">✘ None</td>
+              <td class="cmp-val-good">✔ Yes</td>
+              <td style="color:var(--muted)">No</td>
+              <td style="font-size:.72rem;color:var(--snp);font-weight:600;">Direct link only</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="formula">Routing rule for REQ/RSP/DAT:
+  flit.TgtID → mesh router → forward to correct node
+
+Routing rule for SNP:
+  snoop_filter[addr].NodeID → routing_table[NodeID] → link
+  put flit on that link → CPU on other end receives it
+  NO TgtID field. NO mesh router involvement.</div>
+</div>
+
+<!-- ═══ WHAT IS A LINK ═══════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="link">
+  <div class="sec-eyebrow">Section 02</div>
+  <div class="sec-title" style="color:var(--link)">What Exactly Is a "Link"?</div>
+  <p class="sec-desc">Link ≠ separate wire. Link = one physical connection between two adjacent nodes, carrying ALL four CHI channels simultaneously via virtual channel multiplexing.</p>
+
+  <div class="grid3" style="margin-bottom:20px;">
+    <div class="card" style="border-left:3px solid var(--link);">
+      <div style="font-weight:600;font-size:.88rem;margin-bottom:8px;color:var(--link);">🔌 Wire (Physical)</div>
+      <p style="font-size:.78rem;color:var(--soft);line-height:1.65;">Actual copper/metal trace on silicon die. Current flows here. Cannot be reprogrammed.</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--snp);">
+      <div style="font-weight:600;font-size:.88rem;margin-bottom:8px;color:var(--snp);">🔗 Link (Physical+Logical)</div>
+      <p style="font-size:.78rem;color:var(--soft);line-height:1.65;">Bundle of wires between two nodes. Carries REQ + RSP + DAT + SNP channels. One link per neighbour node.</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--req);">
+      <div style="font-weight:600;font-size:.88rem;margin-bottom:8px;color:var(--req);">🚪 Port (Logical)</div>
+      <p style="font-size:.78rem;color:var(--soft);line-height:1.65;">HN-F's named endpoint of a link. "Port 2" = the end of the link that connects to CPU2. Not a separate wire.</p>
+    </div>
+  </div>
+
+  <!-- Channel anatomy strip -->
+  <div class="card" style="margin-bottom:20px;">
+    <div style="font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">// One Link Between HN-F and CPU2 — All 4 channels share same physical wires</div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <div style="font-family:'Azeret Mono',monospace;font-size:.7rem;color:var(--link);font-weight:600;min-width:60px;">HN-F</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+        <div class="ch-strip" id="anatomy-strip">
+          <div class="ch-lane cl-req" id="anat-req">REQ<br><span style="font-size:.52rem;opacity:.7">TX/RX + credits</span></div>
+          <div class="ch-lane cl-rsp" id="anat-rsp">RSP<br><span style="font-size:.52rem;opacity:.7">TX/RX + credits</span></div>
+          <div class="ch-lane cl-dat" id="anat-dat">DAT<br><span style="font-size:.52rem;opacity:.7">TX/RX + credits</span></div>
+          <div class="ch-lane cl-snp" id="anat-snp">SNP<br><span style="font-size:.52rem;opacity:.7">TX/RX + credits</span></div>
+        </div>
+        <div class="cl-wire" style="border-radius:4px;margin-top:2px;">⬑ shared physical silicon traces — one link, four virtual channels</div>
+      </div>
+      <div style="font-family:'Azeret Mono',monospace;font-size:.7rem;color:var(--req);font-weight:600;min-width:60px;text-align:right;">CPU2</div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+      <button class="demo-btn btn-snp" onclick="highlightChannel('snp')">Highlight SNP lane</button>
+      <button class="demo-btn btn-hit" onclick="highlightChannel('req')">Highlight REQ lane</button>
+      <button class="demo-btn btn-reset" onclick="highlightChannel('all')">Show all</button>
+    </div>
+  </div>
+
+  <!-- Port vs Link vs Wire table -->
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr><th>Term</th><th>Layer</th><th>Separate for SNP?</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-family:'Azeret Mono',monospace;color:var(--link);font-weight:600;">Wire</td>
+          <td><span class="ch-miss ch" style="background:transparent;border:none;padding:0;color:var(--soft);">Physical</span></td>
+          <td class="cmp-val-bad">No</td>
+          <td style="color:var(--soft);font-size:.75rem;">Actual metal trace on chip. Shared by all channels.</td>
+        </tr>
+        <tr>
+          <td style="font-family:'Azeret Mono',monospace;color:var(--link);font-weight:600;">Link</td>
+          <td><span style="font-size:.72rem;color:var(--soft);">Physical+Logical</span></td>
+          <td class="cmp-val-bad">No</td>
+          <td style="color:var(--soft);font-size:.75rem;">Bundle of wires between two adjacent nodes. One link = REQ+RSP+DAT+SNP multiplexed.</td>
+        </tr>
+        <tr>
+          <td style="font-family:'Azeret Mono',monospace;color:var(--link);font-weight:600;">Virtual Channel</td>
+          <td><span style="font-size:.72rem;color:var(--soft);">Logical</span></td>
+          <td class="cmp-val-bad">No</td>
+          <td style="color:var(--soft);font-size:.75rem;">REQ / RSP / DAT / SNP are virtual channels on the same link. Own credit pool + arbitration slot.</td>
+        </tr>
+        <tr>
+          <td style="font-family:'Azeret Mono',monospace;color:var(--link);font-weight:600;">Port</td>
+          <td><span style="font-size:.72rem;color:var(--soft);">Logical</span></td>
+          <td class="cmp-val-bad">No</td>
+          <td style="color:var(--soft);font-size:.75rem;">Named endpoint of a link at HN-F. "Port 2" = the link-end connecting to CPU2. Not a separate wire.</td>
+        </tr>
+        <tr style="background:rgba(249,115,22,.04);">
+          <td style="font-family:'Azeret Mono',monospace;color:var(--snp);font-weight:600;">SNP Channel</td>
+          <td><span style="font-size:.72rem;color:var(--soft);">Logical</span></td>
+          <td class="cmp-val-bad">No</td>
+          <td style="color:var(--snp);font-size:.75rem;">One of four virtual channels on each link. Selecting which link = selecting destination. No TgtID needed.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ INTERACTIVE SIMULATOR ═══════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="direct">
+  <div class="sec-eyebrow">Section 03</div>
+  <div class="sec-title" style="color:var(--hit)">Interactive Demo — Direct Link (Filter HIT)</div>
+  <p class="sec-desc">Snoop Filter has an entry for the target address. HN-F knows exactly which CPU holds the line → sends SNP on ONE link only → 3 CPUs untouched.</p>
+
+  <!-- Step tracker -->
+  <div class="step-tracker" id="hit-steps">
+    <span class="step-pip" id="hpip0">1 CPU0 → REQ</span>
+    <span style="color:var(--dim)">→</span>
+    <span class="step-pip" id="hpip1">2 Filter lookup</span>
+    <span style="color:var(--dim)">→</span>
+    <span class="step-pip" id="hpip2">3 SNP → CPU2</span>
+    <span style="color:var(--dim)">→</span>
+    <span class="step-pip" id="hpip3">4 CPU2 responds</span>
+    <span style="color:var(--dim)">→</span>
+    <span class="step-pip" id="hpip4">5 HN-F → CPU0</span>
+  </div>
+
+  <div class="grid2" style="gap:20px;align-items:start;">
+    <!-- Topology diagram -->
+    <div>
+      <div class="card" style="padding:20px;margin-bottom:14px;">
+        <div style="font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">// System Topology — 4 CPUs + HN-F + SN-F</div>
+
+        <!-- CPU row -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">
+          <div id="hit-cpu0" class="node-cpu cpu-idle">CPU0<br><span style="font-size:.6rem;opacity:.7">0x01</span></div>
+          <div id="hit-cpu1" class="node-cpu cpu-idle">CPU1<br><span style="font-size:.6rem;opacity:.7">0x02</span></div>
+          <div id="hit-cpu2" class="node-cpu cpu-idle">CPU2<br><span style="font-size:.6rem;opacity:.7">0x03</span></div>
+          <div id="hit-cpu3" class="node-cpu cpu-idle">CPU3<br><span style="font-size:.6rem;opacity:.7">0x04</span></div>
+        </div>
+
+        <!-- Links CPU → HN-F -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px;">
+          <div style="display:flex;justify-content:center;"><div id="hit-lnk0" class="link-wire" style="width:3px;height:28px;flex:none;"></div></div>
+          <div style="display:flex;justify-content:center;"><div id="hit-lnk1" class="link-wire" style="width:3px;height:28px;flex:none;"></div></div>
+          <div style="display:flex;justify-content:center;"><div id="hit-lnk2" class="link-wire" style="width:3px;height:28px;flex:none;"></div></div>
+          <div style="display:flex;justify-content:center;"><div id="hit-lnk3" class="link-wire" style="width:3px;height:28px;flex:none;"></div></div>
+        </div>
+
+        <!-- HN-F -->
+        <div id="hit-hn" class="node-hn" style="margin-bottom:4px;">
+          HN-F · 0x10<br>
+          <span style="font-size:.62rem;opacity:.7;font-weight:400;">Snoop Filter · Routing Table</span>
+        </div>
+
+        <!-- Link HN-F → SN-F -->
+        <div style="display:flex;justify-content:center;margin-bottom:4px;">
+          <div id="hit-lnk-sn" class="link-wire" style="width:3px;height:20px;flex:none;"></div>
+        </div>
+
+        <!-- SN-F -->
+        <div id="hit-sn" class="node-sn">SN-F · 0x20 · DDR Memory</div>
+      </div>
+
+      <!-- Snoop filter state -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--b1);font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);">// Snoop Filter State</div>
+        <div class="tbl-wrap" style="margin-bottom:0;border:none;border-radius:0;">
+          <table>
+            <thead><tr><th>Address</th><th>Sharer</th><th>State</th><th>Link</th></tr></thead>
+            <tbody>
+              <tr id="sf-row" style="background:rgba(249,115,22,.04);">
+                <td style="font-family:'Azeret Mono',monospace;font-size:.7rem;color:var(--snp)">0xBEEF_0040</td>
+                <td><span class="ch ch-snp" id="sf-sharer">CPU2 (0x03)</span></td>
+                <td id="sf-state"><span class="ch" style="color:var(--miss);background:var(--miss-bg);border:1px solid rgba(239,68,68,.3);">UD</span></td>
+                <td style="font-family:'Azeret Mono',monospace;font-size:.7rem;color:var(--link);" id="sf-link">Port 2</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: controls + log + flit -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="demo-btn btn-hit" onclick="hitStep()">▶ Next Step</button>
+        <button class="demo-btn btn-reset" onclick="hitReset()">↺ Reset</button>
+        <span id="hit-step-label" style="font-family:'Azeret Mono',monospace;font-size:.68rem;color:var(--muted);padding:9px 12px;background:var(--bg3);border:1px solid var(--b1);border-radius:6px;">Ready</span>
+      </div>
+
+      <!-- Log -->
+      <div>
+        <div style="font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">// Activity Log</div>
+        <div class="log-box" id="hit-log"><div style="font-family:'Azeret Mono',monospace;font-size:.68rem;color:var(--dim);">Press ▶ to start simulation…</div></div>
+      </div>
+
+      <!-- SNP flit display -->
+      <div>
+        <div style="font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">// SNP Flit (no TgtID!)</div>
+        <div class="flit-box" id="hit-flit" style="opacity:.35;">
+<span class="fl-comment">// SNP flit — HN-F puts on Link to CPU2</span>
+<span class="fl-field">SrcID  </span>= <span class="fl-val-snp">0x10</span>      <span class="fl-comment">// from HN-F</span>
+<span class="fl-field">TxnID  </span>= <span class="fl-val-snp">0x07</span>      <span class="fl-comment">// snoop ID</span>
+<span class="fl-field">Opcode </span>= <span class="fl-val-snp">SnpShared</span> <span class="fl-comment">// downgrade to SC</span>
+<span class="fl-field">Addr   </span>= <span class="fl-val-snp">0xBEEF_0040</span>
+<span class="fl-field">RetToSrc</span>= <span class="fl-val-snp">1</span>        <span class="fl-comment">// return data</span>
+<span class="fl-comment">// ← NO TgtID field!</span></div>
+      </div>
+
+      <!-- Cost summary -->
+      <div class="card" style="padding:14px;">
+        <div style="font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">// Cost (Filter HIT)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="text-align:center;padding:8px;background:var(--bg3);border-radius:5px;">
+            <div style="font-family:'Azeret Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--hit);">1</div>
+            <div style="font-size:.62rem;color:var(--muted);">SNP flit sent</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg3);border-radius:5px;">
+            <div style="font-family:'Azeret Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--hit);">3</div>
+            <div style="font-size:.62rem;color:var(--muted);">CPUs spared</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg3);border-radius:5px;">
+            <div style="font-family:'Azeret Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--hit);">1</div>
+            <div style="font-size:.62rem;color:var(--muted);">RSP back</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg3);border-radius:5px;">
+            <div style="font-family:'Azeret Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--hit);">Low</div>
+            <div style="font-size:.62rem;color:var(--muted);">Latency</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BROADCAST DEMO ═══════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="broadcast">
+  <div class="sec-eyebrow">Section 04</div>
+  <div class="sec-title" style="color:var(--miss)">Interactive Demo — Broadcast (Filter MISS)</div>
+  <p class="sec-desc">Snoop Filter has no entry — it was evicted earlier. HN-F doesn't know who holds the line → sends SNP to ALL CPUs → all 4 links used → expensive.</p>
+
+  <div class="step-tracker" id="miss-steps">
+    <span class="step-pip" id="mpip0">1 CPU0 → REQ</span>
+    <span style="color:var(--dim)">→</span>
+    <span class="step-pip" id="mpip1">2 Filter MISS</span>
+    <span style="color:var(--dim)">→</span>
+    <span class="step-pip" id="mpip2">3 SNP → ALL CPUs</span>
+    <span style="color:var(--dim)">→</span>
+    <span class="step-pip" id="mpip3">4 All respond</span>
+    <span style="color:var(--dim)">→</span>
+    <span class="step-pip" id="mpip4">5 Data from CPU2</span>
+  </div>
+
+  <div class="grid2" style="gap:20px;align-items:start;">
+    <!-- Topology -->
+    <div>
+      <div class="card" style="padding:20px;margin-bottom:14px;">
+        <div style="font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">// System Topology — Broadcast scenario</div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">
+          <div id="brd-cpu0" class="node-cpu cpu-idle">CPU0<br><span style="font-size:.6rem;opacity:.7">0x01</span></div>
+          <div id="brd-cpu1" class="node-cpu cpu-idle">CPU1<br><span style="font-size:.6rem;opacity:.7">0x02</span></div>
+          <div id="brd-cpu2" class="node-cpu cpu-idle">CPU2<br><span style="font-size:.6rem;opacity:.7">0x03</span><br><span id="brd-cpu2-badge" style="font-size:.52rem;color:var(--miss);display:none;">UD ⚡</span></div>
+          <div id="brd-cpu3" class="node-cpu cpu-idle">CPU3<br><span style="font-size:.6rem;opacity:.7">0x04</span></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px;">
+          <div style="display:flex;justify-content:center;"><div id="brd-lnk0" class="link-wire" style="width:3px;height:28px;flex:none;"></div></div>
+          <div style="display:flex;justify-content:center;"><div id="brd-lnk1" class="link-wire" style="width:3px;height:28px;flex:none;"></div></div>
+          <div style="display:flex;justify-content:center;"><div id="brd-lnk2" class="link-wire" style="width:3px;height:28px;flex:none;"></div></div>
+          <div style="display:flex;justify-content:center;"><div id="brd-lnk3" class="link-wire" style="width:3px;height:28px;flex:none;"></div></div>
+        </div>
+
+        <div id="brd-hn" class="node-hn" style="margin-bottom:4px;">
+          HN-F · 0x10<br>
+          <span id="brd-hn-status" style="font-size:.62rem;opacity:.7;font-weight:400;">Snoop Filter · Routing Table</span>
+        </div>
+
+        <div style="display:flex;justify-content:center;margin-bottom:4px;">
+          <div id="brd-lnk-sn" class="link-wire" style="width:3px;height:20px;flex:none;"></div>
+        </div>
+        <div class="node-sn">SN-F · 0x20 · DDR Memory</div>
+      </div>
+
+      <!-- Empty snoop filter -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--b1);font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);">// Snoop Filter State</div>
+        <div style="padding:14px;font-family:'Azeret Mono',monospace;font-size:.72rem;text-align:center;">
+          <span id="sf-miss-status" style="color:var(--miss);">0xDEAD_C080 — NO ENTRY (evicted)</span><br>
+          <span style="color:var(--dim);font-size:.65rem;">Filter must broadcast to all RN-Fs</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls + log -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="demo-btn btn-miss" onclick="brdStep()">▶ Next Step</button>
+        <button class="demo-btn btn-reset" onclick="brdReset()">↺ Reset</button>
+        <span id="brd-step-label" style="font-family:'Azeret Mono',monospace;font-size:.68rem;color:var(--muted);padding:9px 12px;background:var(--bg3);border:1px solid var(--b1);border-radius:6px;">Ready</span>
+      </div>
+
+      <div>
+        <div style="font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">// Activity Log</div>
+        <div class="log-box" id="brd-log"><div style="font-family:'Azeret Mono',monospace;font-size:.68rem;color:var(--dim);">Press ▶ to start simulation…</div></div>
+      </div>
+
+      <!-- Broadcast SNP flit -->
+      <div>
+        <div style="font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">// 4 Identical SNP Flits Sent</div>
+        <div class="flit-box" id="brd-flit" style="opacity:.35;">
+<span class="fl-comment">// SNP flit × 4 — one per link</span>
+<span class="fl-field">SrcID  </span>= <span style="color:var(--miss)">0x10</span>      <span class="fl-comment">// from HN-F</span>
+<span class="fl-field">TxnID  </span>= <span style="color:var(--miss)">0x15</span>      <span class="fl-comment">// broadcast ID</span>
+<span class="fl-field">Opcode </span>= <span style="color:var(--miss)">SnpShared</span>
+<span class="fl-field">Addr   </span>= <span style="color:var(--miss)">0xDEAD_C080</span>
+<span class="fl-comment">// Same flit put on ALL 4 links</span>
+<span class="fl-comment">// HN-F waits for ALL 4 responses</span></div>
+      </div>
+
+      <!-- Cost summary -->
+      <div class="card" style="padding:14px;">
+        <div style="font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">// Cost (Filter MISS — Broadcast)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="text-align:center;padding:8px;background:var(--bg3);border-radius:5px;">
+            <div style="font-family:'Azeret Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--miss);">4</div>
+            <div style="font-size:.62rem;color:var(--muted);">SNP flits sent</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg3);border-radius:5px;">
+            <div style="font-family:'Azeret Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--miss);">0</div>
+            <div style="font-size:.62rem;color:var(--muted);">CPUs spared</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg3);border-radius:5px;">
+            <div style="font-family:'Azeret Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--miss);">4</div>
+            <div style="font-size:.62rem;color:var(--muted);">RSPs back (wait all)</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg3);border-radius:5px;">
+            <div style="font-family:'Azeret Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--miss);">High</div>
+            <div style="font-size:.62rem;color:var(--muted);">Latency (slowest wins)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ COMPARISON ═══════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="compare">
+  <div class="sec-eyebrow">Section 05</div>
+  <div class="sec-title">Direct Link vs Broadcast — Full Comparison</div>
+  <p class="sec-desc">Snoop Filter exists precisely to convert broadcasts into direct-link snoops. Every filter miss is a broadcast penalty.</p>
+
+  <div class="tbl-wrap" style="margin-bottom:20px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th style="color:var(--hit);">Direct Link (Filter HIT)</th>
+          <th style="color:var(--miss);">Broadcast (Filter MISS)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--soft);font-weight:500;">Trigger</td>
+          <td style="color:var(--soft);font-size:.76rem;">Filter has entry → knows which CPU</td>
+          <td style="color:var(--soft);font-size:.76rem;">Filter miss → no entry for address</td>
+        </tr>
+        <tr>
+          <td style="color:var(--soft);font-weight:500;">Links used</td>
+          <td class="cmp-val-good">1 (targeted)</td>
+          <td class="cmp-val-bad">N (all RN-Fs)</td>
+        </tr>
+        <tr>
+          <td style="color:var(--soft);font-weight:500;">SNP flits sent</td>
+          <td class="cmp-val-good">1</td>
+          <td class="cmp-val-bad">4 (for 4-CPU system)</td>
+        </tr>
+        <tr>
+          <td style="color:var(--soft);font-weight:500;">RSP flits received</td>
+          <td class="cmp-val-good">1</td>
+          <td class="cmp-val-bad">4 (must wait for all)</td>
+        </tr>
+        <tr>
+          <td style="color:var(--soft);font-weight:500;">CPUs interrupted</td>
+          <td class="cmp-val-good">1</td>
+          <td class="cmp-val-bad">All N CPUs</td>
+        </tr>
+        <tr>
+          <td style="color:var(--soft);font-weight:500;">Wasted SNP flits</td>
+          <td class="cmp-val-good">0</td>
+          <td class="cmp-val-bad">N−1 (only 1 had the line)</td>
+        </tr>
+        <tr>
+          <td style="color:var(--soft);font-weight:500;">Latency</td>
+          <td class="cmp-val-good">~1 RTT</td>
+          <td class="cmp-val-bad">~2–3 RTT (wait slowest CPU)</td>
+        </tr>
+        <tr>
+          <td style="color:var(--soft);font-weight:500;">Mesh bandwidth</td>
+          <td class="cmp-val-good">Minimal</td>
+          <td class="cmp-val-bad">High — all links active</td>
+        </tr>
+        <tr>
+          <td style="color:var(--soft);font-weight:500;">Pipeline disruption</td>
+          <td class="cmp-val-good">1 CPU pipeline stalled</td>
+          <td class="cmp-val-bad">All N pipelines stalled</td>
+        </tr>
+        <tr>
+          <td style="color:var(--soft);font-weight:500;">Scales with core count?</td>
+          <td class="cmp-val-good">Yes — always 1 SNP</td>
+          <td class="cmp-val-bad">No — N flits for N CPUs</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid2">
+    <div class="callout co-hit" style="margin-bottom:0;">
+      <strong>Why direct-link works without TgtID:</strong> HN-F selects which physical link to put the SNP flit on. The CPU at the other end of that link receives it. The link IS the addressing mechanism — no TgtID field needed inside the flit.
+    </div>
+    <div class="callout co-miss" style="margin-bottom:0;">
+      <strong>Broadcast penalty scales badly:</strong> 16-core system with 10% filter miss rate → every miss costs 16× the bandwidth and latency. This is why engineers spend silicon area on large snoop filters.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SNP FLIT ANATOMY ═══════════════════════════════════ -->
+<div class="divider"></div>
+<div class="section" id="flit">
+  <div class="sec-eyebrow">Section 06</div>
+  <div class="sec-title" style="color:var(--snp)">SNP Flit — Field-Level Anatomy</div>
+  <p class="sec-desc">The SNP flit is deliberately compact. No TgtID saves 11 bits. Every field has a specific purpose. Compare with REQ flit which carries TgtID.</p>
+
+  <div class="grid2" style="margin-bottom:20px;align-items:start;">
+    <!-- SNP flit -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--b1);background:var(--snp-bg);display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-family:'Azeret Mono',monospace;font-size:.72rem;font-weight:700;color:var(--snp);">SNP Flit</span>
+        <span class="ch ch-snp">no TgtID</span>
+      </div>
+      <table>
+        <thead><tr><th>Field</th><th>Bits</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--snp);">QoS</td><td class="mono" style="color:var(--muted);">4</td><td style="color:var(--soft);font-size:.75rem;">Priority — inherited from originating REQ</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--req);">SrcID</td><td class="mono" style="color:var(--muted);">11</td><td style="color:var(--soft);font-size:.75rem;">HN-F node ID — snoopee routes RSP/DAT back here</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--req);">TxnID</td><td class="mono" style="color:var(--muted);">8</td><td style="color:var(--soft);font-size:.75rem;">Snoop ID — snoopee echoes in SnpResp</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--req);">FwdNID</td><td class="mono" style="color:var(--muted);">11</td><td style="color:var(--soft);font-size:.75rem;">DCT: node to forward data to (if forwarding)</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--req);">FwdTxnID</td><td class="mono" style="color:var(--muted);">8</td><td style="color:var(--soft);font-size:.75rem;">DCT: TxnID to use in forwarded DAT flit</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--snp);">Opcode</td><td class="mono" style="color:var(--muted);">5</td><td style="color:var(--soft);font-size:.75rem;">SnpShared / SnpUnique / SnpCleanInvalid…</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--snp);">Addr</td><td class="mono" style="color:var(--muted);">44–52</td><td style="color:var(--soft);font-size:.75rem;">Cache line address — snoopee checks its tag</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--link);">NS</td><td class="mono" style="color:var(--muted);">1</td><td style="color:var(--soft);font-size:.75rem;">Non-Secure — must match cache tag NS bit</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--link);">DoNotGoToSD</td><td class="mono" style="color:var(--muted);">1</td><td style="color:var(--soft);font-size:.75rem;">Prevent SD state transition at snoopee</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--link);">RetToSrc</td><td class="mono" style="color:var(--muted);">1</td><td style="color:var(--soft);font-size:.75rem;">Force data return even if line is clean</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--dim);">TraceTag</td><td class="mono" style="color:var(--muted);">1</td><td style="color:var(--soft);font-size:.75rem;">Debug trace flag — propagated from REQ</td></tr>
+          <tr style="background:rgba(239,68,68,.04);">
+            <td style="font-family:'Azeret Mono',monospace;color:var(--miss);text-decoration:line-through;">TgtID</td>
+            <td class="mono" style="color:var(--miss);text-decoration:line-through;">11</td>
+            <td style="color:var(--miss);font-size:.75rem;">NOT PRESENT — link selection replaces this</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- REQ flit comparison -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--b1);background:var(--req-bg);display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-family:'Azeret Mono',monospace;font-size:.72rem;font-weight:700;color:var(--req);">REQ Flit (for comparison)</span>
+        <span class="ch ch-req">has TgtID</span>
+      </div>
+      <table>
+        <thead><tr><th>Field</th><th>Bits</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--req);">QoS</td><td class="mono" style="color:var(--muted);">4</td><td style="color:var(--soft);font-size:.75rem;">Priority</td></tr>
+          <tr style="background:rgba(34,197,94,.04);">
+            <td style="font-family:'Azeret Mono',monospace;color:var(--hit);font-weight:700;">TgtID</td>
+            <td class="mono" style="color:var(--hit);font-weight:700;">11</td>
+            <td style="color:var(--hit);font-size:.75rem;font-weight:600;">✔ Present — mesh router reads this to route flit</td>
+          </tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--req);">SrcID</td><td class="mono" style="color:var(--muted);">11</td><td style="color:var(--soft);font-size:.75rem;">Source node</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--req);">TxnID</td><td class="mono" style="color:var(--muted);">8</td><td style="color:var(--soft);font-size:.75rem;">Transaction ID</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--req);">ReturnNID</td><td class="mono" style="color:var(--muted);">11</td><td style="color:var(--soft);font-size:.75rem;">Return data to this node</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--snp);">Opcode</td><td class="mono" style="color:var(--muted);">6</td><td style="color:var(--soft);font-size:.75rem;">ReadShared / WriteBack…</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--snp);">Addr</td><td class="mono" style="color:var(--muted);">44–52</td><td style="color:var(--soft);font-size:.75rem;">Physical address</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--link);">Size</td><td class="mono" style="color:var(--muted);">3</td><td style="color:var(--soft);font-size:.75rem;">Transfer size</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--link);">MemAttr</td><td class="mono" style="color:var(--muted);">4</td><td style="color:var(--soft);font-size:.75rem;">Memory attributes</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--link);">SnpAttr</td><td class="mono" style="color:var(--muted);">1</td><td style="color:var(--soft);font-size:.75rem;">Snoopable flag</td></tr>
+          <tr><td style="font-family:'Azeret Mono',monospace;color:var(--link);">ExpCompAck</td><td class="mono" style="color:var(--muted);">1</td><td style="color:var(--soft);font-size:.75rem;">Will send CompAck</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Key insight box -->
+  <div class="callout co-snp">
+    <strong>The key insight:</strong> REQ needs TgtID because it enters a shared mesh where multiple routers must forward it. SNP goes on a <em>specific pre-selected link</em> — HN-F picks the link based on its routing table (NodeID → port). The link itself carries the addressing information. No field inside the flit needed. This is why SNP is point-to-point only — mesh routing of SNP would require adding TgtID back.
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<div class="divider" style="margin-bottom:0;"></div>
+<footer>
+  <div class="ft">CHI Protocol · SNP Channel · Direct Link vs Broadcast · ARM IHI 0050</div>
+  <div class="ft">HN-F = Home Node Full · SNP = Snoop · RN-F = Requester Node Full</div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════
+//  CHANNEL ANATOMY HIGHLIGHT
+// ═══════════════════════════════════════
+function highlightChannel(ch) {
+  const lanes = ['req','rsp','dat','snp'];
+  lanes.forEach(c => {
+    const el = document.getElementById('anat-'+c);
+    if (!el) return;
+    if (ch === 'all') {
+      el.style.opacity = '1';
+      el.style.transform = 'scale(1)';
+    } else if (c === ch) {
+      el.style.opacity = '1';
+      el.style.transform = 'scale(1.05)';
+      el.style.boxShadow = ch === 'snp'
+        ? '0 0 16px rgba(249,115,22,.35)'
+        : '0 0 16px rgba(56,189,248,.35)';
+    } else {
+      el.style.opacity = '0.3';
+      el.style.transform = 'scale(1)';
+      el.style.boxShadow = 'none';
+    }
+  });
+  if (ch === 'all') {
+    lanes.forEach(c => {
+      const el = document.getElementById('anat-'+c);
+      if (el) el.style.boxShadow = 'none';
+    });
+  }
+}
+
+// ═══════════════════════════════════════
+//  HELPER: log entry
+// ═══════════════════════════════════════
+function addLog(logId, msg, color='#38bdf8') {
+  const log = document.getElementById(logId);
+  if (!log) return;
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.style.borderLeftColor = color;
+  div.style.color = color;
+  div.style.background = color + '10';
+  div.textContent = msg;
+  log.prepend(div);
+}
+
+function setLink(id, state) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'link-wire';
+  if (state) {
+    el.classList.add('active-'+state);
+    el.classList.add('pulse');
+    setTimeout(() => el.classList.remove('pulse'), 900);
+  }
+}
+function resetLink(id) {
+  const el = document.getElementById(id);
+  if (el) el.className = 'link-wire';
+}
+function setCpu(id, state) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'node-cpu cpu-'+state;
+}
+function setPip(id, state) {
+  const el = document.getElementById(id);
+  if (el) { el.className = 'step-pip'; if (state) el.classList.add(state); }
+}
+
+// ═══════════════════════════════════════
+//  FILTER HIT SIMULATOR
+// ═══════════════════════════════════════
+let hitIdx = 0;
+const hitActions = [
+  () => {
+    setCpu('hit-cpu0','hit');
+    setLink('hit-lnk0','hit');
+    addLog('hit-log','① CPU0 → HN-F: ReadShared(0xBEEF_0040) on REQ channel','#38bdf8');
+    setPip('hpip0','done');
+    setPip('hpip1','active');
+    document.getElementById('hit-step-label').textContent = 'Step 1: REQ sent';
+    document.getElementById('hit-flit').style.opacity = '0.35';
+  },
+  () => {
+    // filter lookup
+    document.getElementById('sf-row').style.background='rgba(249,115,22,.14)';
+    document.getElementById('hit-hn').style.boxShadow='0 0 24px rgba(251,191,36,.35)';
+    addLog('hit-log','② HN-F snoop filter lookup: 0xBEEF_0040 → CPU2 (0x03) → Port 2','#fbbf24');
+    addLog('hit-log','   Routing table: NodeID 0x03 → direct link to CPU2','#fbbf24');
+    setPip('hpip1','done');
+    setPip('hpip2','active');
+    document.getElementById('hit-step-label').textContent = 'Step 2: Filter HIT';
+    resetLink('hit-lnk0'); setCpu('hit-cpu0','idle');
+  },
+  () => {
+    // SNP to CPU2 only
+    setLink('hit-lnk2','snp');
+    setCpu('hit-cpu2','snooped');
+    addLog('hit-log','③ HN-F → CPU2: SNP flit on direct link (Port 2). No TgtID needed.','#f97316');
+    addLog('hit-log','   CPU0, CPU1, CPU3 — untouched. Links idle.','#22c55e');
+    setPip('hpip2','done');
+    setPip('hpip3','active');
+    document.getElementById('hit-step-label').textContent = 'Step 3: SNP → CPU2 only';
+    document.getElementById('hit-flit').style.opacity = '1';
+  },
+  () => {
+    // CPU2 responds
+    setLink('hit-lnk2','hit');
+    setCpu('hit-cpu2','hit');
+    addLog('hit-log','④ CPU2 → HN-F: SnpResp_SC_PD on RSP+DAT channels (has TgtID=HN-F)','#22c55e');
+    addLog('hit-log','   CPU2 transitions UD → SC. Sends dirty data back.','#22c55e');
+    setPip('hpip3','done');
+    setPip('hpip4','active');
+    document.getElementById('hit-step-label').textContent = 'Step 4: CPU2 responds';
+  },
+  () => {
+    // HN-F → CPU0
+    setLink('hit-lnk0','hit');
+    setCpu('hit-cpu0','hit');
+    addLog('hit-log','⑤ HN-F → CPU0: CompData(SC) on DAT channel. Transaction complete.','#22c55e');
+    addLog('hit-log','   Total: 1 SNP flit. 3 CPUs never interrupted. ✓','#22c55e');
+    setPip('hpip4','done');
+    document.getElementById('hit-step-label').textContent = '✓ Complete';
+    document.getElementById('btn-step').disabled = false;
+  }
+];
+
+function hitStep() {
+  if (hitIdx >= hitActions.length) return;
+  hitActions[hitIdx]();
+  hitIdx++;
+  if (hitIdx >= hitActions.length) {
+    // find step button — disable
+  }
+}
+
+function hitReset() {
+  hitIdx = 0;
+  ['hit-cpu0','hit-cpu1','hit-cpu2','hit-cpu3'].forEach(id=>setCpu(id,'idle'));
+  ['hit-lnk0','hit-lnk1','hit-lnk2','hit-lnk3','hit-lnk-sn'].forEach(id=>resetLink(id));
+  document.getElementById('hit-hn').style.boxShadow='0 0 20px rgba(251,191,36,.1)';
+  document.getElementById('sf-row').style.background='rgba(249,115,22,.04)';
+  document.getElementById('hit-flit').style.opacity='0.35';
+  document.getElementById('hit-log').innerHTML='<div style="font-family:\'Azeret Mono\',monospace;font-size:.68rem;color:var(--dim);">Press ▶ to start simulation…</div>';
+  document.getElementById('hit-step-label').textContent='Ready';
+  ['hpip0','hpip1','hpip2','hpip3','hpip4'].forEach(id=>setPip(id,''));
+}
+
+// ═══════════════════════════════════════
+//  BROADCAST SIMULATOR
+// ═══════════════════════════════════════
+let brdIdx = 0;
+const brdActions = [
+  () => {
+    setCpu('brd-cpu0','hit');
+    setLink('brd-lnk0','hit');
+    addLog('brd-log','① CPU0 → HN-F: ReadShared(0xDEAD_C080) on REQ channel','#38bdf8');
+    setPip('mpip0','done'); setPip('mpip1','active');
+    document.getElementById('brd-step-label').textContent = 'Step 1: REQ sent';
+    document.getElementById('brd-flit').style.opacity = '0.35';
+  },
+  () => {
+    resetLink('brd-lnk0'); setCpu('brd-cpu0','idle');
+    document.getElementById('brd-hn').style.boxShadow='0 0 24px rgba(239,68,68,.35)';
+    document.getElementById('sf-miss-status').style.color='#ef4444';
+    document.getElementById('brd-hn-status').textContent='Filter MISS — must broadcast!';
+    addLog('brd-log','② HN-F snoop filter lookup: 0xDEAD_C080 → NO ENTRY (evicted)','#ef4444');
+    addLog('brd-log','   Unknown sharers. Must broadcast SNP to ALL RN-Fs.','#ef4444');
+    setPip('mpip1','done'); setPip('mpip2','active');
+    document.getElementById('brd-step-label').textContent = 'Step 2: Filter MISS ⚠';
+  },
+  () => {
+    // broadcast to all
+    ['brd-lnk0','brd-lnk1','brd-lnk2','brd-lnk3'].forEach(id=>setLink(id,'miss'));
+    ['brd-cpu0','brd-cpu1','brd-cpu2','brd-cpu3'].forEach(id=>setCpu(id,'snooped'));
+    document.getElementById('brd-cpu2-badge').style.display='';
+    addLog('brd-log','③ HN-F → ALL: 4 identical SNP flits on 4 links simultaneously','#ef4444');
+    addLog('brd-log','   All CPUs interrupted. Pipeline stalls on all 4.','#ef4444');
+    document.getElementById('brd-flit').style.opacity='1';
+    setPip('mpip2','done'); setPip('mpip3','active');
+    document.getElementById('brd-step-label').textContent = 'Step 3: Broadcast sent';
+  },
+  () => {
+    // all respond
+    ['brd-lnk0','brd-lnk1','brd-lnk2','brd-lnk3'].forEach(id=>setLink(id,'hit'));
+    setCpu('brd-cpu0','idle'); setCpu('brd-cpu1','idle');
+    setCpu('brd-cpu2','snooped'); setCpu('brd-cpu3','idle');
+    addLog('brd-log','④ All 4 CPUs respond (HN-F waits for LAST response):','#fbbf24');
+    addLog('brd-log','   CPU0: SnpResp_I — did not have it','#64748b');
+    addLog('brd-log','   CPU1: SnpResp_I — did not have it','#64748b');
+    addLog('brd-log','   CPU2: SnpRespData_SC_PD — HAD IT (dirty) ← only useful one','#f97316');
+    addLog('brd-log','   CPU3: SnpResp_I — did not have it','#64748b');
+    setPip('mpip3','done'); setPip('mpip4','active');
+    document.getElementById('brd-step-label').textContent = 'Step 4: All respond';
+  },
+  () => {
+    setLink('brd-lnk0','hit');
+    setCpu('brd-cpu0','hit');
+    setCpu('brd-cpu2','idle');
+    document.getElementById('brd-cpu2-badge').style.display='none';
+    addLog('brd-log','⑤ HN-F → CPU0: CompData(SC). Transaction complete.','#22c55e');
+    addLog('brd-log','   Wasted: 3 SNP flits + 3 RSP flits. 3 CPUs disrupted needlessly.','#ef4444');
+    setPip('mpip4','done');
+    document.getElementById('brd-step-label').textContent = '✓ Complete (costly)';
+  }
+];
+
+function brdStep() {
+  if (brdIdx >= brdActions.length) return;
+  brdActions[brdIdx]();
+  brdIdx++;
+}
+
+function brdReset() {
+  brdIdx = 0;
+  ['brd-cpu0','brd-cpu1','brd-cpu2','brd-cpu3'].forEach(id=>setCpu(id,'idle'));
+  ['brd-lnk0','brd-lnk1','brd-lnk2','brd-lnk3','brd-lnk-sn'].forEach(id=>resetLink(id));
+  document.getElementById('brd-hn').style.boxShadow='0 0 20px rgba(251,191,36,.1)';
+  document.getElementById('brd-hn-status').textContent='Snoop Filter · Routing Table';
+  document.getElementById('sf-miss-status').textContent='0xDEAD_C080 — NO ENTRY (evicted)';
+  document.getElementById('sf-miss-status').style.color='var(--miss)';
+  document.getElementById('brd-cpu2-badge').style.display='none';
+  document.getElementById('brd-flit').style.opacity='0.35';
+  document.getElementById('brd-log').innerHTML='<div style="font-family:\'Azeret Mono\',monospace;font-size:.68rem;color:var(--dim);">Press ▶ to start simulation…</div>';
+  document.getElementById('brd-step-label').textContent='Ready';
+  ['mpip0','mpip1','mpip2','mpip3','mpip4'].forEach(id=>setPip(id,''));
+}
+
+// active nav highlight on scroll
+const sections = document.querySelectorAll('[id]');
+const navLinks = document.querySelectorAll('.top-nav a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(a => {
+        a.classList.remove('active-nav');
+        if (a.getAttribute('href') === '#'+e.target.id) a.classList.add('active-nav');
+      });
+    }
+  });
+}, {threshold:.3, rootMargin:'-60px 0px -60px 0px'});
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

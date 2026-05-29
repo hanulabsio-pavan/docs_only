@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHI — ReadShared with Snooping</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;600;700;800&display=swap');
+
+:root {
+  --bg:       #06080e;
+  --surface:  #0a0d16;
+  --card:     #0d111c;
+  --border:   #161e30;
+  --border2:  #1e2d48;
+
+  --req:  #60a5fa;
+  --rsp:  #c084fc;
+  --dat:  #34d399;
+  --snp:  #f97316;
+
+  --cpu0: #38bdf8;
+  --cpu1: #f472b6;
+  --hn:   #a78bfa;
+  --mem:  #4ade80;
+
+  --text:  #c8d8ec;
+  --muted: #3d5070;
+  --soft:  #7a90b0;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+}
+
+/* ═══ HEADER ═══════════════════════════════ */
+.hero {
+  padding: 50px 52px 42px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 55% 100% at 5% 50%,  #38bdf80b 0%, transparent 65%),
+    radial-gradient(ellipse 40% 80% at 95% 20%, #f472b60a 0%, transparent 60%),
+    radial-gradient(ellipse 30% 60% at 50% 100%, #f973160a 0%, transparent 60%);
+  pointer-events: none;
+}
+.eyebrow {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.63rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.hero h1 {
+  font-size: clamp(1.6rem, 3.8vw, 2.8rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  margin-bottom: 16px;
+}
+.t1 { color: var(--cpu0); }
+.t2 { color: var(--snp); }
+.t3 { color: var(--text); opacity: 0.9; }
+
+.hero-desc {
+  font-size: 0.88rem;
+  color: var(--soft);
+  max-width: 640px;
+  line-height: 1.7;
+  margin-bottom: 18px;
+}
+
+.scenario-chips {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.chip {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.62rem;
+  padding: 4px 11px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+.chip-warn { background: #f9731614; border: 1px solid #f9731630; color: var(--snp); }
+.chip-info { background: #60a5fa12; border: 1px solid #60a5fa28; color: var(--req); }
+.chip-ok   { background: #34d39912; border: 1px solid #34d39928; color: var(--dat); }
+
+/* ═══ NODE MAP ══════════════════════════════ */
+.node-map {
+  padding: 0 52px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.node-map-inner {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0;
+  padding: 28px 0;
+  overflow-x: auto;
+}
+.nm-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.nm-box {
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1.5px solid;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  min-width: 96px;
+  position: relative;
+}
+.nm-box.cpu0  { color: var(--cpu0); border-color: #38bdf840; background: #38bdf80c; }
+.nm-box.cpu1  { color: var(--cpu1); border-color: #f472b640; background: #f472b60c; }
+.nm-box.hn    { color: var(--hn);   border-color: #a78bfa40; background: #a78bfa0c; }
+.nm-box.mem   { color: var(--mem);  border-color: #4ade8040; background: #4ade800c; }
+.nm-sub { font-size: 0.58rem; opacity: 0.7; margin-top: 2px; font-weight: 400; }
+.nm-label { font-size: 0.6rem; color: var(--muted); font-family: 'Fira Code', monospace; }
+.nm-state {
+  font-size: 0.58rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-family: 'Fira Code', monospace;
+  margin-top: 2px;
+}
+.nm-state.dirty { background: #f9731618; color: var(--snp); border: 1px solid #f9731628; }
+.nm-state.miss  { background: #ffffff08; color: var(--muted); border: 1px solid var(--border2); }
+.nm-state.clean { background: #34d39918; color: var(--dat); border: 1px solid #34d39928; }
+
+.nm-conn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  gap: 3px;
+  align-self: center;
+  margin-bottom: 32px;
+}
+.nm-conn-line {
+  width: 50px;
+  height: 2px;
+  background: var(--border2);
+  position: relative;
+}
+.nm-conn-line::after {
+  content: '';
+  position: absolute;
+  right: -5px; top: -4px;
+  border: 5px solid transparent;
+  border-left-color: var(--border2);
+}
+.nm-conn-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.55rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ═══ CHANNEL LEGEND ════════════════════════ */
+.ch-legend {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: #08091400;
+  padding: 0 52px;
+}
+.ch-leg-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 12px 18px 12px 0;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.63rem;
+  border-right: 1px solid var(--border);
+  margin-right: 18px;
+}
+.ch-leg-item:last-child { border-right: none; }
+.ch-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ═══ MAIN LAYOUT ═══════════════════════════ */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  align-items: start;
+}
+
+/* ═══ SIDEBAR ═══════════════════════════════ */
+.sidebar {
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--surface);
+}
+.sb-section {
+  padding: 16px 0 8px;
+  border-bottom: 1px solid var(--border);
+}
+.sb-title {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  text-transform: uppercase;
+  padding: 0 20px 10px;
+}
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s;
+  border-left: 2px solid transparent;
+}
+.sb-item:hover { background: #ffffff04; }
+.sb-item.req { }
+.sb-item.req:hover, .sb-item.req.active { border-left-color: var(--req); background: #60a5fa06; }
+.sb-item.rsp:hover, .sb-item.rsp.active { border-left-color: var(--rsp); background: #c084fc06; }
+.sb-item.dat:hover, .sb-item.dat.active { border-left-color: var(--dat); background: #34d39906; }
+.sb-item.snp:hover, .sb-item.snp.active { border-left-color: var(--snp); background: #f9731606; }
+
+.sb-num {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  width: 18px;
+  flex-shrink: 0;
+}
+.sb-badge {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.56rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  min-width: 30px;
+  text-align: center;
+}
+.req .sb-badge { background: #60a5fa18; color: var(--req); }
+.rsp .sb-badge { background: #c084fc18; color: var(--rsp); }
+.dat .sb-badge { background: #34d39918; color: var(--dat); }
+.snp .sb-badge { background: #f9731618; color: var(--snp); }
+.sb-text { font-size: 0.72rem; color: var(--text); line-height: 1.3; }
+
+.sb-final {
+  padding: 14px 20px;
+  font-size: 0.72rem;
+  line-height: 1.8;
+}
+.sf-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sf-label { color: var(--muted); font-family: 'Fira Code', monospace; font-size: 0.62rem; }
+.sf-val { font-family: 'Fira Code', monospace; font-size: 0.65rem; }
+
+/* ═══ STEPS ══════════════════════════════════ */
+.steps {
+  padding: 36px 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.card {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: var(--border2); }
+
+/* card header */
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.head-num {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.card.req .head-num { color: var(--req); border-color: var(--req); background: #60a5fa0a; }
+.card.rsp .head-num { color: var(--rsp); border-color: var(--rsp); background: #c084fc0a; }
+.card.dat .head-num { color: var(--dat); border-color: var(--dat); background: #34d3990a; }
+.card.snp .head-num { color: var(--snp); border-color: var(--snp); background: #f973160a; }
+
+.head-meta { flex: 1; }
+.head-ch {
+  display: inline-block;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.58rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-bottom: 5px;
+  letter-spacing: 0.08em;
+}
+.card.req .head-ch { background: #60a5fa18; color: var(--req); border: 1px solid #60a5fa25; }
+.card.rsp .head-ch { background: #c084fc18; color: var(--rsp); border: 1px solid #c084fc25; }
+.card.dat .head-ch { background: #34d39918; color: var(--dat); border: 1px solid #34d39925; }
+.card.snp .head-ch { background: #f9731618; color: var(--snp); border: 1px solid #f9731625; }
+
+.head-dir {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.head-title {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.card.req .head-title { color: var(--req); }
+.card.rsp .head-title { color: var(--rsp); }
+.card.dat .head-title { color: var(--dat); }
+.card.snp .head-title { color: var(--snp); }
+
+.head-sub { font-size: 0.8rem; color: var(--soft); line-height: 1.4; }
+
+/* special highlight tags */
+.snoop-tag {
+  display: inline-block;
+  margin-left: 8px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.56rem;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: #f9731618;
+  border: 1px solid #f9731632;
+  color: var(--snp);
+  vertical-align: middle;
+}
+
+/* card body 2-col */
+.card-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.explain {
+  padding: 18px 22px;
+  border-right: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--soft);
+  line-height: 1.72;
+}
+.explain p { margin-bottom: 9px; }
+.explain p:last-child { margin-bottom: 0; }
+.explain strong { color: var(--text); font-weight: 600; }
+.explain code {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8em;
+  background: #ffffff0a;
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: #93c5fd;
+}
+
+.hl {
+  margin-top: 12px;
+  padding: 9px 13px;
+  border-radius: 5px;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+.card.req .hl { background: #60a5fa08; border: 1px solid #60a5fa1e; color: #93c5fd; }
+.card.rsp .hl { background: #c084fc08; border: 1px solid #c084fc1e; color: #d8b4fe; }
+.card.dat .hl { background: #34d39908; border: 1px solid #34d3991e; color: #6ee7b7; }
+.card.snp .hl { background: #f9731608; border: 1px solid #f973161e; color: #fdba74; }
+
+/* flit panel */
+.flit-panel {
+  padding: 18px 22px;
+  background: #07090f;
+}
+.flit-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.57rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.flit-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.67rem;
+}
+.flit-tbl tr { border-bottom: 1px solid #0f1828; }
+.flit-tbl tr:last-child { border-bottom: none; }
+.flit-tbl td { padding: 4px 6px; vertical-align: top; }
+.ft-field { color: var(--muted); width: 100px; white-space: nowrap; }
+.ft-val { font-weight: 600; }
+.card.req .ft-val { color: var(--req); }
+.card.rsp .ft-val { color: var(--rsp); }
+.card.dat .ft-val { color: var(--dat); }
+.card.snp .ft-val { color: var(--snp); }
+.ft-note { color: #2a3d58; font-size: 0.6rem; font-style: italic; }
+
+.ft-highlight { color: #fde68a !important; }
+
+/* state transition */
+.state-txn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 7px 11px;
+  border-radius: 4px;
+  background: #ffffff04;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.66rem;
+}
+.st-label { color: var(--muted); margin-right: 2px; }
+.st-from  { color: #f87171; }
+.st-arrow { color: var(--muted); }
+.st-to    { color: #4ade80; }
+
+/* ═══ DIAGRAM STRIP ══════════════════════════ */
+.diag {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  background: #070a12;
+  overflow-x: auto;
+}
+.diag-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.68rem;
+  white-space: nowrap;
+  min-width: max-content;
+}
+.dn {
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  border: 1px solid;
+  font-size: 0.7rem;
+}
+.dn.c0  { color: var(--cpu0); border-color: #38bdf828; background: #38bdf80a; }
+.dn.c1  { color: var(--cpu1); border-color: #f472b628; background: #f472b60a; }
+.dn.hn  { color: var(--hn);   border-color: #a78bfa28; background: #a78bfa0a; }
+.dn.mem { color: var(--mem);  border-color: #4ade8028; background: #4ade800a; }
+.dn.dim { color: var(--muted); border-color: var(--border); background: transparent; }
+
+.da {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 6px;
+  gap: 1px;
+}
+.da-ch {
+  font-size: 0.56rem;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+.da-ch.req { background: #60a5fa15; color: var(--req); }
+.da-ch.rsp { background: #c084fc15; color: var(--rsp); }
+.da-ch.dat { background: #34d39915; color: var(--dat); }
+.da-ch.snp { background: #f9731615; color: var(--snp); }
+.da-line { color: var(--border2); font-size: 0.78rem; letter-spacing: -3px; }
+
+/* ═══ COMPARE TABLE ══════════════════════════ */
+.compare {
+  margin: 0 44px 44px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.compare-hdr {
+  padding: 13px 20px;
+  background: var(--surface);
+  font-family: 'Fira Code', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.cmp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.cmp-col {
+  padding: 20px 22px;
+}
+.cmp-col:first-child { border-right: 1px solid var(--border); }
+.cmp-title {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.cmp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.76rem;
+}
+.cmp-row:last-child { border-bottom: none; }
+.cmp-k { color: var(--soft); }
+.cmp-v { font-family: 'Fira Code', monospace; font-size: 0.7rem; font-weight: 600; }
+
+/* ═══ SUMMARY STRIP ══════════════════════════ */
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.ss-cell {
+  padding: 18px 14px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+.ss-cell:last-child { border-right: none; }
+.ss-num {
+  font-family: 'Fira Code', monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.ss-label { font-size: 0.62rem; color: var(--muted); }
+
+footer {
+  padding: 20px 52px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.foot-note {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: relative; height: auto; }
+  .card-body { grid-template-columns: 1fr; }
+  .explain { border-right: none; border-bottom: 1px solid var(--border); }
+  .hero, .steps, .compare, footer { padding-left: 20px; padding-right: 20px; }
+  .node-map, .ch-legend { padding-left: 20px; padding-right: 20px; }
+  .summary-strip { grid-template-columns: repeat(3, 1fr); }
+  .cmp-grid { grid-template-columns: 1fr; }
+  .cmp-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══════════════════════════════════════════════ -->
+<header class="hero">
+  <div class="eyebrow">AMBA 5 CHI · Coherent Transaction · Snoop Path</div>
+  <h1>
+    <span class="t1">ReadShared</span>
+    <span class="t3"> with </span>
+    <span class="t2">Snooping</span>
+  </h1>
+  <p class="hero-desc">
+    CPU0 issues a cache-miss read for a line currently held <strong>Unique Dirty (UD)</strong> by CPU1.
+    The Home Node detects this via the Snoop Filter, issues a snoop to CPU1, which writes back
+    dirty data — and that data is forwarded directly to CPU0.
+  </p>
+  <div class="scenario-chips">
+    <span class="chip chip-warn">Cache Miss on CPU0</span>
+    <span class="chip chip-warn">CPU1 holds UD (Unique Dirty)</span>
+    <span class="chip chip-info">Snoop Required</span>
+    <span class="chip chip-info">Dirty Data Writeback</span>
+    <span class="chip chip-ok">No Memory Fetch Needed</span>
+    <span class="chip chip-ok">Final State: SC on Both</span>
+  </div>
+</header>
+
+<!-- ═══ NODE MAP ═══════════════════════════════════════════ -->
+<div class="node-map">
+  <div class="node-map-inner">
+    <div class="nm-node">
+      <div class="nm-box cpu0">CPU0<div class="nm-sub">RN-F · NodeID=0x01</div></div>
+      <div class="nm-label">Requester</div>
+      <div class="nm-state miss">I (cache miss)</div>
+    </div>
+    <div class="nm-conn">
+      <div class="nm-conn-line"></div>
+      <div class="nm-conn-label">CHI mesh</div>
+    </div>
+    <div class="nm-node">
+      <div class="nm-box hn">HN-F<div class="nm-sub">Home Node · NodeID=0x10</div></div>
+      <div class="nm-label">Coordinator</div>
+      <div class="nm-state dirty">Snoop Filter: CPU1→UD</div>
+    </div>
+    <div class="nm-conn">
+      <div class="nm-conn-line"></div>
+      <div class="nm-conn-label">CHI mesh</div>
+    </div>
+    <div class="nm-node">
+      <div class="nm-box cpu1">CPU1<div class="nm-sub">RN-F · NodeID=0x02</div></div>
+      <div class="nm-label">Snoopee</div>
+      <div class="nm-state dirty">UD (Unique Dirty)</div>
+    </div>
+    <div class="nm-conn">
+      <div class="nm-conn-line"></div>
+      <div class="nm-conn-label">CHI mesh</div>
+    </div>
+    <div class="nm-node">
+      <div class="nm-box mem">DDR SN<div class="nm-sub">Slave Node · NodeID=0x20</div></div>
+      <div class="nm-label">Memory</div>
+      <div class="nm-state miss">stale (CPU1 dirty)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CHANNEL LEGEND ══════════════════════════════════════ -->
+<div class="ch-legend">
+  <div class="ch-leg-item"><div class="ch-dot" style="background:var(--req)"></div><span style="color:var(--req);margin-right:4px">REQ</span><span style="color:var(--muted)">Request</span></div>
+  <div class="ch-leg-item"><div class="ch-dot" style="background:var(--rsp)"></div><span style="color:var(--rsp);margin-right:4px">RSP</span><span style="color:var(--muted)">Response</span></div>
+  <div class="ch-leg-item"><div class="ch-dot" style="background:var(--dat)"></div><span style="color:var(--dat);margin-right:4px">DAT</span><span style="color:var(--muted)">Data</span></div>
+  <div class="ch-leg-item"><div class="ch-dot" style="background:var(--snp)"></div><span style="color:var(--snp);margin-right:4px">SNP</span><span style="color:var(--muted)">Snoop</span></div>
+  <div class="ch-leg-item" style="margin-left:auto"><span style="color:var(--muted);font-family:'Fira Code',monospace;font-size:0.6rem">Addr=0xDEAD_C080 · CPU0 TxnID=0x12 · CPU1 TxnID=0x07(HN)</span></div>
+</div>
+
+<div class="layout">
+
+<!-- ═══ SIDEBAR ════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sb-section">
+    <div class="sb-title">// Steps</div>
+    <a href="#s1" class="sb-item req active">
+      <span class="sb-num">01</span><span class="sb-badge">REQ</span>
+      <span class="sb-text">CPU0 → ReadShared</span>
+    </a>
+    <a href="#s2" class="sb-item rsp">
+      <span class="sb-num">02</span><span class="sb-badge">RSP</span>
+      <span class="sb-text">HN → ReadReceipt</span>
+    </a>
+    <a href="#s3" class="sb-item snp">
+      <span class="sb-num">03</span><span class="sb-badge">SNP</span>
+      <span class="sb-text">HN → SnpShared (CPU1)</span>
+    </a>
+    <a href="#s4" class="sb-item dat">
+      <span class="sb-num">04</span><span class="sb-badge">DAT</span>
+      <span class="sb-text">CPU1 → SnpRespData to HN</span>
+    </a>
+    <a href="#s5" class="sb-item dat">
+      <span class="sb-num">05</span><span class="sb-badge">DAT</span>
+      <span class="sb-text">HN → CompData to CPU0</span>
+    </a>
+    <a href="#s6" class="sb-item dat">
+      <span class="sb-num">06</span><span class="sb-badge">DAT</span>
+      <span class="sb-text">HN → WriteData to Memory</span>
+    </a>
+    <a href="#s7" class="sb-item rsp">
+      <span class="sb-num">07</span><span class="sb-badge">RSP</span>
+      <span class="sb-text">CPU0 → CompAck</span>
+    </a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-title">// Final States</div>
+    <div class="sb-final">
+      <div class="sf-row">
+        <span class="sf-label">CPU0</span>
+        <span class="sf-val" style="color:var(--dat)">SC</span>
+      </div>
+      <div class="sf-row">
+        <span class="sf-label">CPU1</span>
+        <span class="sf-val" style="color:var(--dat)">SC</span>
+      </div>
+      <div class="sf-row">
+        <span class="sf-label">Memory</span>
+        <span class="sf-val" style="color:var(--dat)">Updated ✓</span>
+      </div>
+      <div class="sf-row">
+        <span class="sf-label">HN Tracker</span>
+        <span class="sf-val" style="color:var(--dat)">Freed</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-title">// Flit Count</div>
+    <div class="sb-final">
+      <div class="sf-row"><span class="sf-label">REQ</span><span class="sf-val" style="color:var(--req)">1</span></div>
+      <div class="sf-row"><span class="sf-label">RSP</span><span class="sf-val" style="color:var(--rsp)">2</span></div>
+      <div class="sf-row"><span class="sf-label">DAT</span><span class="sf-val" style="color:var(--dat)">6 (3×2)</span></div>
+      <div class="sf-row"><span class="sf-label">SNP</span><span class="sf-val" style="color:var(--snp)">1</span></div>
+      <div class="sf-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px">
+        <span class="sf-label">Total</span><span class="sf-val" style="color:var(--text)">10</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ STEPS ═══════════════════════════════════════════════ -->
+<div class="steps">
+
+  <!-- S1: ReadShared -->
+  <div class="card req" id="s1">
+    <div class="card-head">
+      <div class="head-num">01</div>
+      <div class="head-meta">
+        <div class="head-ch">REQ Channel</div>
+        <div class="head-dir">CPU0 (0x01) ──REQ──▶ HN-F (0x10)</div>
+        <div class="head-title">CPU0 Issues ReadShared Request</div>
+        <div class="head-sub">CPU0 load-misses on address 0xDEAD_C080. It places a ReadShared flit on the REQ channel toward the Home Node.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="explain">
+        <p>CPU0 executes <code>LDR X1, [0xDEAD_C080]</code>. The address misses in both L1 and L2 — no valid entry. The CHI interface generates a <strong>ReadShared</strong> REQ flit.</p>
+        <p>CPU0 has <strong>no knowledge</strong> that CPU1 currently holds this line in Unique Dirty state. That's the Home Node's job to discover via the Snoop Filter.</p>
+        <p>CPU0 sets <strong>ExpCompAck=1</strong>, signalling it will send CompAck once data is received — allowing HN to safely track when CPU0 has installed the line.</p>
+        <div class="hl"><strong>Same first step as the non-snoop case.</strong> The difference only emerges at the HN when it checks the Snoop Filter and finds CPU1 holds the dirty line.</div>
+      </div>
+      <div class="flit-panel">
+        <div class="flit-label">// REQ Flit — CPU0 → HN</div>
+        <table class="flit-tbl">
+          <tr><td class="ft-field">Opcode</td><td class="ft-val">ReadShared</td><td class="ft-note">// want shared read</td></tr>
+          <tr><td class="ft-field">TgtID</td><td class="ft-val">0x10</td><td class="ft-note">// Home Node</td></tr>
+          <tr><td class="ft-field">SrcID</td><td class="ft-val">0x01</td><td class="ft-note">// CPU0</td></tr>
+          <tr><td class="ft-field">TxnID</td><td class="ft-val">0x12</td><td class="ft-note">// CPU0 local ID</td></tr>
+          <tr><td class="ft-field">Addr</td><td class="ft-val">0xDEAD_C080</td><td class="ft-note">// 64B aligned</td></tr>
+          <tr><td class="ft-field">Size</td><td class="ft-val">0b110</td><td class="ft-note">// 64 bytes</td></tr>
+          <tr><td class="ft-field">AllowRetry</td><td class="ft-val">1</td><td class="ft-note">// ok to retry</td></tr>
+          <tr><td class="ft-field">ExpCompAck</td><td class="ft-val">1</td><td class="ft-note">// will ack data</td></tr>
+          <tr><td class="ft-field">SnpAttr</td><td class="ft-val">1</td><td class="ft-note">// snoopable</td></tr>
+        </table>
+        <div class="state-txn">
+          <span class="st-label">CPU0:</span>
+          <span class="st-from">I (miss)</span>
+          <span class="st-arrow">→</span>
+          <span style="color:var(--muted)">pending…</span>
+        </div>
+      </div>
+    </div>
+    <div class="diag">
+      <div class="diag-row">
+        <div class="dn c0">CPU0</div>
+        <div class="da"><div class="da-ch req">REQ·ReadShared</div><div class="da-line">──────▶</div></div>
+        <div class="dn hn">HN-F</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn dim">CPU1</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn dim">DDR</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S2: ReadReceipt -->
+  <div class="card rsp" id="s2">
+    <div class="card-head">
+      <div class="head-num">02</div>
+      <div class="head-meta">
+        <div class="head-ch">RSP Channel</div>
+        <div class="head-dir">HN-F (0x10) ──RSP──▶ CPU0 (0x01)</div>
+        <div class="head-title">HN Sends ReadReceipt + Checks Snoop Filter</div>
+        <div class="head-sub">HN allocates a tracker, acknowledges the REQ, and simultaneously checks the Snoop Filter — discovering CPU1 holds the line as Unique Dirty.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="explain">
+        <p>The HN allocates a tracker for TxnID=0x12 from CPU0 and immediately sends <strong>ReadReceipt</strong> on the RSP channel. This releases CPU0's protocol credit so it can issue more transactions.</p>
+        <p>In parallel, HN consults the <strong>Snoop Filter</strong>: it finds that <strong>CPU1 (NodeID=0x02) holds this line in UD (Unique Dirty)</strong> state.</p>
+        <p>This is the critical decision point: because the line is dirty, HN <strong>must not</strong> fetch from memory — the memory copy is stale. It must snoop CPU1 first to get the up-to-date data.</p>
+        <div class="hl"><strong>Key difference vs clean path:</strong> Snoop Filter hit on a dirty line forces the snoop path. Memory fetch is suppressed entirely until CPU1's dirty data is retrieved.</div>
+      </div>
+      <div class="flit-panel">
+        <div class="flit-label">// RSP Flit — HN → CPU0</div>
+        <table class="flit-tbl">
+          <tr><td class="ft-field">Opcode</td><td class="ft-val">ReadReceipt</td><td class="ft-note">// txn accepted</td></tr>
+          <tr><td class="ft-field">TgtID</td><td class="ft-val">0x01</td><td class="ft-note">// CPU0</td></tr>
+          <tr><td class="ft-field">SrcID</td><td class="ft-val">0x10</td><td class="ft-note">// HN-F</td></tr>
+          <tr><td class="ft-field">TxnID</td><td class="ft-val">0x12</td><td class="ft-note">// echo CPU0 TxnID</td></tr>
+        </table>
+        <div style="margin-top:12px;padding:9px 12px;background:#f9731610;border:1px solid #f9731628;border-radius:5px;font-family:'Fira Code',monospace;font-size:0.65rem;line-height:1.7;color:#fdba74;">
+          Snoop Filter lookup: 0xDEAD_C080<br>
+          → CPU1 (0x02): <span style="font-weight:700">UD (Unique Dirty)</span><br>
+          → Memory: STALE — do NOT fetch<br>
+          → Action: Issue SnpShared to CPU1
+        </div>
+      </div>
+    </div>
+    <div class="diag">
+      <div class="diag-row">
+        <div class="dn c0">CPU0</div>
+        <div class="da"><div class="da-ch rsp">RSP·ReadReceipt</div><div class="da-line">◀──────</div></div>
+        <div class="dn hn">HN-F</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn c1">CPU1</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn dim">DDR</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3: SnpShared -->
+  <div class="card snp" id="s3">
+    <div class="card-head">
+      <div class="head-num">03</div>
+      <div class="head-meta">
+        <div class="head-ch">SNP Channel <span class="snoop-tag">⚡ SNOOP</span></div>
+        <div class="head-dir">HN-F (0x10) ──SNP──▶ CPU1 (0x02)</div>
+        <div class="head-title">HN Issues SnpShared to CPU1</div>
+        <div class="head-sub">HN sends a snoop to CPU1 requesting it downgrade from UD to SC — and return the dirty data. RetToSrc=1 forces CPU1 to send data even if it thinks the line is clean.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="explain">
+        <p>HN issues a <strong>SnpShared</strong> flit on the SNP channel to CPU1. This snoop says: <em>"You hold this line uniquely. Another node wants to share it. Downgrade to Shared and send me the data."</em></p>
+        <p>Since CPU1's copy is <strong>Unique Dirty</strong>, it has modified the data from the memory image. HN sets <strong>RetToSrc=1</strong> to explicitly request that CPU1 return the data payload — HN needs it to forward to CPU0 and write back to memory.</p>
+        <p>Note: the SNP channel has <strong>no TgtID field</strong> — the target is implicit from which physical link the flit is dispatched on (the link toward CPU1's mesh port).</p>
+        <div class="hl"><strong>DoNotGoToSD=0</strong> here — HN allows CPU1 to transition to Shared Dirty if needed. But since CPU0 only wants SC, HN will manage state carefully in the response.</div>
+      </div>
+      <div class="flit-panel">
+        <div class="flit-label">// SNP Flit — HN → CPU1</div>
+        <table class="flit-tbl">
+          <tr><td class="ft-field">Opcode</td><td class="ft-val">SnpShared</td><td class="ft-note">// downgrade to SC</td></tr>
+          <tr><td class="ft-field">SrcID</td><td class="ft-val">0x10</td><td class="ft-note">// from HN-F</td></tr>
+          <tr><td class="ft-field">TxnID</td><td class="ft-val">0x07</td><td class="ft-note">// HN internal snoop ID</td></tr>
+          <tr><td class="ft-field">Addr</td><td class="ft-val ft-highlight">0xDEAD_C080</td><td class="ft-note">// cache line addr</td></tr>
+          <tr><td class="ft-field">RetToSrc</td><td class="ft-val ft-highlight">1</td><td class="ft-note">// MUST return data!</td></tr>
+          <tr><td class="ft-field">DoNotGoToSD</td><td class="ft-val">0</td><td class="ft-note">// SD allowed</td></tr>
+          <tr><td class="ft-field">NS</td><td class="ft-val">1</td><td class="ft-note">// Non-Secure</td></tr>
+        </table>
+        <div class="state-txn">
+          <span class="st-label">CPU1:</span>
+          <span class="st-from">UD</span>
+          <span class="st-arrow">→</span>
+          <span style="color:var(--muted)">processing snoop…</span>
+        </div>
+      </div>
+    </div>
+    <div class="diag">
+      <div class="diag-row">
+        <div class="dn dim">CPU0</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn hn">HN-F</div>
+        <div class="da"><div class="da-ch snp">SNP·SnpShared</div><div class="da-line">──────▶</div></div>
+        <div class="dn c1">CPU1</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn dim">DDR</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S4: SnpRespData CPU1→HN -->
+  <div class="card dat" id="s4">
+    <div class="card-head">
+      <div class="head-num">04</div>
+      <div class="head-meta">
+        <div class="head-ch">DAT Channel <span class="snoop-tag">⚡ DIRTY DATA</span></div>
+        <div class="head-dir">CPU1 (0x02) ──DAT──▶ HN-F (0x10)</div>
+        <div class="head-title">CPU1 Returns Dirty Data via SnpRespData</div>
+        <div class="head-sub">CPU1 flushes its dirty cache line to HN in 2 DAT flits (SnpRespData), downgrading its own copy from UD to SC. This is the only copy of correct data.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="explain">
+        <p>CPU1 receives the SnpShared snoop. It finds the line is <strong>Unique Dirty</strong> — it has made modifications since the memory copy was written. It must return the data.</p>
+        <p>CPU1 sends a <strong>SnpRespData</strong> on the DAT channel to HN, carrying the full 64-byte dirty cache line in 2 flits. The <strong>Resp=SC_PD</strong> (Shared Clean, Pass Dirty) tells HN: <em>"I'm giving you the dirty data. I'm transitioning to SC. You own the dirty responsibility now."</em></p>
+        <p>After this, <strong>CPU1 retains the line in SC state</strong> — it has shared the clean version of what it knew. Memory is still stale until HN writes it back.</p>
+        <div class="hl"><strong>SC_PD (Pass Dirty):</strong> The "PD" flag tells HN it must write this data back to memory before the transaction ends. HN accepts the dirty responsibility from CPU1.</div>
+      </div>
+      <div class="flit-panel">
+        <div class="flit-label">// DAT Flit #1 — CPU1 → HN (DataID=0x0)</div>
+        <table class="flit-tbl">
+          <tr><td class="ft-field">Opcode</td><td class="ft-val">SnpRespData</td><td class="ft-note">// snoop + data</td></tr>
+          <tr><td class="ft-field">TgtID</td><td class="ft-val">0x10</td><td class="ft-note">// to HN-F</td></tr>
+          <tr><td class="ft-field">SrcID</td><td class="ft-val">0x02</td><td class="ft-note">// from CPU1</td></tr>
+          <tr><td class="ft-field">TxnID</td><td class="ft-val">0x07</td><td class="ft-note">// HN's snoop TxnID</td></tr>
+          <tr><td class="ft-field">Resp</td><td class="ft-val ft-highlight">SC_PD</td><td class="ft-note">// SC + Pass Dirty!</td></tr>
+          <tr><td class="ft-field">DataID</td><td class="ft-val">0x0</td><td class="ft-note">// bytes 0–31</td></tr>
+          <tr><td class="ft-field">Data</td><td class="ft-val">256 bits</td><td class="ft-note">// DIRTY payload</td></tr>
+          <tr><td class="ft-field">BE</td><td class="ft-val">0xFFFF_FFFF</td><td class="ft-note">// all bytes valid</td></tr>
+          <tr><td class="ft-field">DataCheck</td><td class="ft-val">ECC[31:0]</td><td class="ft-note">// integrity</td></tr>
+        </table>
+        <div class="state-txn">
+          <span class="st-label">CPU1:</span>
+          <span class="st-from">UD</span>
+          <span class="st-arrow">→</span>
+          <span class="st-to">SC (shared clean)</span>
+        </div>
+      </div>
+    </div>
+    <div class="diag">
+      <div class="diag-row">
+        <div class="dn dim">CPU0</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn hn">HN-F</div>
+        <div class="da"><div class="da-ch dat">DAT·SnpRespData ×2</div><div class="da-line">◀──────</div></div>
+        <div class="dn c1">CPU1</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn dim">DDR</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S5: CompData → CPU0 -->
+  <div class="card dat" id="s5">
+    <div class="card-head">
+      <div class="head-num">05</div>
+      <div class="head-meta">
+        <div class="head-ch">DAT Channel</div>
+        <div class="head-dir">HN-F (0x10) ──DAT──▶ CPU0 (0x01)</div>
+        <div class="head-title">HN Forwards CompData to CPU0</div>
+        <div class="head-sub">HN re-packages the dirty data received from CPU1 and delivers it to CPU0 with Resp=SC. CPU0 can now complete its load instruction.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="explain">
+        <p>HN now holds the up-to-date 64-byte cache line (from CPU1's dirty writeback). It re-packages it as a <strong>CompData</strong> and sends it to CPU0 — again in 2 DAT flits.</p>
+        <p>HN sets <strong>Resp=SC</strong> — Shared Clean — giving CPU0 a shared copy of the now-clean data. Both CPU0 and CPU1 will end up in SC state.</p>
+        <p>HN includes <strong>HomeNID=0x10</strong> so CPU0 knows where to send the final CompAck. CPU0 can now service the load instruction and bring the line into its L1/L2 cache.</p>
+        <div class="hl"><strong>HN is the data broker here.</strong> It received dirty data from CPU1 and simultaneously needs to: (1) send it to CPU0, and (2) write it back to memory. These happen independently.</div>
+      </div>
+      <div class="flit-panel">
+        <div class="flit-label">// DAT Flit #1 — HN → CPU0 (DataID=0x0)</div>
+        <table class="flit-tbl">
+          <tr><td class="ft-field">Opcode</td><td class="ft-val">CompData</td><td class="ft-note">// data + complete</td></tr>
+          <tr><td class="ft-field">TgtID</td><td class="ft-val">0x01</td><td class="ft-note">// to CPU0</td></tr>
+          <tr><td class="ft-field">SrcID</td><td class="ft-val">0x10</td><td class="ft-note">// from HN-F</td></tr>
+          <tr><td class="ft-field">TxnID</td><td class="ft-val">0x12</td><td class="ft-note">// CPU0's TxnID</td></tr>
+          <tr><td class="ft-field">HomeNID</td><td class="ft-val">0x10</td><td class="ft-note">// send CompAck here</td></tr>
+          <tr><td class="ft-field">Resp</td><td class="ft-val ft-highlight">SC</td><td class="ft-note">// Shared Clean</td></tr>
+          <tr><td class="ft-field">DataID</td><td class="ft-val">0x0</td><td class="ft-note">// bytes 0–31</td></tr>
+          <tr><td class="ft-field">Data</td><td class="ft-val">256 bits</td><td class="ft-note">// now-clean payload</td></tr>
+          <tr><td class="ft-field">BE</td><td class="ft-val">0xFFFF_FFFF</td><td class="ft-note">// all valid</td></tr>
+          <tr><td class="ft-field">RespErr</td><td class="ft-val">OK</td><td class="ft-note">// no error</td></tr>
+        </table>
+        <div class="state-txn">
+          <span class="st-label">CPU0:</span>
+          <span class="st-from">I (miss)</span>
+          <span class="st-arrow">→</span>
+          <span class="st-to">SC (shared clean)</span>
+        </div>
+      </div>
+    </div>
+    <div class="diag">
+      <div class="diag-row">
+        <div class="dn c0">CPU0</div>
+        <div class="da"><div class="da-ch dat">DAT·CompData ×2 Resp=SC</div><div class="da-line">◀──────</div></div>
+        <div class="dn hn">HN-F</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn dim">CPU1</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn dim">DDR</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S6: WriteNoSnpFull → Memory -->
+  <div class="card dat" id="s6">
+    <div class="card-head">
+      <div class="head-num">06</div>
+      <div class="head-meta">
+        <div class="head-ch">DAT Channel <span class="snoop-tag">⚡ WRITEBACK</span></div>
+        <div class="head-dir">HN-F (0x10) ──DAT──▶ DDR SN (0x20)</div>
+        <div class="head-title">HN Writes Dirty Data Back to Memory</div>
+        <div class="head-sub">Because CPU1 passed dirty responsibility (SC_PD) to HN, the HN must now update memory with the correct data. This happens in parallel with Step 5.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="explain">
+        <p>When CPU1 responded with <strong>Resp=SC_PD (Pass Dirty)</strong>, it transferred the writeback obligation to HN. HN must update memory before releasing its tracker.</p>
+        <p>HN sends a <strong>WriteNoSnpFull</strong> (or CopyBackWrData) to the Slave Node (DDR controller), carrying the 64-byte line in 2 DAT flits. This is a <strong>non-coherent write</strong> — just a direct memory update.</p>
+        <p>Steps 5 and 6 can happen <strong>in parallel</strong> — HN can forward data to CPU0 and issue the memory writeback simultaneously, since they use independent routing paths.</p>
+        <div class="hl"><strong>No extra REQ needed:</strong> HN uses an internal write mechanism (or a pre-allocated write buffer at the SN) to do this writeback efficiently. Memory is updated and the stale state is corrected.</div>
+      </div>
+      <div class="flit-panel">
+        <div class="flit-label">// DAT Flit #1 — HN → DDR SN (DataID=0x0)</div>
+        <table class="flit-tbl">
+          <tr><td class="ft-field">Opcode</td><td class="ft-val">CopyBackWrData</td><td class="ft-note">// dirty writeback</td></tr>
+          <tr><td class="ft-field">TgtID</td><td class="ft-val">0x20</td><td class="ft-note">// DDR SN</td></tr>
+          <tr><td class="ft-field">SrcID</td><td class="ft-val">0x10</td><td class="ft-note">// HN-F</td></tr>
+          <tr><td class="ft-field">TxnID</td><td class="ft-val">0xB1</td><td class="ft-note">// HN write TxnID</td></tr>
+          <tr><td class="ft-field">DataID</td><td class="ft-val">0x0</td><td class="ft-note">// bytes 0–31</td></tr>
+          <tr><td class="ft-field">Data</td><td class="ft-val">256 bits</td><td class="ft-note">// dirty data</td></tr>
+          <tr><td class="ft-field">BE</td><td class="ft-val">0xFFFF_FFFF</td><td class="ft-note">// all bytes</td></tr>
+        </table>
+        <div class="state-txn">
+          <span class="st-label">Memory:</span>
+          <span class="st-from">stale</span>
+          <span class="st-arrow">→</span>
+          <span class="st-to">updated ✓</span>
+        </div>
+      </div>
+    </div>
+    <div class="diag">
+      <div class="diag-row">
+        <div class="dn dim">CPU0</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn hn">HN-F</div>
+        <div class="da"><div class="da-ch dat">DAT·CopyBackWrData ×2</div><div class="da-line">──────▶</div></div>
+        <div class="dn dim">CPU1</div>
+        <div class="da"><div class="da-ch dat">→</div><div class="da-line">──────▶</div></div>
+        <div class="dn mem">DDR</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S7: CompAck -->
+  <div class="card rsp" id="s7">
+    <div class="card-head">
+      <div class="head-num">07</div>
+      <div class="head-meta">
+        <div class="head-ch">RSP Channel</div>
+        <div class="head-dir">CPU0 (0x01) ──RSP──▶ HN-F (0x10)</div>
+        <div class="head-title">CPU0 Sends CompAck — Transaction Complete</div>
+        <div class="head-sub">CPU0 confirms data receipt and cache line installation. HN frees the tracker. Snoop Filter updated: both CPU0 and CPU1 in SC.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="explain">
+        <p>CPU0 has received all 2 DAT flits (DataID 0x0 and 0x1) and installed the line in SC state. It sends <strong>CompAck</strong> to HN-F (HomeNID=0x10 from Step 5).</p>
+        <p>CompAck is the <strong>final signal</strong> to HN that CPU0 owns the cache line. Only after receiving CompAck does HN update the Snoop Filter to show both CPU0 and CPU1 as sharers in SC state.</p>
+        <p>HN can now <strong>deallocate its transaction tracker</strong> for TxnID=0x12. All resources are freed. The memory writeback (Step 6) completes independently.</p>
+        <div class="hl"><strong>Transaction is now complete.</strong> CPU0 load returns data. CPU1 downgraded cleanly. Memory updated. Both caches coherent at SC.</div>
+      </div>
+      <div class="flit-panel">
+        <div class="flit-label">// RSP Flit — CPU0 → HN</div>
+        <table class="flit-tbl">
+          <tr><td class="ft-field">Opcode</td><td class="ft-val">CompAck</td><td class="ft-note">// final ack</td></tr>
+          <tr><td class="ft-field">TgtID</td><td class="ft-val">0x10</td><td class="ft-note">// to HN (HomeNID)</td></tr>
+          <tr><td class="ft-field">SrcID</td><td class="ft-val">0x01</td><td class="ft-note">// from CPU0</td></tr>
+          <tr><td class="ft-field">TxnID</td><td class="ft-val">0x12</td><td class="ft-note">// closes transaction</td></tr>
+        </table>
+        <div style="margin-top:12px;padding:9px 12px;background:#34d39910;border:1px solid #34d39928;border-radius:5px;font-family:'Fira Code',monospace;font-size:0.65rem;line-height:1.7;color:#6ee7b7;">
+          ✓ HN Tracker[0x12]: FREED<br>
+          ✓ Snoop Filter: CPU0→SC, CPU1→SC<br>
+          ✓ Memory: updated (from Step 6)<br>
+          ✓ CPU0 LDR: COMPLETE
+        </div>
+        <div class="state-txn">
+          <span class="st-label">Transaction:</span>
+          <span class="st-from">OPEN</span>
+          <span class="st-arrow">→</span>
+          <span class="st-to">CLOSED ✓</span>
+        </div>
+      </div>
+    </div>
+    <div class="diag">
+      <div class="diag-row">
+        <div class="dn c0">CPU0</div>
+        <div class="da"><div class="da-ch rsp">RSP·CompAck</div><div class="da-line">──────▶</div></div>
+        <div class="dn hn">HN-F</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn dim">CPU1</div>
+        <div class="da"><div class="da-line" style="color:#161e30">──────</div></div>
+        <div class="dn dim">DDR</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /steps -->
+</div><!-- /layout -->
+
+<!-- ═══ SUMMARY STRIP ═══════════════════════════════════════ -->
+<div class="summary-strip">
+  <div class="ss-cell"><div class="ss-num" style="color:var(--req)">1</div><div class="ss-label">REQ Flits</div></div>
+  <div class="ss-cell"><div class="ss-num" style="color:var(--rsp)">2</div><div class="ss-label">RSP Flits</div></div>
+  <div class="ss-cell"><div class="ss-num" style="color:var(--dat)">6</div><div class="ss-label">DAT Flits (3×2)</div></div>
+  <div class="ss-cell"><div class="ss-num" style="color:var(--snp)">1</div><div class="ss-label">SNP Flits</div></div>
+  <div class="ss-cell"><div class="ss-num" style="color:#4ade80">SC</div><div class="ss-label">Both CPUs Final State</div></div>
+  <div class="ss-cell"><div class="ss-num" style="color:var(--text)">7</div><div class="ss-label">Total Steps</div></div>
+</div>
+
+<!-- ═══ COMPARE TABLE ═══════════════════════════════════════ -->
+<div class="compare">
+  <div class="compare-hdr">// Snoop Path vs No-Snoop Path Comparison</div>
+  <div class="cmp-grid">
+    <div class="cmp-col">
+      <div class="cmp-title" style="color:var(--soft)">No-Snoop Path (Clean Miss)</div>
+      <div class="cmp-row"><span class="cmp-k">Steps</span><span class="cmp-v" style="color:var(--dat)">6</span></div>
+      <div class="cmp-row"><span class="cmp-k">SNP Flits</span><span class="cmp-v" style="color:var(--dat)">0</span></div>
+      <div class="cmp-row"><span class="cmp-k">DAT Flits</span><span class="cmp-v" style="color:var(--dat)">4 (SN→HN + HN→CPU0)</span></div>
+      <div class="cmp-row"><span class="cmp-k">Memory fetch</span><span class="cmp-v" style="color:var(--dat)">Yes (ReadNoSnp)</span></div>
+      <div class="cmp-row"><span class="cmp-k">Writeback</span><span class="cmp-v" style="color:var(--dat)">None</span></div>
+      <div class="cmp-row"><span class="cmp-k">CPU1 involved</span><span class="cmp-v" style="color:var(--dat)">No</span></div>
+      <div class="cmp-row"><span class="cmp-k">Final state</span><span class="cmp-v" style="color:var(--dat)">CPU0=SC, Mem=clean</span></div>
+    </div>
+    <div class="cmp-col">
+      <div class="cmp-title" style="color:var(--snp)">Snoop Path (Dirty Sharer)</div>
+      <div class="cmp-row"><span class="cmp-k">Steps</span><span class="cmp-v" style="color:var(--snp)">7</span></div>
+      <div class="cmp-row"><span class="cmp-k">SNP Flits</span><span class="cmp-v" style="color:var(--snp)">1 (SnpShared)</span></div>
+      <div class="cmp-row"><span class="cmp-k">DAT Flits</span><span class="cmp-v" style="color:var(--snp)">6 (CPU1→HN + HN→CPU0 + HN→Mem)</span></div>
+      <div class="cmp-row"><span class="cmp-k">Memory fetch</span><span class="cmp-v" style="color:var(--snp)">No (memory stale)</span></div>
+      <div class="cmp-row"><span class="cmp-k">Writeback</span><span class="cmp-v" style="color:var(--snp)">Yes (dirty data → Mem)</span></div>
+      <div class="cmp-row"><span class="cmp-k">CPU1 involved</span><span class="cmp-v" style="color:var(--snp)">Yes (snooped)</span></div>
+      <div class="cmp-row"><span class="cmp-k">Final state</span><span class="cmp-v" style="color:var(--snp)">CPU0=SC, CPU1=SC, Mem=updated</span></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-note">AMBA 5 CHI · ReadShared + SnpShared · Dirty Writeback Path</div>
+  <div class="foot-note">SC_PD = Shared Clean, Pass Dirty · UD = Unique Dirty · SC = Shared Clean</div>
+</footer>
+
+</body>
+</html>

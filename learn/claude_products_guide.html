@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Products: Chat vs Cowork vs Code</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161d;
+    --bg3: #1a1e28;
+    --border: #252a38;
+    --text: #e2e8f0;
+    --muted: #7a8499;
+    --chat-color: #38bdf8;
+    --chat-glow: rgba(56,189,248,0.15);
+    --cowork-color: #a78bfa;
+    --cowork-glow: rgba(167,139,250,0.15);
+    --code-color: #34d399;
+    --code-glow: rgba(52,211,153,0.15);
+    --mcp-color: #fb923c;
+    --agent-color: #f472b6;
+    --skill-color: #facc15;
+    --project-color: #60a5fa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ──── NAV ──── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13,15,20,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    height: 52px;
+    overflow-x: auto;
+  }
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0 1rem;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  nav a:hover { color: var(--text); border-color: var(--border); }
+  nav a.active { color: var(--text); border-color: var(--chat-color); }
+  .nav-logo {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--text);
+    padding-right: 1.5rem;
+    margin-right: 0.5rem;
+    border-right: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  /* ──── HERO ──── */
+  .hero {
+    text-align: center;
+    padding: 5rem 2rem 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(56,189,248,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+  }
+  .hero h1 span.c { color: var(--chat-color); }
+  .hero h1 span.w { color: var(--cowork-color); }
+  .hero h1 span.k { color: var(--code-color); }
+  .hero p {
+    color: var(--muted);
+    max-width: 620px;
+    margin: 0 auto 2.5rem;
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  /* ──── SECTION ──── */
+  section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3.5rem 2rem;
+  }
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  h2 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+  }
+  .section-intro {
+    color: var(--muted);
+    max-width: 680px;
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+  }
+
+  /* ──── PRODUCT CARDS ──── */
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  @media (max-width: 768px) { .product-grid { grid-template-columns: 1fr; } }
+
+  .product-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .product-card:hover { transform: translateY(-4px); }
+  .product-card.chat { border-top: 3px solid var(--chat-color); }
+  .product-card.cowork { border-top: 3px solid var(--cowork-color); }
+  .product-card.code { border-top: 3px solid var(--code-color); }
+  .product-card.chat:hover { box-shadow: 0 8px 40px var(--chat-glow); }
+  .product-card.cowork:hover { box-shadow: 0 8px 40px var(--cowork-glow); }
+  .product-card.code:hover { box-shadow: 0 8px 40px var(--code-glow); }
+
+  .card-icon { font-size: 2.2rem; margin-bottom: 1rem; }
+  .card-title { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem; }
+  .card-title.chat { color: var(--chat-color); }
+  .card-title.cowork { color: var(--cowork-color); }
+  .card-title.code { color: var(--code-color); }
+  .card-subtitle { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.2rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+  .card-desc { color: #b0b8cc; font-size: 0.92rem; line-height: 1.65; margin-bottom: 1.5rem; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  /* ──── WHO USES / ANALOGY ──── */
+  .analogy-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  @media (max-width: 768px) { .analogy-box { grid-template-columns: 1fr; } }
+  .analogy-item h4 { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; }
+  .analogy-item p { font-size: 0.9rem; line-height: 1.6; color: #c0c8d8; }
+
+  /* ──── COMPARISON TABLE ──── */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  thead tr { background: var(--bg3); }
+  th { padding: 0.85rem 1.2rem; text-align: left; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); white-space: nowrap; }
+  td { padding: 0.8rem 1.2rem; border-top: 1px solid var(--border); vertical-align: middle; line-height: 1.5; }
+  tr:hover td { background: rgba(255,255,255,0.025); }
+  .yes { color: #34d399; font-weight: 700; }
+  .no { color: #64748b; }
+  .partial { color: #fb923c; font-weight: 700; }
+  .col-chat { color: var(--chat-color); font-weight: 700; }
+  .col-cowork { color: var(--cowork-color); font-weight: 700; }
+  .col-code { color: var(--code-color); font-weight: 700; }
+
+  /* ──── FLOWCHART / DIAGRAM ──── */
+  .flow-diagram {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    overflow-x: auto;
+  }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: nowrap;
+    margin-bottom: 1rem;
+  }
+  .flow-node {
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    min-width: 110px;
+  }
+  .flow-node.start { background: var(--bg); border-color: #38bdf8; color: #38bdf8; }
+  .flow-node.q { background: rgba(250,204,21,0.08); border-color: #facc15; color: #facc15; font-style: italic; }
+  .flow-node.chat-n { background: var(--chat-glow); border-color: var(--chat-color); color: var(--chat-color); }
+  .flow-node.cowork-n { background: var(--cowork-glow); border-color: var(--cowork-color); color: var(--cowork-color); }
+  .flow-node.code-n { background: var(--code-glow); border-color: var(--code-color); color: var(--code-color); }
+  .arrow { font-size: 1.1rem; color: var(--muted); margin: 0 0.4rem; }
+  .flow-label { font-size: 0.7rem; color: var(--muted); margin: 0 0.3rem; font-weight: 600; }
+
+  /* ──── ARCHITECTURE DIAGRAM ──── */
+  .arch-diagram {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    color: #94a3b8;
+    white-space: pre;
+  }
+  .arch-diagram .box-cyan { color: var(--chat-color); }
+  .arch-diagram .box-purple { color: var(--cowork-color); }
+  .arch-diagram .box-green { color: var(--code-color); }
+  .arch-diagram .box-orange { color: var(--mcp-color); }
+  .arch-diagram .box-pink { color: var(--agent-color); }
+  .arch-diagram .box-yellow { color: var(--skill-color); }
+  .arch-diagram .box-blue { color: var(--project-color); }
+  .arch-diagram .dim { color: #3d4558; }
+
+  /* ──── FEATURE DEEP DIVES ──── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  @media (max-width: 768px) { .feature-grid { grid-template-columns: 1fr; } }
+
+  .feature-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+  }
+  .feature-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .feature-card p { color: var(--muted); font-size: 0.88rem; line-height: 1.65; margin-bottom: 1rem; }
+  .feature-card ul { list-style: none; }
+  .feature-card ul li {
+    font-size: 0.86rem;
+    color: #b0b8cc;
+    padding: 0.3rem 0;
+    padding-left: 1.2rem;
+    position: relative;
+    line-height: 1.5;
+  }
+  .feature-card ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .badge.mcp { background: rgba(251,146,60,0.15); color: var(--mcp-color); border: 1px solid rgba(251,146,60,0.3); }
+  .badge.agent { background: rgba(244,114,182,0.15); color: var(--agent-color); border: 1px solid rgba(244,114,182,0.3); }
+  .badge.skill { background: rgba(250,204,21,0.12); color: var(--skill-color); border: 1px solid rgba(250,204,21,0.25); }
+  .badge.project { background: rgba(96,165,250,0.12); color: var(--project-color); border: 1px solid rgba(96,165,250,0.25); }
+  .badge.git { background: rgba(52,211,153,0.12); color: var(--code-color); border: 1px solid rgba(52,211,153,0.25); }
+
+  /* ──── MCP DIAGRAM ──── */
+  .mcp-diagram {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: start;
+    margin-top: 1.5rem;
+  }
+  .mcp-clients, .mcp-servers {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+  .mcp-middle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding-top: 1.5rem;
+  }
+  .mcp-protocol-label {
+    background: rgba(251,146,60,0.12);
+    border: 1px solid rgba(251,146,60,0.3);
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--mcp-color);
+    text-align: center;
+    white-space: nowrap;
+  }
+  .mcp-arrow { color: var(--mcp-color); font-size: 1.4rem; }
+  .mcp-clients h4, .mcp-servers h4 {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 0.7rem;
+    font-weight: 700;
+  }
+  .mcp-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* ──── AGENT PIPELINE ──── */
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+  .pipe-step {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    min-width: 140px;
+    flex-shrink: 0;
+    text-align: center;
+  }
+  .pipe-step .step-num {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.3rem;
+  }
+  .pipe-step .step-name { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .pipe-step .step-desc { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+  .pipe-arrow { display: flex; align-items: center; padding: 0 0.3rem; color: var(--muted); font-size: 1.2rem; flex-shrink: 0; }
+
+  /* ──── SKILLS & PROJECTS COMPARISON ──── */
+  .sp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  @media (max-width: 640px) { .sp-grid { grid-template-columns: 1fr; } }
+  .sp-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+  }
+  .sp-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.6rem; }
+  .sp-card .sp-desc { color: var(--muted); font-size: 0.88rem; line-height: 1.65; margin-bottom: 1.2rem; }
+  .sp-example {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    font-size: 0.82rem;
+    color: #b0b8cc;
+    line-height: 1.6;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .sp-example strong { color: var(--text); font-weight: 600; }
+
+  /* ──── GIT SECTION ──── */
+  .git-flow {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 768px) { .git-flow { grid-template-columns: 1fr; } }
+  .git-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem;
+  }
+  .git-card h4 { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.5rem; }
+  .git-card ul { list-style: none; }
+  .git-card ul li { font-size: 0.8rem; color: var(--muted); padding: 0.2rem 0 0.2rem 1rem; position: relative; }
+  .git-card ul li::before { content: '▸'; position: absolute; left: 0; color: var(--code-color); font-size: 0.65rem; top: 0.25rem; }
+
+  /* ──── DECISION GUIDE ──── */
+  .decision-list { list-style: none; margin-top: 1.5rem; }
+  .decision-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    transition: background 0.2s;
+  }
+  .decision-item:hover { background: var(--bg3); }
+  .decision-q { flex: 1; font-size: 0.92rem; color: #c0c8d8; line-height: 1.5; }
+  .decision-a {
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .decision-a.chat { background: var(--chat-glow); color: var(--chat-color); border: 1px solid var(--chat-color); }
+  .decision-a.cowork { background: var(--cowork-glow); color: var(--cowork-color); border: 1px solid var(--cowork-color); }
+  .decision-a.code { background: var(--code-glow); color: var(--code-color); border: 1px solid var(--code-color); }
+
+  /* ──── TABS ──── */
+  .tab-bar {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.82rem;
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 0.65rem 1.1rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--text); border-color: var(--mcp-color); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ──── CALLOUT ──── */
+  .callout {
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin: 1.2rem 0;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  .callout.info { background: rgba(56,189,248,0.07); border-left: 3px solid var(--chat-color); color: #94bfd6; }
+  .callout.warn { background: rgba(251,146,60,0.07); border-left: 3px solid var(--mcp-color); color: #cba87d; }
+  .callout.tip { background: rgba(52,211,153,0.07); border-left: 3px solid var(--code-color); color: #88c9b0; }
+  .callout.purple { background: rgba(167,139,250,0.07); border-left: 3px solid var(--cowork-color); color: #b49fd6; }
+
+  /* ──── CODE BLOCK ──── */
+  .code-block {
+    background: #0a0c12;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.3rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    color: #94a3b8;
+    margin: 1rem 0;
+  }
+  .code-block .kw { color: #c084fc; }
+  .code-block .str { color: #86efac; }
+  .code-block .comment { color: #3d4558; }
+  .code-block .cmd { color: var(--code-color); }
+  .code-block .flag { color: var(--mcp-color); }
+
+  hr.divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  /* ──── FOOTER ──── */
+  footer {
+    text-align: center;
+    padding: 2.5rem 2rem;
+    color: #3d4558;
+    font-size: 0.78rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ──── ANIMATIONS ──── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .anim { animation: fadeUp 0.5s ease both; }
+  .anim-d1 { animation-delay: 0.05s; }
+  .anim-d2 { animation-delay: 0.12s; }
+  .anim-d3 { animation-delay: 0.19s; }
+
+  /* Security note box */
+  .security-note {
+    background: rgba(248,113,113,0.06);
+    border: 1px solid rgba(248,113,113,0.2);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-size: 0.85rem;
+    color: #f19090;
+    line-height: 1.6;
+    margin-top: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">🤖 Claude Guide</div>
+  <a href="#overview" class="active">Overview</a>
+  <a href="#comparison">Compare</a>
+  <a href="#mcp">MCP Servers</a>
+  <a href="#agents">Agents</a>
+  <a href="#projects">Projects</a>
+  <a href="#skills">Skills</a>
+  <a href="#git">Git</a>
+  <a href="#decision">Decision</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="overview">
+  <div class="section-label" style="text-align:center;">Anthropic Product Guide · 2026</div>
+  <h1 class="anim">
+    <span class="c">Claude Chat</span> ·
+    <span class="w">Cowork</span> · 
+    <span class="k">Code</span>
+  </h1>
+  <p class="anim anim-d1">Three modes of working with Claude — same brain, different superpowers. Pick the right tool and you stop fighting your AI assistant.</p>
+</div>
+
+<!-- ══════════════════════════════════════════ SECTION 1: PRODUCT CARDS -->
+<section>
+  <div class="section-label">The Three Products</div>
+  <h2>Same Claude. Three Work Modes.</h2>
+  <p class="section-intro">Think of these not as separate AI systems, but as three different interfaces to the same powerful model — each designed for a fundamentally different kind of task.</p>
+
+  <div class="product-grid">
+    <!-- CHAT -->
+    <div class="product-card chat anim anim-d1">
+      <div class="card-icon">💬</div>
+      <div class="card-title chat">Claude Chat</div>
+      <div class="card-subtitle">claude.ai · Web · Mobile · Desktop</div>
+      <div class="card-desc">
+        Your conversational partner. Think, write, analyze, brainstorm, and iterate in a natural back-and-forth. <em>You</em> are always in the driver's seat — Claude responds, you decide.
+      </div>
+      <div class="card-tags">
+        <span class="tag">Free tier available</span>
+        <span class="tag">Web / Mobile / Desktop</span>
+        <span class="tag">Projects</span>
+        <span class="tag">Skills</span>
+        <span class="tag">File uploads</span>
+        <span class="tag">Artifacts</span>
+      </div>
+    </div>
+
+    <!-- COWORK -->
+    <div class="product-card cowork anim anim-d2">
+      <div class="card-icon">🖥️</div>
+      <div class="card-title cowork">Claude Cowork</div>
+      <div class="card-subtitle">Desktop App · Non-developers · Agentic</div>
+      <div class="card-desc">
+        Your desktop co-worker. You assign an outcome in plain English — Cowork plans the steps, you approve, it executes across files, apps, and websites. No command line needed.
+      </div>
+      <div class="card-tags">
+        <span class="tag">Paid plans (Pro+)</span>
+        <span class="tag">Desktop app</span>
+        <span class="tag">Isolated VM</span>
+        <span class="tag">File system access</span>
+        <span class="tag">MCP connectors</span>
+        <span class="tag">Skills</span>
+      </div>
+    </div>
+
+    <!-- CODE -->
+    <div class="product-card code anim anim-d3">
+      <div class="card-icon">⌨️</div>
+      <div class="card-title code">Claude Code</div>
+      <div class="card-subtitle">Terminal CLI · Developers · Power mode</div>
+      <div class="card-desc">
+        Your terminal-native coding agent. Runs in your shell, reads your entire codebase, executes commands, runs tests, commits to git, and deploys — all through natural language.
+      </div>
+      <div class="card-tags">
+        <span class="tag">npm install</span>
+        <span class="tag">CLI / Terminal</span>
+        <span class="tag">Full git access</span>
+        <span class="tag">MCP servers</span>
+        <span class="tag">Subagents</span>
+        <span class="tag">IDE plugins</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analogies -->
+  <div class="analogy-box">
+    <div class="analogy-item">
+      <h4 style="color: var(--chat-color)">💬 Chat analogy</h4>
+      <p>Like having a brilliant colleague you can ask anything. You are the project manager; Claude assists. Every response is text you can use however you like.</p>
+    </div>
+    <div class="analogy-item">
+      <h4 style="color: var(--cowork-color)">🖥️ Cowork analogy</h4>
+      <p>Like hiring a smart contractor. You describe the outcome, approve the plan, and they handle execution — opening apps, moving files, browsing websites — while you watch.</p>
+    </div>
+    <div class="analogy-item">
+      <h4 style="color: var(--code-color)">⌨️ Code analogy</h4>
+      <p>Like pairing with an expert engineer who has your entire codebase memorized. Lives in your terminal, writes code, runs it, fixes errors, and commits changes autonomously.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ SECTION 2: COMPARISON TABLE -->
+<section id="comparison">
+  <div class="section-label">Feature Comparison</div>
+  <h2>Side-by-Side Breakdown</h2>
+  <p class="section-intro">A detailed look at what each product supports out of the box.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="min-width:200px">Feature / Capability</th>
+          <th class="col-chat">💬 Chat</th>
+          <th class="col-cowork">🖥️ Cowork</th>
+          <th class="col-code">⌨️ Code</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="4" style="background:var(--bg3); color:var(--muted); font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:0.5rem 1.2rem;">Environment</td></tr>
+        <tr>
+          <td>Where it runs</td>
+          <td>Browser / Mobile / Desktop app</td>
+          <td>Isolated VM on desktop</td>
+          <td>Your terminal (local or remote)</td>
+        </tr>
+        <tr>
+          <td>Setup required</td>
+          <td class="yes">None — sign in and go</td>
+          <td>Download desktop app</td>
+          <td>npm install -g claude</td>
+        </tr>
+        <tr>
+          <td>Target user</td>
+          <td>Everyone</td>
+          <td>Non-technical knowledge workers</td>
+          <td>Developers & power users</td>
+        </tr>
+        <tr>
+          <td>Free tier</td>
+          <td class="yes">✓ Yes</td>
+          <td class="no">✗ Pro+ required</td>
+          <td class="partial">~ Paid API usage</td>
+        </tr>
+        <tr><td colspan="4" style="background:var(--bg3); color:var(--muted); font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:0.5rem 1.2rem;">Access & Files</td></tr>
+        <tr>
+          <td>Read local files</td>
+          <td class="partial">~ Upload only</td>
+          <td class="yes">✓ Full file system</td>
+          <td class="yes">✓ Full file system</td>
+        </tr>
+        <tr>
+          <td>Write / edit files</td>
+          <td class="no">✗ No</td>
+          <td class="yes">✓ Yes</td>
+          <td class="yes">✓ Yes</td>
+        </tr>
+        <tr>
+          <td>Browser / web control</td>
+          <td class="no">✗ No</td>
+          <td class="yes">✓ Yes (VM-sandboxed)</td>
+          <td class="partial">~ Via MCP server</td>
+        </tr>
+        <tr>
+          <td>Run terminal commands</td>
+          <td class="no">✗ No</td>
+          <td class="partial">~ Limited</td>
+          <td class="yes">✓ Full shell access</td>
+        </tr>
+        <tr><td colspan="4" style="background:var(--bg3); color:var(--muted); font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:0.5rem 1.2rem;">Developer Features</td></tr>
+        <tr>
+          <td>Git integration</td>
+          <td class="no">✗ No</td>
+          <td class="partial">~ Read-only via MCP</td>
+          <td class="yes">✓ Full (commit, branch, PR)</td>
+        </tr>
+        <tr>
+          <td>Run tests / build</td>
+          <td class="no">✗ No</td>
+          <td class="no">✗ No</td>
+          <td class="yes">✓ Yes</td>
+        </tr>
+        <tr>
+          <td>IDE integration</td>
+          <td class="no">✗ No</td>
+          <td class="no">✗ No</td>
+          <td class="yes">✓ VS Code, JetBrains plugins</td>
+        </tr>
+        <tr>
+          <td>MCP servers</td>
+          <td class="partial">~ Limited (via connectors)</td>
+          <td class="yes">✓ Yes</td>
+          <td class="yes">✓ Full (local + remote)</td>
+        </tr>
+        <tr><td colspan="4" style="background:var(--bg3); color:var(--muted); font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:0.5rem 1.2rem;">Context & Memory</td></tr>
+        <tr>
+          <td>Projects (persistent context)</td>
+          <td class="yes">✓ Yes</td>
+          <td class="yes">✓ Yes</td>
+          <td class="yes">✓ Yes</td>
+        </tr>
+        <tr>
+          <td>Skills (custom instructions)</td>
+          <td class="yes">✓ Yes</td>
+          <td class="yes">✓ Yes</td>
+          <td class="yes">✓ Yes (SKILL.md files)</td>
+        </tr>
+        <tr>
+          <td>Memory across sessions</td>
+          <td class="partial">~ Projects only</td>
+          <td class="partial">~ Projects only</td>
+          <td class="partial">~ CLAUDE.md file</td>
+        </tr>
+        <tr><td colspan="4" style="background:var(--bg3); color:var(--muted); font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:0.5rem 1.2rem;">Agentic Capabilities</td></tr>
+        <tr>
+          <td>Autonomous multi-step tasks</td>
+          <td class="no">✗ No</td>
+          <td class="yes">✓ Yes (with approval)</td>
+          <td class="yes">✓ Yes (configurable)</td>
+        </tr>
+        <tr>
+          <td>Subagents / parallel work</td>
+          <td class="no">✗ No</td>
+          <td class="partial">~ Limited</td>
+          <td class="yes">✓ Up to 7 parallel subagents</td>
+        </tr>
+        <tr>
+          <td>Background / scheduled tasks</td>
+          <td class="no">✗ No</td>
+          <td class="no">✗ No (manual trigger only)</td>
+          <td class="yes">✓ Via SDK / CI pipeline</td>
+        </tr>
+        <tr>
+          <td>Security model</td>
+          <td>Sandboxed chat</td>
+          <td>Isolated VM (safer)</td>
+          <td>Full access (powerful, needs care)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:flex; gap:1rem; margin-top:1rem; flex-wrap:wrap;">
+    <span style="font-size:0.78rem; color:var(--muted)"><span class="yes">✓</span> = Full support</span>
+    <span style="font-size:0.78rem; color:var(--muted)"><span class="partial">~</span> = Partial / limited</span>
+    <span style="font-size:0.78rem; color:var(--muted)"><span class="no">✗</span> = Not available</span>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ SECTION 3: MCP -->
+<section id="mcp">
+  <div class="section-label">Model Context Protocol</div>
+  <h2>MCP Servers — Claude's Plugin System</h2>
+  <p class="section-intro">MCP (Model Context Protocol) is an open standard that lets Claude connect to external tools and data sources. Think of it as <strong style="color:var(--text)">USB-C for AI</strong> — one standard interface, thousands of compatible tools.</p>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('mcp-what', this)">What is MCP?</button>
+    <button class="tab-btn" onclick="showTab('mcp-how', this)">How it Works</button>
+    <button class="tab-btn" onclick="showTab('mcp-examples', this)">Popular Servers</button>
+    <button class="tab-btn" onclick="showTab('mcp-setup', this)">Setup (Claude Code)</button>
+  </div>
+
+  <div id="mcp-what" class="tab-content active">
+    <p style="color:var(--muted); font-size:0.9rem; line-height:1.7; margin-bottom:1.5rem;">
+      Without MCP, Claude is isolated — it knows things but can't <em>do</em> things outside of text. MCP servers give Claude hands. Each server exposes a set of <strong style="color:var(--text)">tools</strong> (actions), <strong style="color:var(--text)">resources</strong> (data), and <strong style="color:var(--text)">prompts</strong> (templates) that Claude can use.
+    </p>
+
+    <div class="mcp-diagram">
+      <div class="mcp-clients">
+        <h4>🤖 MCP Clients</h4>
+        <div class="mcp-item">💬 <span>Claude Chat</span></div>
+        <div class="mcp-item">🖥️ <span>Claude Cowork</span></div>
+        <div class="mcp-item">⌨️ <span>Claude Code</span></div>
+        <div class="mcp-item">🔧 <span>Cursor / Windsurf</span></div>
+        <div class="mcp-item">🏢 <span>Custom apps (API)</span></div>
+      </div>
+      <div class="mcp-middle">
+        <div class="mcp-arrow">↔</div>
+        <div class="mcp-protocol-label">MCP Protocol<br><span style="font-weight:400; font-size:0.65rem;">JSON-RPC over stdio / HTTP / SSE</span></div>
+        <div class="mcp-arrow">↔</div>
+      </div>
+      <div class="mcp-servers">
+        <h4>🔌 MCP Servers</h4>
+        <div class="mcp-item" style="color:var(--code-color)">🐙 GitHub</div>
+        <div class="mcp-item" style="color:#60a5fa">📋 Notion</div>
+        <div class="mcp-item" style="color:#f472b6">🗄️ PostgreSQL / Supabase</div>
+        <div class="mcp-item" style="color:#fb923c">🎨 Figma</div>
+        <div class="mcp-item" style="color:#a78bfa">🌐 Browser / Playwright</div>
+        <div class="mcp-item" style="color:#34d399">💬 Slack / Linear</div>
+      </div>
+    </div>
+
+    <div class="callout info" style="margin-top:1.5rem;">
+      💡 <span>MCP was created by Anthropic and is now an open industry standard. Thousands of MCP servers exist in 2026 — from simple database connectors to full workflow automation platforms.</span>
+    </div>
+  </div>
+
+  <div id="mcp-how" class="tab-content">
+    <p style="color:var(--muted); font-size:0.9rem; line-height:1.7; margin-bottom:1.5rem;">Under the hood, MCP servers expose three building blocks:</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h3>🛠️ Tools (Actions)</h3>
+        <p>Things Claude can <em>do</em>. These are functions the server exposes that Claude can call.</p>
+        <ul>
+          <li>Create a GitHub PR</li>
+          <li>Insert a row in PostgreSQL</li>
+          <li>Post a Slack message</li>
+          <li>Click a button in Playwright</li>
+          <li>Create a Notion page</li>
+        </ul>
+      </div>
+      <div class="feature-card">
+        <h3>📦 Resources (Data)</h3>
+        <p>Data Claude can <em>read</em>. Raw structured data the server makes available for context.</p>
+        <ul>
+          <li>Database records / schema</li>
+          <li>GitHub repository files</li>
+          <li>Notion pages and databases</li>
+          <li>File contents from disk</li>
+          <li>API responses / webhooks</li>
+        </ul>
+      </div>
+      <div class="feature-card">
+        <h3>📝 Prompts (Templates)</h3>
+        <p>Reusable prompt templates with pre-built context for common workflows.</p>
+        <ul>
+          <li>"Review this PR for security issues"</li>
+          <li>"Summarize all open issues"</li>
+          <li>"Generate a standup from my commits"</li>
+        </ul>
+      </div>
+      <div class="feature-card">
+        <h3>🔒 Transport Layers</h3>
+        <p>How Claude communicates with MCP servers. Different modes for different environments.</p>
+        <ul>
+          <li><strong style="color:var(--text)">stdio</strong> — Local process (most common for dev)</li>
+          <li><strong style="color:var(--text)">HTTP/SSE</strong> — Remote servers over the internet</li>
+          <li><strong style="color:var(--text)">MCP Tunnels</strong> — Private network servers (enterprise)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div id="mcp-examples" class="tab-content">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>MCP Server</th>
+            <th>What Claude can do</th>
+            <th>Works in</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong style="color:#34d399">🐙 GitHub MCP</strong></td>
+            <td>Read issues, review PRs, search repos, create files, automate workflows</td>
+            <td><span class="yes">Code</span> · <span class="partial">Cowork</span></td>
+          </tr>
+          <tr>
+            <td><strong style="color:#60a5fa">📋 Notion MCP</strong></td>
+            <td>Read/write Notion pages, query databases, create documents</td>
+            <td><span class="yes">Code</span> · <span class="yes">Cowork</span></td>
+          </tr>
+          <tr>
+            <td><strong style="color:#f472b6">🗄️ PostgreSQL MCP</strong></td>
+            <td>Query databases, inspect schema, run SQL, fetch records</td>
+            <td><span class="yes">Code</span> · <span class="yes">Cowork</span></td>
+          </tr>
+          <tr>
+            <td><strong style="color:#fb923c">🎨 Figma MCP</strong></td>
+            <td>Read design frames, generate code from selected Figma components</td>
+            <td><span class="yes">Code</span></td>
+          </tr>
+          <tr>
+            <td><strong style="color:#a78bfa">🌐 Playwright MCP</strong></td>
+            <td>Control a real browser — navigate, click, fill forms, extract data</td>
+            <td><span class="yes">Code</span> · <span class="yes">Cowork</span></td>
+          </tr>
+          <tr>
+            <td><strong style="color:#34d399">💬 Slack MCP</strong></td>
+            <td>Read messages, send replies, create channels, search conversations</td>
+            <td><span class="yes">Code</span> · <span class="yes">Cowork</span></td>
+          </tr>
+          <tr>
+            <td><strong style="color:#facc15">📊 Supabase MCP</strong></td>
+            <td>Database queries, auth management, edge functions, real-time data</td>
+            <td><span class="yes">Code</span></td>
+          </tr>
+          <tr>
+            <td><strong style="color:#60a5fa">📅 Google Calendar MCP</strong></td>
+            <td>Read/create events, check availability, schedule meetings</td>
+            <td><span class="yes">Code</span> · <span class="yes">Cowork</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn" style="margin-top:1.2rem;">
+      ⚠️ <span>Security tip: Give each MCP server the minimum permissions it needs. Use read-only tokens for GitHub when you only need to read — limit the blast radius if something goes wrong.</span>
+    </div>
+  </div>
+
+  <div id="mcp-setup" class="tab-content">
+    <p style="color:var(--muted); font-size:0.9rem; line-height:1.7; margin-bottom:1rem;">Installing an MCP server in Claude Code is a single command:</p>
+    <div class="code-block">
+<span class="comment"># Install via HTTP (remote server)</span>
+<span class="cmd">claude mcp add</span> <span class="flag">--transport http</span> notion https://mcp.notion.com/mcp
+
+<span class="comment"># Install a local stdio server (npm-based)</span>
+<span class="cmd">claude mcp add</span> github <span class="flag">--</span> npx <span class="flag">-y</span> @modelcontextprotocol/server-github
+
+<span class="comment"># List all installed MCP servers</span>
+<span class="cmd">claude mcp list</span>
+
+<span class="comment"># Remove a server</span>
+<span class="cmd">claude mcp remove</span> github
+    </div>
+    <div class="callout tip">
+      💡 <span>MCP configuration is stored in <code style="font-family: 'JetBrains Mono'; background: var(--bg3); padding: 0.1rem 0.3rem; border-radius: 4px;">~/.claude/settings.json</code>. Track this file in your dotfiles repo so your setup is reproducible across machines.</span>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ SECTION 4: AGENTS -->
+<section id="agents">
+  <div class="section-label">Agentic AI</div>
+  <h2>Agents — Claude That Does, Not Just Talks</h2>
+  <p class="section-intro">An <strong style="color:var(--text)">agent</strong> is Claude in a loop — it gets a goal, plans steps, executes them, checks results, and keeps going until done. No hand-holding required.</p>
+
+  <div class="callout info">
+    🤖 <span><strong style="color:var(--text)">Key difference:</strong> Regular Chat gives you one response per message. An agent takes your goal and works through many steps autonomously — reading files, running code, calling APIs — before reporting back.</span>
+  </div>
+
+  <!-- Pipeline -->
+  <h3 style="margin: 2rem 0 1rem; font-size:1rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Agent Execution Pipeline</h3>
+  <div class="pipeline">
+    <div class="pipe-step">
+      <div class="step-num">Step 1</div>
+      <div class="step-name" style="color:var(--chat-color)">📥 Goal</div>
+      <div class="step-desc">User provides a high-level objective</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">
+      <div class="step-num">Step 2</div>
+      <div class="step-name" style="color:var(--skill-color)">🗺️ Plan</div>
+      <div class="step-desc">Claude breaks it into concrete steps</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">
+      <div class="step-num">Step 3</div>
+      <div class="step-name" style="color:var(--mcp-color)">🔧 Tool Use</div>
+      <div class="step-desc">Calls MCP tools, runs code, reads files</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">
+      <div class="step-num">Step 4</div>
+      <div class="step-name" style="color:var(--agent-color)">🔍 Observe</div>
+      <div class="step-desc">Checks tool output, detects errors</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">
+      <div class="step-num">Step 5</div>
+      <div class="step-name" style="color:var(--cowork-color)">♻️ Iterate</div>
+      <div class="step-desc">Adjusts plan based on results</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">
+      <div class="step-num">Step 6</div>
+      <div class="step-name" style="color:var(--code-color)">✅ Done</div>
+      <div class="step-desc">Reports final result to user</div>
+    </div>
+  </div>
+
+  <!-- Subagents in Claude Code -->
+  <div class="feature-grid" style="margin-top: 2.5rem;">
+    <div class="feature-card">
+      <h3>⌨️ Subagents in Claude Code <span class="badge agent">Code only</span></h3>
+      <p>Claude Code can spawn specialized sub-agents that run <strong style="color:var(--text)">in parallel</strong> — up to 7 simultaneously. Each handles a focused task while the parent agent orchestrates the whole job.</p>
+      <ul>
+        <li><strong style="color:var(--text)">Explore agent</strong> — maps and understands the file structure</li>
+        <li><strong style="color:var(--text)">Plan agent</strong> — researches the codebase, proposes a strategy</li>
+        <li><strong style="color:var(--text)">General agent</strong> — executes complex multi-step tasks</li>
+        <li>Example: "refactor auth module" spawns Explore + Plan + 2× implementation agents simultaneously</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <h3>🖥️ Cowork Agent Model <span class="badge agent">Human-in-loop</span></h3>
+      <p>Cowork uses the same agentic engine as Claude Code but wraps it in a graphical interface with mandatory human approval steps. Safer for sensitive work.</p>
+      <ul>
+        <li>You describe the outcome in plain English</li>
+        <li>Claude proposes a plan with numbered steps</li>
+        <li>You review and approve before execution begins</li>
+        <li>Claude executes — opening apps, editing docs, browsing websites</li>
+        <li>Always triggered manually — no background automation</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <h3>🏢 Managed Agents <span class="badge agent">Enterprise API</span></h3>
+      <p>For teams building production agent pipelines via the API. Managed Agents with self-hosted sandboxes give enterprise control over security boundaries.</p>
+      <ul>
+        <li>Run inside your own infrastructure</li>
+        <li>Network policies and audit logging you control</li>
+        <li>Files never leave your perimeter</li>
+        <li>MCP tunnels for private network access</li>
+        <li>Used by companies like Amplitude, Clay, Rogo</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <h3>🔐 Agent Safety <span class="badge agent">Important!</span></h3>
+      <p>More power means more responsibility. Claude has built-in safety mechanisms, but you should understand them.</p>
+      <ul>
+        <li>Claude Code asks permission before destructive actions by default</li>
+        <li>Cowork's VM isolation limits damage if something goes wrong</li>
+        <li>Prompt injection attacks are a real risk (malicious websites can try to hijack agents)</li>
+        <li>Enterprise: use MCP tunnels to keep servers private</li>
+        <li>Principle of least privilege: give agents only the access they need</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warn" style="margin-top: 1rem;">
+    ⚠️ <span><strong style="color:var(--text)">Cowork limitation:</strong> Cowork only activates when you manually trigger it. It is not an always-on background agent — it won't run tasks on a schedule or wake up automatically. That capability currently requires Claude Code + a CI/CD pipeline or the API.</span>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ SECTION 5: PROJECTS -->
+<section id="projects">
+  <div class="section-label">Persistent Workspaces</div>
+  <h2>Projects — Persistent Context Across Sessions</h2>
+  <p class="section-intro">By default Claude has no memory between conversations. Projects solve this — they are persistent workspaces where you pin files, instructions, and links that Claude always has access to, no matter which conversation you start.</p>
+
+  <div class="sp-grid">
+    <div class="sp-card">
+      <h3 style="color: var(--project-color)">📁 What is a Project?</h3>
+      <div class="sp-desc">
+        A Project is a persistent workspace in Claude Chat or Cowork. It holds:
+        <ul style="list-style:none; margin-top:0.8rem;">
+          <li style="padding:0.3rem 0 0.3rem 1.2rem; position:relative; font-size:0.87rem; color:#b0b8cc;"><span style="position:absolute;left:0;color:var(--project-color)">▸</span> A permanent system prompt / instructions</li>
+          <li style="padding:0.3rem 0 0.3rem 1.2rem; position:relative; font-size:0.87rem; color:#b0b8cc;"><span style="position:absolute;left:0;color:var(--project-color)">▸</span> Uploaded reference files (code, docs, data)</li>
+          <li style="padding:0.3rem 0 0.3rem 1.2rem; position:relative; font-size:0.87rem; color:#b0b8cc;"><span style="position:absolute;left:0;color:var(--project-color)">▸</span> Linked URLs (documentation, wikis)</li>
+          <li style="padding:0.3rem 0 0.3rem 1.2rem; position:relative; font-size:0.87rem; color:#b0b8cc;"><span style="position:absolute;left:0;color:var(--project-color)">▸</span> All related conversations, grouped</li>
+        </ul>
+      </div>
+      <div class="sp-example">
+<strong>Example Project: "AMBA CHI Documentation"</strong>
+
+📌 Instructions:
+You are a hardware architect expert in AMBA 5 CHI.
+Always use cyan for RN-F, amber for HN-F, green for SN-F.
+
+📎 Files:
+- chi_spec_v5.pdf
+- cache_state_machine.md
+- flit_reference.xlsx
+
+🔗 Links:
+- https://arm.com/architecture/system-architectures/amba
+      </div>
+    </div>
+
+    <div class="sp-card">
+      <h3 style="color: var(--project-color)">🆚 Project vs. Regular Chat</h3>
+      <div class="sp-desc">What changes when you work inside a Project vs. a one-off conversation.</div>
+      <div class="table-wrap">
+        <table style="font-size:0.82rem;">
+          <thead>
+            <tr>
+              <th>Aspect</th>
+              <th>Regular Chat</th>
+              <th style="color:var(--project-color)">Project</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Instructions</td><td class="no">Repeated each time</td><td class="yes">Always present</td></tr>
+            <tr><td>Files</td><td class="no">Re-upload each session</td><td class="yes">Always attached</td></tr>
+            <tr><td>Context</td><td class="no">Blank slate</td><td class="yes">Pre-loaded</td></tr>
+            <tr><td>Conversations</td><td class="no">Scattered</td><td class="yes">Grouped & organized</td></tr>
+            <tr><td>Memory between sessions</td><td class="no">None</td><td class="yes">Full (via files)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout purple" style="margin-top: 1.5rem;">
+    🗂️ <span><strong style="color:var(--text)">Key insight:</strong> Chat and Cowork have strict environmental boundaries — they don't share context automatically. Projects are the exception: you can use the same Project in both Chat and Cowork to maintain consistent context across both tools.</span>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ SECTION 6: SKILLS -->
+<section id="skills">
+  <div class="section-label">Custom Instructions</div>
+  <h2>Skills — Teaching Claude Your Standards</h2>
+  <p class="section-intro">Skills are reusable instruction sets that activate when relevant. Unlike Projects (which are always-on), Skills are context-aware — they kick in only when the task calls for them. Think of them as specialist training modules.</p>
+
+  <div class="sp-grid">
+    <div class="sp-card">
+      <h3 style="color: var(--skill-color)">⚡ What is a Skill?</h3>
+      <div class="sp-desc">
+        A Skill is a markdown file (typically SKILL.md) containing instructions for a specific type of task. When you or Claude identify a matching task, the skill is loaded into context.
+        <br><br>
+        Skills work across <strong style="color:var(--text)">Chat, Cowork, and Claude Code</strong>. They're not locked to a project — they're reusable across all your work.
+      </div>
+      <div class="sp-example">
+<strong># SKILL: CHI Snoop Filter Design</strong>
+
+<strong>Trigger:</strong> Any question about snoop filters, SF sizing,
+or cache lookup in a CHI interconnect.
+
+<strong>Rules:</strong>
+- Always show filter tables with hit/miss/evict columns
+- Color code: RN-F=cyan, HN-F=amber
+- Assume 16-way set associative unless stated
+- Include latency breakdown when analyzing performance
+- Reference ARM IHI0050 spec section numbers
+      </div>
+    </div>
+
+    <div class="sp-card">
+      <h3 style="color: var(--skill-color)">🔄 Skills vs. Projects</h3>
+      <div class="sp-desc">Both hold custom instructions, but they serve different purposes.</div>
+      <div class="table-wrap">
+        <table style="font-size:0.82rem;">
+          <thead>
+            <tr>
+              <th>Aspect</th>
+              <th style="color:var(--project-color)">Project</th>
+              <th style="color:var(--skill-color)">Skill</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Scope</td><td>One project workspace</td><td class="yes">All conversations</td></tr>
+            <tr><td>Activation</td><td>Always-on in project</td><td class="yes">When relevant</td></tr>
+            <tr><td>Best for</td><td>Domain context</td><td>Task procedures</td></tr>
+            <tr><td>Carries files?</td><td class="yes">Yes</td><td class="no">Instructions only</td></tr>
+            <tr><td>Shareable?</td><td class="partial">Within team</td><td class="yes">GitHub / community</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout tip" style="margin-top:1rem; font-size:0.82rem;">
+        💡 <span>The community shares skills on GitHub. There are already hundreds of published skill bundles covering writing styles, code review standards, domain-specific formats, and more.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills in Claude Code -->
+  <div class="feature-card" style="margin-top:1.5rem;">
+    <h3>⌨️ Skills in Claude Code — SKILL.md & CLAUDE.md <span class="badge skill">Advanced</span></h3>
+    <p>Claude Code has a more structured skills system. It reads special markdown files from your project directory and activates relevant ones automatically.</p>
+    <div class="code-block">
+<span class="comment"># CLAUDE.md — project-wide persistent context (memory)</span>
+<span class="comment"># Loaded at the start of every Claude Code session in this repo</span>
+project: CHI NoC Micro-architecture Reference
+language: SystemVerilog + Python
+build: make sim TEST=&lt;testname&gt;
+test: pytest tests/ -v
+<span class="comment"># Rules</span>
+- never modify golden reference files under rtl/golden/
+- always run lint before committing
+
+<span class="comment"># skills/chi-snoop-filter/SKILL.md — activated when relevant</span>
+<span class="comment"># trigger: snoop filter, SF, lookup latency</span>
+Always include HitMissEvict table. Show cycle breakdown.
+    </div>
+    <ul>
+      <li><strong style="color:var(--text)">CLAUDE.md</strong> = always-on project memory (like a project README Claude always reads)</li>
+      <li><strong style="color:var(--text)">SKILL.md</strong> = conditional instructions that activate for specific task types</li>
+      <li>Skills with no <code style="font-size:0.8em; background:var(--bg3); padding:0.1rem 0.3rem; border-radius:4px">skills/</code> subdirectory and only a root SKILL.md are surfaced as single skills in the UI</li>
+    </ul>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ SECTION 7: GIT -->
+<section id="git">
+  <div class="section-label">Version Control</div>
+  <h2>Git Access — From Read-Only to Full Automation</h2>
+  <p class="section-intro">Git access varies dramatically across the three products. Claude Code is where git really shines — it can handle your entire development workflow end-to-end.</p>
+
+  <div class="git-flow">
+    <div class="git-card">
+      <h4><span style="color:var(--chat-color)">💬</span> Claude Chat</h4>
+      <ul>
+        <li>No direct git access</li>
+        <li>Can read git diffs you paste in</li>
+        <li>Can write git commands for you to run</li>
+        <li>Can review commit messages, PR descriptions</li>
+        <li>Understands git concepts and explains them</li>
+      </ul>
+      <div class="callout info" style="margin-top:0.8rem; font-size:0.8rem;">
+        Use for: learning git, writing commit messages, reviewing diffs you paste
+      </div>
+    </div>
+
+    <div class="git-card">
+      <h4><span style="color:var(--cowork-color)">🖥️</span> Claude Cowork</h4>
+      <ul>
+        <li>Limited git via GitHub MCP connector</li>
+        <li>Can read repos, issues, and PRs</li>
+        <li>Cannot execute local git commands directly</li>
+        <li>Can browse github.com via its browser</li>
+        <li>Best for: project management tasks</li>
+      </ul>
+      <div class="callout purple" style="margin-top:0.8rem; font-size:0.8rem;">
+        Use for: reading GitHub issues, creating PR descriptions, reviewing code on github.com
+      </div>
+    </div>
+
+    <div class="git-card">
+      <h4><span style="color:var(--code-color)">⌨️</span> Claude Code</h4>
+      <ul>
+        <li>Full git integration — reads your entire repo</li>
+        <li>Creates branches, commits with messages</li>
+        <li>Runs git diff, git log, git blame</li>
+        <li>Creates and reviews pull requests (via GitHub MCP)</li>
+        <li>Manages worktrees for parallel development</li>
+        <li>Hooks into CI/CD pipelines</li>
+      </ul>
+      <div class="callout tip" style="margin-top:0.8rem; font-size:0.8rem;">
+        Use for: full software development lifecycle automation
+      </div>
+    </div>
+  </div>
+
+  <!-- Claude Code git example -->
+  <div style="margin-top: 2rem;">
+    <h3 style="font-size:1rem; font-weight:700; margin-bottom:1rem;">Example: Claude Code Full Git Workflow</h3>
+    <div class="code-block">
+<span class="comment"># Start Claude Code in your repo</span>
+<span class="cmd">cd</span> my-chi-noc-project
+<span class="cmd">claude</span>
+
+<span class="comment"># Then just talk to it:</span>
+
+<span class="kw">You:</span> <span class="str">"There's a bug in the snoop filter hit calculation — fix it, 
+       write a test, and open a PR against main"</span>
+
+<span class="comment"># Claude Code will:</span>
+<span class="comment"># 1. Run git log to understand recent changes</span>
+<span class="comment"># 2. Read the relevant source files</span>
+<span class="comment"># 3. Identify the bug</span>
+<span class="comment"># 4. Create a new branch: git checkout -b fix/snoop-filter-hit</span>
+<span class="comment"># 5. Edit the source file to fix the bug</span>
+<span class="comment"># 6. Write a pytest test</span>
+<span class="comment"># 7. Run the tests to confirm they pass</span>
+<span class="comment"># 8. git add + git commit -m "fix: correct SF hit calculation logic"</span>
+<span class="comment"># 9. git push origin fix/snoop-filter-hit</span>
+<span class="comment"># 10. Create a GitHub PR via the GitHub MCP server</span>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    ⚠️ <span><strong style="color:var(--text)">New in May 2026:</strong> Claude Code now properly handles pre-existing git worktrees in background sessions — a previous bug blocked editing while EnterWorktree refused to create duplicates. This is now fixed.</span>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ SECTION 8: DECISION GUIDE -->
+<section id="decision">
+  <div class="section-label">When to Use What</div>
+  <h2>Decision Guide — Pick the Right Tool</h2>
+  <p class="section-intro">Not sure which product to reach for? Match your task to the right Claude mode.</p>
+
+  <ul class="decision-list">
+    <li class="decision-item">
+      <div class="decision-q">💭 I want to brainstorm, write an essay, analyze a document, or have a conversation</div>
+      <div class="decision-a chat">Chat</div>
+    </li>
+    <li class="decision-item">
+      <div class="decision-q">📊 I need to reorganize 200 PDFs, pull data from them into a spreadsheet, and email a summary</div>
+      <div class="decision-a cowork">Cowork</div>
+    </li>
+    <li class="decision-item">
+      <div class="decision-q">🐛 I need to find and fix a bug in my codebase, run tests, and commit the fix</div>
+      <div class="decision-a code">Code</div>
+    </li>
+    <li class="decision-item">
+      <div class="decision-q">✉️ I want to review my emails, draft replies, and schedule follow-ups — no code involved</div>
+      <div class="decision-a cowork">Cowork</div>
+    </li>
+    <li class="decision-item">
+      <div class="decision-q">🚀 I want to build a CI pipeline that automatically reviews PRs and comments with suggestions</div>
+      <div class="decision-a code">Code</div>
+    </li>
+    <li class="decision-item">
+      <div class="decision-q">📝 Quick question: "What is cache coherency in AMBA CHI?"</div>
+      <div class="decision-a chat">Chat</div>
+    </li>
+    <li class="decision-item">
+      <div class="decision-q">🖼️ I need to open Figma, screenshot each screen, and document them in Notion</div>
+      <div class="decision-a cowork">Cowork</div>
+    </li>
+    <li class="decision-item">
+      <div class="decision-q">🔧 I want to add a new API endpoint, write docs, write tests, and deploy to staging</div>
+      <div class="decision-a code">Code</div>
+    </li>
+    <li class="decision-item">
+      <div class="decision-q">📚 I'm working on an ongoing project and want Claude to always know my style, codebase, and rules</div>
+      <div class="decision-a chat">Project</div>
+    </li>
+    <li class="decision-item">
+      <div class="decision-q">🤔 I'm a non-developer who wants to automate repetitive computer tasks without learning to code</div>
+      <div class="decision-a cowork">Cowork</div>
+    </li>
+    <li class="decision-item">
+      <div class="decision-q">⚡ I want maximum autonomy — Claude just goes and does the work, I'll review the result</div>
+      <div class="decision-a code">Code</div>
+    </li>
+  </ul>
+
+  <!-- Summary architecture diagram -->
+  <h3 style="margin: 2.5rem 0 1rem; font-size:1rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Architecture Overview</h3>
+  <div class="arch-diagram">
+<span class="dim">┌────────────────────────────────────────────────────────────────────────┐</span>
+<span class="dim">│</span>                      <span class="box-yellow">ANTHROPIC CLAUDE PRODUCTS</span>                         <span class="dim">│</span>
+<span class="dim">│</span>                                                                        <span class="dim">│</span>
+<span class="dim">│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────┐ │</span>
+<span class="dim">│  │</span>  <span class="box-cyan">💬 CLAUDE CHAT</span>   <span class="dim">│  │</span>  <span class="box-purple">🖥️ COWORK</span>         <span class="dim">│  │</span>  <span class="box-green">⌨️ CLAUDE CODE</span>      <span class="dim">│ │</span>
+<span class="dim">│  │</span>  claude.ai       <span class="dim">│  │</span>  Desktop VM       <span class="dim">│  │</span>  Terminal CLI        <span class="dim">│ │</span>
+<span class="dim">│  │</span>  Web/Mobile/App  <span class="dim">│  │</span>  Non-developers   <span class="dim">│  │</span>  Developers          <span class="dim">│ │</span>
+<span class="dim">│  └────────┬─────────┘  └────────┬──────────┘  └──────────┬───────────┘ │</span>
+<span class="dim">│           │                     │                          │             │</span>
+<span class="dim">│           └─────────────────────┴──────────────────────────┘             │</span>
+<span class="dim">│                                        │                                  │</span>
+<span class="dim">│                              ┌─────────┴─────────┐                       │</span>
+<span class="dim">│                              │</span>  <span class="box-yellow">Claude Model API</span>   <span class="dim">│</span>                       <span class="dim">│</span>
+<span class="dim">│                              │</span>  Sonnet 4.6 / Opus<span class="dim">│</span>                       <span class="dim">│</span>
+<span class="dim">│                              └──────────────────-┘                       │</span>
+<span class="dim">│                                                                           │</span>
+<span class="dim">│  ┌──────────────────────────────────────────────────────────────────┐    │</span>
+<span class="dim">│  │</span>                    <span class="box-orange">MCP PROTOCOL LAYER</span>                          <span class="dim">│    │</span>
+<span class="dim">│  │</span>   <span class="box-green">GitHub</span>  <span class="box-blue">Notion</span>  <span class="box-pink">Postgres</span>  <span class="box-orange">Figma</span>  <span class="box-yellow">Slack</span>  <span class="box-cyan">Playwright</span>  <span class="box-purple">Custom</span>  <span class="dim">│    │</span>
+<span class="dim">│  └──────────────────────────────────────────────────────────────────┘    │</span>
+<span class="dim">│                                                                           │</span>
+<span class="dim">│  ┌────────────────┐  ┌────────────────────┐  ┌────────────────────────┐ │</span>
+<span class="dim">│  │</span>  <span class="box-blue">PROJECTS</span>       <span class="dim">│  │</span>  <span class="box-yellow">SKILLS</span>              <span class="dim">│  │</span>  <span class="box-green">AGENTS / SUBAGENTS</span>  <span class="dim">│ │</span>
+<span class="dim">│  │</span>  Persistent ctx <span class="dim">│  │</span>  Conditional instr. <span class="dim">│  │</span>  Autonomous pipelines <span class="dim">│ │</span>
+<span class="dim">│  └────────────────┘  └────────────────────┘  └────────────────────────┘ │</span>
+<span class="dim">└───────────────────────────────────────────────────────────────────────────┘</span></div>
+</section>
+
+<footer>
+  <p>Built as an interactive reference · Based on Anthropic product documentation · May 2026</p>
+  <p style="margin-top:0.4rem;">Claude Chat · Claude Cowork (beta) · Claude Code · All products by Anthropic</p>
+</footer>
+
+<script>
+  // Tab switching
+  function showTab(id, btn) {
+    const section = btn.closest('section');
+    section.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    section.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // Smooth scroll + active nav
+  document.querySelectorAll('nav a').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const sections = document.querySelectorAll('section[id], .hero[id]');
+  const navLinks = document.querySelectorAll('nav a');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => {
+          a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id);
+        });
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXI vs CHI Protocol Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;600;800&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --panel: #0f1628;
+    --border: #1e2d4a;
+    --axi: #00d4ff;
+    --chi: #ff6b35;
+    --chi2: #ffb347;
+    --chi3: #7ee8a2;
+    --text: #c8d8f0;
+    --muted: #5a7090;
+    --glow-axi: 0 0 18px #00d4ff55;
+    --glow-chi: 0 0 18px #ff6b3555;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    padding: 28px 20px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    background: linear-gradient(90deg, var(--axi), var(--chi));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    margin-bottom: 28px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .panel {
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .panel-title.axi { color: var(--axi); text-shadow: var(--glow-axi); }
+  .panel-title.chi { color: var(--chi); text-shadow: var(--glow-chi); }
+
+  .panel-sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+    margin-bottom: 18px;
+  }
+
+  /* ---- AXI diagram ---- */
+  .axi-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .axi-nodes {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .node {
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-align: center;
+    min-width: 80px;
+  }
+
+  .node.master {
+    background: #001e2e;
+    border: 1.5px solid var(--axi);
+    color: var(--axi);
+    box-shadow: var(--glow-axi);
+  }
+
+  .node.slave {
+    background: #001e2e;
+    border: 1.5px solid var(--axi);
+    color: var(--axi);
+    box-shadow: var(--glow-axi);
+  }
+
+  .axi-channels {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .channel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .ch-label {
+    background: #002233;
+    border: 1px solid var(--axi);
+    color: var(--axi);
+    border-radius: 4px;
+    padding: 2px 6px;
+    min-width: 30px;
+    text-align: center;
+    font-size: 0.65rem;
+  }
+
+  .ch-arrow {
+    flex: 1;
+    height: 1px;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .ch-arrow::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1.5px;
+    background: var(--axi);
+    opacity: 0.5;
+  }
+
+  .ch-arrow.right::before {
+    content: '▶';
+    position: absolute;
+    right: -2px;
+    color: var(--axi);
+    font-size: 0.6rem;
+    z-index: 1;
+    top: -5px;
+  }
+
+  .ch-arrow.left::before {
+    content: '◀';
+    position: absolute;
+    left: -2px;
+    color: var(--axi);
+    font-size: 0.6rem;
+    z-index: 1;
+    top: -5px;
+  }
+
+  .ch-desc {
+    color: var(--muted);
+    font-size: 0.62rem;
+    min-width: 55px;
+    text-align: right;
+  }
+
+  /* ---- CHI diagram ---- */
+  .chi-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .layer-box {
+    border-radius: 8px;
+    padding: 10px 14px;
+    border-left: 3px solid;
+    position: relative;
+  }
+
+  .layer-box.proto {
+    background: #1a0e00;
+    border-color: var(--chi);
+  }
+  .layer-box.network {
+    background: #1a1400;
+    border-color: var(--chi2);
+  }
+  .layer-box.link {
+    background: #001a0e;
+    border-color: var(--chi3);
+  }
+
+  .layer-num {
+    font-size: 0.6rem;
+    font-family: 'Share Tech Mono', monospace;
+    opacity: 0.6;
+    margin-bottom: 2px;
+  }
+
+  .layer-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .layer-box.proto .layer-name { color: var(--chi); }
+  .layer-box.network .layer-name { color: var(--chi2); }
+  .layer-box.link .layer-name { color: var(--chi3); }
+
+  .layer-detail {
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: 'Share Tech Mono', monospace;
+    line-height: 1.5;
+  }
+
+  .layer-tag {
+    font-size: 0.6rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'Share Tech Mono', monospace;
+    margin-top: 5px;
+    display: inline-block;
+  }
+
+  .layer-box.proto .layer-tag { background: #ff6b3522; color: var(--chi); border: 1px solid #ff6b3544; }
+  .layer-box.network .layer-tag { background: #ffb34722; color: var(--chi2); border: 1px solid #ffb34744; }
+  .layer-box.link .layer-tag { background: #7ee8a222; color: var(--chi3); border: 1px solid #7ee8a244; }
+
+  /* ---- Transaction flow ---- */
+  .txn-section {
+    max-width: 960px;
+    margin: 20px auto 0;
+  }
+
+  .txn-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+
+  .txn-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .txn-panel {
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .txn-panel-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+  .txn-panel-title.axi { color: var(--axi); }
+  .txn-panel-title.chi { color: var(--chi); }
+
+  .flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.68rem;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .step-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+
+  .step-dot.axi { background: var(--axi); box-shadow: var(--glow-axi); }
+  .step-dot.chi1 { background: var(--chi); box-shadow: var(--glow-chi); }
+  .step-dot.chi2 { background: var(--chi2); }
+  .step-dot.chi3 { background: var(--chi3); }
+
+  .step-body { color: var(--text); line-height: 1.5; }
+  .step-layer {
+    font-size: 0.58rem;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  .step-layer.p { background: #ff6b3522; color: var(--chi); }
+  .step-layer.n { background: #ffb34722; color: var(--chi2); }
+  .step-layer.l { background: #7ee8a222; color: var(--chi3); }
+
+  /* ---- Topology compare ---- */
+  .topo-section {
+    max-width: 960px;
+    margin: 20px auto 0;
+  }
+
+  .topo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .topo-panel {
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+
+  svg text { font-family: 'Share Tech Mono', monospace; }
+
+  @keyframes flow {
+    0% { stroke-dashoffset: 40; }
+    100% { stroke-dashoffset: 0; }
+  }
+
+  .flow-line {
+    stroke-dasharray: 8 4;
+    animation: flow 1.2s linear infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .pulse { animation: pulse 2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<h1>AXI vs CHI Protocol Architecture</h1>
+<p class="subtitle">// AMBA BUS PROTOCOL COMPARISON — LAYER STRUCTURE & TRANSACTION FLOW //</p>
+
+<!-- Top panels -->
+<div class="columns">
+
+  <!-- AXI Panel -->
+  <div class="panel">
+    <div class="panel-title axi">AXI4 — Single Layer</div>
+    <div class="panel-sub">Advanced eXtensible Interface · Direct Master↔Slave</div>
+    <div class="axi-diagram">
+      <div class="axi-nodes">
+        <div class="node master">MASTER<br><span style="font-size:0.6rem;opacity:0.6">CPU / DMA</span></div>
+        <div class="axi-channels">
+          <div class="channel">
+            <div class="ch-label">AW</div>
+            <div class="ch-arrow right"></div>
+            <div class="ch-desc">Write Addr</div>
+          </div>
+          <div class="channel">
+            <div class="ch-label">W</div>
+            <div class="ch-arrow right"></div>
+            <div class="ch-desc">Write Data</div>
+          </div>
+          <div class="channel">
+            <div class="ch-label">B</div>
+            <div class="ch-arrow left"></div>
+            <div class="ch-desc">Write Resp</div>
+          </div>
+          <div class="channel">
+            <div class="ch-label">AR</div>
+            <div class="ch-arrow right"></div>
+            <div class="ch-desc">Read Addr</div>
+          </div>
+          <div class="channel">
+            <div class="ch-label">R</div>
+            <div class="ch-arrow left"></div>
+            <div class="ch-desc">Read Data</div>
+          </div>
+        </div>
+        <div class="node slave">SLAVE<br><span style="font-size:0.6rem;opacity:0.6">MEM / IP</span></div>
+      </div>
+      <div style="margin-top:8px; padding:8px 10px; background:#001422; border-radius:6px; border:1px solid #00d4ff22;">
+        <div style="font-size:0.65rem; color:var(--muted); font-family:'Share Tech Mono',monospace; line-height:1.6;">
+          ✦ Protocol layer only<br>
+          ✦ No routing — assumes direct connection<br>
+          ✦ No coherency — external to protocol<br>
+          ✦ Simple crossbar / bus topology
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHI Panel -->
+  <div class="panel">
+    <div class="panel-title chi">CHI — Three Layers</div>
+    <div class="panel-sub">Coherent Hub Interface · Mesh NoC · AMBA 5</div>
+    <div class="chi-diagram">
+      <div class="layer-box proto">
+        <div class="layer-num">LAYER 3 — TOP</div>
+        <div class="layer-name">Protocol Layer</div>
+        <div class="layer-detail">Defines transactions: ReadShared, WriteBack,<br>SnpShared, CMO, AtomicStore…</div>
+        <div class="layer-tag">WHAT is requested</div>
+      </div>
+      <div style="text-align:center; color:var(--muted); font-size:0.8rem; margin: -4px 0;">↕</div>
+      <div class="layer-box network">
+        <div class="layer-num">LAYER 2 — MIDDLE</div>
+        <div class="layer-name">Network Layer</div>
+        <div class="layer-detail">Packet routing via NodeID, SrcID, TgtID.<br>Traverses mesh hops between nodes.</div>
+        <div class="layer-tag">WHERE it goes</div>
+      </div>
+      <div style="text-align:center; color:var(--muted); font-size:0.8rem; margin: -4px 0;">↕</div>
+      <div class="layer-box link">
+        <div class="layer-num">LAYER 1 — BOTTOM</div>
+        <div class="layer-name">Link Layer</div>
+        <div class="layer-detail">Flit-level flow control per hop.<br>Credit-based. No deadlock.</div>
+        <div class="layer-tag">HOW each hop works</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Topology SVGs -->
+<div class="topo-section">
+  <div class="txn-title">// Network Topology //</div>
+  <div class="topo-grid">
+
+    <!-- AXI Topology -->
+    <div class="topo-panel">
+      <div class="txn-panel-title axi">AXI — Point-to-Point / Crossbar</div>
+      <svg viewBox="0 0 280 160" width="100%" style="display:block;">
+        <!-- crossbar center -->
+        <rect x="110" y="60" width="60" height="40" rx="5" fill="#001422" stroke="#00d4ff" stroke-width="1.5"/>
+        <text x="140" y="84" text-anchor="middle" fill="#00d4ff" font-size="9">CROSSBAR</text>
+
+        <!-- masters -->
+        <rect x="10" y="10" width="60" height="30" rx="4" fill="#001422" stroke="#00d4ff" stroke-width="1"/>
+        <text x="40" y="29" text-anchor="middle" fill="#00d4ff" font-size="8">CPU M0</text>
+
+        <rect x="10" y="65" width="60" height="30" rx="4" fill="#001422" stroke="#00d4ff" stroke-width="1"/>
+        <text x="40" y="84" text-anchor="middle" fill="#00d4ff" font-size="8">DMA M1</text>
+
+        <rect x="10" y="120" width="60" height="30" rx="4" fill="#001422" stroke="#00d4ff" stroke-width="1"/>
+        <text x="40" y="139" text-anchor="middle" fill="#00d4ff" font-size="8">GPU M2</text>
+
+        <!-- slaves -->
+        <rect x="210" y="10" width="60" height="30" rx="4" fill="#001422" stroke="#00d4ff44" stroke-width="1"/>
+        <text x="240" y="29" text-anchor="middle" fill="#00d4ff88" font-size="8">DDR S0</text>
+
+        <rect x="210" y="65" width="60" height="30" rx="4" fill="#001422" stroke="#00d4ff44" stroke-width="1"/>
+        <text x="240" y="84" text-anchor="middle" fill="#00d4ff88" font-size="8">SRAM S1</text>
+
+        <rect x="210" y="120" width="60" height="30" rx="4" fill="#001422" stroke="#00d4ff44" stroke-width="1"/>
+        <text x="240" y="139" text-anchor="middle" fill="#00d4ff88" font-size="8">PERI S2</text>
+
+        <!-- lines master → crossbar -->
+        <line x1="70" y1="25" x2="110" y2="70" stroke="#00d4ff" stroke-width="1" stroke-opacity="0.5" class="flow-line"/>
+        <line x1="70" y1="80" x2="110" y2="80" stroke="#00d4ff" stroke-width="1" stroke-opacity="0.5" class="flow-line"/>
+        <line x1="70" y1="135" x2="110" y2="90" stroke="#00d4ff" stroke-width="1" stroke-opacity="0.5" class="flow-line"/>
+
+        <!-- lines crossbar → slave -->
+        <line x1="170" y1="70" x2="210" y2="25" stroke="#00d4ff44" stroke-width="1" stroke-opacity="0.5"/>
+        <line x1="170" y1="80" x2="210" y2="80" stroke="#00d4ff44" stroke-width="1" stroke-opacity="0.5"/>
+        <line x1="170" y1="90" x2="210" y2="135" stroke="#00d4ff44" stroke-width="1" stroke-opacity="0.5"/>
+      </svg>
+    </div>
+
+    <!-- CHI Topology -->
+    <div class="topo-panel">
+      <div class="txn-panel-title chi">CHI — Mesh NoC</div>
+      <svg viewBox="0 0 280 160" width="100%" style="display:block;">
+        <!-- mesh nodes -->
+        <!-- row 1 -->
+        <rect x="10" y="10" width="50" height="30" rx="4" fill="#1a0e00" stroke="#ff6b35" stroke-width="1.5"/>
+        <text x="35" y="29" text-anchor="middle" fill="#ff6b35" font-size="7.5">CPU0</text>
+
+        <rect x="80" y="10" width="50" height="30" rx="4" fill="#1a0e00" stroke="#ff6b35" stroke-width="1.5"/>
+        <text x="105" y="29" text-anchor="middle" fill="#ff6b35" font-size="7.5">CPU1</text>
+
+        <rect x="150" y="10" width="50" height="30" rx="4" fill="#1a1400" stroke="#ffb347" stroke-width="1.5"/>
+        <text x="175" y="22" text-anchor="middle" fill="#ffb347" font-size="7">HOME</text>
+        <text x="175" y="34" text-anchor="middle" fill="#ffb347" font-size="7">NODE</text>
+
+        <rect x="220" y="10" width="50" height="30" rx="4" fill="#001a0e" stroke="#7ee8a2" stroke-width="1.5"/>
+        <text x="245" y="29" text-anchor="middle" fill="#7ee8a2" font-size="7.5">MEM</text>
+
+        <!-- row 2 -->
+        <rect x="10" y="65" width="50" height="30" rx="4" fill="#1a0e00" stroke="#ff6b35" stroke-width="1.5"/>
+        <text x="35" y="84" text-anchor="middle" fill="#ff6b35" font-size="7.5">CPU2</text>
+
+        <rect x="80" y="65" width="50" height="30" rx="4" fill="#1a0e00" stroke="#ff6b35" stroke-width="1.5"/>
+        <text x="105" y="84" text-anchor="middle" fill="#ff6b35" font-size="7.5">CPU3</text>
+
+        <rect x="150" y="65" width="50" height="30" rx="4" fill="#1a1400" stroke="#ffb347" stroke-width="1.5"/>
+        <text x="175" y="76" text-anchor="middle" fill="#ffb347" font-size="7">ROUTER</text>
+        <text x="175" y="88" text-anchor="middle" fill="#ffb347" font-size="7">NODE</text>
+
+        <rect x="220" y="65" width="50" height="30" rx="4" fill="#001a0e" stroke="#7ee8a2" stroke-width="1.5"/>
+        <text x="245" y="84" text-anchor="middle" fill="#7ee8a2" font-size="7.5">I/O</text>
+
+        <!-- row 3 -->
+        <rect x="10" y="120" width="50" height="30" rx="4" fill="#1a0e00" stroke="#ff6b35" stroke-width="1.5"/>
+        <text x="35" y="139" text-anchor="middle" fill="#ff6b35" font-size="7.5">GPU</text>
+
+        <rect x="80" y="120" width="50" height="30" rx="4" fill="#1a0e00" stroke="#ff6b35" stroke-width="1.5"/>
+        <text x="105" y="139" text-anchor="middle" fill="#ff6b35" font-size="7.5">DSP</text>
+
+        <rect x="150" y="120" width="50" height="30" rx="4" fill="#1a1400" stroke="#ffb347" stroke-width="1.5"/>
+        <text x="175" y="131" text-anchor="middle" fill="#ffb347" font-size="7">SNOOP</text>
+        <text x="175" y="143" text-anchor="middle" fill="#ffb347" font-size="7">FILTER</text>
+
+        <rect x="220" y="120" width="50" height="30" rx="4" fill="#001a0e" stroke="#7ee8a2" stroke-width="1.5"/>
+        <text x="245" y="139" text-anchor="middle" fill="#7ee8a2" font-size="7.5">DDR</text>
+
+        <!-- horizontal links row1 -->
+        <line x1="60" y1="25" x2="80" y2="25" stroke="#ff6b3588" stroke-width="1.5"/>
+        <line x1="130" y1="25" x2="150" y2="25" stroke="#ffb34788" stroke-width="1.5"/>
+        <line x1="200" y1="25" x2="220" y2="25" stroke="#7ee8a288" stroke-width="1.5"/>
+        <!-- horizontal links row2 -->
+        <line x1="60" y1="80" x2="80" y2="80" stroke="#ff6b3588" stroke-width="1.5"/>
+        <line x1="130" y1="80" x2="150" y2="80" stroke="#ffb34788" stroke-width="1.5"/>
+        <line x1="200" y1="80" x2="220" y2="80" stroke="#7ee8a288" stroke-width="1.5"/>
+        <!-- horizontal links row3 -->
+        <line x1="60" y1="135" x2="80" y2="135" stroke="#ff6b3588" stroke-width="1.5"/>
+        <line x1="130" y1="135" x2="150" y2="135" stroke="#ffb34788" stroke-width="1.5"/>
+        <line x1="200" y1="135" x2="220" y2="135" stroke="#7ee8a288" stroke-width="1.5"/>
+
+        <!-- vertical links col1 -->
+        <line x1="35" y1="40" x2="35" y2="65" stroke="#ff6b3566" stroke-width="1.5"/>
+        <line x1="35" y1="95" x2="35" y2="120" stroke="#ff6b3566" stroke-width="1.5"/>
+        <!-- vertical links col2 -->
+        <line x1="105" y1="40" x2="105" y2="65" stroke="#ff6b3566" stroke-width="1.5"/>
+        <line x1="105" y1="95" x2="105" y2="120" stroke="#ff6b3566" stroke-width="1.5"/>
+        <!-- vertical links col3 -->
+        <line x1="175" y1="40" x2="175" y2="65" stroke="#ffb34766" stroke-width="1.5"/>
+        <line x1="175" y1="95" x2="175" y2="120" stroke="#ffb34766" stroke-width="1.5"/>
+        <!-- vertical links col4 -->
+        <line x1="245" y1="40" x2="245" y2="65" stroke="#7ee8a266" stroke-width="1.5"/>
+        <line x1="245" y1="95" x2="245" y2="120" stroke="#7ee8a266" stroke-width="1.5"/>
+
+        <!-- animated packet: CPU0 → HomeNode -->
+        <circle r="4" fill="#ff6b35" class="pulse">
+          <animateMotion dur="2.5s" repeatCount="indefinite"
+            path="M35,25 L105,25 L175,25"/>
+        </circle>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- Transaction flows -->
+<div class="txn-section">
+  <div class="txn-title">// Example Transactions //</div>
+  <div class="txn-grid">
+
+    <!-- AXI Read Txn -->
+    <div class="txn-panel">
+      <div class="txn-panel-title axi">AXI — Read Transaction (Master→Slave)</div>
+      <div class="flow-step">
+        <div class="step-dot axi"></div>
+        <div class="step-body">Master drives <strong>AR</strong>: ADDR=0x1000, LEN=4, SIZE=4B, ID=1</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-dot axi"></div>
+        <div class="step-body">Slave asserts ARREADY → handshake complete</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-dot axi"></div>
+        <div class="step-body">Slave returns 4 beats on <strong>R</strong>: DATA[0..3], RLAST on beat 4</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-dot axi"></div>
+        <div class="step-body">Master asserts RREADY each beat → transaction done</div>
+      </div>
+      <div style="margin-top:10px; padding:8px; background:#001422; border-radius:5px; font-family:'Share Tech Mono',monospace; font-size:0.62rem; color:var(--muted); line-height:1.7;">
+        AR: ADDR=0x1000 LEN=4 ID=1 ──▶ Slave<br>
+        Slave ──▶ R: D0 D1 D2 D3·RLAST<br>
+        <span style="color:#00d4ff66;">No routing. No NodeID. One layer.</span>
+      </div>
+    </div>
+
+    <!-- CHI Read Txn -->
+    <div class="txn-panel">
+      <div class="txn-panel-title chi">CHI — ReadShared Transaction</div>
+      <div class="flow-step">
+        <div class="step-dot chi1"></div>
+        <div class="step-body"><span class="step-layer p">PROTO</span> CPU0 issues <strong>ReadShared</strong> to HomeNode, Addr=0x1000, TxnID=42</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-dot chi2"></div>
+        <div class="step-body"><span class="step-layer n">NET</span> Packet: SrcID=CPU0, TgtID=HN5 → routed hop-by-hop via mesh</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-dot chi3"></div>
+        <div class="step-body"><span class="step-layer l">LINK</span> Each hop: sender checks credit → sends flit → receiver returns credit</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-dot chi1"></div>
+        <div class="step-body"><span class="step-layer p">PROTO</span> HomeNode sends <strong>SnpShared</strong> to CPU1 (has cached copy)</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-dot chi1"></div>
+        <div class="step-body"><span class="step-layer p">PROTO</span> CPU1 responds <strong>SnpResp_SC</strong> + data → HN forwards to CPU0</div>
+      </div>
+      <div style="margin-top:10px; padding:8px; background:#1a0800; border-radius:5px; font-family:'Share Tech Mono',monospace; font-size:0.62rem; color:var(--muted); line-height:1.7;">
+        CPU0──[NET]──▶HN5: ReadShared(0x1000)<br>
+        HN5──[NET]──▶CPU1: SnpShared(0x1000)<br>
+        CPU1──▶HN5──▶CPU0: Data+SnpResp_SC<br>
+        <span style="color:#ff6b3566;">3 layers active simultaneously.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div style="max-width:960px; margin: 20px auto 0; display:flex; gap:16px; flex-wrap:wrap;">
+  <div style="display:flex; align-items:center; gap:6px; font-size:0.65rem; font-family:'Share Tech Mono',monospace;">
+    <div style="width:10px; height:10px; border-radius:50%; background:var(--chi);"></div>
+    <span style="color:var(--chi)">Protocol Layer</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:6px; font-size:0.65rem; font-family:'Share Tech Mono',monospace;">
+    <div style="width:10px; height:10px; border-radius:50%; background:var(--chi2);"></div>
+    <span style="color:var(--chi2)">Network Layer</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:6px; font-size:0.65rem; font-family:'Share Tech Mono',monospace;">
+    <div style="width:10px; height:10px; border-radius:50%; background:var(--chi3);"></div>
+    <span style="color:var(--chi3)">Link Layer</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:6px; font-size:0.65rem; font-family:'Share Tech Mono',monospace;">
+    <div style="width:10px; height:10px; border-radius:50%; background:var(--axi);"></div>
+    <span style="color:var(--axi)">AXI (single layer)</span>
+  </div>
+</div>
+
+</body>
+</html>

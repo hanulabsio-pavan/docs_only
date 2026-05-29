@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHI — Memory Read (ReadShared) Walkthrough</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;600;700&display=swap');
+
+:root {
+  --bg:        #07090f;
+  --surface:   #0c0f1a;
+  --card:      #101420;
+  --border:    #1a2035;
+  --border2:   #243050;
+
+  --cpu:  #38bdf8;
+  --hn:   #a78bfa;
+  --mem:  #34d399;
+  --snp:  #fb923c;
+
+  --req-col:  #3b9eff;
+  --rsp-col:  #a78bfa;
+  --dat-col:  #34d399;
+  --snp-col:  #fb923c;
+
+  --text:  #c5d3e8;
+  --muted: #4a5f80;
+  --dim:   #1e2840;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ─────────────────────────────── */
+header {
+  padding: 52px 48px 40px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+header::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 50% 120% at 0% 50%, #38bdf80a 0%, transparent 60%),
+    radial-gradient(ellipse 40% 80% at 100% 0%, #a78bfa08 0%, transparent 55%);
+  pointer-events: none;
+}
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+}
+.h1-cpu  { color: var(--cpu); }
+.h1-hn   { color: var(--hn); }
+.h1-plain{ color: var(--text); }
+.header-sub {
+  font-size: 0.9rem;
+  color: var(--muted);
+  max-width: 620px;
+  line-height: 1.65;
+}
+.scenario-tag {
+  display: inline-block;
+  margin-top: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  padding: 5px 12px;
+  border-radius: 4px;
+  background: #38bdf810;
+  border: 1px solid #38bdf828;
+  color: var(--cpu);
+  letter-spacing: 0.06em;
+}
+
+/* ── TOPOLOGY BAR ─────────────────────────── */
+.topo-bar {
+  padding: 24px 48px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+}
+.topo-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.topo-box {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border: 1.5px solid;
+  text-align: center;
+  min-width: 90px;
+}
+.topo-box.cpu  { color: var(--cpu); border-color: var(--cpu); background: #38bdf80d; }
+.topo-box.hn   { color: var(--hn);  border-color: var(--hn);  background: #a78bfa0d; }
+.topo-box.mem  { color: var(--mem); border-color: var(--mem); background: #34d3990d; }
+.topo-label { font-size: 0.6rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+.topo-line {
+  flex: 1;
+  height: 2px;
+  min-width: 40px;
+  background: linear-gradient(90deg, var(--border2), var(--border2));
+  position: relative;
+  align-self: center;
+  margin-bottom: 20px;
+}
+.topo-line::after {
+  content: '⟶';
+  position: absolute;
+  right: -6px;
+  top: -9px;
+  font-size: 0.75rem;
+  color: var(--border2);
+}
+
+/* ── MAIN LAYOUT ─────────────────────────── */
+.page-body {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: calc(100vh - 220px);
+}
+
+/* ── SIDEBAR ─────────────────────────────── */
+.sidebar {
+  border-right: 1px solid var(--border);
+  padding: 28px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.sidebar-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  text-transform: uppercase;
+  padding: 0 24px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.step-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+}
+.step-nav-item:hover { background: #ffffff04; }
+.step-nav-item.active { background: #ffffff06; }
+.step-nav-item.active.ch-req { border-left-color: var(--req-col); }
+.step-nav-item.active.ch-rsp { border-left-color: var(--rsp-col); }
+.step-nav-item.active.ch-dat { border-left-color: var(--dat-col); }
+.step-nav-item.active.ch-snp { border-left-color: var(--snp-col); }
+
+.nav-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--muted);
+  width: 20px;
+  flex-shrink: 0;
+}
+.nav-ch-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.ch-req .nav-ch-badge { background: #3b9eff18; color: var(--req-col); }
+.ch-rsp .nav-ch-badge { background: #a78bfa18; color: var(--rsp-col); }
+.ch-dat .nav-ch-badge { background: #34d39918; color: var(--dat-col); }
+.ch-snp .nav-ch-badge { background: #fb923c18; color: var(--snp-col); }
+
+.nav-text {
+  font-size: 0.75rem;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+/* ── STEP CONTENT ─────────────────────────── */
+.steps-area {
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.step-card {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: var(--card);
+  transition: border-color 0.2s;
+}
+.step-card:hover { border-color: var(--border2); }
+
+/* step header */
+.step-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.step-num-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 2px solid;
+}
+.step-card.ch-req .step-circle { color: var(--req-col); border-color: var(--req-col); background: #3b9eff0a; }
+.step-card.ch-rsp .step-circle { color: var(--rsp-col); border-color: var(--rsp-col); background: #a78bfa0a; }
+.step-card.ch-dat .step-circle { color: var(--dat-col); border-color: var(--dat-col); background: #34d3990a; }
+.step-card.ch-snp .step-circle { color: var(--snp-col); border-color: var(--snp-col); background: #fb923c0a; }
+
+.step-ch-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.08em;
+}
+.step-card.ch-req .step-ch-pill { background: #3b9eff18; color: var(--req-col); border: 1px solid #3b9eff28; }
+.step-card.ch-rsp .step-ch-pill { background: #a78bfa18; color: var(--rsp-col); border: 1px solid #a78bfa28; }
+.step-card.ch-dat .step-ch-pill { background: #34d39918; color: var(--dat-col); border: 1px solid #34d39928; }
+.step-card.ch-snp .step-ch-pill { background: #fb923c18; color: var(--snp-col); border: 1px solid #fb923c28; }
+
+.step-title-area { flex: 1; }
+.step-direction {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dir-arrow { color: var(--border2); }
+.step-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+.step-card.ch-req .step-title { color: var(--req-col); }
+.step-card.ch-rsp .step-title { color: var(--rsp-col); }
+.step-card.ch-dat .step-title { color: var(--dat-col); }
+.step-card.ch-snp .step-title { color: var(--snp-col); }
+
+.step-subtitle { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+/* step body */
+.step-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.step-explain {
+  padding: 20px 24px;
+  border-right: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: #8a9ab8;
+  line-height: 1.7;
+}
+.step-explain p { margin-bottom: 10px; }
+.step-explain p:last-child { margin-bottom: 0; }
+
+.step-explain strong { color: var(--text); font-weight: 600; }
+
+.highlight-box {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+.step-card.ch-req .highlight-box { background: #3b9eff08; border: 1px solid #3b9eff20; color: #90c8ff; }
+.step-card.ch-rsp .highlight-box { background: #a78bfa08; border: 1px solid #a78bfa20; color: #c4b5fd; }
+.step-card.ch-dat .highlight-box { background: #34d39908; border: 1px solid #34d39920; color: #6ee7b7; }
+.step-card.ch-snp .highlight-box { background: #fb923c08; border: 1px solid #fb923c20; color: #fdba74; }
+
+/* flit panel */
+.flit-panel {
+  padding: 20px 24px;
+  background: #080b14;
+}
+.flit-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.flit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+}
+.flit-table tr { border-bottom: 1px solid var(--dim); }
+.flit-table tr:last-child { border-bottom: none; }
+.flit-table td { padding: 5px 8px; vertical-align: top; }
+.flit-field {
+  color: var(--muted);
+  white-space: nowrap;
+  padding-right: 12px;
+  width: 110px;
+}
+.flit-val {
+  font-weight: 600;
+}
+.step-card.ch-req .flit-val { color: var(--req-col); }
+.step-card.ch-rsp .flit-val { color: var(--rsp-col); }
+.step-card.ch-dat .flit-val { color: var(--dat-col); }
+.step-card.ch-snp .flit-val { color: var(--snp-col); }
+
+.flit-note {
+  color: #3a4f6a;
+  font-style: italic;
+  font-size: 0.62rem;
+}
+
+/* state changes */
+.state-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 12px;
+  border-radius: 5px;
+  background: #ffffff04;
+  font-size: 0.72rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.state-before { color: #f87171; }
+.state-arrow { color: var(--muted); }
+.state-after  { color: #4ade80; }
+.state-label  { color: var(--muted); margin-right: 4px; }
+
+/* diagram strip */
+.step-diagram {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: #0a0d18;
+  overflow-x: auto;
+}
+.diag-flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  min-width: max-content;
+}
+.diag-node {
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-weight: 700;
+  border: 1px solid;
+  font-size: 0.72rem;
+}
+.diag-node.cpu { color: var(--cpu); border-color: #38bdf828; background: #38bdf80a; }
+.diag-node.hn  { color: var(--hn);  border-color: #a78bfa28; background: #a78bfa0a; }
+.diag-node.mem { color: var(--mem); border-color: #34d39928; background: #34d3990a; }
+.diag-node.dim { color: var(--muted); border-color: var(--dim); background: transparent; }
+
+.diag-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 8px;
+  gap: 2px;
+}
+.diag-ch {
+  font-size: 0.58rem;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-weight: 700;
+}
+.diag-ch.req { background: #3b9eff18; color: var(--req-col); }
+.diag-ch.rsp { background: #a78bfa18; color: var(--rsp-col); }
+.diag-ch.dat { background: #34d39918; color: var(--dat-col); }
+.diag-ch.snp { background: #fb923c18; color: var(--snp-col); }
+
+.diag-line {
+  display: flex;
+  align-items: center;
+  color: var(--border2);
+  font-size: 0.85rem;
+  letter-spacing: -2px;
+}
+
+/* ── LEGEND ─────────────────────────────── */
+.legend-bar {
+  padding: 16px 48px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: var(--surface);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+}
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+/* ── SUMMARY ─────────────────────────────── */
+.summary-card {
+  margin: 0 48px 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.summary-hdr {
+  padding: 14px 22px;
+  background: var(--dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  background: var(--card);
+}
+.sum-cell {
+  padding: 18px 16px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+.sum-cell:last-child { border-right: none; }
+.sum-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.sum-label { font-size: 0.62rem; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .page-body { grid-template-columns: 1fr; }
+  .sidebar { position: relative; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  .step-body { grid-template-columns: 1fr; }
+  .step-explain { border-right: none; border-bottom: 1px solid var(--border); }
+  header, .steps-area, .legend-bar, .summary-card { padding-left: 20px; padding-right: 20px; }
+  .topo-bar { padding-left: 20px; padding-right: 20px; }
+  .summary-grid { grid-template-columns: repeat(3, 1fr); }
+  .sum-cell:nth-child(3) { border-right: none; }
+  .sum-cell:nth-child(4) { border-top: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="eyebrow">AMBA 5 CHI · Protocol Transaction Walkthrough</div>
+  <h1>
+    <span class="h1-cpu">CPU Load → </span>
+    <span class="h1-hn">ReadShared </span>
+    <span class="h1-plain">Transaction</span>
+  </h1>
+  <p class="header-sub">
+    A CPU (RN-F) issues a memory read for an address not present in its L1/L2 cache.
+    The Home Node coordinates the read from memory (SN) and returns data with a shared-clean state.
+  </p>
+  <div class="scenario-tag">Scenario: Cache Miss · No Other Sharer · Clean Memory Read · No Snoop Required</div>
+</header>
+
+<!-- TOPOLOGY -->
+<div class="topo-bar">
+  <div class="topo-node">
+    <div class="topo-box cpu">CPU0<br><span style="font-size:0.6rem;font-weight:400">RN-F</span></div>
+    <div class="topo-label">Requester Node</div>
+  </div>
+  <div class="topo-line"></div>
+  <div class="topo-node">
+    <div class="topo-box hn">HN-F<br><span style="font-size:0.6rem;font-weight:400">Home Node</span></div>
+    <div class="topo-label">Coherency Hub</div>
+  </div>
+  <div class="topo-line"></div>
+  <div class="topo-node">
+    <div class="topo-box mem">DDR SN<br><span style="font-size:0.6rem;font-weight:400">Slave Node</span></div>
+    <div class="topo-label">Memory Controller</div>
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend-bar">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--req-col)"></div><span style="color:var(--req-col)">REQ</span> <span style="color:var(--muted)">Request Channel</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--rsp-col)"></div><span style="color:var(--rsp-col)">RSP</span> <span style="color:var(--muted)">Response Channel</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--dat-col)"></div><span style="color:var(--dat-col)">DAT</span> <span style="color:var(--muted)">Data Channel</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--snp-col)"></div><span style="color:var(--snp-col)">SNP</span> <span style="color:var(--muted)">Snoop Channel</span></div>
+  <div class="legend-item" style="margin-left:auto"><span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.62rem">Addr = 0xBEEF_0040 · TxnID = 0x07 · SrcID = CPU0(0x01) · HN NodeID = 0x10 · SN NodeID = 0x20</span></div>
+</div>
+
+<div class="page-body">
+
+  <!-- SIDEBAR NAV -->
+  <aside class="sidebar">
+    <div class="sidebar-title">// Transaction Steps</div>
+
+    <a href="#s1" class="step-nav-item ch-req active">
+      <span class="nav-num">01</span>
+      <span class="nav-ch-badge">REQ</span>
+      <span class="nav-text">CPU issues ReadShared</span>
+    </a>
+    <a href="#s2" class="step-nav-item ch-rsp">
+      <span class="nav-num">02</span>
+      <span class="nav-ch-badge">RSP</span>
+      <span class="nav-text">HN sends ReadReceipt</span>
+    </a>
+    <a href="#s3" class="step-nav-item ch-req">
+      <span class="nav-num">03</span>
+      <span class="nav-ch-badge">REQ</span>
+      <span class="nav-text">HN forwards to SN</span>
+    </a>
+    <a href="#s4" class="step-nav-item ch-dat">
+      <span class="nav-num">04</span>
+      <span class="nav-ch-badge">DAT</span>
+      <span class="nav-text">SN returns data to HN</span>
+    </a>
+    <a href="#s5" class="step-nav-item ch-dat">
+      <span class="nav-num">05</span>
+      <span class="nav-ch-badge">DAT</span>
+      <span class="nav-text">HN sends CompData to CPU</span>
+    </a>
+    <a href="#s6" class="step-nav-item ch-rsp">
+      <span class="nav-num">06</span>
+      <span class="nav-ch-badge">RSP</span>
+      <span class="nav-text">CPU sends CompAck</span>
+    </a>
+
+    <div style="margin-top:20px; padding:16px 24px; border-top:1px solid var(--border);">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">Final State</div>
+      <div style="font-size:0.72rem;color:var(--text);line-height:1.6;">
+        CPU0 cache: <span style="color:#4ade80">SC (Shared Clean)</span><br>
+        HN tracker: <span style="color:#4ade80">Closed</span><br>
+        Memory: <span style="color:var(--muted)">Unchanged</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- STEPS -->
+  <div class="steps-area">
+
+    <!-- STEP 1 -->
+    <div class="step-card ch-req" id="s1">
+      <div class="step-header">
+        <div class="step-num-wrap">
+          <div class="step-circle">01</div>
+          <div class="step-ch-pill">REQ</div>
+        </div>
+        <div class="step-title-area">
+          <div class="step-direction">
+            <span>CPU0 (RN-F, NodeID=0x01)</span>
+            <span class="dir-arrow">──REQ──▶</span>
+            <span>HN-F (NodeID=0x10)</span>
+          </div>
+          <div class="step-title">CPU Issues ReadShared Request</div>
+          <div class="step-subtitle">CPU L1 cache misses on load to 0xBEEF_0040. A ReadShared flit is placed on the REQ channel toward the Home Node.</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="step-explain">
+          <p>The CPU executes a <strong>load instruction</strong> (e.g., <code style="font-family:'JetBrains Mono',monospace;font-size:0.85em;color:#93c5fd">LDR X0, [0xBEEF_0040]</code>). The address misses in L1 and L2 cache — no valid cache line exists.</p>
+          <p>The CPU's CHI interface constructs a <strong>ReadShared</strong> flit on the REQ channel. ReadShared means: <em>"I want to read this line and hold it in Shared state — other nodes may also have it."</em></p>
+          <p>The Network Layer stamps <strong>TgtID=0x10</strong> (Home Node) and routes the flit through the mesh. The Link Layer manages flit-level credits hop by hop.</p>
+          <div class="highlight-box">
+            <strong>Why ReadShared not ReadUnique?</strong> The CPU only needs to read — it doesn't intend to write. ReadShared allows other caches to hold the same line simultaneously (SC state), maximising concurrency.
+          </div>
+        </div>
+        <div class="flit-panel">
+          <div class="flit-title">// REQ Flit Contents</div>
+          <table class="flit-table">
+            <tr><td class="flit-field">Opcode</td><td class="flit-val">ReadShared</td><td class="flit-note">// read, allow sharing</td></tr>
+            <tr><td class="flit-field">TgtID</td><td class="flit-val">0x10</td><td class="flit-note">// Home Node</td></tr>
+            <tr><td class="flit-field">SrcID</td><td class="flit-val">0x01</td><td class="flit-note">// CPU0</td></tr>
+            <tr><td class="flit-field">TxnID</td><td class="flit-val">0x07</td><td class="flit-note">// unique per CPU0</td></tr>
+            <tr><td class="flit-field">Addr</td><td class="flit-val">0xBEEF_0040</td><td class="flit-note">// 64B aligned</td></tr>
+            <tr><td class="flit-field">Size</td><td class="flit-val">0b110</td><td class="flit-note">// 64 bytes</td></tr>
+            <tr><td class="flit-field">NS</td><td class="flit-val">1</td><td class="flit-note">// Non-Secure</td></tr>
+            <tr><td class="flit-field">AllowRetry</td><td class="flit-val">1</td><td class="flit-note">// can retry if busy</td></tr>
+            <tr><td class="flit-field">ExpCompAck</td><td class="flit-val">1</td><td class="flit-note">// will send CompAck</td></tr>
+            <tr><td class="flit-field">SnpAttr</td><td class="flit-val">1</td><td class="flit-note">// snoopable line</td></tr>
+            <tr><td class="flit-field">MemAttr</td><td class="flit-val">0b0011</td><td class="flit-note">// cacheable, alloc</td></tr>
+            <tr><td class="flit-field">QoS</td><td class="flit-val">0x4</td><td class="flit-note">// medium priority</td></tr>
+          </table>
+          <div class="state-row">
+            <span class="state-label">CPU0 cache:</span>
+            <span class="state-before">MISS / I</span>
+            <span class="state-arrow">→</span>
+            <span style="color:var(--muted)">pending</span>
+          </div>
+        </div>
+      </div>
+      <div class="step-diagram">
+        <div class="diag-flow">
+          <div class="diag-node cpu">CPU0</div>
+          <div class="diag-arrow">
+            <div class="diag-ch req">REQ · ReadShared</div>
+            <div class="diag-line">──────────▶</div>
+          </div>
+          <div class="diag-node hn">HN-F</div>
+          <div class="diag-arrow"><div class="diag-line" style="color:#1a2035">──────────</div></div>
+          <div class="diag-node dim">DDR SN</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step-card ch-rsp" id="s2">
+      <div class="step-header">
+        <div class="step-num-wrap">
+          <div class="step-circle">02</div>
+          <div class="step-ch-pill">RSP</div>
+        </div>
+        <div class="step-title-area">
+          <div class="step-direction">
+            <span>HN-F (0x10)</span>
+            <span class="dir-arrow">──RSP──▶</span>
+            <span>CPU0 (0x01)</span>
+          </div>
+          <div class="step-title">Home Node Sends ReadReceipt</div>
+          <div class="step-subtitle">HN acknowledges receipt of the REQ and allocates a tracker entry. CPU may now accept CompData when it arrives.</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="step-explain">
+          <p>On receiving the ReadShared, the Home Node <strong>allocates a transaction tracker</strong> (scarce hardware resource) for TxnID=0x07 from SrcID=0x01.</p>
+          <p>HN immediately sends a <strong>ReadReceipt</strong> back to CPU0. This RSP flit tells the CPU: <em>"I have your request. You can now expect a CompData. Keep TxnID=0x07 open."</em></p>
+          <p>The ReadReceipt also allows the CPU's <strong>protocol credit counter</strong> to be released — the CPU knows HN has accepted ownership of this transaction.</p>
+          <div class="highlight-box">
+            <strong>Why ReadReceipt before data?</strong> HN may need time to fetch from memory. ReadReceipt decouples acknowledgement from data delivery, allowing the CPU to issue more transactions while waiting.
+          </div>
+        </div>
+        <div class="flit-panel">
+          <div class="flit-title">// RSP Flit Contents</div>
+          <table class="flit-table">
+            <tr><td class="flit-field">Opcode</td><td class="flit-val">ReadReceipt</td><td class="flit-note">// txn accepted</td></tr>
+            <tr><td class="flit-field">TgtID</td><td class="flit-val">0x01</td><td class="flit-note">// back to CPU0</td></tr>
+            <tr><td class="flit-field">SrcID</td><td class="flit-val">0x10</td><td class="flit-note">// from HN-F</td></tr>
+            <tr><td class="flit-field">TxnID</td><td class="flit-val">0x07</td><td class="flit-note">// echoes REQ TxnID</td></tr>
+            <tr><td class="flit-field">QoS</td><td class="flit-val">0x4</td><td class="flit-note">// inherited</td></tr>
+          </table>
+          <div style="margin-top:14px;padding:10px 12px;background:#a78bfa08;border:1px solid #a78bfa18;border-radius:5px;font-size:0.72rem;color:#c4b5fd;font-family:'JetBrains Mono',monospace;">
+            HN Tracker[0x07]: ALLOCATED<br>
+            SrcID=0x01 · Addr=0xBEEF_0040<br>
+            State: FETCHING_FROM_MEM
+          </div>
+        </div>
+      </div>
+      <div class="step-diagram">
+        <div class="diag-flow">
+          <div class="diag-node cpu">CPU0</div>
+          <div class="diag-arrow">
+            <div class="diag-ch rsp">RSP · ReadReceipt</div>
+            <div class="diag-line">◀──────────</div>
+          </div>
+          <div class="diag-node hn">HN-F</div>
+          <div class="diag-arrow"><div class="diag-line" style="color:#1a2035">──────────</div></div>
+          <div class="diag-node dim">DDR SN</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step-card ch-req" id="s3">
+      <div class="step-header">
+        <div class="step-num-wrap">
+          <div class="step-circle">03</div>
+          <div class="step-ch-pill">REQ</div>
+        </div>
+        <div class="step-title-area">
+          <div class="step-direction">
+            <span>HN-F (0x10)</span>
+            <span class="dir-arrow">──REQ──▶</span>
+            <span>DDR SN (0x20)</span>
+          </div>
+          <div class="step-title">HN Sends ReadNoSnp to Memory</div>
+          <div class="step-subtitle">HN checks its Snoop Filter — no other RN-F holds this line. HN issues a non-coherent read directly to the Slave Node (memory controller).</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="step-explain">
+          <p>The Home Node consults its <strong>Snoop Filter</strong>: no other cache currently holds address 0xBEEF_0040. No snoops are needed.</p>
+          <p>HN issues a <strong>ReadNoSnp</strong> on the REQ channel to the Slave Node (DDR memory controller). <em>ReadNoSnp</em> is a non-coherent read — it bypasses coherency protocol, simply fetching raw data from DRAM.</p>
+          <p>HN assigns its own <strong>internal TxnID=0xA3</strong> for tracking this sub-transaction with the SN. This is separate from CPU0's TxnID=0x07.</p>
+          <div class="highlight-box">
+            <strong>ReadNoSnp vs ReadShared:</strong> ReadShared is used between coherent nodes (RN↔HN). ReadNoSnp is used between HN and memory (non-coherent). The HN translates one to the other.
+          </div>
+        </div>
+        <div class="flit-panel">
+          <div class="flit-title">// REQ Flit Contents (HN → SN)</div>
+          <table class="flit-table">
+            <tr><td class="flit-field">Opcode</td><td class="flit-val">ReadNoSnp</td><td class="flit-note">// non-coherent read</td></tr>
+            <tr><td class="flit-field">TgtID</td><td class="flit-val">0x20</td><td class="flit-note">// DDR SN</td></tr>
+            <tr><td class="flit-field">SrcID</td><td class="flit-val">0x10</td><td class="flit-note">// HN-F</td></tr>
+            <tr><td class="flit-field">TxnID</td><td class="flit-val">0xA3</td><td class="flit-note">// HN internal ID</td></tr>
+            <tr><td class="flit-field">Addr</td><td class="flit-val">0xBEEF_0040</td><td class="flit-note">// same address</td></tr>
+            <tr><td class="flit-field">Size</td><td class="flit-val">0b110</td><td class="flit-note">// 64 bytes</td></tr>
+            <tr><td class="flit-field">MemAttr</td><td class="flit-val">0b0011</td><td class="flit-note">// cacheable</td></tr>
+          </table>
+          <div style="margin-top:14px;padding:10px 12px;background:#3b9eff08;border:1px solid #3b9eff18;border-radius:5px;font-size:0.72rem;color:#90c8ff;font-family:'JetBrains Mono',monospace;">
+            Snoop Filter: NO sharers found<br>
+            → Skip SNP channel entirely<br>
+            → Direct memory fetch path
+          </div>
+        </div>
+      </div>
+      <div class="step-diagram">
+        <div class="diag-flow">
+          <div class="diag-node dim">CPU0</div>
+          <div class="diag-arrow"><div class="diag-line" style="color:#1a2035">──────────</div></div>
+          <div class="diag-node hn">HN-F</div>
+          <div class="diag-arrow">
+            <div class="diag-ch req">REQ · ReadNoSnp</div>
+            <div class="diag-line">──────────▶</div>
+          </div>
+          <div class="diag-node mem">DDR SN</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step-card ch-dat" id="s4">
+      <div class="step-header">
+        <div class="step-num-wrap">
+          <div class="step-circle">04</div>
+          <div class="step-ch-pill">DAT</div>
+        </div>
+        <div class="step-title-area">
+          <div class="step-direction">
+            <span>DDR SN (0x20)</span>
+            <span class="dir-arrow">──DAT──▶</span>
+            <span>HN-F (0x10)</span>
+          </div>
+          <div class="step-title">Memory Returns Data to Home Node</div>
+          <div class="step-subtitle">The DDR controller fetches the 64-byte cache line from DRAM and sends it back to HN-F via two CompData DAT flits (on a 256-bit bus).</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="step-explain">
+          <p>The Slave Node's DDR controller issues a DRAM read and receives the <strong>64-byte cache line</strong> for address 0xBEEF_0040.</p>
+          <p>On a <strong>256-bit (32-byte) data bus</strong>, one full cache line = <strong>2 DAT flits</strong>, identified by DataID=0x0 and DataID=0x1. Each flit also carries a <strong>32-byte BE (Byte Enable)</strong> mask.</p>
+          <p>The SN includes <strong>DataCheck</strong> (ECC bits) in each flit for end-to-end integrity verification. The opcode is <em>CompData</em> — data plus implicit completion.</p>
+          <div class="highlight-box">
+            <strong>CCID (Critical Chunk ID):</strong> If CPU0 needs bytes at offset +0x40, the SN can return that 16-byte chunk first (CCID=0) to minimise CPU stall, even before the rest of the line arrives.
+          </div>
+        </div>
+        <div class="flit-panel">
+          <div class="flit-title">// DAT Flit #1 (DataID=0x0)</div>
+          <table class="flit-table">
+            <tr><td class="flit-field">Opcode</td><td class="flit-val">CompData</td><td class="flit-note">// data + complete</td></tr>
+            <tr><td class="flit-field">TgtID</td><td class="flit-val">0x10</td><td class="flit-note">// to HN-F</td></tr>
+            <tr><td class="flit-field">SrcID</td><td class="flit-val">0x20</td><td class="flit-note">// from DDR SN</td></tr>
+            <tr><td class="flit-field">TxnID</td><td class="flit-val">0xA3</td><td class="flit-note">// HN's internal ID</td></tr>
+            <tr><td class="flit-field">DataID</td><td class="flit-val">0x0</td><td class="flit-note">// chunk 0 (bytes 0-31)</td></tr>
+            <tr><td class="flit-field">CCID</td><td class="flit-val">0x0</td><td class="flit-note">// critical chunk first</td></tr>
+            <tr><td class="flit-field">Data</td><td class="flit-val">256 bits</td><td class="flit-note">// bytes [0..31]</td></tr>
+            <tr><td class="flit-field">BE</td><td class="flit-val">0xFFFF_FFFF</td><td class="flit-note">// all bytes valid</td></tr>
+            <tr><td class="flit-field">DataCheck</td><td class="flit-val">ECC[31:0]</td><td class="flit-note">// integrity bits</td></tr>
+            <tr><td class="flit-field">Resp</td><td class="flit-val">UC</td><td class="flit-note">// Unique Clean (interim)</td></tr>
+            <tr><td class="flit-field">RespErr</td><td class="flit-val">OK</td><td class="flit-note">// no error</td></tr>
+          </table>
+          <div style="margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted)">Flit #2: same fields, DataID=0x1, Data=bytes[32..63]</div>
+        </div>
+      </div>
+      <div class="step-diagram">
+        <div class="diag-flow">
+          <div class="diag-node dim">CPU0</div>
+          <div class="diag-arrow"><div class="diag-line" style="color:#1a2035">──────────</div></div>
+          <div class="diag-node hn">HN-F</div>
+          <div class="diag-arrow">
+            <div class="diag-ch dat">DAT · CompData ×2</div>
+            <div class="diag-line">◀──────────</div>
+          </div>
+          <div class="diag-node mem">DDR SN</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step-card ch-dat" id="s5">
+      <div class="step-header">
+        <div class="step-num-wrap">
+          <div class="step-circle">05</div>
+          <div class="step-ch-pill">DAT</div>
+        </div>
+        <div class="step-title-area">
+          <div class="step-direction">
+            <span>HN-F (0x10)</span>
+            <span class="dir-arrow">──DAT──▶</span>
+            <span>CPU0 (0x01)</span>
+          </div>
+          <div class="step-title">HN Forwards CompData to CPU</div>
+          <div class="step-subtitle">HN re-packages and forwards the 64-byte cache line to CPU0 with Resp=SC (Shared Clean), also providing HomeNID for CompAck routing.</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="step-explain">
+          <p>HN has the full cache line. It now forwards it to CPU0 via the <strong>DAT channel</strong>, again as two flits. The Home Node <strong>re-stamps the routing fields</strong>: TgtID=CPU0, and replaces TxnID with CPU0's original TxnID=0x07.</p>
+          <p>The <strong>Resp field is set to SC (Shared Clean)</strong> — HN grants the line in shared state, not unique, because other nodes might request it next.</p>
+          <p>Critically, HN includes <strong>HomeNID=0x10</strong> in the flit. This tells CPU0 <em>where</em> to send the CompAck — it must go back to HN, not to the SN.</p>
+          <div class="highlight-box">
+            <strong>SC vs UC state:</strong> HN chose SC (Shared Clean) because ReadShared was requested. If CPU0 had issued ReadUnique, HN would grant UC (Unique Clean), giving CPU0 exclusive ownership to write.
+          </div>
+        </div>
+        <div class="flit-panel">
+          <div class="flit-title">// DAT Flit to CPU0 (DataID=0x0)</div>
+          <table class="flit-table">
+            <tr><td class="flit-field">Opcode</td><td class="flit-val">CompData</td><td class="flit-note">// data + complete</td></tr>
+            <tr><td class="flit-field">TgtID</td><td class="flit-val">0x01</td><td class="flit-note">// to CPU0</td></tr>
+            <tr><td class="flit-field">SrcID</td><td class="flit-val">0x10</td><td class="flit-note">// from HN-F</td></tr>
+            <tr><td class="flit-field">TxnID</td><td class="flit-val">0x07</td><td class="flit-note">// CPU0's TxnID</td></tr>
+            <tr><td class="flit-field">HomeNID</td><td class="flit-val">0x10</td><td class="flit-note">// send CompAck here</td></tr>
+            <tr><td class="flit-field">DataID</td><td class="flit-val">0x0</td><td class="flit-note">// chunk 0</td></tr>
+            <tr><td class="flit-field">CCID</td><td class="flit-val">0x0</td><td class="flit-note">// critical chunk</td></tr>
+            <tr><td class="flit-field">Resp</td><td class="flit-val">SC</td><td class="flit-note">// Shared Clean ← key!</td></tr>
+            <tr><td class="flit-field">Data</td><td class="flit-val">256 bits</td><td class="flit-note">// bytes [0..31]</td></tr>
+            <tr><td class="flit-field">BE</td><td class="flit-val">0xFFFF_FFFF</td><td class="flit-note">// all valid</td></tr>
+            <tr><td class="flit-field">RespErr</td><td class="flit-val">OK</td><td class="flit-note">// clean</td></tr>
+          </table>
+          <div class="state-row">
+            <span class="state-label">CPU0 cache:</span>
+            <span class="state-before">I (Miss)</span>
+            <span class="state-arrow">→</span>
+            <span class="state-after">SC (Shared Clean)</span>
+          </div>
+        </div>
+      </div>
+      <div class="step-diagram">
+        <div class="diag-flow">
+          <div class="diag-node cpu">CPU0</div>
+          <div class="diag-arrow">
+            <div class="diag-ch dat">DAT · CompData ×2 · Resp=SC</div>
+            <div class="diag-line">◀──────────</div>
+          </div>
+          <div class="diag-node hn">HN-F</div>
+          <div class="diag-arrow"><div class="diag-line" style="color:#1a2035">──────────</div></div>
+          <div class="diag-node dim">DDR SN</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="step-card ch-rsp" id="s6">
+      <div class="step-header">
+        <div class="step-num-wrap">
+          <div class="step-circle">06</div>
+          <div class="step-ch-pill">RSP</div>
+        </div>
+        <div class="step-title-area">
+          <div class="step-direction">
+            <span>CPU0 (0x01)</span>
+            <span class="dir-arrow">──RSP──▶</span>
+            <span>HN-F (0x10)</span>
+          </div>
+          <div class="step-title">CPU Sends CompAck — Transaction Complete</div>
+          <div class="step-subtitle">CPU0 confirms it has received and installed the cache line. HN-F deallocates its tracker. The transaction is fully closed.</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="step-explain">
+          <p>After installing the cache line in state SC, CPU0 sends a <strong>CompAck</strong> on the RSP channel back to HN-F (HomeNID=0x10 from Step 5).</p>
+          <p>CompAck is the <strong>final handshake</strong>. It signals to HN: <em>"I have received all data flits for TxnID=0x07 and the line is now resident in my cache."</em></p>
+          <p>On receiving CompAck, HN-F <strong>deallocates its tracker entry</strong> for this transaction. Resources are freed. The snoop filter is updated to record CPU0 as a sharer of 0xBEEF_0040.</p>
+          <div class="highlight-box">
+            <strong>Why CompAck is required:</strong> Without CompAck, the HN cannot safely allow another node to invalidate CPU0's copy via a snoop — it wouldn't know if CPU0 had actually received and installed the data yet.
+          </div>
+        </div>
+        <div class="flit-panel">
+          <div class="flit-title">// RSP Flit Contents</div>
+          <table class="flit-table">
+            <tr><td class="flit-field">Opcode</td><td class="flit-val">CompAck</td><td class="flit-note">// final ack</td></tr>
+            <tr><td class="flit-field">TgtID</td><td class="flit-val">0x10</td><td class="flit-note">// to HN-F (HomeNID)</td></tr>
+            <tr><td class="flit-field">SrcID</td><td class="flit-val">0x01</td><td class="flit-note">// from CPU0</td></tr>
+            <tr><td class="flit-field">TxnID</td><td class="flit-val">0x07</td><td class="flit-note">// closes this txn</td></tr>
+          </table>
+          <div style="margin-top:14px;padding:10px 12px;background:#34d39908;border:1px solid #34d39920;border-radius:5px;font-size:0.72rem;line-height:1.6;font-family:'JetBrains Mono',monospace;">
+            <span style="color:#4ade80">✓ HN Tracker[0x07]: FREED</span><br>
+            <span style="color:#4ade80">✓ Snoop Filter updated: CPU0 → SC</span><br>
+            <span style="color:#4ade80">✓ CPU0 LDR instruction: COMPLETE</span><br>
+            <span style="color:var(--muted)">Memory: untouched (clean read)</span>
+          </div>
+          <div class="state-row">
+            <span class="state-label">Transaction:</span>
+            <span class="state-before">OPEN</span>
+            <span class="state-arrow">→</span>
+            <span class="state-after">CLOSED ✓</span>
+          </div>
+        </div>
+      </div>
+      <div class="step-diagram">
+        <div class="diag-flow">
+          <div class="diag-node cpu">CPU0</div>
+          <div class="diag-arrow">
+            <div class="diag-ch rsp">RSP · CompAck</div>
+            <div class="diag-line">──────────▶</div>
+          </div>
+          <div class="diag-node hn">HN-F</div>
+          <div class="diag-arrow"><div class="diag-line" style="color:#1a2035">──────────</div></div>
+          <div class="diag-node dim">DDR SN</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /steps-area -->
+</div><!-- /page-body -->
+
+<!-- SUMMARY -->
+<div class="summary-card">
+  <div class="summary-hdr">// Transaction Summary — ReadShared (Cache Miss, No Sharers)</div>
+  <div class="summary-grid">
+    <div class="sum-cell">
+      <div class="sum-num" style="color:var(--req-col)">2</div>
+      <div class="sum-label">REQ Flits</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-num" style="color:var(--rsp-col)">2</div>
+      <div class="sum-label">RSP Flits</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-num" style="color:var(--dat-col)">4</div>
+      <div class="sum-label">DAT Flits</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-num" style="color:var(--snp-col)">0</div>
+      <div class="sum-label">SNP Flits</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-num" style="color:#4ade80">SC</div>
+      <div class="sum-label">Final Cache State</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-num" style="color:var(--muted)">6</div>
+      <div class="sum-label">Total Steps</div>
+    </div>
+  </div>
+</div>
+
+<div style="padding:24px 48px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted)">AMBA 5 CHI · ReadShared Transaction · Cache Miss · No Sharers · Non-Snooped Path</div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted)">RN-F = Requester Node Full · HN-F = Home Node Full · SN = Slave Node</div>
+</div>
+
+</body>
+</html>
