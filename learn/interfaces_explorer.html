@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hanuma SoC — RTL Interface Explorer</title>
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --surface2: #21262d;
+    --border:   #30363d;
+    --text:     #e6edf3;
+    --muted:    #8b949e;
+    --accent:   #58a6ff;
+    --green:    #3fb950;
+    --orange:   #f78166;
+    --yellow:   #e3b341;
+    --purple:   #bc8cff;
+    --teal:     #39d353;
+    --red:      #f85149;
+    --cyan:     #56d364;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.6; }
+
+  /* ── Header ── */
+  header { background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a2332 100%); border-bottom: 1px solid var(--border); padding: 24px 32px; display: flex; align-items: center; gap: 16px; }
+  .logo { width: 44px; height: 44px; }
+  .header-text h1 { font-size: 22px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; }
+  .header-text p  { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; font-size: 11px; color: var(--muted); margin-left: auto; }
+
+  /* ── Layout ── */
+  .container { display: flex; height: calc(100vh - 81px); }
+  nav { width: 220px; min-width: 220px; background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; padding: 16px 0; }
+  main { flex: 1; overflow-y: auto; padding: 28px 36px; }
+
+  /* ── Sidebar nav ── */
+  .nav-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding: 0 16px 8px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; cursor: pointer; border-left: 3px solid transparent; transition: all .15s; font-size: 13px; color: var(--muted); }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(88,166,255,.08); border-left-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .nav-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Sections ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── Section header ── */
+  .sec-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .sec-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .sec-title { font-size: 20px; font-weight: 700; color: var(--text); }
+  .sec-subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .file-chip { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 11px; color: var(--accent); margin-top: 6px; }
+
+  /* ── Cards ── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+  .card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── 2-col grid ── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { background: var(--surface2); color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; font-size: 11px; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 7px 12px; border-bottom: 1px solid rgba(48,54,61,.6); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(48,54,61,.4); }
+  code { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 11.5px; background: var(--surface2); padding: 1px 5px; border-radius: 4px; color: var(--accent); }
+
+  /* ── Direction badges ── */
+  .dir { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .dir-tx  { background: rgba(63,185,80,.12);  color: var(--green);  border: 1px solid rgba(63,185,80,.3); }
+  .dir-rx  { background: rgba(248,97,73,.12);  color: var(--orange); border: 1px solid rgba(248,97,73,.3); }
+  .dir-bi  { background: rgba(88,166,255,.12); color: var(--accent); border: 1px solid rgba(88,166,255,.3); }
+  .dir-crd { background: rgba(227,179,65,.12); color: var(--yellow); border: 1px solid rgba(227,179,65,.3); }
+  .dir-ls  { background: rgba(188,140,255,.12);color: var(--purple); border: 1px solid rgba(188,140,255,.3); }
+  .dir-io  { background: rgba(86,211,100,.12); color: var(--teal);   border: 1px solid rgba(86,211,100,.3); }
+
+  /* ── Type chips ── */
+  .type-logic   { color: #79c0ff; }
+  .type-struct  { color: #ffa657; }
+  .type-param   { color: var(--purple); }
+
+  /* ── SVG diagrams ── */
+  .diagram-wrap { border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+  svg text { font-family: 'Segoe UI', system-ui, sans-serif; }
+
+  /* ── Modport tabs ── */
+  .mp-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+  .mp-tab { padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; color: var(--muted); transition: all .15s; }
+  .mp-tab:hover { color: var(--text); }
+  .mp-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .mp-pane { display: none; }
+  .mp-pane.active { display: block; }
+
+  /* ── Assertion blocks ── */
+  .assert-box { background: rgba(248,97,73,.06); border: 1px solid rgba(248,97,73,.25); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+  .assert-name { font-weight: 700; color: var(--orange); font-size: 12px; font-family: monospace; }
+  .assert-desc { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .assert-code { font-family: monospace; font-size: 11px; color: var(--text); background: var(--surface2); padding: 8px 10px; border-radius: 5px; margin-top: 8px; white-space: pre; overflow-x: auto; }
+
+  /* ── Legend ── */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+  /* ── Overview grid ── */
+  .ov-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .ov-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all .15s; }
+  .ov-card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(88,166,255,.1); }
+  .ov-card-title { font-weight: 700; font-size: 13px; color: var(--accent); margin-bottom: 6px; font-family: monospace; }
+  .ov-card-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .ov-card-meta  { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { font-size: 10px; padding: 2px 7px; border-radius: 10px; }
+
+  /* ── Param table ── */
+  .param-tag { display: inline-block; background: rgba(188,140,255,.12); border: 1px solid rgba(188,140,255,.3); border-radius: 4px; padding: 1px 7px; font-size: 11px; color: var(--purple); font-family: monospace; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="logo" viewBox="0 0 44 44" fill="none">
+    <rect width="44" height="44" rx="10" fill="#161b22" stroke="#30363d"/>
+    <path d="M8 22 L22 8 L36 22 L22 36 Z" fill="none" stroke="#58a6ff" stroke-width="1.5"/>
+    <circle cx="22" cy="22" r="5" fill="#58a6ff"/>
+    <circle cx="8"  cy="22" r="3" fill="#3fb950"/>
+    <circle cx="36" cy="22" r="3" fill="#3fb950"/>
+    <circle cx="22" cy="8"  r="3" fill="#f78166"/>
+    <circle cx="22" cy="36" r="3" fill="#f78166"/>
+  </svg>
+  <div class="header-text">
+    <h1>RTL Interface Explorer</h1>
+    <p>Hanuma SoC — CHI Issue E NoC Interconnect</p>
+  </div>
+  <span class="badge">rtl/interfaces/ · 5 files</span>
+</header>
+
+<div class="container">
+  <!-- ── Sidebar ── -->
+  <nav>
+    <div class="nav-label" style="margin-top:4px">Overview</div>
+    <div class="nav-item active" onclick="show('overview', this)">
+      <span class="nav-dot" style="background:#58a6ff"></span> All Interfaces
+    </div>
+    <div class="nav-label" style="margin-top:16px">CHI Interfaces</div>
+    <div class="nav-item" onclick="show('chi_link', this)">
+      <span class="nav-dot" style="background:#3fb950"></span> chi_link_if
+    </div>
+    <div class="nav-item" onclick="show('chi_rn', this)">
+      <span class="nav-dot" style="background:#f78166"></span> chi_rn_if
+    </div>
+    <div class="nav-item" onclick="show('chi_hn', this)">
+      <span class="nav-dot" style="background:#e3b341"></span> chi_hn_if
+    </div>
+    <div class="nav-item" onclick="show('chi_sn', this)">
+      <span class="nav-dot" style="background:#bc8cff"></span> chi_sn_if
+    </div>
+    <div class="nav-label" style="margin-top:16px">NoC Interface</div>
+    <div class="nav-item" onclick="show('noc', this)">
+      <span class="nav-dot" style="background:#56d364"></span> noc_if
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ════════════════════════════════════════ OVERVIEW ════════════════════════════════════════ -->
+    <div id="sec-overview" class="section active">
+      <div class="sec-header">
+        <div class="sec-icon" style="background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2)">🗺️</div>
+        <div>
+          <div class="sec-title">Interface Overview</div>
+          <div class="sec-subtitle">Five SystemVerilog interfaces forming the signal boundary of the Hanuma CHI NoC</div>
+        </div>
+      </div>
+
+      <!-- Architecture SVG -->
+      <div class="card">
+        <div class="card-title">System Architecture — Interface Placement</div>
+        <div class="diagram-wrap">
+          <svg width="100%" viewBox="0 0 820 420" style="background:#0d1117;display:block">
+            <defs>
+              <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0,8 3,0 6" fill="#8b949e"/>
+              </marker>
+              <marker id="ah-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0,8 3,0 6" fill="#3fb950"/>
+              </marker>
+              <marker id="ah-o" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0,8 3,0 6" fill="#f78166"/>
+              </marker>
+              <marker id="ah-y" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0,8 3,0 6" fill="#e3b341"/>
+              </marker>
+              <marker id="ah-p" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0,8 3,0 6" fill="#bc8cff"/>
+              </marker>
+              <marker id="ah-t" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0,8 3,0 6" fill="#56d364"/>
+              </marker>
+            </defs>
+
+            <!-- RN box -->
+            <rect x="30" y="130" width="130" height="160" rx="10" fill="#161b22" stroke="#f78166" stroke-width="1.5"/>
+            <text x="95" y="155" text-anchor="middle" fill="#f78166" font-size="13" font-weight="700">RN-F</text>
+            <text x="95" y="172" text-anchor="middle" fill="#8b949e" font-size="10">Request Node</text>
+            <text x="95" y="200" text-anchor="middle" fill="#8b949e" font-size="9">chi_rn.sv</text>
+            <rect x="50" y="215" width="90" height="22" rx="5" fill="rgba(248,97,73,.1)" stroke="rgba(248,97,73,.3)"/>
+            <text x="95" y="230" text-anchor="middle" fill="#f78166" font-size="9" font-weight="600">chi_rn_if</text>
+            <text x="95" y="272" text-anchor="middle" fill="#8b949e" font-size="9">×8 nodes</text>
+
+            <!-- HN box -->
+            <rect x="330" y="80" width="160" height="260" rx="10" fill="#161b22" stroke="#e3b341" stroke-width="1.5"/>
+            <text x="410" y="106" text-anchor="middle" fill="#e3b341" font-size="13" font-weight="700">HN-F</text>
+            <text x="410" y="122" text-anchor="middle" fill="#8b949e" font-size="10">Home Node</text>
+            <text x="410" y="143" text-anchor="middle" fill="#8b949e" font-size="9">chi_hn.sv</text>
+            <rect x="350" y="158" width="120" height="22" rx="5" fill="rgba(227,179,65,.1)" stroke="rgba(227,179,65,.3)"/>
+            <text x="410" y="173" text-anchor="middle" fill="#e3b341" font-size="9" font-weight="600">chi_hn_if (upstream)</text>
+            <rect x="350" y="258" width="120" height="22" rx="5" fill="rgba(227,179,65,.1)" stroke="rgba(227,179,65,.3)"/>
+            <text x="410" y="273" text-anchor="middle" fill="#e3b341" font-size="9" font-weight="600">chi_hn_if (downstream)</text>
+            <text x="410" y="320" text-anchor="middle" fill="#8b949e" font-size="9">×2 nodes</text>
+
+            <!-- SN box -->
+            <rect x="630" y="130" width="130" height="160" rx="10" fill="#161b22" stroke="#bc8cff" stroke-width="1.5"/>
+            <text x="695" y="155" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="700">SN-F</text>
+            <text x="695" y="172" text-anchor="middle" fill="#8b949e" font-size="10">Slave Node</text>
+            <text x="695" y="200" text-anchor="middle" fill="#8b949e" font-size="9">chi_sn.sv</text>
+            <rect x="650" y="215" width="90" height="22" rx="5" fill="rgba(188,140,255,.1)" stroke="rgba(188,140,255,.3)"/>
+            <text x="695" y="230" text-anchor="middle" fill="#bc8cff" font-size="9" font-weight="600">chi_sn_if</text>
+            <text x="695" y="272" text-anchor="middle" fill="#8b949e" font-size="9">×4 nodes</text>
+
+            <!-- NoC Mesh box -->
+            <rect x="240" y="360" width="340" height="50" rx="8" fill="#161b22" stroke="#56d364" stroke-width="1.5"/>
+            <text x="410" y="380" text-anchor="middle" fill="#56d364" font-size="12" font-weight="700">2D Mesh NoC (4×4 router grid)</text>
+            <text x="410" y="397" text-anchor="middle" fill="#8b949e" font-size="9">noc_if — between adjacent routers &amp; local ports</text>
+
+            <!-- chi_link_if label -->
+            <rect x="185" y="195" width="125" height="22" rx="5" fill="rgba(63,185,80,.1)" stroke="rgba(63,185,80,.3)"/>
+            <text x="247" y="210" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">chi_link_if (RN↔HN)</text>
+
+            <!-- chi_link_if label SN side -->
+            <rect x="500" y="195" width="125" height="22" rx="5" fill="rgba(63,185,80,.1)" stroke="rgba(63,185,80,.3)"/>
+            <text x="562" y="210" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">chi_link_if (HN↔SN)</text>
+
+            <!-- Arrows RN → chi_link → HN -->
+            <line x1="160" y1="210" x2="185" y2="206" stroke="#3fb950" stroke-width="1.2" marker-end="url(#ah-g)"/>
+            <line x1="310" y1="206" x2="330" y2="210" stroke="#3fb950" stroke-width="1.2" marker-end="url(#ah-g)"/>
+
+            <!-- Arrows HN → chi_link → SN -->
+            <line x1="490" y1="210" x2="500" y2="206" stroke="#3fb950" stroke-width="1.2" marker-end="url(#ah-g)"/>
+            <line x1="625" y1="206" x2="640" y2="210" stroke="#3fb950" stroke-width="1.2" marker-end="url(#ah-g)"/>
+
+            <!-- HN to NoC -->
+            <line x1="410" y1="340" x2="410" y2="358" stroke="#56d364" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#ah-t)"/>
+
+            <!-- Legend -->
+            <rect x="30" y="30" width="760" height="24" rx="5" fill="rgba(255,255,255,.02)" stroke="var(--border)"/>
+            <circle cx="55"  cy="42" r="5" fill="#3fb950"/>  <text x="64"  cy="42" y="46" fill="#8b949e" font-size="10">chi_link_if</text>
+            <circle cx="150" cy="42" r="5" fill="#f78166"/>  <text x="159" cy="42" y="46" fill="#8b949e" font-size="10">chi_rn_if</text>
+            <circle cx="230" cy="42" r="5" fill="#e3b341"/>  <text x="239" cy="42" y="46" fill="#8b949e" font-size="10">chi_hn_if</text>
+            <circle cx="310" cy="42" r="5" fill="#bc8cff"/>  <text x="319" cy="42" y="46" fill="#8b949e" font-size="10">chi_sn_if</text>
+            <circle cx="390" cy="42" r="5" fill="#56d364"/>  <text x="399" cy="42" y="46" fill="#8b949e" font-size="10">noc_if</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Cards -->
+      <div class="ov-grid">
+        <div class="ov-card" onclick="show('chi_link', document.querySelector('[onclick*=chi_link]'))">
+          <div class="ov-card-title">chi_link_if.sv</div>
+          <div class="ov-card-desc">Primary CHI link between any two nodes. All 4 channels (REQ/RSP/SNP/DAT) with per-channel credit signals. Parametric widths.</div>
+          <div class="ov-card-meta">
+            <span class="pill" style="background:rgba(63,185,80,.1);color:#3fb950;border:1px solid rgba(63,185,80,.3)">requester</span>
+            <span class="pill" style="background:rgba(63,185,80,.1);color:#3fb950;border:1px solid rgba(63,185,80,.3)">completer</span>
+            <span class="pill" style="background:rgba(63,185,80,.1);color:#3fb950;border:1px solid rgba(63,185,80,.3)">monitor</span>
+          </div>
+        </div>
+        <div class="ov-card" onclick="show('chi_rn', document.querySelector('[onclick*=chi_rn]'))">
+          <div class="ov-card-title">chi_rn_if.sv</div>
+          <div class="ov-card-desc">RN-centric convenience wrapper. Signals named from the RN's perspective: TX = what RN drives, RX = what RN receives.</div>
+          <div class="ov-card-meta">
+            <span class="pill" style="background:rgba(248,97,73,.1);color:#f78166;border:1px solid rgba(248,97,73,.3)">rn</span>
+            <span class="pill" style="background:rgba(248,97,73,.1);color:#f78166;border:1px solid rgba(248,97,73,.3)">hn</span>
+            <span class="pill" style="background:rgba(248,97,73,.1);color:#f78166;border:1px solid rgba(248,97,73,.3)">monitor</span>
+          </div>
+        </div>
+        <div class="ov-card" onclick="show('chi_hn', document.querySelector('[onclick*=chi_hn]'))">
+          <div class="ov-card-title">chi_hn_if.sv</div>
+          <div class="ov-card-desc">HN-centric interface with separate upstream (RN-facing) and downstream (SN-facing) signal groups. HN is completer upstream, requester downstream.</div>
+          <div class="ov-card-meta">
+            <span class="pill" style="background:rgba(227,179,65,.1);color:#e3b341;border:1px solid rgba(227,179,65,.3)">hn</span>
+            <span class="pill" style="background:rgba(227,179,65,.1);color:#e3b341;border:1px solid rgba(227,179,65,.3)">monitor</span>
+          </div>
+        </div>
+        <div class="ov-card" onclick="show('chi_sn', document.querySelector('[onclick*=chi_sn]'))">
+          <div class="ov-card-title">chi_sn_if.sv</div>
+          <div class="ov-card-desc">SN-F (Slave Node) interface. SN only receives REQ+DAT and responds with RSP+DAT. Never originates snoops. Has link-activation signals.</div>
+          <div class="ov-card-meta">
+            <span class="pill" style="background:rgba(188,140,255,.1);color:#bc8cff;border:1px solid rgba(188,140,255,.3)">sn</span>
+            <span class="pill" style="background:rgba(188,140,255,.1);color:#bc8cff;border:1px solid rgba(188,140,255,.3)">hn</span>
+            <span class="pill" style="background:rgba(188,140,255,.1);color:#bc8cff;border:1px solid rgba(188,140,255,.3)">monitor</span>
+          </div>
+        </div>
+        <div class="ov-card" onclick="show('noc', document.querySelector('[onclick*=noc]'))">
+          <div class="ov-card-title">noc_if.sv</div>
+          <div class="ov-card-desc">Router-level flit bus. Carries noc_flit_ctrl_t with valid/ready handshake, VC ID, head/tail markers, and per-VC credit return.</div>
+          <div class="ov-card-meta">
+            <span class="pill" style="background:rgba(86,211,100,.1);color:#56d364;border:1px solid rgba(86,211,100,.3)">source</span>
+            <span class="pill" style="background:rgba(86,211,100,.1);color:#56d364;border:1px solid rgba(86,211,100,.3)">sink</span>
+            <span class="pill" style="background:rgba(86,211,100,.1);color:#56d364;border:1px solid rgba(86,211,100,.3)">monitor</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHI channel summary -->
+      <div class="card">
+        <div class="card-title">CHI Channel Summary — Direction Rules</div>
+        <table>
+          <thead><tr><th>Channel</th><th>Direction</th><th>Flit Type</th><th>RN role</th><th>HN role</th><th>SN role</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>REQ</strong></td>
+              <td><span class="dir dir-tx">RN → HN</span></td>
+              <td><code>chi_req_flit_t</code></td>
+              <td>Sender</td><td>Receiver</td><td>—</td>
+            </tr>
+            <tr>
+              <td><strong>RSP</strong></td>
+              <td><span class="dir dir-bi">Bidirectional</span></td>
+              <td><code>chi_rsp_flit_t</code></td>
+              <td>TX: RetryAck reply · RX: Comp/DBIDResp</td><td>TX: Comp, PCrdGrant · RX: ACK from RN</td><td>TX: CompDBIDResp</td>
+            </tr>
+            <tr>
+              <td><strong>SNP</strong></td>
+              <td><span class="dir dir-rx">HN → RN</span></td>
+              <td><code>chi_snp_flit_t</code></td>
+              <td>Receiver</td><td>Sender</td><td>—</td>
+            </tr>
+            <tr>
+              <td><strong>DAT</strong></td>
+              <td><span class="dir dir-bi">Bidirectional</span></td>
+              <td><code>chi_dat_flit_t</code></td>
+              <td>TX: CopyBackWrData · RX: CompData</td><td>TX: CompData to RN · RX: WriteData from RN</td><td>TX: CompData · RX: WriteData</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════ CHI_LINK_IF ════════════════════════════════════════ -->
+    <div id="sec-chi_link" class="section">
+      <div class="sec-header">
+        <div class="sec-icon" style="background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.2)">🔗</div>
+        <div>
+          <div class="sec-title">chi_link_if</div>
+          <div class="sec-subtitle">Primary CHI Link Layer interface — all 4 channels with credit-based flow control. Used between any pair of CHI nodes across a link.</div>
+          <span class="file-chip">chi_link_if.sv</span>
+        </div>
+      </div>
+
+      <!-- Parameters -->
+      <div class="card">
+        <div class="card-title">Parameters</div>
+        <table>
+          <thead><tr><th>Parameter</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="param-tag">NODE_ID_W</span></td><td><code>CHI_NODE_ID_WIDTH (7)</code></td><td>Node ID field width</td></tr>
+            <tr><td><span class="param-tag">TXNID_W</span></td><td><code>CHI_TXNID_WIDTH (12)</code></td><td>Transaction ID width</td></tr>
+            <tr><td><span class="param-tag">ADDR_W</span></td><td><code>CHI_ADDR_WIDTH (44)</code></td><td>Physical address width</td></tr>
+            <tr><td><span class="param-tag">DATA_W</span></td><td><code>CHI_DATA_WIDTH (512)</code></td><td>Cache-line data width in bits</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Signal diagram -->
+      <div class="card">
+        <div class="card-title">Signal Flow Diagram — Requester ↔ Completer</div>
+        <div class="diagram-wrap">
+          <svg width="100%" viewBox="0 0 760 380" style="background:#0d1117;display:block">
+            <defs>
+              <marker id="r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#3fb950"/></marker>
+              <marker id="l" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#f78166"/></marker>
+              <marker id="r2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f78166"/></marker>
+              <marker id="r3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#e3b341"/></marker>
+              <marker id="l3" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#e3b341"/></marker>
+            </defs>
+
+            <!-- Requester -->
+            <rect x="30" y="60" width="160" height="280" rx="10" fill="#161b22" stroke="#f78166" stroke-width="1.5"/>
+            <text x="110" y="85" text-anchor="middle" fill="#f78166" font-size="14" font-weight="700">REQUESTER</text>
+            <text x="110" y="102" text-anchor="middle" fill="#8b949e" font-size="10">(RN-F)</text>
+
+            <!-- Completer -->
+            <rect x="570" y="60" width="160" height="280" rx="10" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+            <text x="650" y="85" text-anchor="middle" fill="#3fb950" font-size="14" font-weight="700">COMPLETER</text>
+            <text x="650" y="102" text-anchor="middle" fill="#8b949e" font-size="10">(HN-F / SN-F)</text>
+
+            <!-- Channel rows: REQ, RSP, SNP, DAT -->
+            <!-- REQ -->
+            <text x="380" y="140" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">REQ channel</text>
+            <line x1="190" y1="150" x2="568" y2="150" stroke="#3fb950" stroke-width="1.8" marker-end="url(#r)"/>
+            <rect x="280" y="138" width="200" height="18" rx="4" fill="#0d1117"/>
+            <text x="380" y="151" text-anchor="middle" fill="#3fb950" font-size="10">txreqflitpend · txreqflitv · txreqflit</text>
+
+            <!-- Credit back REQ -->
+            <line x1="570" y1="165" x2="192" y2="165" stroke="#e3b341" stroke-width="1.2" stroke-dasharray="5,2" marker-end="url(#r2)"/>
+            <rect x="280" y="153" width="200" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="165" text-anchor="middle" fill="#e3b341" font-size="9">rxreqlcrdv (credit return)</text>
+
+            <!-- RSP -->
+            <text x="380" y="200" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">RSP channel (bidirectional)</text>
+            <line x1="190" y1="210" x2="568" y2="210" stroke="#3fb950" stroke-width="1.8" marker-end="url(#r)"/>
+            <rect x="290" y="198" width="180" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="210" text-anchor="middle" fill="#3fb950" font-size="10">txrspflit (RN→HN ACK)</text>
+            <line x1="570" y1="222" x2="192" y2="222" stroke="#f78166" stroke-width="1.8" marker-end="url(#r2)"/>
+            <rect x="290" y="210" width="180" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="222" text-anchor="middle" fill="#f78166" font-size="10">rxrspflit (Comp/RetryAck)</text>
+
+            <!-- SNP -->
+            <text x="380" y="258" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">SNP channel</text>
+            <line x1="570" y1="268" x2="192" y2="268" stroke="#f78166" stroke-width="1.8" marker-end="url(#r2)"/>
+            <rect x="290" y="256" width="180" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="268" text-anchor="middle" fill="#f78166" font-size="10">txsnpflit (HN→RN snoop)</text>
+
+            <!-- DAT -->
+            <text x="380" y="304" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">DAT channel (bidirectional)</text>
+            <line x1="190" y1="314" x2="568" y2="314" stroke="#3fb950" stroke-width="1.8" marker-end="url(#r)"/>
+            <rect x="290" y="302" width="180" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="314" text-anchor="middle" fill="#3fb950" font-size="10">txdatflit (write data)</text>
+            <line x1="570" y1="326" x2="192" y2="326" stroke="#f78166" stroke-width="1.8" marker-end="url(#r2)"/>
+            <rect x="290" y="314" width="180" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="326" text-anchor="middle" fill="#f78166" font-size="10">rxdatflit (CompData read)</text>
+
+            <!-- Link State -->
+            <text x="110" y="360" text-anchor="middle" fill="#bc8cff" font-size="9">txsactive · txlinkactivereq</text>
+            <text x="650" y="360" text-anchor="middle" fill="#bc8cff" font-size="9">txlinkactiveack · rxlinkactivereq</text>
+
+            <!-- legend -->
+            <line x1="30" y1="22" x2="60" y2="22" stroke="#3fb950" stroke-width="1.5" marker-end="url(#r)"/>
+            <text x="65" y="26" fill="#8b949e" font-size="10">Req → Comp (TX)</text>
+            <line x1="210" y1="22" x2="240" y2="22" stroke="#f78166" stroke-width="1.5" marker-end="url(#r2)"/>
+            <text x="245" y="26" fill="#8b949e" font-size="10">Comp → Req (RX)</text>
+            <line x1="400" y1="22" x2="430" y2="22" stroke="#e3b341" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#r3)"/>
+            <text x="435" y="26" fill="#8b949e" font-size="10">Credit Return</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Signal table with modport tabs -->
+      <div class="card">
+        <div class="card-title">Signal Reference</div>
+        <div class="mp-tabs" id="mp-chi_link">
+          <div class="mp-tab active" onclick="mpTab('chi_link','all',this)">All Signals</div>
+          <div class="mp-tab" onclick="mpTab('chi_link','req',this)">REQ</div>
+          <div class="mp-tab" onclick="mpTab('chi_link','rsp',this)">RSP</div>
+          <div class="mp-tab" onclick="mpTab('chi_link','snp',this)">SNP</div>
+          <div class="mp-tab" onclick="mpTab('chi_link','dat',this)">DAT</div>
+          <div class="mp-tab" onclick="mpTab('chi_link','ls',this)">Link State</div>
+        </div>
+
+        <div class="mp-pane active" id="chi_link-all">
+          <table>
+            <thead><tr><th>Signal</th><th>Type</th><th>Direction (requester MP)</th><th>Group</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>txreqflitpend</code></td><td><span class="type-logic">logic</span></td><td><span class="dir dir-tx">TX →</span></td><td>REQ</td><td>Pend — valid asserted next cycle; registered look-ahead</td></tr>
+              <tr><td><code>txreqflitv</code></td><td><span class="type-logic">logic</span></td><td><span class="dir dir-tx">TX →</span></td><td>REQ</td><td>Flit valid on this cycle</td></tr>
+              <tr><td><code>txreqflit</code></td><td><span class="type-struct">chi_req_flit_t</span></td><td><span class="dir dir-tx">TX →</span></td><td>REQ</td><td>Packed REQ flit payload</td></tr>
+              <tr><td><code>txreqlcrdv</code></td><td><span class="type-logic">logic</span></td><td><span class="dir dir-tx">TX →</span></td><td>REQ</td><td>Credit return from requester back to upstream</td></tr>
+              <tr><td><code>rxreqflitpend/v/flit</code></td><td><span class="type-logic">logic</span></td><td><span class="dir dir-rx">← RX</span></td><td>REQ</td><td>Incoming REQ from completer (unusual path)</td></tr>
+              <tr><td><code>rxreqlcrdv</code></td><td><span class="type-logic">logic</span></td><td><span class="dir dir-rx">← RX</span></td><td>REQ credit</td><td>LCRD returned by completer after consuming REQ</td></tr>
+              <tr style="background:rgba(248,97,73,.04)"><td><code>txrspflitpend/v/flit</code></td><td><span class="type-struct">chi_rsp_flit_t</span></td><td><span class="dir dir-tx">TX →</span></td><td>RSP</td><td>RSP from requester (e.g. WriteDataResp, PCrdReturn)</td></tr>
+              <tr style="background:rgba(248,97,73,.04)"><td><code>rxrspflitpend/v/flit</code></td><td><span class="type-struct">chi_rsp_flit_t</span></td><td><span class="dir dir-rx">← RX</span></td><td>RSP</td><td>RSP from completer (Comp, DBIDResp, RetryAck)</td></tr>
+              <tr><td><code>txsnpflitpend/v/flit</code></td><td><span class="type-struct">chi_snp_flit_t</span></td><td><span class="dir dir-rx">← INPUT</span></td><td>SNP</td><td>Snoop from completer — input at requester modport</td></tr>
+              <tr><td><code>rxsnpflitpend/v/flit</code></td><td><span class="type-struct">chi_snp_flit_t</span></td><td><span class="dir dir-tx">output</span></td><td>SNP</td><td>Requester's credit return for snoops received</td></tr>
+              <tr style="background:rgba(63,185,80,.04)"><td><code>txdatflitpend/v/flit</code></td><td><span class="type-struct">chi_dat_flit_t</span></td><td><span class="dir dir-tx">TX →</span></td><td>DAT</td><td>Write data from requester (CopyBackWrData, NonCopyBack)</td></tr>
+              <tr style="background:rgba(63,185,80,.04)"><td><code>rxdatflitpend/v/flit</code></td><td><span class="type-struct">chi_dat_flit_t</span></td><td><span class="dir dir-rx">← RX</span></td><td>DAT</td><td>Read data from completer (CompData)</td></tr>
+              <tr><td><code>txsactive</code></td><td><span class="type-logic">logic</span></td><td><span class="dir dir-tx">TX →</span></td><td>Link State</td><td>TX side power-active indicator</td></tr>
+              <tr><td><code>txlinkactivereq</code></td><td><span class="type-logic">logic</span></td><td><span class="dir dir-tx">TX →</span></td><td>Link State</td><td>Requester asserts to bring link up</td></tr>
+              <tr><td><code>txlinkactiveack</code></td><td><span class="type-logic">logic</span></td><td><span class="dir dir-rx">← RX</span></td><td>Link State</td><td>Completer acknowledges link activation</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mp-pane" id="chi_link-req"><table><thead><tr><th>Signal</th><th>Req MP dir</th><th>Description</th></tr></thead><tbody>
+          <tr><td><code>txreqflitpend</code></td><td><span class="dir dir-tx">output</span></td><td>Look-ahead pend before valid</td></tr>
+          <tr><td><code>txreqflitv</code></td><td><span class="dir dir-tx">output</span></td><td>Flit valid</td></tr>
+          <tr><td><code>txreqflit</code></td><td><span class="dir dir-tx">output</span></td><td>Packed REQ flit</td></tr>
+          <tr><td><code>txreqlcrdv</code></td><td><span class="dir dir-tx">output</span></td><td>Credit return upstream</td></tr>
+          <tr><td><code>rxreqlcrdv</code></td><td><span class="dir dir-crd">← input</span></td><td>Credit from completer — enables next send</td></tr>
+        </tbody></table></div>
+        <div class="mp-pane" id="chi_link-rsp"><table><thead><tr><th>Signal</th><th>Req MP dir</th><th>Description</th></tr></thead><tbody>
+          <tr><td><code>txrspflitpend/v/flit</code></td><td><span class="dir dir-tx">output</span></td><td>RSP originated by requester (rare — e.g. WriteDataResp)</td></tr>
+          <tr><td><code>txrsplcrdv</code></td><td><span class="dir dir-tx">output</span></td><td>RSP credit return to completer</td></tr>
+          <tr><td><code>rxrspflitpend/v/flit</code></td><td><span class="dir dir-rx">input</span></td><td>RSP from completer (Comp, DBIDResp, RetryAck, PCrdGrant)</td></tr>
+          <tr><td><code>rxrsplcrdv</code></td><td><span class="dir dir-crd">← input</span></td><td>Credit returned by completer after consuming requester RSP</td></tr>
+        </tbody></table></div>
+        <div class="mp-pane" id="chi_link-snp"><table><thead><tr><th>Signal</th><th>Req MP dir</th><th>Description</th></tr></thead><tbody>
+          <tr><td><code>txsnpflitpend/v/flit</code></td><td><span class="dir dir-rx">input</span></td><td>Snoop driven by completer (HN→RN); input at requester modport</td></tr>
+          <tr><td><code>txsnplcrdv</code></td><td><span class="dir dir-rx">input</span></td><td>Completer credit return for SNP</td></tr>
+          <tr><td><code>rxsnpflitpend/v/flit</code></td><td><span class="dir dir-tx">output</span></td><td>Requester credit return for incoming snoops</td></tr>
+          <tr><td><code>rxsnplcrdv</code></td><td><span class="dir dir-tx">output</span></td><td>LCRD return after consuming snoop</td></tr>
+        </tbody></table></div>
+        <div class="mp-pane" id="chi_link-dat"><table><thead><tr><th>Signal</th><th>Req MP dir</th><th>Description</th></tr></thead><tbody>
+          <tr><td><code>txdatflitpend/v/flit</code></td><td><span class="dir dir-tx">output</span></td><td>Write data from requester to completer</td></tr>
+          <tr><td><code>txdatlcrdv</code></td><td><span class="dir dir-tx">output</span></td><td>DAT credit return toward completer</td></tr>
+          <tr><td><code>rxdatflitpend/v/flit</code></td><td><span class="dir dir-rx">input</span></td><td>Read data (CompData) from completer</td></tr>
+          <tr><td><code>rxdatlcrdv</code></td><td><span class="dir dir-crd">← input</span></td><td>Credit from completer for TX DAT</td></tr>
+        </tbody></table></div>
+        <div class="mp-pane" id="chi_link-ls"><table><thead><tr><th>Signal</th><th>Req MP dir</th><th>Description</th></tr></thead><tbody>
+          <tr><td><code>txsactive</code></td><td><span class="dir dir-tx">output</span></td><td>TX side active; de-asserted to request power-down</td></tr>
+          <tr><td><code>rxsactive</code></td><td><span class="dir dir-rx">input</span></td><td>Completer TX side active</td></tr>
+          <tr><td><code>txlinkactivereq</code></td><td><span class="dir dir-tx">output</span></td><td>Requester initiates link activation handshake</td></tr>
+          <tr><td><code>txlinkactiveack</code></td><td><span class="dir dir-rx">input</span></td><td>Completer acknowledges; link is operational when both high</td></tr>
+          <tr><td><code>rxlinkactivereq</code></td><td><span class="dir dir-rx">input</span></td><td>Completer requests link activation in its TX direction</td></tr>
+          <tr><td><code>rxlinkactiveack</code></td><td><span class="dir dir-tx">output</span></td><td>Requester acknowledges completer link-activate</td></tr>
+        </tbody></table></div>
+      </div>
+
+      <!-- Assertions -->
+      <div class="card">
+        <div class="card-title">Embedded SVA Assertions</div>
+        <div class="assert-box">
+          <div class="assert-name">a_req_valid_needs_credit</div>
+          <div class="assert-desc">REQ flit valid cannot be asserted without a prior pending signal. Ensures the pend→valid timing requirement of the CHI spec.</div>
+          <div class="assert-code">txreqflitv |-> ##[0:1] txreqflitpend;</div>
+        </div>
+        <div class="assert-box">
+          <div class="assert-name">a_link_active_ack</div>
+          <div class="assert-desc">After txlinkactivereq rises, txlinkactiveack must be received within 20 cycles. Guards against link training stall.</div>
+          <div class="assert-code">$rose(txlinkactivereq) |-> ##[1:20] txlinkactiveack;</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════ CHI_RN_IF ════════════════════════════════════════ -->
+    <div id="sec-chi_rn" class="section">
+      <div class="sec-header">
+        <div class="sec-icon" style="background:rgba(248,97,73,.1);border:1px solid rgba(248,97,73,.2)">📤</div>
+        <div>
+          <div class="sec-title">chi_rn_if</div>
+          <div class="sec-subtitle">RN-centric convenience wrapper. Signal names are from the RN's perspective. Mirrors chi_link_if but is cleaner for flat RN module port declarations.</div>
+          <span class="file-chip">chi_rn_if.sv</span>
+        </div>
+      </div>
+
+      <!-- Diagram -->
+      <div class="card">
+        <div class="card-title">Signal Perspective — RN View</div>
+        <div class="diagram-wrap">
+          <svg width="100%" viewBox="0 0 760 300" style="background:#0d1117;display:block">
+            <defs>
+              <marker id="rn-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#3fb950"/></marker>
+              <marker id="rn-l" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f78166"/></marker>
+              <marker id="rn-y" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#e3b341"/></marker>
+            </defs>
+            <!-- RN -->
+            <rect x="30" y="50" width="150" height="220" rx="10" fill="#161b22" stroke="#f78166" stroke-width="1.5"/>
+            <text x="105" y="76" text-anchor="middle" fill="#f78166" font-size="14" font-weight="700">RN-F</text>
+            <!-- HN -->
+            <rect x="580" y="50" width="150" height="220" rx="10" fill="#161b22" stroke="#e3b341" stroke-width="1.5"/>
+            <text x="655" y="76" text-anchor="middle" fill="#e3b341" font-size="14" font-weight="700">HN-F</text>
+
+            <!-- TX REQ -->
+            <line x1="180" y1="105" x2="578" y2="105" stroke="#3fb950" stroke-width="1.8" marker-end="url(#rn-r)"/>
+            <rect x="270" y="93" width="220" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="105" text-anchor="middle" fill="#3fb950" font-size="10">txreqflit / txreqflitv / txreqflitpend</text>
+
+            <!-- Credit return REQ -->
+            <line x1="580" y1="118" x2="182" y2="118" stroke="#e3b341" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#rn-l)"/>
+            <rect x="290" y="106" width="180" height="14" rx="4" fill="#0d1117"/>
+            <text x="380" y="117" text-anchor="middle" fill="#e3b341" font-size="9">rxreqlcrdv (credit from HN)</text>
+
+            <!-- TX DAT (write) -->
+            <line x1="180" y1="148" x2="578" y2="148" stroke="#3fb950" stroke-width="1.8" marker-end="url(#rn-r)"/>
+            <rect x="290" y="137" width="180" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="149" text-anchor="middle" fill="#3fb950" font-size="10">txdatflit / txdatflitv (write data)</text>
+
+            <!-- RX RSP -->
+            <line x1="580" y1="180" x2="182" y2="180" stroke="#f78166" stroke-width="1.8" marker-end="url(#rn-l)"/>
+            <rect x="290" y="169" width="180" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="181" text-anchor="middle" fill="#f78166" font-size="10">rxrspflit / rxrspflitv (Comp / DBIDResp)</text>
+
+            <!-- RX SNP -->
+            <line x1="580" y1="208" x2="182" y2="208" stroke="#f78166" stroke-width="1.8" marker-end="url(#rn-l)"/>
+            <rect x="290" y="197" width="180" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="209" text-anchor="middle" fill="#f78166" font-size="10">rxsnpflit / rxsnpflitv (SnpShared etc.)</text>
+
+            <!-- RX DAT (read) -->
+            <line x1="580" y1="236" x2="182" y2="236" stroke="#f78166" stroke-width="1.8" marker-end="url(#rn-l)"/>
+            <rect x="290" y="225" width="180" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="237" text-anchor="middle" fill="#f78166" font-size="10">rxdatflit / rxdatflitv (CompData)</text>
+
+            <!-- Labels -->
+            <text x="105" y="268" text-anchor="middle" fill="#8b949e" font-size="9">rn modport: drives TX, receives RX</text>
+            <text x="655" y="268" text-anchor="middle" fill="#8b949e" font-size="9">hn modport: mirror of rn</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Modport Comparison — rn vs hn</div>
+        <table>
+          <thead><tr><th>Signal Group</th><th>rn modport</th><th>hn modport</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>txreqflit / txreqflitv / txreqflitpend</td><td><span class="dir dir-tx">output</span></td><td><span class="dir dir-rx">input</span></td><td>RN originates requests</td></tr>
+            <tr><td>rxreqlcrdv</td><td><span class="dir dir-crd">← input</span></td><td><span class="dir dir-tx">output</span></td><td>HN returns credits after accepting REQ</td></tr>
+            <tr><td>txdatflit / txdatflitv / txdatflitpend</td><td><span class="dir dir-tx">output</span></td><td><span class="dir dir-rx">input</span></td><td>RN sends write data</td></tr>
+            <tr><td>rxrspflit / rxrspflitv / rxrspflitpend</td><td><span class="dir dir-rx">input</span></td><td><span class="dir dir-tx">output</span></td><td>HN sends Comp / RetryAck</td></tr>
+            <tr><td>rxsnpflit / rxsnpflitv / rxsnpflitpend</td><td><span class="dir dir-rx">input</span></td><td><span class="dir dir-tx">output</span></td><td>HN originates snoops</td></tr>
+            <tr><td>rxdatflit / rxdatflitv / rxdatflitpend</td><td><span class="dir dir-rx">input</span></td><td><span class="dir dir-tx">output</span></td><td>HN/SN delivers read data</td></tr>
+            <tr><td>txlinkactivereq / rxlinkactiveack / txsactive</td><td><span class="dir dir-tx">output</span></td><td><span class="dir dir-rx">input</span></td><td>RN initiates link activation</td></tr>
+            <tr><td>txlinkactiveack / rxlinkactivereq / rxsactive</td><td><span class="dir dir-rx">input</span></td><td><span class="dir dir-tx">output</span></td><td>HN acknowledges</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Key Design Note</div>
+        <p style="color:var(--muted);font-size:13px;line-height:1.7">
+          <strong style="color:var(--text)">chi_rn_if vs chi_link_if:</strong> Both interfaces carry identical signals. The difference is binding point of view.
+          <code>chi_link_if</code> is technology-agnostic and requires selecting a <em>modport</em> (requester/completer) at connect time.
+          <code>chi_rn_if</code> names signals from the RN's perspective, making module instantiation less error-prone in flat netlists where modport resolution is cumbersome.
+          The <code>hn</code> modport in <code>chi_rn_if</code> is the exact mirror of the <code>rn</code> modport.
+        </p>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════ CHI_HN_IF ════════════════════════════════════════ -->
+    <div id="sec-chi_hn" class="section">
+      <div class="sec-header">
+        <div class="sec-icon" style="background:rgba(227,179,65,.1);border:1px solid rgba(227,179,65,.2)">🏠</div>
+        <div>
+          <div class="sec-title">chi_hn_if</div>
+          <div class="sec-subtitle">HN-F centric interface with two planes: upstream (toward RN, HN is completer) and downstream (toward SN, HN is requester).</div>
+          <span class="file-chip">chi_hn_if.sv</span>
+        </div>
+      </div>
+
+      <!-- Dual-plane diagram -->
+      <div class="card">
+        <div class="card-title">Dual-Plane Architecture</div>
+        <div class="diagram-wrap">
+          <svg width="100%" viewBox="0 0 760 360" style="background:#0d1117;display:block">
+            <defs>
+              <marker id="hn-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#3fb950"/></marker>
+              <marker id="hn-o" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f78166"/></marker>
+              <marker id="hn-y" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#e3b341"/></marker>
+              <marker id="hn-p" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#bc8cff"/></marker>
+            </defs>
+
+            <!-- RN -->
+            <rect x="20" y="60" width="130" height="240" rx="8" fill="#161b22" stroke="#f78166" stroke-width="1.5"/>
+            <text x="85" y="82" text-anchor="middle" fill="#f78166" font-size="12" font-weight="700">RN-F</text>
+            <text x="85" y="97" text-anchor="middle" fill="#8b949e" font-size="9">×8</text>
+
+            <!-- HN -->
+            <rect x="300" y="20" width="160" height="320" rx="10" fill="#161b22" stroke="#e3b341" stroke-width="2"/>
+            <text x="380" y="44" text-anchor="middle" fill="#e3b341" font-size="14" font-weight="700">HN-F</text>
+            <text x="380" y="60" text-anchor="middle" fill="#8b949e" font-size="9">×2 nodes</text>
+            <!-- upstream plane -->
+            <rect x="310" y="72" width="140" height="100" rx="6" fill="rgba(227,179,65,.06)" stroke="rgba(227,179,65,.25)"/>
+            <text x="380" y="92" text-anchor="middle" fill="#e3b341" font-size="10" font-weight="700">upstream plane</text>
+            <text x="380" y="107" text-anchor="middle" fill="#8b949e" font-size="9">HN = completer</text>
+            <text x="380" y="120" text-anchor="middle" fill="#8b949e" font-size="9">up_rx* / up_tx*</text>
+            <text x="380" y="133" text-anchor="middle" fill="#8b949e" font-size="9">up_txreqlcrdv</text>
+            <text x="380" y="148" text-anchor="middle" fill="#8b949e" font-size="9">up_txrspflit · up_txsnpflit · up_txdatflit</text>
+            <!-- downstream plane -->
+            <rect x="310" y="188" width="140" height="100" rx="6" fill="rgba(188,140,255,.06)" stroke="rgba(188,140,255,.25)"/>
+            <text x="380" y="208" text-anchor="middle" fill="#bc8cff" font-size="10" font-weight="700">downstream plane</text>
+            <text x="380" y="223" text-anchor="middle" fill="#8b949e" font-size="9">HN = requester</text>
+            <text x="380" y="238" text-anchor="middle" fill="#8b949e" font-size="9">dn_tx* / dn_rx*</text>
+            <text x="380" y="253" text-anchor="middle" fill="#8b949e" font-size="9">dn_txreqflit · dn_txdatflit</text>
+            <text x="380" y="268" text-anchor="middle" fill="#8b949e" font-size="9">dn_rxrspflit · dn_rxdatflit</text>
+
+            <!-- SN -->
+            <rect x="610" y="60" width="130" height="240" rx="8" fill="#161b22" stroke="#bc8cff" stroke-width="1.5"/>
+            <text x="675" y="82" text-anchor="middle" fill="#bc8cff" font-size="12" font-weight="700">SN-F</text>
+            <text x="675" y="97" text-anchor="middle" fill="#8b949e" font-size="9">×4</text>
+
+            <!-- Upstream arrows RN ↔ HN -->
+            <line x1="150" y1="115" x2="298" y2="115" stroke="#f78166" stroke-width="1.5" marker-end="url(#hn-y)"/>
+            <text x="224" y="109" text-anchor="middle" fill="#8b949e" font-size="9">REQ / DAT</text>
+            <line x1="300" y1="130" x2="152" y2="130" stroke="#e3b341" stroke-width="1.5" marker-end="url(#hn-o)"/>
+            <text x="224" y="143" text-anchor="middle" fill="#8b949e" font-size="9">RSP / SNP / DAT</text>
+
+            <!-- Downstream arrows HN ↔ SN -->
+            <line x1="460" y1="230" x2="608" y2="230" stroke="#e3b341" stroke-width="1.5" marker-end="url(#hn-y)"/>
+            <text x="534" y="222" text-anchor="middle" fill="#8b949e" font-size="9">REQ / DAT (write)</text>
+            <line x1="610" y1="245" x2="462" y2="245" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#hn-p)"/>
+            <text x="534" y="258" text-anchor="middle" fill="#8b949e" font-size="9">RSP / DAT (CompData)</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Upstream Signals (up_*) — HN as Completer</div>
+          <table>
+            <thead><tr><th>Signal</th><th>hn MP dir</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>up_rxreqflitv / up_rxreqflit</code></td><td><span class="dir dir-rx">input</span></td><td>REQ from RN (reads, writes, atomics)</td></tr>
+              <tr><td><code>up_txreqlcrdv</code></td><td><span class="dir dir-crd">output</span></td><td>Credit returned to RN after consuming REQ</td></tr>
+              <tr><td><code>up_rxdatflitv / up_rxdatflit</code></td><td><span class="dir dir-rx">input</span></td><td>Write data from RN (CopyBackWrData)</td></tr>
+              <tr><td><code>up_txdatlcrdv</code></td><td><span class="dir dir-crd">output</span></td><td>Credit returned to RN for write DAT</td></tr>
+              <tr><td><code>up_txrspflitv / up_txrspflit</code></td><td><span class="dir dir-tx">output</span></td><td>Comp / DBIDResp / RetryAck / PCrdGrant to RN</td></tr>
+              <tr><td><code>up_rxrsplcrdv</code></td><td><span class="dir dir-crd">input</span></td><td>Credit from RN for RSP channel</td></tr>
+              <tr><td><code>up_txsnpflitv / up_txsnpflit</code></td><td><span class="dir dir-tx">output</span></td><td>Snoop to RN (SnpShared, SnpUnique, etc.)</td></tr>
+              <tr><td><code>up_rxsnplcrdv</code></td><td><span class="dir dir-crd">input</span></td><td>Credit from RN for SNP channel</td></tr>
+              <tr><td><code>up_txdatflitv / up_txdatflit</code></td><td><span class="dir dir-tx">output</span></td><td>CompData to RN (read data response)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">Downstream Signals (dn_*) — HN as Requester</div>
+          <table>
+            <thead><tr><th>Signal</th><th>hn MP dir</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>dn_txreqflitv / dn_txreqflit</code></td><td><span class="dir dir-tx">output</span></td><td>REQ to SN (ReadNoSnp, WriteNoSnp)</td></tr>
+              <tr><td><code>dn_rxreqlcrdv</code></td><td><span class="dir dir-crd">input</span></td><td>Credit from SN enabling REQ send</td></tr>
+              <tr><td><code>dn_txdatflitv / dn_txdatflit</code></td><td><span class="dir dir-tx">output</span></td><td>Write data to SN memory</td></tr>
+              <tr><td><code>dn_rxdatlcrdv</code></td><td><span class="dir dir-crd">input</span></td><td>Credit from SN for DAT channel</td></tr>
+              <tr><td><code>dn_rxrspflitv / dn_rxrspflit</code></td><td><span class="dir dir-rx">input</span></td><td>CompDBIDResp / Comp from SN</td></tr>
+              <tr><td><code>dn_txrsplcrdv</code></td><td><span class="dir dir-crd">output</span></td><td>Credit returned to SN after consuming RSP</td></tr>
+              <tr><td><code>dn_rxdatflitv / dn_rxdatflit</code></td><td><span class="dir dir-rx">input</span></td><td>CompData from SN (memory read data)</td></tr>
+              <tr><td><code>dn_txdatlcrdv</code></td><td><span class="dir dir-crd">output</span></td><td>Credit returned to SN for DAT</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════ CHI_SN_IF ════════════════════════════════════════ -->
+    <div id="sec-chi_sn" class="section">
+      <div class="sec-header">
+        <div class="sec-icon" style="background:rgba(188,140,255,.1);border:1px solid rgba(188,140,255,.2)">💾</div>
+        <div>
+          <div class="sec-title">chi_sn_if</div>
+          <div class="sec-subtitle">SN-F (Slave Node) interface — memory-side CHI endpoint. SN only receives REQ+DAT and responds with RSP+DAT. Never originates snoops.</div>
+          <span class="file-chip">chi_sn_if.sv</span>
+        </div>
+      </div>
+
+      <!-- Diagram -->
+      <div class="card">
+        <div class="card-title">SN Signal Map — Simplified View</div>
+        <div class="diagram-wrap">
+          <svg width="100%" viewBox="0 0 760 260" style="background:#0d1117;display:block">
+            <defs>
+              <marker id="sn-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#3fb950"/></marker>
+              <marker id="sn-p" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#bc8cff"/></marker>
+              <marker id="sn-y" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#e3b341"/></marker>
+            </defs>
+            <!-- HN -->
+            <rect x="30" y="40" width="150" height="180" rx="8" fill="#161b22" stroke="#e3b341" stroke-width="1.5"/>
+            <text x="105" y="64" text-anchor="middle" fill="#e3b341" font-size="13" font-weight="700">HN-F</text>
+            <text x="105" y="80" text-anchor="middle" fill="#8b949e" font-size="9">(acts as requester)</text>
+            <!-- SN -->
+            <rect x="580" y="40" width="150" height="180" rx="8" fill="#161b22" stroke="#bc8cff" stroke-width="1.5"/>
+            <text x="655" y="64" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="700">SN-F</text>
+            <text x="655" y="80" text-anchor="middle" fill="#8b949e" font-size="9">(memory controller)</text>
+
+            <!-- RX REQ -->
+            <line x1="180" y1="100" x2="578" y2="100" stroke="#3fb950" stroke-width="1.8" marker-end="url(#sn-g)"/>
+            <rect x="280" y="88" width="200" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="100" text-anchor="middle" fill="#3fb950" font-size="10">rxreqflitv / rxreqflit (ReadNoSnp, WriteNoSnp)</text>
+
+            <!-- Credit REQ -->
+            <line x1="580" y1="113" x2="182" y2="113" stroke="#e3b341" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#sn-y)"/>
+            <text x="380" y="124" text-anchor="middle" fill="#e3b341" font-size="9">txreqlcrdv (SN credit return to HN)</text>
+
+            <!-- RX DAT -->
+            <line x1="180" y1="145" x2="578" y2="145" stroke="#3fb950" stroke-width="1.8" marker-end="url(#sn-g)"/>
+            <rect x="280" y="133" width="200" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="145" text-anchor="middle" fill="#3fb950" font-size="10">rxdatflitv / rxdatflit (NonCopyBackWrData)</text>
+
+            <!-- TX RSP -->
+            <line x1="580" y1="175" x2="182" y2="175" stroke="#bc8cff" stroke-width="1.8" marker-end="url(#sn-p)"/>
+            <rect x="280" y="163" width="200" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="175" text-anchor="middle" fill="#bc8cff" font-size="10">txrspflitv / txrspflit (CompDBIDResp / Comp)</text>
+
+            <!-- TX DAT -->
+            <line x1="580" y1="198" x2="182" y2="198" stroke="#bc8cff" stroke-width="1.8" marker-end="url(#sn-p)"/>
+            <rect x="280" y="186" width="200" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="198" text-anchor="middle" fill="#bc8cff" font-size="10">txdatflitv / txdatflit (CompData — read response)</text>
+
+            <!-- No SNP annotation -->
+            <rect x="280" y="216" width="200" height="16" rx="4" fill="rgba(248,97,73,.06)" stroke="rgba(248,97,73,.2)"/>
+            <text x="380" y="228" text-anchor="middle" fill="#f85149" font-size="9">✗  No SNP channel — SN never snoops</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Signal Reference — sn modport</div>
+          <table>
+            <thead><tr><th>Signal</th><th>Direction</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>rxreqflitv</code></td><td><span class="dir dir-rx">input</span></td><td>REQ valid from HN</td></tr>
+              <tr><td><code>rxreqflit</code></td><td><span class="dir dir-rx">input</span></td><td>REQ flit (ReadNoSnp / WriteNoSnp)</td></tr>
+              <tr><td><code>txreqlcrdv</code></td><td><span class="dir dir-crd">output</span></td><td>SN returns REQ credit to HN</td></tr>
+              <tr><td><code>rxdatflitv / rxdatflit</code></td><td><span class="dir dir-rx">input</span></td><td>Write data from HN</td></tr>
+              <tr><td><code>txdatlcrdv</code></td><td><span class="dir dir-crd">output</span></td><td>Credit return for write DAT</td></tr>
+              <tr><td><code>txrspflitv / txrspflit</code></td><td><span class="dir dir-tx">output</span></td><td>RSP to HN (CompDBIDResp for writes; Comp for reads)</td></tr>
+              <tr><td><code>rxrsplcrdv</code></td><td><span class="dir dir-crd">input</span></td><td>RSP credit from HN</td></tr>
+              <tr><td><code>txdatflitv / txdatflit</code></td><td><span class="dir dir-tx">output</span></td><td>CompData to HN (read data)</td></tr>
+              <tr><td><code>rxdatlcrdv</code></td><td><span class="dir dir-crd">input</span></td><td>DAT TX credit from HN</td></tr>
+              <tr><td><code>txlinkactivereq / rxlinkactiveack / txsactive</code></td><td><span class="dir dir-ls">output</span></td><td>SN initiates link activation</td></tr>
+              <tr><td><code>txlinkactiveack / rxlinkactivereq / rxsactive</code></td><td><span class="dir dir-ls">input</span></td><td>HN acknowledges</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">SN Protocol Flow</div>
+          <div class="diagram-wrap">
+            <svg width="100%" viewBox="0 0 340 260" style="background:#0d1117;display:block">
+              <defs>
+                <marker id="fl-r" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#56d364"/></marker>
+              </defs>
+              <!-- States -->
+              <rect x="120" y="20"  width="100" height="30" rx="6" fill="#21262d" stroke="#bc8cff" stroke-width="1.2"/>
+              <text x="170" y="40" text-anchor="middle" fill="#bc8cff" font-size="10" font-weight="700">IDLE</text>
+              <rect x="80"  y="80"  width="100" height="30" rx="6" fill="#21262d" stroke="#e3b341" stroke-width="1.2"/>
+              <text x="130" y="100" text-anchor="middle" fill="#e3b341" font-size="10">ISSUE_DBID</text>
+              <rect x="160" y="80"  width="100" height="30" rx="6" fill="#21262d" stroke="#58a6ff" stroke-width="1.2"/>
+              <text x="210" y="100" text-anchor="middle" fill="#58a6ff" font-size="10">WAIT_WDATA</text>
+              <rect x="80"  y="155" width="100" height="30" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1.2"/>
+              <text x="130" y="175" text-anchor="middle" fill="#3fb950" font-size="10">MEM_READ</text>
+              <rect x="160" y="155" width="100" height="30" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1.2"/>
+              <text x="210" y="175" text-anchor="middle" fill="#3fb950" font-size="10">MEM_WRITE</text>
+              <rect x="120" y="220" width="100" height="28" rx="6" fill="#21262d" stroke="#f78166" stroke-width="1.2"/>
+              <text x="170" y="238" text-anchor="middle" fill="#f78166" font-size="10">SEND_COMP</text>
+              <!-- Arrows -->
+              <line x1="140" y1="50" x2="120" y2="78" stroke="#56d364" stroke-width="1" marker-end="url(#fl-r)"/>
+              <text x="110" y="70" fill="#8b949e" font-size="8">ReadNoSnp</text>
+              <line x1="200" y1="50" x2="220" y2="78" stroke="#56d364" stroke-width="1" marker-end="url(#fl-r)"/>
+              <text x="205" y="70" fill="#8b949e" font-size="8">WriteNoSnp</text>
+              <line x1="130" y1="110" x2="130" y2="153" stroke="#56d364" stroke-width="1" marker-end="url(#fl-r)"/>
+              <text x="134" y="140" fill="#8b949e" font-size="8">rx CompData</text>
+              <line x1="210" y1="110" x2="210" y2="153" stroke="#56d364" stroke-width="1" marker-end="url(#fl-r)"/>
+              <text x="214" y="140" fill="#8b949e" font-size="8">rxdat WrData</text>
+              <line x1="155" y1="185" x2="175" y2="218" stroke="#56d364" stroke-width="1" marker-end="url(#fl-r)"/>
+              <line x1="195" y1="185" x2="185" y2="218" stroke="#56d364" stroke-width="1" marker-end="url(#fl-r)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assertion -->
+      <div class="card">
+        <div class="card-title">Embedded SVA Assertion</div>
+        <div class="assert-box">
+          <div class="assert-name">a_rsp_no_x</div>
+          <div class="assert-desc">When SN asserts txrspflitv, the txrspflit payload must not contain X/Z values. Catches uninitialized register drive.</div>
+          <div class="assert-code">txrspflitv |-> !$isunknown(txrspflit);</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════ NOC_IF ════════════════════════════════════════ -->
+    <div id="sec-noc" class="section">
+      <div class="sec-header">
+        <div class="sec-icon" style="background:rgba(86,211,100,.1);border:1px solid rgba(86,211,100,.2)">🔀</div>
+        <div>
+          <div class="sec-title">noc_if</div>
+          <div class="sec-subtitle">Generic router-level flit interface. Used between adjacent router tiles and between router output ports and local CHI packetizers. Valid/ready handshake with per-VC credit return.</div>
+          <span class="file-chip">noc_if.sv</span>
+        </div>
+      </div>
+
+      <!-- Parameters -->
+      <div class="card">
+        <div class="card-title">Parameters</div>
+        <table>
+          <thead><tr><th>Parameter</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="param-tag">NUM_VC</span></td><td><code>NOC_NUM_VCS (4)</code></td><td>Number of virtual channels; sets lcrd_return bus width</td></tr>
+            <tr><td><span class="param-tag">FLIT_W</span></td><td><code>NOC_FLIT_WIDTH (512+ctrl)</code></td><td>Full flit width including control fields</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Diagram -->
+      <div class="card">
+        <div class="card-title">Router Link — noc_if in Context</div>
+        <div class="diagram-wrap">
+          <svg width="100%" viewBox="0 0 760 200" style="background:#0d1117;display:block">
+            <defs>
+              <marker id="noc-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#56d364"/></marker>
+              <marker id="noc-y" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#e3b341"/></marker>
+            </defs>
+            <!-- Router A -->
+            <rect x="30" y="40" width="140" height="120" rx="8" fill="#161b22" stroke="#56d364" stroke-width="1.5"/>
+            <text x="100" y="66" text-anchor="middle" fill="#56d364" font-size="12" font-weight="700">Router (r,c)</text>
+            <text x="100" y="84" text-anchor="middle" fill="#8b949e" font-size="9">source modport</text>
+            <text x="100" y="110" text-anchor="middle" fill="#8b949e" font-size="8">drives: flit, valid</text>
+            <text x="100" y="124" text-anchor="middle" fill="#8b949e" font-size="8">vc, head, tail</text>
+            <text x="100" y="140" text-anchor="middle" fill="#8b949e" font-size="8">receives: ready, lcrd_return</text>
+
+            <!-- Router B -->
+            <rect x="590" y="40" width="140" height="120" rx="8" fill="#161b22" stroke="#56d364" stroke-width="1.5"/>
+            <text x="660" y="66" text-anchor="middle" fill="#56d364" font-size="12" font-weight="700">Router (r,c+1)</text>
+            <text x="660" y="84" text-anchor="middle" fill="#8b949e" font-size="9">sink modport</text>
+            <text x="660" y="110" text-anchor="middle" fill="#8b949e" font-size="8">receives: flit, valid</text>
+            <text x="660" y="124" text-anchor="middle" fill="#8b949e" font-size="8">vc, head, tail</text>
+            <text x="660" y="140" text-anchor="middle" fill="#8b949e" font-size="8">drives: ready, lcrd_return</text>
+
+            <!-- Forward flit -->
+            <line x1="170" y1="88" x2="588" y2="88" stroke="#56d364" stroke-width="2" marker-end="url(#noc-g)"/>
+            <rect x="250" y="72" width="260" height="20" rx="4" fill="#0d1117"/>
+            <text x="380" y="86" text-anchor="middle" fill="#56d364" font-size="10">flit[FLIT_W-1:0]  ·  valid  ·  vc[1:0]  ·  head  ·  tail</text>
+
+            <!-- Back-pressure ready -->
+            <line x1="590" y1="108" x2="172" y2="108" stroke="#e3b341" stroke-width="1.5" stroke-dasharray="5,2" marker-end="url(#noc-y)"/>
+            <rect x="280" y="96" width="200" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="108" text-anchor="middle" fill="#e3b341" font-size="9">ready</text>
+
+            <!-- Credit return -->
+            <line x1="590" y1="128" x2="172" y2="128" stroke="#e3b341" stroke-width="1.5" stroke-dasharray="5,2" marker-end="url(#noc-y)"/>
+            <rect x="270" y="116" width="220" height="16" rx="4" fill="#0d1117"/>
+            <text x="380" y="128" text-anchor="middle" fill="#e3b341" font-size="9">lcrd_return[NUM_VC-1:0] (one-hot per cycle)</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Signal Reference</div>
+          <table>
+            <thead><tr><th>Signal</th><th>Source MP</th><th>Sink MP</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>flit[FLIT_W-1:0]</code></td><td><span class="dir dir-tx">output</span></td><td><span class="dir dir-rx">input</span></td><td>Full flit bus (data + ctrl)</td></tr>
+              <tr><td><code>valid</code></td><td><span class="dir dir-tx">output</span></td><td><span class="dir dir-rx">input</span></td><td>Flit valid this cycle</td></tr>
+              <tr><td><code>ready</code></td><td><span class="dir dir-rx">input</span></td><td><span class="dir dir-tx">output</span></td><td>Back-pressure from sink</td></tr>
+              <tr><td><code>vc[1:0]</code></td><td><span class="dir dir-tx">output</span></td><td><span class="dir dir-rx">input</span></td><td>Active virtual channel (0–3)</td></tr>
+              <tr><td><code>head</code></td><td><span class="dir dir-tx">output</span></td><td><span class="dir dir-rx">input</span></td><td>First flit of a packet</td></tr>
+              <tr><td><code>tail</code></td><td><span class="dir dir-tx">output</span></td><td><span class="dir dir-rx">input</span></td><td>Last flit of a packet</td></tr>
+              <tr><td><code>lcrd_return[NUM_VC-1:0]</code></td><td><span class="dir dir-rx">input</span></td><td><span class="dir dir-tx">output</span></td><td>Per-VC credit return (one-hot or zero)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">VC Mapping (from noc_pkg)</div>
+          <table>
+            <thead><tr><th>VC</th><th>CHI Channel</th><th>Priority</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><code style="color:#f78166">VC0</code></td><td>REQ / SNP</td><td>Lowest</td><td>Requests &amp; snoops — can stall</td></tr>
+              <tr><td><code style="color:#e3b341">VC1</code></td><td>RSP</td><td>Medium</td><td>Completion responses — must progress</td></tr>
+              <tr><td><code style="color:#3fb950">VC2</code></td><td>DAT</td><td>High</td><td>Data payloads (CompData, WriteData)</td></tr>
+              <tr><td><code style="color:#bc8cff">VC3</code></td><td>Hi-Priority</td><td>Highest</td><td>Urgent completions — never blocked</td></tr>
+            </tbody>
+          </table>
+          <p style="color:var(--muted);font-size:11px;margin-top:10px;line-height:1.6">Strict priority in <code>output_port.sv</code>: VC3 &gt; VC2 &gt; VC1 &gt; VC0. Deadlock freedom guaranteed by never allowing VC0 (REQ) to block VC1 (RSP).</p>
+        </div>
+      </div>
+
+      <!-- Assertions -->
+      <div class="card">
+        <div class="card-title">Embedded SVA Assertions</div>
+        <div class="assert-box">
+          <div class="assert-name">a_no_spurious_deassert</div>
+          <div class="assert-desc">Once valid is asserted and the sink is not ready, valid must remain high next cycle. Prevents source from dropping a flit mid-transfer (AXI4-Stream style rule).</div>
+          <div class="assert-code">(valid && !ready) |=> valid;</div>
+        </div>
+        <div class="assert-box">
+          <div class="assert-name">a_lcrd_one_hot</div>
+          <div class="assert-desc">At most one credit can be returned per cycle (one-hot or zero). Returning multiple credits simultaneously would corrupt the upstream counter.</div>
+          <div class="assert-code">$onehot0(lcrd_return);</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Handshake Timing — valid / ready / lcrd_return</div>
+        <div class="diagram-wrap">
+          <svg width="100%" viewBox="0 0 760 160" style="background:#0d1117;display:block">
+            <!-- Cycle marks -->
+            <line x1="60" y1="20" x2="60"  y2="150" stroke="#30363d" stroke-width="0.5" stroke-dasharray="2,3"/>
+            <line x1="160" y1="20" x2="160" y2="150" stroke="#30363d" stroke-width="0.5" stroke-dasharray="2,3"/>
+            <line x1="260" y1="20" x2="260" y2="150" stroke="#30363d" stroke-width="0.5" stroke-dasharray="2,3"/>
+            <line x1="360" y1="20" x2="360" y2="150" stroke="#30363d" stroke-width="0.5" stroke-dasharray="2,3"/>
+            <line x1="460" y1="20" x2="460" y2="150" stroke="#30363d" stroke-width="0.5" stroke-dasharray="2,3"/>
+            <line x1="560" y1="20" x2="560" y2="150" stroke="#30363d" stroke-width="0.5" stroke-dasharray="2,3"/>
+            <line x1="660" y1="20" x2="660" y2="150" stroke="#30363d" stroke-width="0.5" stroke-dasharray="2,3"/>
+            <!-- cycle labels -->
+            <text x="108" y="16" text-anchor="middle" fill="#8b949e" font-size="9">T1</text>
+            <text x="208" y="16" text-anchor="middle" fill="#8b949e" font-size="9">T2</text>
+            <text x="308" y="16" text-anchor="middle" fill="#8b949e" font-size="9">T3</text>
+            <text x="408" y="16" text-anchor="middle" fill="#8b949e" font-size="9">T4</text>
+            <text x="508" y="16" text-anchor="middle" fill="#8b949e" font-size="9">T5</text>
+            <text x="608" y="16" text-anchor="middle" fill="#8b949e" font-size="9">T6</text>
+            <!-- valid waveform -->
+            <text x="50" y="45" text-anchor="end" fill="#56d364" font-size="10">valid</text>
+            <polyline points="60,55 60,35 560,35 560,55 760,55" fill="none" stroke="#56d364" stroke-width="1.8"/>
+            <!-- ready waveform (stall at T2) -->
+            <text x="50" y="85" text-anchor="end" fill="#e3b341" font-size="10">ready</text>
+            <polyline points="60,95 60,95 160,95 160,75 260,75 260,95 760,95" fill="none" stroke="#e3b341" stroke-width="1.8"/>
+            <!-- transfer marks -->
+            <text x="108" y="115" text-anchor="middle" fill="#8b949e" font-size="8">stall</text>
+            <text x="208" y="115" text-anchor="middle" fill="#56d364" font-size="8">xfer✓</text>
+            <text x="308" y="115" text-anchor="middle" fill="#56d364" font-size="8">xfer✓</text>
+            <!-- lcrd_return -->
+            <text x="50" y="140" text-anchor="end" fill="#bc8cff" font-size="10">lcrd</text>
+            <polyline points="60,148 60,148 208,148 208,135 228,135 228,148 308,148 308,135 328,135 328,148 760,148" fill="none" stroke="#bc8cff" stroke-width="1.8"/>
+            <text x="218" y="130" text-anchor="middle" fill="#bc8cff" font-size="8">VC0</text>
+            <text x="318" y="130" text-anchor="middle" fill="#bc8cff" font-size="8">VC2</text>
+          </svg>
+        </div>
+        <p style="color:var(--muted);font-size:11px;margin-top:8px">Transfer occurs when <code>valid &amp;&amp; ready</code> on the same cycle. Credits are returned one cycle after consumption; <code>a_no_spurious_deassert</code> prevents source from retracting valid during stall.</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function show(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('sec-' + id).classList.add('active');
+    if (el) el.classList.add('active');
+  }
+
+  function mpTab(ifaceId, tabId, el) {
+    const container = el.closest('.card');
+    container.querySelectorAll('.mp-tab').forEach(t => t.classList.remove('active'));
+    container.querySelectorAll('.mp-pane').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    container.querySelector('#' + ifaceId + '-' + tabId).classList.add('active');
+  }
+
+  // Overview cards navigate to their section
+  document.querySelectorAll('.ov-card').forEach(card => {
+    card.addEventListener('click', function() {
+      const targetId = this.querySelector('.ov-card-title').textContent.replace('.sv','').replace('.', '_');
+      const navItem = Array.from(document.querySelectorAll('.nav-item'))
+        .find(n => n.getAttribute('onclick') && n.getAttribute('onclick').includes(targetId.split('_')[0]));
+    });
+  });
+</script>
+
+</body>
+</html>
