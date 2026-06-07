@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DDR5 MC — Low-Level Implementation Spec | hanuma SoC</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#c9d1d9;--dim:#8b949e;--bright:#f0f6fc;--blue:#388bfd;--blue-d:#1f3a6e;--cyan:#39d0d8;--cyan-d:#0e3a3d;--orange:#e08a1c;--orange-d:#3d2600;--purple:#a371f7;--purple-d:#2d1e5e;--green:#3fb950;--green-d:#0d3018;--yellow:#e3b341;--yellow-d:#2d2000;--red:#f85149;--red-d:#3d0a0a;--sw:260px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;line-height:1.6}
+#app{display:flex;min-height:100vh}
+#sidebar{width:var(--sw);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+#main{margin-left:var(--sw);flex:1;padding:20px 28px;max-width:1100px}
+.sh{padding:14px;background:var(--bg3);border-bottom:1px solid var(--border)}
+.sh-title{font-size:11px;font-weight:700;color:var(--blue);letter-spacing:1px;text-transform:uppercase}
+.sh-sub{font-size:12px;color:var(--bright);margin-top:3px;font-weight:600}
+#srch{margin:10px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;width:calc(100% - 20px)}
+#srch:focus{outline:none;border-color:var(--blue)}
+.ns{padding:6px 0;border-bottom:1px solid var(--border)}
+.ns-t{padding:3px 14px;font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.7px}
+.ni{display:block;padding:5px 14px 5px 22px;color:var(--text);font-size:12px;cursor:pointer;border-left:3px solid transparent;transition:all .12s}
+.ni:hover{background:var(--bg3);color:var(--bright)}
+.ni.active{border-left-color:var(--blue);color:var(--blue);background:var(--blue-d)}
+.ni .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px}
+.ph{margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.ph h1{font-size:19px;font-weight:700;color:var(--bright)}
+.ph p{color:var(--dim);margin-top:5px;font-size:12px}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;margin-right:5px;margin-top:8px}
+.b-blue{background:var(--blue-d);color:var(--blue)}
+.b-green{background:var(--green-d);color:var(--green)}
+.b-orange{background:var(--orange-d);color:var(--orange)}
+.b-red{background:var(--red-d);color:var(--red)}
+.sec{margin-bottom:32px;scroll-margin-top:16px}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:7px 7px 0 0;cursor:pointer;user-select:none}
+.sec-hdr.collapsed{border-radius:7px}
+.sec-hdr h2{font-size:13px;font-weight:600;color:var(--bright)}
+.sec-hdr .chv{color:var(--dim);transition:transform .18s;font-size:11px}
+.sec-hdr.collapsed .chv{transform:rotate(-90deg)}
+.sec-body{padding:16px;background:var(--bg2);border:1px solid var(--border);border-top:none;border-radius:0 0 7px 7px}
+.sec-body.hidden{display:none}
+.code{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:12px 14px;font-family:'Consolas','SF Mono',monospace;font-size:11.5px;color:#79c0ff;margin:10px 0;overflow-x:auto;line-height:1.55;white-space:pre}
+.code .cm{color:var(--dim)}
+.code .kw{color:var(--purple)}
+.code .tp{color:var(--cyan)}
+.code .fd{color:var(--text)}
+.code .nm{color:var(--green)}
+.code .st{color:var(--orange)}
+tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+th{padding:7px 10px;text-align:left;background:var(--bg3);color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border)}
+td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.chip{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;margin-left:4px}
+.chip-g{background:var(--green-d);color:var(--green)}
+.chip-r{background:var(--red-d);color:var(--red)}
+.chip-o{background:var(--orange-d);color:var(--orange)}
+.chip-b{background:var(--blue-d);color:var(--blue)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:14px;font-size:12px}
+.card h4{color:var(--bright);margin-bottom:8px;font-size:13px}
+.card p{color:var(--dim);line-height:1.5}
+.port-row{display:flex;align-items:flex-start;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)}
+.port-row:last-child{border-bottom:none}
+.port-dir{font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;flex-shrink:0;width:40px;text-align:center}
+.dir-in{background:var(--blue-d);color:var(--blue)}
+.dir-out{background:var(--green-d);color:var(--green)}
+.port-name{font-family:monospace;font-size:11.5px;color:var(--cyan);flex-shrink:0;width:200px}
+.port-desc{color:var(--dim);font-size:11px}
+.fsm-box{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;margin:10px 0}
+.state{display:inline-block;background:var(--blue-d);border:1px solid var(--blue);color:var(--blue);padding:3px 9px;border-radius:4px;font-size:11px;font-weight:600;font-family:monospace;margin:2px}
+.tab-bar{display:flex;gap:3px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.tab-btn{padding:7px 14px;cursor:pointer;font-size:12px;color:var(--dim);border-bottom:2px solid transparent;transition:all .12s}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-pane{display:none}.tab-pane.active{display:block}
+.timing-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.timing-row:last-child{border-bottom:none}
+.timing-name{font-family:monospace;color:var(--cyan);width:90px;flex-shrink:0;font-size:12px}
+.timing-bar-bg{flex:1;height:6px;background:var(--bg4);border-radius:3px}
+.timing-bar-fill{height:6px;border-radius:3px;background:var(--orange)}
+.timing-val{width:60px;text-align:right;font-size:11px;color:var(--dim)}
+#tooltip{position:fixed;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:9px 12px;font-size:11px;color:var(--text);max-width:240px;z-index:1000;pointer-events:none;opacity:0;transition:opacity .12s;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+#tooltip.vis{opacity:1}
+#tooltip h4{color:var(--bright);margin-bottom:3px;font-size:12px}
+.sev-f{color:var(--red)}
+.sev-e{color:var(--orange)}
+.sev-w{color:var(--yellow)}
+.sev-c{color:var(--cyan)}
+.mono{font-family:monospace;font-size:11.5px}
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin:10px 0}
+.flow-node{padding:5px 12px;border-radius:5px;font-size:11px;font-weight:600;border:1px solid}
+.flow-arrow{color:var(--dim);font-size:14px}
+.subsec{margin:14px 0 6px;font-size:12px;font-weight:700;color:var(--bright);border-left:3px solid var(--blue);padding-left:8px}
+</style>
+</head>
+<body>
+<div id="tooltip"><h4 id="tt-t"></h4><p id="tt-b"></p></div>
+<div id="app">
+<nav id="sidebar">
+  <div class="sh"><div class="sh-title">hanuma SoC</div><div class="sh-sub">DDR5 MC · Low-Level Spec</div></div>
+  <input id="srch" placeholder="🔍 Search..." oninput="doSearch(this.value)">
+  <div class="ns"><div class="ns-t">Overview</div>
+    <a class="ni" onclick="go('s-hier')"><span class="dot" style="background:var(--blue)"></span>Module Hierarchy</a>
+    <a class="ni" onclick="go('s-pkg')"><span class="dot" style="background:var(--blue)"></span>Package & Types</a>
+  </div>
+  <div class="ns"><div class="ns-t">Blocks</div>
+    <a class="ni" onclick="go('s-cfe')"><span class="dot" style="background:var(--blue)"></span>CFE — CHI Front-End</a>
+    <a class="ni" onclick="go('s-tte')"><span class="dot" style="background:var(--blue)"></span>TTE — Txn Tracker</a>
+    <a class="ni" onclick="go('s-ape')"><span class="dot" style="background:var(--cyan)"></span>APE — Addr Processing</a>
+    <a class="ni" onclick="go('s-drg')"><span class="dot" style="background:var(--cyan)"></span>DRG — DRAM Req Gen</a>
+    <a class="ni" onclick="go('s-rqa')"><span class="dot" style="background:var(--orange)"></span>RQA — Request Queues</a>
+    <a class="ni" onclick="go('s-sch')"><span class="dot" style="background:var(--orange)"></span>SCH — Scheduler</a>
+    <a class="ni" onclick="go('s-rme')"><span class="dot" style="background:var(--purple)"></span>RME — Refresh Engine</a>
+    <a class="ni" onclick="go('s-cal')"><span class="dot" style="background:var(--purple)"></span>CAL — Cmd Arbitration</a>
+    <a class="ni" onclick="go('s-dtl')"><span class="dot" style="background:var(--green)"></span>DTL — DFI Translation</a>
+    <a class="ni" onclick="go('s-rsp')"><span class="dot" style="background:var(--yellow)"></span>RSP — Response Path</a>
+    <a class="ni" onclick="go('s-csr')"><span class="dot" style="background:var(--dim)"></span>CSR — Config Regs</a>
+  </div>
+  <div class="ns"><div class="ns-t">Reference</div>
+    <a class="ni" onclick="go('s-timing')"><span class="dot" style="background:var(--dim)"></span>DDR5 Timing Params</a>
+    <a class="ni" onclick="go('s-nmi')"><span class="dot" style="background:var(--dim)"></span>NMI Protocol</a>
+    <a class="ni" onclick="go('s-assert')"><span class="dot" style="background:var(--dim)"></span>Assertion Catalog</a>
+    <a class="ni" onclick="go('s-debug')"><span class="dot" style="background:var(--dim)"></span>Debug & PMU</a>
+    <a class="ni" onclick="go('s-edge')"><span class="dot" style="background:var(--dim)"></span>Edge Cases</a>
+  </div>
+</nav>
+
+<main id="main">
+<div class="ph">
+  <h1>DDR5 Memory Controller — Low-Level Implementation Spec</h1>
+  <p>Reference document for RTL coding, debugging, and verification · hanuma SoC SN-F</p>
+  <div>
+    <span class="badge b-blue">CHI Issue E</span>
+    <span class="badge b-green">DFI 5.0</span>
+    <span class="badge b-orange">32 Txn Slots</span>
+    <span class="badge b-blue">SystemVerilog</span>
+  </div>
+</div>
+
+<!-- MODULE HIERARCHY -->
+<div class="sec" id="s-hier">
+  <div class="sec-hdr" onclick="tog(this)"><h2>📁 Module Hierarchy & File Structure</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="code"><span class="cm">rtl/memory_controller/</span>
+├── mc_top.sv                    <span class="cm">// Top-level: instantiates all blocks</span>
+├── pkg/mc_pkg.sv                <span class="cm">// All types, enums, structs</span>
+├── cfe/
+│   ├── chi_fe.sv                <span class="cm">// CHI Front-End top</span>
+│   ├── chi_req_fifo.sv          <span class="cm">// REQ FIFO 88b×8</span>
+│   ├── chi_dat_fifo.sv          <span class="cm">// Write DAT FIFO 368b×8</span>
+│   ├── chi_rsp_tx.sv            <span class="cm">// TX RSP FIFO 4-entry</span>
+│   ├── chi_dat_tx.sv            <span class="cm">// TX DAT FIFO 4-entry</span>
+│   └── chi_credit_mgr.sv        <span class="cm">// Link credit tracking</span>
+├── tte/txn_tracker.sv           <span class="cm">// 32-entry indexed tracker</span>
+├── ape/
+│   ├── addr_proc_engine.sv      <span class="cm">// Top: 2-stage pipeline</span>
+│   ├── addr_hole_filter.sv      <span class="cm">// MMIO hole removal</span>
+│   └── addr_hash_decode.sv      <span class="cm">// XOR hash + field decode</span>
+├── drg/dram_req_gen.sv          <span class="cm">// NMI request assembly</span>
+├── rqa/
+│   ├── req_queue_array.sv       <span class="cm">// Top: 4 BG queues + overflow</span>
+│   ├── bg_queue.sv              <span class="cm">// Single BG FIFO 8-entry</span>
+│   └── overflow_queue.sv        <span class="cm">// 16-entry global overflow</span>
+├── sch/
+│   ├── ddr5_scheduler.sv        <span class="cm">// Top: FR-FCFS selection</span>
+│   ├── bank_state_table.sv      <span class="cm">// 16 bank state regs + timers</span>
+│   ├── timing_checker.sv        <span class="cm">// tRAS/tRCD/tRP/tRRD/tCCD/tFAW</span>
+│   └── starvation_mgr.sv        <span class="cm">// Age counter + priority boost</span>
+├── rme/
+│   ├── refresh_engine.sv        <span class="cm">// Top: tREFI timer</span>
+│   ├── init_fsm.sv              <span class="cm">// DDR5 power-on sequence</span>
+│   ├── refresh_fsm.sv           <span class="cm">// REFab/REFpb FSM</span>
+│   ├── selfref_fsm.sv           <span class="cm">// Self-refresh entry/exit</span>
+│   └── zqcal_fsm.sv             <span class="cm">// ZQ calibration sequencer</span>
+├── cal/cmd_arb_layer.sv         <span class="cm">// Priority mux</span>
+├── dtl/
+│   ├── dfi_trans_layer.sv       <span class="cm">// Top: NMI→DFI</span>
+│   ├── cmd_encoder.sv           <span class="cm">// DDR5 command encoding</span>
+│   ├── rl_pipeline.sv           <span class="cm">// Read latency shift reg</span>
+│   ├── wl_pipeline.sv           <span class="cm">// Write latency pipeline</span>
+│   └── phy_ctrl.sv              <span class="cm">// PHY update / LP control</span>
+├── rsp/
+│   ├── response_path.sv         <span class="cm">// Top</span>
+│   ├── rd_data_capture.sv       <span class="cm">// dfi_rddata + tag pipeline</span>
+│   └── wr_comp_tracker.sv       <span class="cm">// Write completion counter</span>
+└── csr/mc_csr.sv                <span class="cm">// APB register file</span></div>
+
+    <div class="subsec">Top-Level Parameters (mc_top)</div>
+    <table>
+      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">NODE_ID</td><td>int</td><td>0</td><td>CHI Node ID of this SN-F</td></tr>
+        <tr><td class="mono">NUM_TXN</td><td>int</td><td>32</td><td>Max outstanding CHI transactions</td></tr>
+        <tr><td class="mono">NUM_RANKS</td><td>int</td><td>2</td><td>DRAM ranks per channel</td></tr>
+        <tr><td class="mono">NUM_BG</td><td>int</td><td>4</td><td>Bank groups per rank</td></tr>
+        <tr><td class="mono">NUM_BANKS_PER_BG</td><td>int</td><td>4</td><td>Banks per bank group</td></tr>
+        <tr><td class="mono">ROW_BITS</td><td>int</td><td>17</td><td>Row address width</td></tr>
+        <tr><td class="mono">COL_BITS</td><td>int</td><td>10</td><td>Column address width</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PACKAGE -->
+<div class="sec" id="s-pkg">
+  <div class="sec-hdr" onclick="tog(this)"><h2>📦 mc_pkg.sv — Key Types & Structs</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="tab-bar">
+      <div class="tab-btn active" onclick="swTab(this,'pk-nmi')">NMI Types</div>
+      <div class="tab-btn" onclick="swTab(this,'pk-tte')">TTE Entry</div>
+      <div class="tab-btn" onclick="swTab(this,'pk-rq')">Queue Entry</div>
+      <div class="tab-btn" onclick="swTab(this,'pk-bst')">Bank State</div>
+      <div class="tab-btn" onclick="swTab(this,'pk-csr')">CSR Shadow</div>
+    </div>
+    <div class="tab-pane active" id="pk-nmi">
+<div class="code"><span class="kw">typedef enum logic</span> [2:0] {
+  <span class="st">NMI_ACT</span>   = 3'd0,  <span class="cm">// Activate row</span>
+  <span class="st">NMI_PRE</span>   = 3'd1,  <span class="cm">// Precharge bank</span>
+  <span class="st">NMI_RD</span>    = 3'd2,  <span class="cm">// Read (ap bit included)</span>
+  <span class="st">NMI_WR</span>    = 3'd3,  <span class="cm">// Write</span>
+  <span class="st">NMI_REF</span>   = 3'd4,  <span class="cm">// REFab or REFpb</span>
+  <span class="st">NMI_MRS</span>   = 3'd5,  <span class="cm">// Mode Register Set</span>
+  <span class="st">NMI_ZQCAL</span> = 3'd6,  <span class="cm">// ZQ calibration</span>
+  <span class="st">NMI_SREF</span>  = 3'd7   <span class="cm">// Self-refresh toggle</span>
+} <span class="tp">nmi_cmd_e</span>;
+
+<span class="kw">typedef struct packed</span> {  <span class="cm">// 45 bits total</span>
+  <span class="tp">nmi_cmd_e</span>  cmd;          <span class="cm">// [44:42] 3b</span>
+  <span class="kw">logic</span> [0:0] rank;         <span class="cm">// [41]</span>
+  <span class="kw">logic</span> [1:0] bg;           <span class="cm">// [40:39]</span>
+  <span class="kw">logic</span> [1:0] bank;         <span class="cm">// [38:37]</span>
+  <span class="kw">logic</span> [16:0] row;         <span class="cm">// [36:20]</span>
+  <span class="kw">logic</span> [9:0] col;          <span class="cm">// [19:10]</span>
+  <span class="kw">logic</span>       ap;           <span class="cm">// [9] auto-precharge</span>
+  <span class="kw">logic</span> [4:0] tracker_id;  <span class="cm">// [8:4]</span>
+  <span class="kw">logic</span> [3:0] qos;          <span class="cm">// [3:0]</span>
+} <span class="tp">nmi_cmd_t</span>;
+
+<span class="kw">typedef struct packed</span> {  <span class="cm">// NMI Response</span>
+  <span class="kw">logic</span> [4:0]   tracker_id;
+  <span class="kw">logic</span> [255:0] data;
+  <span class="kw">logic</span> [31:0]  be;
+  <span class="kw">logic</span>         valid;
+  <span class="kw">logic</span> [1:0]   err;  <span class="cm">// 00=OK 01=CE 10=UE</span>
+} <span class="tp">nmi_resp_t</span>;</div>
+    </div>
+    <div class="tab-pane" id="pk-tte">
+<div class="code"><span class="kw">typedef enum logic</span> [2:0] {
+  <span class="st">TTE_IDLE</span>       = 3'd0,
+  <span class="st">TTE_ACTIVE</span>     = 3'd1,  <span class="cm">// read: allocated, ready to dispatch</span>
+  <span class="st">TTE_WAIT_WDATA</span> = 3'd2,  <span class="cm">// write: waiting for NonCopyBackWrData</span>
+  <span class="st">TTE_DISPATCHED</span> = 3'd3,  <span class="cm">// NMI request sent to queue</span>
+  <span class="st">TTE_WAIT_DRAM</span>  = 3'd4,  <span class="cm">// awaiting DRAM completion</span>
+  <span class="st">TTE_DONE</span>       = 3'd5,  <span class="cm">// building CHI response</span>
+  <span class="st">TTE_ERROR</span>      = 3'd7
+} <span class="tp">tte_state_e</span>;
+
+<span class="kw">typedef struct packed</span> {  <span class="cm">// 89 bits per entry</span>
+  <span class="tp">tte_state_e</span>  state;         <span class="cm">// 3b</span>
+  <span class="kw">logic</span> [11:0] txn_id;        <span class="cm">// CHI TXNID</span>
+  <span class="kw">logic</span> [6:0]  src_id;        <span class="cm">// HN-F node ID</span>
+  <span class="kw">logic</span> [43:0] addr;          <span class="cm">// 44-bit PA</span>
+  <span class="tp">chi_req_opcode_e</span> opcode;   <span class="cm">// 7b</span>
+  <span class="kw">logic</span> [3:0]  qos;
+  <span class="kw">logic</span>        is_write;
+  <span class="kw">logic</span>        wr_data_rcvd;  <span class="cm">// write data arrived</span>
+  <span class="kw">logic</span> [1:0]  resp_err;      <span class="cm">// chi_resp_err_e</span>
+  <span class="kw">logic</span> [7:0]  age;           <span class="cm">// cycles since alloc (saturates)</span>
+} <span class="tp">tte_entry_t</span>;
+<span class="cm">// 32 × 89b = 356 bytes → 1 BRAM18</span>
+<span class="cm">// Write data: separate 32×256b BRAM18 (wr_data_buf)</span></div>
+    </div>
+    <div class="tab-pane" id="pk-rq">
+<div class="code"><span class="kw">typedef struct packed</span> {  <span class="cm">// 51 bits per queue entry</span>
+  <span class="kw">logic</span> [4:0]  tracker_id;  <span class="cm">// pointer into TTE</span>
+  <span class="kw">logic</span> [0:0]  rank;
+  <span class="kw">logic</span> [1:0]  bg;
+  <span class="kw">logic</span> [1:0]  bank;
+  <span class="kw">logic</span> [16:0] row;
+  <span class="kw">logic</span> [9:0]  col;
+  <span class="kw">logic</span> [1:0]  cmd;   <span class="cm">// 00=RD 01=WR 10=WR_MASKED</span>
+  <span class="kw">logic</span> [3:0]  qos;
+  <span class="kw">logic</span> [7:0]  age;   <span class="cm">// cycles in queue</span>
+} <span class="tp">rq_entry_t</span>;
+<span class="cm">// Write data NOT stored in queue — fetched from TTE BRAM via tracker_id</span>
+<span class="cm">// Total queue storage: 48 entries × 51b ≈ 306 bytes (LUT RAM on FPGA)</span></div>
+    </div>
+    <div class="tab-pane" id="pk-bst">
+<div class="code"><span class="kw">typedef struct packed</span> {  <span class="cm">// 66 bits × 16 banks</span>
+  <span class="kw">logic</span>        row_open;  <span class="cm">// current row is open</span>
+  <span class="kw">logic</span> [16:0] open_row;  <span class="cm">// which row is open</span>
+  <span class="kw">logic</span> [7:0]  tRAS_rem;  <span class="cm">// ACT→PRE countdown</span>
+  <span class="kw">logic</span> [7:0]  tRCD_rem;  <span class="cm">// ACT→RD/WR countdown</span>
+  <span class="kw">logic</span> [7:0]  tRP_rem;   <span class="cm">// PRE→ACT countdown</span>
+  <span class="kw">logic</span> [7:0]  tRTP_rem;  <span class="cm">// RD→PRE countdown</span>
+  <span class="kw">logic</span> [7:0]  tWR_rem;   <span class="cm">// WR→PRE countdown</span>
+  <span class="kw">logic</span> [7:0]  tRRD_rem;  <span class="cm">// ACT→ACT countdown</span>
+} <span class="tp">bank_state_t</span>;
+<span class="cm">// Bank index: rank*8 + bg*2 + bank  (for 2-rank, 4-BG, 2-bank-per-BG config)</span>
+<span class="cm">// General: rank*(NUM_BG*BANKS_PER_BG) + bg*BANKS_PER_BG + bank</span></div>
+    </div>
+    <div class="tab-pane" id="pk-csr">
+<div class="code"><span class="kw">typedef struct packed</span> {
+  <span class="cm">// Timing (clock cycles)</span>
+  <span class="kw">logic</span> [7:0]  tRCD, tRP, tRAS, tRTP, tWR;
+  <span class="kw">logic</span> [7:0]  tRRDL, tRRDS, tCCDL, tCCDS, tFAW;
+  <span class="kw">logic</span> [15:0] tRFC1, tRFCpb, tREFI;
+  <span class="kw">logic</span> [7:0]  tRL, tWL;           <span class="cm">// Read/write latency</span>
+  <span class="cm">// Hash masks</span>
+  <span class="kw">logic</span> [43:0] hash_mask_bg0, hash_mask_bg1;
+  <span class="kw">logic</span> [43:0] hash_mask_bank0, hash_mask_bank1;
+  <span class="kw">logic</span> [43:0] hash_mask_rank;
+  <span class="cm">// Policy</span>
+  <span class="kw">logic</span> [1:0]  page_policy;    <span class="cm">// 0=open 1=closed 2=adaptive</span>
+  <span class="kw">logic</span> [1:0]  refresh_mode;   <span class="cm">// 0=REFab 1=REFpb 2=auto</span>
+  <span class="kw">logic</span>        power_down_en;
+  <span class="kw">logic</span> [15:0] sref_idle_thr;
+  <span class="kw">logic</span> [7:0]  zq_period;      <span class="cm">// × tREFI</span>
+  <span class="kw">logic</span>        ecc_en;
+  <span class="kw">logic</span> [7:0]  ref_defer_max;  <span class="cm">// default 8</span>
+  <span class="kw">logic</span> [7:0]  starvation_thr; <span class="cm">// default 255</span>
+  <span class="kw">logic</span> [15:0] mrs [0:7];
+} <span class="tp">mc_csr_t</span>;</div>
+    </div>
+  </div>
+</div>
+
+<!-- CFE -->
+<div class="sec" id="s-cfe">
+  <div class="sec-hdr" onclick="tog(this)"><h2>🔵 CFE — CHI Front-End</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="subsec">Port List</div>
+    <div class="port-row"><span class="port-dir dir-in">IN</span><span class="port-name">chi (chi_sn_if.sn)</span><span class="port-desc">Full CHI SN-F interface: rxreq, rxdat, txrsp, txdat, credits, link activate</span></div>
+    <div class="port-row"><span class="port-dir dir-out">OUT</span><span class="port-name">req_valid / req_flit</span><span class="port-desc">Decoded REQ pushed to TTE</span></div>
+    <div class="port-row"><span class="port-dir dir-out">OUT</span><span class="port-name">wdat_valid / wdat_dbid / wdat_data / wdat_be</span><span class="port-desc">Write data to TTE (DBID = slot index)</span></div>
+    <div class="port-row"><span class="port-dir dir-in">IN</span><span class="port-name">rsp_tx_valid / rsp_tx_flit</span><span class="port-desc">TX RSP from Response Path (Comp, DBIDResp)</span></div>
+    <div class="port-row"><span class="port-dir dir-in">IN</span><span class="port-name">dat_tx_valid / dat_tx_flit</span><span class="port-desc">TX DAT from Response Path (CompData)</span></div>
+    <div class="port-row"><span class="port-dir dir-in">IN</span><span class="port-name">tracker_full</span><span class="port-desc">Stop returning REQ credits when asserted</span></div>
+    <div class="port-row"><span class="port-dir dir-out">OUT</span><span class="port-name">dbg_req_fifo_level [3:0]</span><span class="port-desc">Current REQ FIFO occupancy</span></div>
+
+    <div class="subsec">FIFO Sizing</div>
+    <table>
+      <thead><tr><th>FIFO</th><th>Width</th><th>Depth</th><th>FPGA impl</th></tr></thead>
+      <tbody>
+        <tr><td>RX REQ</td><td>88b</td><td>8</td><td>LUTRAM</td></tr>
+        <tr><td>RX Write DAT</td><td>368b</td><td>8</td><td>BRAM18</td></tr>
+        <tr><td>TX RSP</td><td>46b</td><td>4</td><td>Flip-flops</td></tr>
+        <tr><td>TX DAT</td><td>368b</td><td>4</td><td>BRAM18 (shared)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="subsec">Credit Manager Logic</div>
+    <div class="code"><span class="cm">// TX credit tracking — decrements on send, increments on rxrsplcrdv/rxdatlcrdv</span>
+<span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk <span class="kw">or negedge</span> rst_n) begin
+  <span class="kw">if</span> (!rst_n) begin
+    tx_rsp_crd <= CSR_INIT_RSP_CRD;  <span class="cm">// default 8</span>
+    tx_dat_crd <= CSR_INIT_DAT_CRD;  <span class="cm">// default 4</span>
+  end <span class="kw">else</span> begin
+    tx_rsp_crd <= tx_rsp_crd + chi.rxrsplcrdv - (chi.txrspflitv &amp;&amp; tx_rsp_crd > 0);
+    tx_dat_crd <= tx_dat_crd + chi.rxdatlcrdv - (chi.txdatflitv &amp;&amp; tx_dat_crd > 0);
+  end
+end
+<span class="cm">// Gate TX on credit availability</span>
+<span class="kw">assign</span> chi.txrspflitv = tx_rsp_fifo_valid &amp;&amp; (tx_rsp_crd > 0);
+<span class="kw">assign</span> chi.txdatflitv = tx_dat_fifo_valid &amp;&amp; (tx_dat_crd > 0);
+<span class="cm">// Backpressure: stop REQ credit return when tracker full</span>
+<span class="kw">assign</span> chi.txreqlcrdv = req_fifo_has_space &amp;&amp; !tracker_full;</div>
+
+    <div class="subsec">Link Activation FSM</div>
+    <div class="fsm-box">
+      <div><span class="state">INACTIVE</span> → <span class="state">TX_ACTIVATE</span> → <span class="state">ACTIVE</span> → <span class="state">TX_DEACTIVATE</span> → <span class="state">INACTIVE</span></div>
+      <table style="margin-top:10px">
+        <thead><tr><th>State</th><th>Condition → Next</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">INACTIVE</td><td>rxlinkactivereq↑</td><td>Assert txlinkactivereq</td></tr>
+          <tr><td class="mono">TX_ACTIVATE</td><td>txlinkactiveack↑</td><td>Assert txsactive</td></tr>
+          <tr><td class="mono">ACTIVE</td><td>idle &amp; sref_idle_thr</td><td>Deassert txsactive</td></tr>
+          <tr><td class="mono">TX_DEACTIVATE</td><td>!rxlinkactivereq</td><td>Deassert txlinkactivereq</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TTE -->
+<div class="sec" id="s-tte">
+  <div class="sec-hdr" onclick="tog(this)"><h2>🔵 TTE — Transaction Tracker</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="subsec">Entry FSM</div>
+    <div class="fsm-box">
+      <div style="margin-bottom:8px">
+        <span class="state">IDLE</span>
+        <span style="color:var(--dim)"> ──alloc──► </span>
+        <span class="state">ACTIVE (read)</span>
+        <span style="color:var(--dim)"> ──disp──► </span>
+        <span class="state">DISPATCHED</span>
+        <span style="color:var(--dim)"> ──comp──► </span>
+        <span class="state">DONE</span>
+        <span style="color:var(--dim)"> ──rsp sent──► </span>
+        <span class="state">IDLE</span>
+      </div>
+      <div>
+        <span class="state">IDLE</span>
+        <span style="color:var(--dim)"> ──alloc(write)──► </span>
+        <span class="state">WAIT_WDATA</span>
+        <span style="color:var(--dim)"> ──wdat rcvd──► </span>
+        <span class="state">DISPATCHED</span>
+      </div>
+    </div>
+
+    <div class="subsec">Slot Allocation (Priority Encoder)</div>
+    <div class="code"><span class="cm">// Find lowest free slot — synthesizes to priority encoder</span>
+<span class="kw">always_comb</span> begin : comb_alloc
+  alloc_id_next = '0;
+  alloc_ready   = 1'b0;
+  <span class="kw">for</span> (int i = NUM_TXN-1; i >= 0; i--) <span class="kw">begin</span>
+    <span class="kw">if</span> (entries[i].state == TTE_IDLE) begin
+      alloc_id_next = i[MC_TXN_ID_W-1:0];
+      alloc_ready   = 1'b1;
+    end
+  end
+end
+<span class="kw">assign</span> tracker_full = (alloc_ready == 1'b0);</div>
+
+    <div class="subsec">Write Data Arrival — Direct Indexed Access</div>
+    <div class="code"><span class="cm">// wdat_id == DBID returned in DBIDResp == tracker slot index → O(1) lookup</span>
+<span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk) begin
+  <span class="kw">if</span> (wdat_valid) begin
+    wr_data_buf[wdat_id] <= wdat_data;
+    wr_be_buf[wdat_id]   <= wdat_be;
+    entries[wdat_id].wr_data_rcvd <= 1'b1;
+    <span class="kw">if</span> (entries[wdat_id].state == TTE_WAIT_WDATA)
+      entries[wdat_id].state <= TTE_DISPATCHED;
+  end
+end</div>
+
+    <div class="subsec">Storage</div>
+    <table>
+      <thead><tr><th>Structure</th><th>Size</th><th>FPGA</th></tr></thead>
+      <tbody>
+        <tr><td>Entry metadata (tte_entry_t × 32)</td><td>32 × 89b = 356 bytes</td><td>1× BRAM18</td></tr>
+        <tr><td>Write data buffer (wr_data_buf × 32)</td><td>32 × 256b = 1 KB</td><td>1× BRAM18</td></tr>
+        <tr><td>Write BE buffer (wr_be_buf × 32)</td><td>32 × 32b = 128 bytes</td><td>LUTRAM</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- APE -->
+<div class="sec" id="s-ape">
+  <div class="sec-hdr" onclick="tog(this)"><h2>🔵 APE — Address Processing Engine</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="subsec">2-Stage Pipeline</div>
+    <div class="flow">
+      <div class="flow-node" style="background:var(--blue-d);border-color:var(--blue);color:var(--blue)">PA[43:0] in</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node" style="background:var(--cyan-d);border-color:var(--cyan);color:var(--cyan)">Stage 0: Hole filter (1 cycle)</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node" style="background:var(--cyan-d);border-color:var(--cyan);color:var(--cyan)">Stage 1: XOR hash + field decode (1 cycle)</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node" style="background:var(--green-d);border-color:var(--green);color:var(--green)">{rank, bg, bank, row, col} out</div>
+    </div>
+
+    <div class="subsec">Hole Filter (Stage 0)</div>
+    <div class="code"><span class="cm">// MMIO hole: 0x0800_0000 – 0x0FFF_FFFF should never reach SN-F</span>
+<span class="kw">localparam logic</span> [43:0] HOLE_BASE = 44'h0_0800_0000;
+<span class="kw">localparam logic</span> [43:0] HOLE_TOP  = 44'h0_0FFF_FFFF;
+<span class="kw">assign</span> addr_error = valid_in &amp;&amp; (pa_in >= HOLE_BASE) &amp;&amp; (pa_in <= HOLE_TOP);</div>
+
+    <div class="subsec">XOR Hash (Stage 1)</div>
+    <div class="code"><span class="cm">// Each field is the XOR reduction of (PA & mask) — ~10 gates per field</span>
+<span class="kw">assign</span> bg_hashed[0]   = ^(pa_s1 &amp; csr.hash_mask_bg0);
+<span class="kw">assign</span> bg_hashed[1]   = ^(pa_s1 &amp; csr.hash_mask_bg1);
+<span class="kw">assign</span> bank_hashed[0] = ^(pa_s1 &amp; csr.hash_mask_bank0);
+<span class="kw">assign</span> bank_hashed[1] = ^(pa_s1 &amp; csr.hash_mask_bank1);
+<span class="kw">assign</span> rank_hashed    = ^(pa_s1 &amp; csr.hash_mask_rank);</div>
+
+    <div class="subsec">Default vs. Production Hash Masks</div>
+    <table>
+      <thead><tr><th>Register</th><th>Default (identity)</th><th>Production</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">hash_mask_bg0</td><td class="mono">0x40</td><td class="mono">0x040040</td><td>BG[0] = PA[6]^PA[18]</td></tr>
+        <tr><td class="mono">hash_mask_bg1</td><td class="mono">0x80</td><td class="mono">0x080080</td><td>BG[1] = PA[7]^PA[19]</td></tr>
+        <tr><td class="mono">hash_mask_bank0</td><td class="mono">0x100</td><td class="mono">0x100100</td><td>Bank[0] = PA[8]^PA[20]</td></tr>
+        <tr><td class="mono">hash_mask_bank1</td><td class="mono">0x200</td><td class="mono">0x200200</td><td>Bank[1] = PA[9]^PA[21]</td></tr>
+        <tr><td class="mono">hash_mask_rank</td><td class="mono">0x400</td><td class="mono">0x400400</td><td>Rank = PA[10]^PA[22]</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- DRG -->
+<div class="sec" id="s-drg">
+  <div class="sec-hdr" onclick="tog(this)"><h2>🔵 DRG — DRAM Request Generator</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="code"><span class="cm">// Combinatorial: reads tracker opcode/qos by ape_tracker_id</span>
+<span class="kw">assign</span> tbl_rd_addr = ape_tracker_id;
+
+<span class="kw">always_comb</span> begin
+  req_out.tracker_id = ape_tracker_id;
+  req_out.rank       = ape_dram_addr.rank;
+  req_out.bg         = ape_dram_addr.bg;
+  req_out.bank       = ape_dram_addr.bank;
+  req_out.row        = ape_dram_addr.row;
+  req_out.col        = ape_dram_addr.col;
+  req_out.qos        = tbl_rd_data.qos;
+  req_out.age        = 8'h00;
+  req_out.cmd = tbl_rd_data.is_write ? 2'b01 : 2'b00;
+  <span class="kw">if</span> (tbl_rd_data.is_write &amp;&amp; tbl_rd_data.opcode == REQ_WriteNoSnpPtl)
+    req_out.cmd = 2'b10;  <span class="cm">// WR_MASKED</span>
+  req_valid = ape_valid;
+  req_bg    = ape_dram_addr.bg;
+end</div>
+    <p style="color:var(--dim);font-size:12px;margin-top:8px">⚠ TTE BRAM has 1-cycle read latency. DRG must register ape_tracker_id before using tbl_rd_data.</p>
+  </div>
+</div>
+
+<!-- RQA -->
+<div class="sec" id="s-rqa">
+  <div class="sec-hdr" onclick="tog(this)"><h2>🟠 RQA — Request Queue Array</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="subsec">Structure</div>
+    <div class="grid2">
+      <div class="card"><h4>Per-BG Queues (×4)</h4><p>8 entries each × 51 bits = ~51 bytes per queue. LUTRAM on FPGA. Head always visible to scheduler (combinatorial read).</p></div>
+      <div class="card"><h4>Global Overflow Queue</h4><p>16 entries × 51 bits. Accepts spill when BG queue full. Drained back to BG queues when space available. LUTRAM.</p></div>
+    </div>
+
+    <div class="subsec">Admission Policy</div>
+    <div class="code"><span class="cm">// New entry: target BG queue first, overflow if full</span>
+<span class="kw">always_comb</span> begin
+  push_to_bg  = push_valid &amp;&amp; (bg_level[push_bg] < BG_QUEUE_DEPTH);
+  push_to_ovf = push_valid &amp;&amp; !push_to_bg &amp;&amp; (ovf_level < OVF_QUEUE_DEPTH);
+  push_ready  = push_to_bg || push_to_ovf;
+end</div>
+
+    <div class="subsec">Age Increment</div>
+    <p style="font-size:12px;color:var(--dim)">Every entry's <span class="mono">age</span> field is incremented by 1 each cycle it remains in the queue (saturates at 0xFF). Used by scheduler starvation logic.</p>
+  </div>
+</div>
+
+<!-- SCH -->
+<div class="sec" id="s-sch">
+  <div class="sec-hdr" onclick="tog(this)"><h2>🟠 SCH — DDR5 Scheduler</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="subsec">Per-Cycle Selection Algorithm</div>
+    <div class="code"><span class="cm">// Round-robin across BGs (rr_bg_ptr advances every cycle regardless of issue)</span>
+<span class="kw">for</span> (int i = 0; i < MC_NUM_BG; i++) begin
+  bg_idx = (rr_bg_ptr + i) % MC_NUM_BG;
+  <span class="kw">if</span> (bg_valid[bg_idx]) begin
+    entry = bg_head[bg_idx];
+    bank_idx = entry.rank*MC_NUM_BG*MC_BANKS_PER_BG + entry.bg*MC_BANKS_PER_BG + entry.bank;
+    bst = bank_st[bank_idx];
+
+    <span class="kw">if</span> (bst.row_open &amp;&amp; bst.open_row == entry.row &amp;&amp; bst.tRCD_rem==0 &amp;&amp; cas_timing_ok) begin
+      <span class="cm">// Row hit → issue RD/WR</span>
+      issue_cmd(entry.cmd == 2'b00 ? NMI_RD : NMI_WR, entry);
+
+    end <span class="kw">else if</span> (!bst.row_open &amp;&amp; bst.tRP_rem==0 &amp;&amp; faw_ok &amp;&amp; tRRD_ok(bg_idx)) begin
+      <span class="cm">// Row closed → issue ACT</span>
+      issue_cmd(NMI_ACT, entry);
+
+    end <span class="kw">else if</span> (bst.row_open &amp;&amp; bst.open_row != entry.row &amp;&amp; bst.tRAS_rem==0) begin
+      <span class="cm">// Different row open → issue PRE</span>
+      issue_cmd(NMI_PRE, entry);
+    end
+    <span class="kw">break</span>;  <span class="cm">// only one command per cycle</span>
+  end
+end</div>
+
+    <div class="subsec">tFAW Shift Register</div>
+    <div class="code"><span class="cm">// Shift register of depth tFAW; set bit on ACT, shift each cycle</span>
+<span class="kw">logic</span> [tFAW_MAX-1:0] faw_sreg;
+<span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk) begin
+  faw_sreg <= {faw_sreg[tFAW_MAX-2:0], act_issued};
+end
+<span class="kw">assign</span> faw_ok = ($countones(faw_sreg[csr.tFAW-1:0]) < 4);</div>
+
+    <div class="subsec">Bank State Updates on Command Issue</div>
+    <table>
+      <thead><tr><th>Command</th><th>Bank State Updates</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">ACT</td><td>row_open=1, open_row=R, tRAS_rem=tRAS, tRCD_rem=tRCD</td></tr>
+        <tr><td class="mono">PRE</td><td>row_open=0, tRP_rem=tRP</td></tr>
+        <tr><td class="mono">RD</td><td>tRTP_rem=tRTP; cross-bank: tRRDL (same BG) or tRRDS (diff BG)</td></tr>
+        <tr><td class="mono">WR</td><td>tWR_rem=tWR; cross-bank tRRD same as RD</td></tr>
+        <tr><td class="mono">RD/WR with AP</td><td>Additionally: row_open=0, tRP_rem=tRP</td></tr>
+      </tbody>
+    </table>
+
+    <div class="subsec">tCCDL / tCCDS Global Timer</div>
+    <div class="code"><span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk) begin
+  <span class="kw">if</span> (rd_issued || wr_issued) begin
+    tCCD_rem    <= (issued_bg == last_cas_bg) ? csr.tCCDL : csr.tCCDS;
+    last_cas_bg <= issued_bg;
+  end <span class="kw">else if</span> (tCCD_rem > 0) tCCD_rem <= tCCD_rem - 1;
+end
+<span class="kw">assign</span> cas_timing_ok = (tCCD_rem == 0);</div>
+  </div>
+</div>
+
+<!-- RME -->
+<div class="sec" id="s-rme">
+  <div class="sec-hdr" onclick="tog(this)"><h2>🟣 RME — Refresh & Maintenance Engine</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="tab-bar">
+      <div class="tab-btn active" onclick="swTab(this,'rme-init')">Init FSM</div>
+      <div class="tab-btn" onclick="swTab(this,'rme-ref')">Refresh FSM</div>
+      <div class="tab-btn" onclick="swTab(this,'rme-zq')">ZQ Cal FSM</div>
+    </div>
+    <div class="tab-pane active" id="rme-init">
+      <div class="fsm-box">
+        <span class="state">RESET</span>→<span class="state">POR_WAIT</span>→<span class="state">CKE_LOW</span>→<span class="state">CKE_HIGH_DLY</span>→<span class="state">MRS_SEQ</span>→<span class="state">ZQ_INIT</span>→<span class="state">REF1</span>→<span class="state">REF2</span>→<span class="state">READY</span>
+      </div>
+      <table>
+        <thead><tr><th>State</th><th>Duration</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">POR_WAIT</td><td>200 µs</td><td>Hold CKE low, clock stable</td></tr>
+          <tr><td class="mono">CKE_LOW</td><td>tINIT1</td><td>Assert reset_n only</td></tr>
+          <tr><td class="mono">CKE_HIGH_DLY</td><td>tINIT3</td><td>Deassert reset_n, raise CKE</td></tr>
+          <tr><td class="mono">MRS_SEQ</td><td>8 × (2+tMRD) cycles</td><td>Issue MRS0–MRS7 via NMI_MRS</td></tr>
+          <tr><td class="mono">ZQ_INIT</td><td>tZQINIT = 1000 cycles</td><td>ZQCAL START → LATCH</td></tr>
+          <tr><td class="mono">REF1/REF2</td><td>tRFC1 each</td><td>All-bank refresh ×2</td></tr>
+          <tr><td class="mono">READY</td><td>—</td><td>Set init_done=1, start tREFI timer</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tab-pane" id="rme-ref">
+      <div class="fsm-box">
+        <span class="state">IDLE</span>→<span class="state">PENDING</span>→<span class="state">GRANTED</span>→<span class="state">ISSUING</span>→<span class="state">WAIT_RFC</span>→<span class="state">IDLE</span>
+      </div>
+      <div class="code"><span class="cm">// Defer counter & priority escalation</span>
+<span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk) begin
+  <span class="kw">if</span> (ref_state == PENDING &amp;&amp; !ref_ack &amp;&amp; ref_defer_count < csr.ref_defer_max)
+    ref_defer_count <= ref_defer_count + 1;
+  <span class="kw">else if</span> (ref_ack)
+    ref_defer_count <= '0;
+end
+<span class="kw">assign</span> ref_priority = (ref_defer_count >= csr.ref_defer_max) ? 3'd7 :
+                       (ref_defer_count >= csr.ref_defer_max-2) ? 3'd5 : 3'd2;</div>
+    </div>
+    <div class="tab-pane" id="rme-zq">
+      <div class="fsm-box">
+        <span class="state">IDLE</span>→<span class="state">WAIT_PERIOD</span>→<span class="state">ZQCAL_START</span>→<span class="state">WAIT_TZQCAL</span>→<span class="state">ZQCAL_LATCH</span>→<span class="state">IDLE</span>
+      </div>
+      <p style="font-size:12px;color:var(--dim);margin-top:8px">Period = csr.zq_period × tREFI. tZQCL = 1000 cycles. Two-step: NMI_ZQCAL (ap=0) then NMI_ZQCAL (ap=1).</p>
+    </div>
+  </div>
+</div>
+
+<!-- CAL -->
+<div class="sec" id="s-cal">
+  <div class="sec-hdr" onclick="tog(this)"><h2>🟣 CAL — Command Arbitration Layer</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="subsec">Priority Order (combinatorial mux)</div>
+    <table>
+      <thead><tr><th>Priority</th><th>Source</th><th>Condition</th></tr></thead>
+      <tbody>
+        <tr><td style="color:var(--red)">1 (highest)</td><td>Init FSM</td><td>!init_done</td></tr>
+        <tr><td style="color:var(--red)">2</td><td>Deferred Refresh</td><td>ref_priority == 7</td></tr>
+        <tr><td style="color:var(--orange)">3</td><td>ZQ Calibration</td><td>zq_req_valid</td></tr>
+        <tr><td style="color:var(--orange)">4</td><td>Normal Refresh</td><td>ref_priority >= 2</td></tr>
+        <tr><td>5</td><td>Power-Down Exit</td><td>pd_exit_pending</td></tr>
+        <tr><td style="color:var(--green)">6</td><td>User Commands</td><td>sched_valid</td></tr>
+        <tr><td style="color:var(--dim)">7 (lowest)</td><td>Power-Down Entry</td><td>idle &amp; power_down_en</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--dim);margin-top:8px">CAL is <strong>purely combinatorial</strong> — no registered arbitration. Ensures refresh hard deadline honored within 1 cycle.</p>
+  </div>
+</div>
+
+<!-- DTL -->
+<div class="sec" id="s-dtl">
+  <div class="sec-hdr" onclick="tog(this)"><h2>🟢 DTL — DFI Translation Layer</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="tab-bar">
+      <div class="tab-btn active" onclick="swTab(this,'dtl-enc')">Command Encoding</div>
+      <div class="tab-btn" onclick="swTab(this,'dtl-rl')">Read Latency</div>
+      <div class="tab-btn" onclick="swTab(this,'dtl-wl')">Write Latency</div>
+      <div class="tab-btn" onclick="swTab(this,'dtl-phy')">PHY Update</div>
+    </div>
+    <div class="tab-pane active" id="dtl-enc">
+      <table>
+        <thead><tr><th>NMI cmd</th><th>act_n</th><th>ras_n</th><th>cas_n</th><th>we_n</th><th>dfi_address usage</th></tr></thead>
+        <tbody>
+          <tr><td>ACT1</td><td>0</td><td>R[16:14]</td><td>R[13:11]</td><td>R[10]</td><td>R[9:0]</td></tr>
+          <tr><td>ACT2 (next cycle)</td><td>0</td><td>1</td><td>1</td><td>1</td><td>continued</td></tr>
+          <tr><td>PRE</td><td>1</td><td>0</td><td>1</td><td>0</td><td>bank, A10=0</td></tr>
+          <tr><td>PREA</td><td>1</td><td>0</td><td>1</td><td>0</td><td>A10=1</td></tr>
+          <tr><td>RD</td><td>1</td><td>1</td><td>0</td><td>1</td><td>col, A10=ap</td></tr>
+          <tr><td>WR</td><td>1</td><td>1</td><td>0</td><td>0</td><td>col, A10=ap</td></tr>
+          <tr><td>REFab</td><td>1</td><td>0</td><td>0</td><td>1</td><td>—</td></tr>
+          <tr><td>MRS</td><td>0</td><td>0</td><td>0</td><td>0</td><td>MR addr/data</td></tr>
+          <tr><td>ZQCal Start</td><td>1</td><td>0</td><td>0</td><td>0</td><td>—</td></tr>
+          <tr><td>ZQCal Latch</td><td>1</td><td>1</td><td>0</td><td>0</td><td>—</td></tr>
+          <tr><td>Deselect</td><td>1</td><td>1</td><td>1</td><td>1</td><td>—</td></tr>
+        </tbody>
+      </table>
+      <div class="code" style="margin-top:10px"><span class="cm">// DDR5 ACT uses 2 cycles → nmi_ready=0 during ACT2</span>
+<span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk) begin
+  <span class="kw">case</span> (dtl_state)
+    DTL_IDLE: <span class="kw">if</span> (nmi_valid &amp;&amp; nmi_cmd.cmd == NMI_ACT) dtl_state <= DTL_ACT1;
+              <span class="kw">else if</span> (nmi_valid) dtl_state <= DTL_EXEC;
+    DTL_ACT1: dtl_state <= DTL_ACT2;
+    DTL_ACT2: dtl_state <= DTL_IDLE;
+    DTL_EXEC: dtl_state <= DTL_IDLE;
+  <span class="kw">endcase</span>
+end
+<span class="kw">assign</span> nmi_ready = (dtl_state == DTL_IDLE);</div>
+    </div>
+    <div class="tab-pane" id="dtl-rl">
+      <div class="code"><span class="cm">// Shift register depth = MAX_RL (=40). Inject at position (tRL-PHY_LAT-1)</span>
+<span class="kw">logic</span> [MAX_RL-1:0] rd_en_sreg;
+<span class="kw">logic</span> [4:0] tag_sreg [MAX_RL];
+
+<span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk) begin
+  rd_en_sreg <= {rd_en_sreg[MAX_RL-2:0], 1'b0};
+  <span class="kw">for</span> (int i = MAX_RL-1; i > 0; i--) tag_sreg[i] <= tag_sreg[i-1];
+  <span class="kw">if</span> (rd_issued) begin
+    rd_en_sreg[csr.tRL - PHY_RD_LAT - 1] <= 1'b1;
+    tag_sreg  [csr.tRL - PHY_RD_LAT - 1] <= issued_tracker_id;
+  end
+end
+<span class="cm">// dfi_rddata_en is driven by shift register output</span>
+<span class="kw">assign</span> dfi_rddata_en  = {rd_en_sreg[1], rd_en_sreg[0]};
+<span class="cm">// Response path gets tag when data arrives</span>
+<span class="kw">assign</span> rsp_tracker_id = tag_sreg[MAX_RL-1];</div>
+      <p style="font-size:12px;color:var(--dim);margin-top:8px">⚠ On FPGA, use SRL32 primitives for tag_sreg to avoid consuming large LUT counts. PHY_RD_LAT is typically 2–4 cycles (check PHY datasheet).</p>
+    </div>
+    <div class="tab-pane" id="dtl-wl">
+      <div class="code"><span class="cm">// Similar structure; write data fetched from TTE BRAM by tracker_id</span>
+<span class="kw">assign</span> wr_data_rd_id  = wr_tag_sreg[csr.tWL - PHY_WR_LAT - 1];
+<span class="kw">assign</span> dfi_wrdata      = wr_data_in;   <span class="cm">// from TTE BRAM</span>
+<span class="kw">assign</span> dfi_wrdata_mask = ~wr_be_in;    <span class="cm">// DFI mask is active-LOW</span>
+<span class="kw">assign</span> dfi_wrdata_en   = {wr_en_sreg[1], wr_en_sreg[0]};</div>
+    </div>
+    <div class="tab-pane" id="dtl-phy">
+      <div class="code"><span class="cm">// PHY update: pause NMI pipeline, ack, wait for PHY done</span>
+<span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk) begin
+  <span class="kw">if</span> (dfi_phyupd_req &amp;&amp; !phyupd_active) begin
+    phyupd_active <= 1'b1;
+    nmi_hold      <= 1'b1;
+  end
+  <span class="kw">if</span> (phyupd_active) begin
+    dfi_phyupd_ack <= 1'b1;
+    <span class="kw">if</span> (!dfi_phyupd_req) begin
+      phyupd_active  <= 1'b0;
+      dfi_phyupd_ack <= 1'b0;
+      nmi_hold       <= 1'b0;
+    end
+  end
+end</div>
+    </div>
+  </div>
+</div>
+
+<!-- RSP -->
+<div class="sec" id="s-rsp">
+  <div class="sec-hdr" onclick="tog(this)"><h2>🟡 RSP — Response Path</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="subsec">Read Response (CompData)</div>
+    <div class="code"><span class="cm">// cycle N: rd_valid — tbl_rd_addr set to rd_tracker_id (BRAM 1-cycle latency)</span>
+<span class="cm">// cycle N+1: tbl_rd_data valid → build CompData flit</span>
+<span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk) begin
+  <span class="kw">if</span> (rd_valid_q) begin
+    dat_flit.opcode   <= DAT_CompData;
+    dat_flit.src_id   <= NODE_ID;
+    dat_flit.tgt_id   <= tbl_rd_data.src_id;
+    dat_flit.txn_id   <= tbl_rd_data.txn_id;
+    dat_flit.data     <= rd_data_q;
+    dat_flit.be       <= '1;
+    dat_flit.resp     <= 3'b000;  <span class="cm">// I state at SN-F</span>
+    dat_flit.resp_err <= (rd_err_q != 0) ? RESPERR_DERR : RESPERR_OK;
+    dat_valid         <= 1'b1;
+    free_valid        <= 1'b1;
+    free_id           <= rd_tracker_id_q;
+  end
+end</div>
+
+    <div class="subsec">Write Completion (Comp RSP)</div>
+    <div class="code"><span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk) begin
+  <span class="kw">if</span> (wr_comp_valid) begin
+    rsp_flit.opcode   <= RSP_Comp;
+    rsp_flit.src_id   <= NODE_ID;
+    rsp_flit.tgt_id   <= tbl_rd_data.src_id;
+    rsp_flit.txn_id   <= tbl_rd_data.txn_id;
+    rsp_flit.resp_err <= (wr_err != 0) ? RESPERR_DERR : RESPERR_OK;
+    rsp_valid         <= 1'b1;
+    free_valid        <= 1'b1;
+    free_id           <= wr_tracker_id;
+  end
+end</div>
+
+    <div class="subsec">RD + WR Collision Handling</div>
+    <p style="font-size:12px;color:var(--dim)">If rd_valid and wr_comp_valid assert in the same cycle: serve read (dat) first, buffer write completion in a 1-entry pending register. Issue Comp on next cycle.</p>
+  </div>
+</div>
+
+<!-- CSR -->
+<div class="sec" id="s-csr">
+  <div class="sec-hdr" onclick="tog(this)"><h2>⚙️ CSR — Configuration Register Map</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <p style="font-size:12px;color:var(--dim);margin-bottom:10px">APB base: <span class="mono">0x0B00_0000</span> (MC0), <span class="mono">0x0B10_0000</span> (MC1). All 32-bit aligned.</p>
+    <table>
+      <thead><tr><th>Offset</th><th>Name</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">0x000</td><td class="mono">CTRL</td><td>0x0</td><td>[0]=soft_reset [1]=init_start [31:16]=version</td></tr>
+        <tr><td class="mono">0x004</td><td class="mono">STATUS</td><td>RO</td><td>[0]=init_done [1]=idle [2]=error [7:4]=tracker_occ</td></tr>
+        <tr><td class="mono">0x010</td><td class="mono">TIMING_tRCD</td><td>18</td><td>RAS-to-CAS delay (cycles)</td></tr>
+        <tr><td class="mono">0x014</td><td class="mono">TIMING_tRP</td><td>18</td><td>Precharge time</td></tr>
+        <tr><td class="mono">0x018</td><td class="mono">TIMING_tRAS</td><td>39</td><td>Row active time min</td></tr>
+        <tr><td class="mono">0x01C</td><td class="mono">TIMING_tRTP</td><td>12</td><td>Read-to-precharge</td></tr>
+        <tr><td class="mono">0x020</td><td class="mono">TIMING_tWR</td><td>30</td><td>Write recovery time</td></tr>
+        <tr><td class="mono">0x024</td><td class="mono">TIMING_tRRDL</td><td>8</td><td>RRD same bank group</td></tr>
+        <tr><td class="mono">0x028</td><td class="mono">TIMING_tRRDS</td><td>4</td><td>RRD diff bank group</td></tr>
+        <tr><td class="mono">0x02C</td><td class="mono">TIMING_tCCDL</td><td>8</td><td>CAS-CAS same BG</td></tr>
+        <tr><td class="mono">0x030</td><td class="mono">TIMING_tCCDS</td><td>4</td><td>CAS-CAS diff BG</td></tr>
+        <tr><td class="mono">0x034</td><td class="mono">TIMING_tFAW</td><td>32</td><td>Four activate window</td></tr>
+        <tr><td class="mono">0x038</td><td class="mono">TIMING_tRFC1</td><td>350</td><td>All-bank refresh cycle</td></tr>
+        <tr><td class="mono">0x03C</td><td class="mono">TIMING_tRFCpb</td><td>90</td><td>Per-bank refresh cycle</td></tr>
+        <tr><td class="mono">0x040</td><td class="mono">TIMING_tREFI</td><td>3900</td><td>Refresh interval @ 1 GHz</td></tr>
+        <tr><td class="mono">0x044</td><td class="mono">TIMING_tRL</td><td>36</td><td>Read latency (CL)</td></tr>
+        <tr><td class="mono">0x048</td><td class="mono">TIMING_tWL</td><td>18</td><td>Write latency</td></tr>
+        <tr><td class="mono">0x050–0x074</td><td class="mono">HASH_MASK_*</td><td>identity</td><td>XOR hash masks per field (44b split as LO/HI)</td></tr>
+        <tr><td class="mono">0x080</td><td class="mono">POLICY</td><td>0x02</td><td>[1:0]=page_policy [3:2]=refresh_mode [4]=pd_en</td></tr>
+        <tr><td class="mono">0x084</td><td class="mono">SREF_IDLE_THR</td><td>0x1000</td><td>Idle cycles → self-refresh</td></tr>
+        <tr><td class="mono">0x088</td><td class="mono">ZQ_PERIOD</td><td>64</td><td>ZQ interval (× tREFI)</td></tr>
+        <tr><td class="mono">0x08C</td><td class="mono">REF_DEFER_MAX</td><td>8</td><td>Max deferred refreshes</td></tr>
+        <tr><td class="mono">0x090</td><td class="mono">STARVATION_THR</td><td>255</td><td>Age threshold for priority boost</td></tr>
+        <tr><td class="mono">0x0A0–0x0BC</td><td class="mono">MRS_0–MRS_7</td><td>varies</td><td>DDR5 mode register shadow values</td></tr>
+        <tr><td class="mono">0x0C0</td><td class="mono">ECC_CTRL</td><td>0</td><td>[0]=ecc_en [1]=inject_ce [2]=inject_ue</td></tr>
+        <tr><td class="mono">0x100–0x15C</td><td class="mono">PMU_*</td><td>0</td><td>Performance counters (32b, saturating)</td></tr>
+        <tr><td class="mono">0x200–0x20C</td><td class="mono">ERR_*</td><td>0</td><td>Error capture (status, first addr, txn_id, src_id)</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--dim);margin-top:8px">Timing registers are shadow-registered — take effect at next init_start. Safe to update tREFI at runtime (only REFab timing; tRFC1 is static).</p>
+  </div>
+</div>
+
+<!-- TIMING -->
+<div class="sec" id="s-timing">
+  <div class="sec-hdr" onclick="tog(this)"><h2>⏱ DDR5 Timing Parameter Reference</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <p style="font-size:12px;color:var(--dim);margin-bottom:12px">@ 1 GHz (1 ns/cycle) · DDR5-4800 · JESD79-5B</p>
+    <div id="timing-list">
+      <!-- Generated by JS below -->
+    </div>
+  </div>
+</div>
+
+<!-- NMI PROTOCOL -->
+<div class="sec" id="s-nmi">
+  <div class="sec-hdr" onclick="tog(this)"><h2>⚡ NMI Protocol Reference</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="subsec">Handshake Rules</div>
+    <div class="code"><span class="cm">// valid/ready handshake — same as AXI</span>
+<span class="cm">// Transaction accepted when: valid==1 AND ready==1 in same cycle</span>
+<span class="cm">// Sender may NOT change cmd while valid=1 and ready=0</span>
+<span class="cm">// Sender may lower valid the cycle after acceptance</span></div>
+
+    <div class="subsec">Command Sequencing Rules</div>
+    <table>
+      <thead><tr><th>#</th><th>Rule</th><th>Enforced by</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>ACT must precede RD/WR to same bank (tRCD enforced)</td><td>SCH timing_checker</td></tr>
+        <tr><td>2</td><td>PRE must precede ACT if different row open (tRAS enforced)</td><td>SCH timing_checker</td></tr>
+        <tr><td>3</td><td>REF must not overlap any user command to same rank</td><td>CAL priority mux</td></tr>
+        <tr><td>4</td><td>MRS only during init (no outstanding transactions)</td><td>CAL init priority</td></tr>
+        <tr><td>5</td><td>ZQCAL START immediately followed by LATCH after tZQCAL</td><td>RME ZQ FSM</td></tr>
+        <tr><td>6</td><td>Max 4 ACTs in any tFAW window</td><td>SCH faw_sreg</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ASSERTIONS -->
+<div class="sec" id="s-assert">
+  <div class="sec-hdr" onclick="tog(this)"><h2>✅ Assertion Catalog</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="tab-bar">
+      <div class="tab-btn active" onclick="swTab(this,'as-chi')">CHI</div>
+      <div class="tab-btn" onclick="swTab(this,'as-tte')">Tracker</div>
+      <div class="tab-btn" onclick="swTab(this,'as-ddr')">DDR5 Timing</div>
+      <div class="tab-btn" onclick="swTab(this,'as-cov')">Coverage</div>
+    </div>
+    <div class="tab-pane active" id="as-chi">
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Condition</th><th>Severity</th></tr></thead>
+        <tbody>
+          <tr><td>A01</td><td class="mono">a_chi_rsp_crd_no_neg</td><td>tx_rsp_crd never negative</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A02</td><td class="mono">a_chi_dat_crd_no_neg</td><td>tx_dat_crd never negative</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A03</td><td class="mono">a_chi_no_snp_from_sn</td><td>SN never asserts snoop outputs</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A04</td><td class="mono">a_chi_dbid_range</td><td>dbid_resp_id &lt; NUM_TXN</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A05</td><td class="mono">a_chi_wdat_dbid_valid</td><td>Write dat DBID matches active write slot</td><td class="sev-e">Error</td></tr>
+          <tr><td>A06</td><td class="mono">a_chi_no_x_on_req</td><td>!$isunknown(rxreqflit) when rxreqflitv</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A07</td><td class="mono">a_chi_txnid_unique</td><td>No two active slots same (src_id, txn_id)</td><td class="sev-e">Error</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tab-pane" id="as-tte">
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Condition</th><th>Severity</th></tr></thead>
+        <tbody>
+          <tr><td>A10</td><td class="mono">a_tte_no_double_alloc</td><td>alloc_id always points to IDLE slot</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A11</td><td class="mono">a_tte_comp_valid_slot</td><td>comp_id points to active slot</td><td class="sev-e">Error</td></tr>
+          <tr><td>A12</td><td class="mono">a_tte_no_overflow</td><td>!tracker_full || !alloc_valid</td><td class="sev-w">Warning</td></tr>
+          <tr><td>A13</td><td class="mono">a_tte_wdat_valid_slot</td><td>wdat_id points to active write slot</td><td class="sev-e">Error</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tab-pane" id="as-ddr">
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Condition</th><th>Severity</th></tr></thead>
+        <tbody>
+          <tr><td>A20</td><td class="mono">a_ddr_no_rcd_viol</td><td>RD/WR only when tRCD_rem==0</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A21</td><td class="mono">a_ddr_no_ras_viol</td><td>PRE only when tRAS_rem==0</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A22</td><td class="mono">a_ddr_no_rp_viol</td><td>ACT only when tRP_rem==0</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A23</td><td class="mono">a_ddr_no_faw_viol</td><td>ACT count in tFAW window &lt; 4</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A24</td><td class="mono">a_ddr_no_ccd_viol</td><td>CAS-to-CAS respects tCCDL/tCCDS</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A25</td><td class="mono">a_ddr_no_rw_closed</td><td>RD/WR only when row_open==1</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A26</td><td class="mono">a_ddr_no_cmd_during_rfc</td><td>No user commands during tRFC1 window</td><td class="sev-f">Fatal</td></tr>
+          <tr><td>A27</td><td class="mono">a_ddr_ref_not_overdue</td><td>ref_defer_count ≤ ref_defer_max</td><td class="sev-e">Error</td></tr>
+          <tr><td>A28</td><td class="mono">a_ddr_no_cmd_before_init</td><td>No user commands before init_done</td><td class="sev-f">Fatal</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tab-pane" id="as-cov">
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Description</th><th>Goal</th></tr></thead>
+        <tbody>
+          <tr><td>C01</td><td class="mono">c_tracker_full</td><td>Tracker reaches 32/32</td><td>Occupancy stress</td></tr>
+          <tr><td>C02</td><td class="mono">c_all_bg_active</td><td>All 4 BG queues non-empty simultaneously</td><td>Queue stress</td></tr>
+          <tr><td>C03</td><td class="mono">c_row_hit_all_bg</td><td>Row hit in each BG in same 10-cycle window</td><td>Scheduler</td></tr>
+          <tr><td>C04</td><td class="mono">c_starvation_promo</td><td>Starvation counter triggers promotion</td><td>Fairness</td></tr>
+          <tr><td>C05</td><td class="mono">c_ref_deferred_8x</td><td>8 consecutive deferred refreshes</td><td>Refresh</td></tr>
+          <tr><td>C06</td><td class="mono">c_wr_rd_same_bank</td><td>WR then RD to same bank (tWR boundary)</td><td>Timing</td></tr>
+          <tr><td>C07</td><td class="mono">c_rd_wr_comp_same_cycle</td><td>RSP: both RD and WR comp same cycle</td><td>Conflict</td></tr>
+          <tr><td>C08</td><td class="mono">c_phyupd_during_rw</td><td>PHY update request during active RD pipeline</td><td>PHY</td></tr>
+          <tr><td>C09</td><td class="mono">c_partial_write</td><td>WriteNoSnpPtl with non-full byte enables</td><td>DM pins</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- DEBUG -->
+<div class="sec" id="s-debug">
+  <div class="sec-hdr" onclick="tog(this)"><h2>🔍 Debug & PMU</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <div class="subsec">64-bit Debug Bus (mc_top output)</div>
+    <div class="code">[63:58] faw_count[5:0]         <span class="cm">// current ACT count in tFAW window</span>
+[57:54] ref_defer_count[3:0]   <span class="cm">// deferred refresh count</span>
+[53:48] tracker_occupancy[5:0] <span class="cm">// active tracker entries</span>
+[47:44] req_fifo_level[3:0]
+[43:40] dat_fifo_level[3:0]
+[39:36] bg0_level[3:0]
+[35:32] bg1_level[3:0]
+[31:28] bg2_level[3:0]
+[27:24] bg3_level[3:0]
+[23:19] ovf_level[4:0]
+[18:3]  row_open[15:0]         <span class="cm">// one bit per bank</span>
+[2]     init_done
+[1]     mc_idle
+[0]     mc_error</div>
+
+    <div class="subsec">Key PMU Counters (APB offset 0x100+)</div>
+    <table>
+      <thead><tr><th>Offset</th><th>Name</th><th>What it counts</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">0x100</td><td class="mono">PMU_REQ_TOTAL</td><td>Total CHI REQs received</td></tr>
+        <tr><td class="mono">0x104/8</td><td class="mono">PMU_READ/WRITE</td><td>Read / write transactions</td></tr>
+        <tr><td class="mono">0x10C</td><td class="mono">PMU_ROW_HIT</td><td>Scheduler row-hit commands</td></tr>
+        <tr><td class="mono">0x110</td><td class="mono">PMU_ROW_MISS</td><td>Row-miss (ACT issued)</td></tr>
+        <tr><td class="mono">0x114</td><td class="mono">PMU_ROW_CONFLICT</td><td>Row-conflict (PRE+ACT)</td></tr>
+        <tr><td class="mono">0x118</td><td class="mono">PMU_REF_TOTAL</td><td>Refreshes issued</td></tr>
+        <tr><td class="mono">0x11C</td><td class="mono">PMU_REF_DEFERRED</td><td>Refreshes deferred ≥1 time</td></tr>
+        <tr><td class="mono">0x120</td><td class="mono">PMU_STARVATION</td><td>Starvation promotions</td></tr>
+        <tr><td class="mono">0x13C</td><td class="mono">PMU_TRACKER_FULL</td><td>Cycles tracker was full</td></tr>
+        <tr><td class="mono">0x140</td><td class="mono">PMU_DFI_STALL</td><td>Cycles stalled on PHY update</td></tr>
+        <tr><td class="mono">0x144–14C</td><td class="mono">PMU_RD_LAT_BINS</td><td>Read latency histogram (&lt;100 / 100–200 / 200–400 / &gt;400 cycles)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- EDGE CASES -->
+<div class="sec" id="s-edge">
+  <div class="sec-hdr" onclick="tog(this)"><h2>⚠️ Edge Cases & Corner Cases</h2><span class="chv">▾</span></div>
+  <div class="sec-body">
+    <table>
+      <thead><tr><th>#</th><th>Scenario</th><th>Handling</th><th>Debug signal</th></tr></thead>
+      <tbody>
+        <tr><td>EC-01</td><td><strong>WR→RD same bank before tRTP</strong></td><td>tRTP_rem > 0 → PRE deferred by SCH</td><td class="mono">PMU_ROW_CONFLICT</td></tr>
+        <tr><td>EC-02</td><td><strong>Tracker full + write burst</strong></td><td>CFE stops REQ credits → HN-F stalls. PMU_TRACKER_FULL increments. No explicit RetryAck needed.</td><td class="mono">PMU_TRACKER_FULL, dbg_bus[53:48]</td></tr>
+        <tr><td>EC-03</td><td><strong>PHY update during RL pipeline</strong></td><td>DTL holds new NMI. In-flight RL shift register continues unaffected. Data arrives normally.</td><td class="mono">PMU_DFI_STALL</td></tr>
+        <tr><td>EC-04</td><td><strong>Tracker full + refresh hard deadline</strong></td><td>CAL issues refresh regardless. Refresh needs no tracker slot. No deadlock.</td><td class="mono">PMU_REF_DEFERRED</td></tr>
+        <tr><td>EC-05</td><td><strong>WriteNoSnpPtl partial byte enables</strong></td><td>rq_entry.cmd = WR_MASKED. DTL drives dfi_wrdata_mask = ~wr_be (active-low). Verify PHY DM support.</td><td class="mono">PMU_WRITE_TOTAL</td></tr>
+        <tr><td>EC-06</td><td><strong>Duplicate TXNID from HN-F</strong></td><td>Assertion A07 fires. RTL guard: if alloc_valid but txnid already active in tracker → addr_error, tracker rejects.</td><td class="mono">ERR_STATUS[2]</td></tr>
+        <tr><td>EC-07</td><td><strong>tREFI halved at >85°C</strong></td><td>SW writes TIMING_tREFI = 1950. RME picks up new value next refresh period. tRFC1 unchanged.</td><td class="mono">PMU_REF_TOTAL</td></tr>
+        <tr><td>EC-08</td><td><strong>Self-refresh exit latency</strong></td><td>activity_wake → SREF exit FSM → wait tXSR (from CSR) → sref_exited → CAL resumes. CAL must gate user traffic until sref_exited.</td><td class="mono">dbg_bus[0]</td></tr>
+        <tr><td>EC-09</td><td><strong>DFI 2T mode (FPGA)</strong></td><td>DTL holds each command 2 cycles. nmi_ready=0 on second cycle. Halves command bandwidth. Select via DTL_2T_MODE parameter.</td><td class="mono">PMU_DFI_STALL</td></tr>
+        <tr><td>EC-10</td><td><strong>RSP: RD + WR comp same cycle</strong></td><td>RSP serves RD (CompData) first. WR (Comp) buffered in 1-entry pending register, issued next cycle.</td><td class="mono">PMU_READ_TOTAL</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+// Toggle sections
+function tog(h){h.classList.toggle('collapsed');h.nextElementSibling.classList.toggle('hidden')}
+// Scroll
+function go(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth'})}
+// Tab switch
+function swTab(btn,id){
+  const bar=btn.closest('.tab-bar');
+  const body=bar.nextElementSibling?.parentElement||bar.parentElement;
+  bar.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  // find panes in same parent
+  const panes=[...body.querySelectorAll('.tab-pane')];
+  panes.forEach(p=>p.classList.toggle('active',p.id===id));
+}
+// Search
+function doSearch(q){
+  const s=q.trim().toLowerCase();
+  document.querySelectorAll('.search-hl').forEach(e=>{e.outerHTML=e.textContent});
+  if(!s)return;
+  const walk=document.createTreeWalker(document.getElementById('main'),NodeFilter.SHOW_TEXT);
+  const ns=[];while(walk.nextNode())ns.push(walk.currentNode);
+  ns.forEach(n=>{
+    const t=n.textContent,i=t.toLowerCase().indexOf(s);
+    if(i>=0&&n.parentElement&&!['SCRIPT','STYLE'].includes(n.parentElement.tagName)){
+      const sp=document.createElement('span');
+      sp.innerHTML=esc(t.slice(0,i))+'<span class="search-hl" style="background:rgba(56,139,253,.25);border-radius:2px">'+esc(t.slice(i,i+s.length))+'</span>'+esc(t.slice(i+s.length));
+      n.parentNode.replaceChild(sp,n);
+    }
+  });
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// Build timing table
+const timings=[
+  ['tRCD','RAS-to-CAS delay',18,40],['tRP','Precharge time',18,40],['tRAS','Row active time',39,80],
+  ['tRTP','Read-to-PRE',12,40],['tWR','Write recovery',30,60],['tCL','CAS latency',36,40],
+  ['tWL','Write latency',18,40],['tCCDL','CAS-CAS same BG',8,20],['tCCDS','CAS-CAS diff BG',4,20],
+  ['tRRDL','RRD same BG',8,20],['tRRDS','RRD diff BG',4,20],['tFAW','4-ACT window',32,60],
+  ['tRFC1','All-bank refresh',350,600],['tRFCpb','Per-bank refresh',90,200],['tREFI','Refresh interval',3906,4000],
+  ['tZQINIT','ZQ init cal',1000,1000],['tMRD','MRS-to-MRS',8,20],['tMOD','MRS-to-CMD',24,40],
+];
+const tl=document.getElementById('timing-list');
+timings.forEach(([n,d,v,m])=>{
+  const div=document.createElement('div');
+  div.className='timing-row';
+  div.innerHTML=`<span class="timing-name">${n}</span><div class="timing-bar-bg"><div class="timing-bar-fill" style="width:${Math.round(v/m*100)}%"></div></div><span class="timing-val">${v} cyc</span><span style="color:var(--dim);font-size:11px;margin-left:8px">${d}</span>`;
+  tl.appendChild(div);
+});
+</script>
+</body>
+</html>

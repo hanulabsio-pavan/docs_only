@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Digital Logic Design — Interview Prep</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:        #0a0c0e;
+  --bg2:       #111418;
+  --bg3:       #181c22;
+  --bg4:       #1e242c;
+  --border:    #252c36;
+  --border2:   #2e3847;
+  --text:      #d4dce8;
+  --text2:     #7a90a8;
+  --text3:     #4a5a6e;
+  --cyan:      #00d4ff;
+  --cyan-dim:  #003d4d;
+  --cyan-text: #00bfe0;
+  --amber:     #ffb020;
+  --amber-dim: #3a2800;
+  --green:     #00c07a;
+  --green-dim: #002e1e;
+  --rose:      #ff5a7a;
+  --rose-dim:  #3a0014;
+  --purple:    #9b7fff;
+  --purple-dim:#1e1440;
+  --orange:    #ff8c42;
+  --orange-dim:#3a1800;
+  --teal:      #2dd4bf;
+  --teal-dim:  #003330;
+  --red:       #ff4d4d;
+  --red-dim:   #3a0000;
+  --yellow:    #facc15;
+  --yellow-dim:#2e2600;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:14px;
+  line-height:1.6;
+  min-height:100vh;
+}
+
+/* ── HEADER ── */
+.header{
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  padding:18px 32px;
+  position:sticky;
+  top:0;
+  z-index:100;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.logo-mark{
+  width:34px;height:34px;
+  border:1.5px solid var(--amber);
+  border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;font-weight:600;
+  color:var(--amber);
+  letter-spacing:-0.5px;
+  flex-shrink:0;
+}
+.header-title{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:15px;font-weight:600;
+  color:var(--text);letter-spacing:.02em;
+}
+.header-sub{
+  font-size:11px;color:var(--text3);
+  font-family:'IBM Plex Mono',monospace;
+  margin-top:2px;
+}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:14px;}
+.prog-wrap{display:flex;align-items:center;gap:8px;}
+.prog-bar{width:130px;height:4px;background:var(--border2);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--amber);border-radius:2px;transition:width .4s ease;width:0%;}
+.prog-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);min-width:42px;}
+
+/* ── LAYOUT ── */
+.main{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 71px);}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  padding:22px 0;
+  position:sticky;
+  top:71px;
+  height:calc(100vh - 71px);
+  overflow-y:auto;
+}
+.sb-section{padding:0 16px;margin-bottom:22px;}
+.sb-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px;font-weight:600;
+  color:var(--text3);
+  letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:8px;padding:0 4px;
+}
+.filter-btn{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;padding:8px 12px;
+  border-radius:6px;border:none;
+  background:transparent;color:var(--text2);
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;
+  cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;
+}
+.filter-btn:hover{background:var(--bg3);color:var(--text);}
+.filter-btn.active{
+  background:rgba(255,176,32,.12);
+  color:var(--amber);
+  border:1px solid rgba(255,176,32,.22);
+}
+.filter-btn .cnt{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  background:var(--bg4);padding:1px 6px;border-radius:10px;color:var(--text3);
+}
+.filter-btn.active .cnt{background:rgba(255,176,32,.15);color:var(--amber);}
+.diff-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:7px;flex-shrink:0;}
+
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:0 16px;}
+.stat-card{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:9px;text-align:center;
+}
+.stat-n{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:var(--text);display:block;}
+.stat-l{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* ── CONTENT ── */
+.content{padding:24px 28px;max-width:920px;}
+.search-wrap{position:relative;margin-bottom:20px;}
+.search-wrap::before{
+  content:'⌕';position:absolute;left:12px;top:50%;
+  transform:translateY(-50%);color:var(--text3);font-size:16px;pointer-events:none;
+}
+.search-bar{
+  width:100%;padding:10px 14px 10px 38px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;
+  outline:none;transition:border-color .2s;
+}
+.search-bar:focus{border-color:var(--amber);}
+
+/* ── QUESTION CARDS ── */
+.q-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:10px;margin-bottom:9px;overflow:hidden;
+  transition:border-color .2s;
+}
+.q-card.done{border-color:rgba(0,192,122,.4);}
+.q-header{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:13px 16px;cursor:pointer;user-select:none;
+  transition:background .15s;
+}
+.q-header:hover{background:var(--bg3);}
+.q-num{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+  color:var(--text3);min-width:30px;margin-top:3px;font-weight:500;
+}
+.q-meta{flex:1;}
+.q-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;}
+.tag{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  font-weight:600;padding:2px 8px;border-radius:4px;
+  letter-spacing:.03em;text-transform:uppercase;
+}
+/* category tags */
+.tag-combo   {background:var(--cyan-dim);color:var(--cyan-text);}
+.tag-seq     {background:var(--purple-dim);color:var(--purple);}
+.tag-timing  {background:var(--orange-dim);color:var(--orange);}
+.tag-fsm     {background:var(--teal-dim);color:var(--teal);}
+.tag-debug   {background:var(--amber-dim);color:var(--amber);}
+.tag-soc     {background:var(--rose-dim);color:var(--rose);}
+/* difficulty tags */
+.tag-easy{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,192,122,.2);}
+.tag-med {background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,176,32,.2);}
+.tag-hard{background:var(--red-dim);  color:var(--red);  border:1px solid rgba(255,77,77,.2);}
+
+.q-text{font-size:13px;color:var(--text);line-height:1.65;}
+.q-chev{color:var(--text3);transition:transform .25s;margin-top:3px;flex-shrink:0;}
+.q-chev.open{transform:rotate(180deg);}
+
+/* ── ANSWER ── */
+.ans-wrap{display:none;border-top:1px solid var(--border);padding:16px;background:var(--bg);}
+.ans-wrap.open{display:block;}
+.ans-label{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
+  color:var(--text3);letter-spacing:.1em;margin-bottom:10px;
+}
+.ans-box{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:14px 16px;
+  font-size:13px;line-height:1.85;color:var(--text);
+}
+.ans-box code{
+  font-family:'IBM Plex Mono',monospace;
+  background:var(--bg4);color:var(--cyan-text);
+  padding:1px 6px;border-radius:3px;font-size:11.5px;
+}
+.ans-box pre{
+  font-family:'IBM Plex Mono',monospace;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:6px;padding:12px 14px;
+  font-size:11px;line-height:1.75;color:var(--cyan-text);
+  overflow-x:auto;margin:8px 0;white-space:pre;
+}
+.ans-box strong{color:var(--amber);font-weight:600;}
+.ans-box em{color:var(--text2);font-style:italic;}
+.ans-box ul{margin:6px 0 6px 18px;}
+.ans-box li{margin-bottom:3px;}
+.chk-row{display:flex;align-items:center;gap:8px;margin-top:12px;}
+.chk-btn{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+  padding:6px 14px;border-radius:5px;
+  border:1px solid var(--border2);background:transparent;
+  color:var(--text2);cursor:pointer;transition:all .15s;
+}
+.chk-btn:hover{background:var(--bg4);color:var(--text);}
+.chk-btn.got {background:var(--green-dim);color:var(--green);border-color:rgba(0,192,122,.3);}
+.chk-btn.miss{background:var(--amber-dim);color:var(--amber);border-color:rgba(255,176,32,.3);}
+
+.no-result{
+  text-align:center;padding:48px 24px;
+  color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:13px;
+}
+
+/* ── TOPIC DIVIDER ── */
+.topic-divider{
+  display:flex;align-items:center;gap:10px;
+  margin:20px 0 12px;
+}
+.topic-divider-label{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+  color:var(--text3);letter-spacing:.08em;text-transform:uppercase;
+  white-space:nowrap;
+}
+.topic-divider-line{flex:1;height:1px;background:var(--border);}
+
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+@media(max-width:700px){
+  .main{grid-template-columns:1fr;}
+  .sidebar{position:static;height:auto;}
+  .content{padding:16px;}
+  .header{padding:14px 16px;}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="logo-mark">DLD</div>
+    <div>
+      <div class="header-title">Digital Logic Design — Interview Prep</div>
+      <div class="header-sub">70 questions · Combinational · Sequential · Timing · FSM · Debug · SoC</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="prog-wrap">
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+      <div class="prog-label" id="prog-label">0 / 70</div>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <aside class="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">Category</div>
+      <button class="filter-btn active" data-cat="all">All questions <span class="cnt">70</span></button>
+      <button class="filter-btn" data-cat="combo">Combinational <span class="cnt">14</span></button>
+      <button class="filter-btn" data-cat="seq">Sequential <span class="cnt">13</span></button>
+      <button class="filter-btn" data-cat="timing">Timing &amp; Clocking <span class="cnt">13</span></button>
+      <button class="filter-btn" data-cat="fsm">FSM Design <span class="cnt">10</span></button>
+      <button class="filter-btn" data-cat="debug">Debug &amp; Verification <span class="cnt">10</span></button>
+      <button class="filter-btn" data-cat="soc">SoC / Low Power <span class="cnt">10</span></button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">Difficulty</div>
+      <button class="filter-btn" data-cat="easy"><span class="diff-dot" style="background:var(--green)"></span>Easy <span class="cnt">20</span></button>
+      <button class="filter-btn" data-cat="med"><span class="diff-dot" style="background:var(--amber)"></span>Medium <span class="cnt">30</span></button>
+      <button class="filter-btn" data-cat="hard"><span class="diff-dot" style="background:var(--red)"></span>Hard <span class="cnt">20</span></button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">Progress</div>
+      <div class="stats-grid">
+        <div class="stat-card"><span class="stat-n" id="s-done">0</span><div class="stat-l">Done</div></div>
+        <div class="stat-card"><span class="stat-n" id="s-left">70</span><div class="stat-l">Remaining</div></div>
+        <div class="stat-card"><span class="stat-n" id="s-hard">0</span><div class="stat-l">Hard done</div></div>
+        <div class="stat-card"><span class="stat-n" id="s-pct">0%</span><div class="stat-l">Complete</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="search-wrap">
+      <input class="search-bar" id="search" placeholder="Search questions, gates, flip-flops, timing…" autocomplete="off"/>
+    </div>
+    <div id="q-list"></div>
+  </main>
+</div>
+
+<script>
+const QS = [
+
+/* ══════════════════════════════════════════
+   COMBINATIONAL LOGIC  (14 questions)
+══════════════════════════════════════════ */
+{c:"combo",d:"easy",q:"What is the difference between a half adder and a full adder? Write the Boolean expressions for both.",
+a:`<strong>Half Adder</strong> — adds two 1-bit inputs, no carry-in:<br>
+<code>Sum   = A XOR B</code><br>
+<code>Carry = A AND B</code><br>
+Gate count: 1 XOR + 1 AND. Cannot be cascaded for multi-bit addition alone.<br><br>
+<strong>Full Adder</strong> — adds two 1-bit inputs plus a carry-in:<br>
+<code>Sum   = A XOR B XOR Cin</code><br>
+<code>Cout  = (A AND B) OR (B AND Cin) OR (A AND Cin)</code><br>
+Or equivalently: <code>Cout = (A AND B) OR (Cin AND (A XOR B))</code><br>
+Gate count: 2 XOR + 2 AND + 1 OR (standard CMOS) or built from two half adders.<br><br>
+<strong>Cascade use:</strong> Full adders chain into Ripple Carry Adder (RCA). Cin of bit-0 = 0. Each stage's Cout feeds next stage's Cin.<br><br>
+<strong>Interview tip:</strong> RCA has O(N) carry propagation delay. Carry Look-Ahead Adder (CLA) reduces to O(log N) by pre-computing carries in parallel.`},
+
+{c:"combo",d:"easy",q:"Minimize the Boolean function F(A,B,C,D) = Σm(0,1,2,5,8,9,10) using a Karnaugh Map.",
+a:`<strong>K-Map (4-variable, AB vs CD):</strong><br>
+<pre>
+        CD
+AB    00  01  11  10
+00  [  1   1   0   1 ]
+01  [  0   1   0   0 ]
+11  [  0   0   0   0 ]
+10  [  1   1   0   1 ]
+</pre>
+<strong>Groups identified:</strong><br>
+Group 1 (quad): cells (0,1,8,9) → AB=X0, CD=0X → <strong>B'D'</strong><br>
+Group 2 (quad): cells (0,2,8,10) → AB=X0, CD=X0 → <strong>B'C'</strong><br>
+Group 3 (pair): cells (1,5) → A=0, C=0, D=1 → <strong>A'C'D</strong><br><br>
+<strong>Minimized SOP:</strong><br>
+<code>F = B'D' + B'C' + A'C'D</code><br>
+= <code>B'(C' + D') + A'C'D</code> (factored)<br><br>
+<strong>Gate count before minimization:</strong> 7 minterms = 7 3-input AND gates + 1 7-input OR. After: 3 product terms = significant reduction.<br><br>
+<strong>Key rule:</strong> Always use the largest possible power-of-2 groups. Cells can be reused across groups. Wrap-around groups are valid (edges and corners of the K-map connect).`},
+
+{c:"combo",d:"med",q:"Design a 4-to-1 multiplexer using basic logic gates. Then explain how any combinational function can be implemented with a MUX.",
+a:`<strong>4-to-1 MUX truth table:</strong> Select S1,S0 → Output Y = I0,I1,I2,I3 respectively.<br><br>
+<strong>Boolean expression:</strong><br>
+<code>Y = S1'S0'·I0 + S1'S0·I1 + S1S0'·I2 + S1S0·I3</code><br><br>
+<strong>Gate implementation:</strong> 4 AND gates (3-input each: S decode + data) + 1 OR gate (4-input).<br><br>
+<strong>Any function via MUX:</strong><br>
+An N-variable function can be implemented with a 2^(N-1)-to-1 MUX by:<br>
+1. Use N-1 variables as select lines<br>
+2. For each select combination, assign the Nth variable (or its complement or 0 or 1) as the data input based on the truth table<br><br>
+<em>Example:</em> F(A,B,C) with A,B as selects, C as data input variable:<br>
+- S=00 (A=0,B=0): F=C' if truth table requires → I0=C'<br>
+- S=01 (A=0,B=1): F=1 → I1=1<br>
+etc.<br><br>
+<strong>Why useful in FPGAs:</strong> LUT (Look-Up Table) is essentially a MUX tree. A 6-input LUT = 64-to-1 MUX → can implement any 6-variable function.`},
+
+{c:"combo",d:"med",q:"What is a priority encoder? Design a 4-to-2 priority encoder with a valid output.",
+a:`A priority encoder resolves multiple active inputs by outputting the binary code of the highest-priority (usually highest-index) active input.<br><br>
+<strong>Truth table (I3 highest priority):</strong><br>
+<pre>
+I3 I2 I1 I0 | Y1 Y0 | V
+ 1  X  X  X |  1  1 | 1
+ 0  1  X  X |  1  0 | 1
+ 0  0  1  X |  0  1 | 1
+ 0  0  0  1 |  0  0 | 1
+ 0  0  0  0 |  0  0 | 0
+</pre>
+<strong>Boolean expressions:</strong><br>
+<code>Y1 = I3 + I2</code><br>
+<code>Y0 = I3 + I1·I2'</code><br>
+<code>V  = I3 + I2 + I1 + I0</code>  (any input active)<br><br>
+<strong>Interview application:</strong> Priority encoders are used in interrupt controllers (find highest-priority pending IRQ), arbiters, and instruction issue logic in OoO CPUs. The "X" (don't care) entries are what distinguish a priority encoder from a standard encoder.`},
+
+{c:"combo",d:"med",q:"Explain the difference between a decoder and a demultiplexer. How do you build a 3-to-8 decoder?",
+a:`<strong>Decoder:</strong> N inputs → 2^N outputs. Exactly one output is HIGH for each input combination. No data input.<br><br>
+<strong>Demultiplexer (DEMUX):</strong> 1 data input + N select inputs → 2^N outputs. Routes the single data input to one selected output. A decoder with an enable = DEMUX.<br><br>
+<strong>3-to-8 decoder (active HIGH):</strong><br>
+<pre>
+A2 A1 A0 | Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0
+ 0  0  0 |  0  0  0  0  0  0  0  1
+ 0  0  1 |  0  0  0  0  0  0  1  0
+ ...
+ 1  1  1 |  1  0  0  0  0  0  0  0
+</pre>
+<code>Y0 = A2'A1'A0'</code><br>
+<code>Y1 = A2'A1'A0</code><br>
+...and so on (each output is a unique 3-input AND gate).<br><br>
+<strong>Cascading:</strong> Two 3-to-8 decoders + 1 inverter on A3 → 4-to-16 decoder. Use A3' to enable first decoder, A3 to enable second.<br><br>
+<strong>Application:</strong> Address decoding in memory-mapped I/O. In your IBM Power Bus work, address decoders map physical addresses to specific bus agents.`},
+
+{c:"combo",d:"hard",q:"What is a carry look-ahead adder (CLA)? Derive the Generate and Propagate expressions and explain why CLA is faster than ripple carry.",
+a:`<strong>Ripple Carry Adder (RCA) problem:</strong> Carry must ripple through all N stages. For N-bit adder: delay ≈ N × tFA. At 64-bit, this is 64× full adder delays — unacceptable.<br><br>
+<strong>CLA key insight:</strong> Define per-bit:<br>
+<code>Generate: Gi = Ai AND Bi</code>  (this bit produces carry regardless of Cin)<br>
+<code>Propagate: Pi = Ai XOR Bi</code>  (this bit passes Cin to Cout)<br><br>
+<strong>Carry expressions (computed in parallel):</strong><br>
+<code>C1 = G0 + P0·C0</code><br>
+<code>C2 = G1 + P1·G0 + P1·P0·C0</code><br>
+<code>C3 = G2 + P2·G1 + P2·P1·G0 + P2·P1·P0·C0</code><br><br>
+All carries C1–C3 depend only on the original inputs (A, B, C0) — computed simultaneously in 2 gate delays (one for G/P, one for carry AND-OR).<br><br>
+<strong>Sum:</strong> <code>Si = Pi XOR Ci</code> (one more gate after Ci is ready)<br><br>
+<strong>Total CLA delay:</strong> ~4 gate delays regardless of N (for 4-bit group).<br>
+For 64-bit: use 4-bit CLA groups with a second-level CLA → O(log N) total.<br><br>
+<strong>Tradeoff:</strong> CLA uses more gates (AND-OR network grows with N). Area ↑, delay ↓.`},
+
+{c:"combo",d:"hard",q:"What is a Programmable Logic Array (PLA) vs a Programmable Array Logic (PAL)? Compare their flexibility and limitations.",
+a:`<strong>PLA (Programmable Logic Array):</strong><br>
+Both the AND plane (product terms) AND the OR plane (sum of products) are programmable.<br>
+- High flexibility: any product term can feed any OR gate<br>
+- More area due to double-programmable crossbar<br>
+- Used for complex multi-output Boolean functions<br><br>
+<strong>PAL (Programmable Array Logic):</strong><br>
+Only the AND plane is programmable; the OR plane is fixed.<br>
+- Each output has a fixed set of AND gates feeding it<br>
+- Less flexible but faster (fewer transistors in OR plane) and cheaper<br>
+- One AND gate's output cannot be shared across multiple OR gates<br><br>
+<strong>Comparison table:</strong><br>
+<pre>
+Feature          PLA          PAL
+AND plane        Programmable Programmable
+OR plane         Programmable Fixed
+Flexibility      High         Medium
+Speed            Slower       Faster
+Area             Larger       Smaller
+Sharing P-terms  Yes          No
+</pre>
+<strong>Modern context:</strong> Both are obsolete; replaced by FPGAs (LUT-based) and CPLDs. But the concept lives in FPGA's SOP synthesis flow — place and route maps to LUT structures that behave like small PLAs.`},
+
+{c:"combo",d:"med",q:"Implement a 1-bit comparator. Extend it to a 4-bit magnitude comparator and explain the cascading method.",
+a:`<strong>1-bit comparator:</strong><br>
+<code>A = B : XNOR(A,B) = A'B' + AB</code><br>
+<code>A > B : A AND B'</code><br>
+<code>A &lt; B : A' AND B</code><br><br>
+<strong>4-bit magnitude comparator (A[3:0] vs B[3:0]):</strong><br>
+Compare MSB first. If equal at that bit, move to next.<br>
+<code>A>B = A3B3' + (A3=B3)·A2B2' + (A3=B3)(A2=B2)·A1B1' + ...</code><br>
+where <code>Ei = Ai XNOR Bi</code> (equality at bit i).<br><br>
+<strong>Cascading for larger comparators:</strong><br>
+4-bit comparators (e.g., 74LS85) have cascade inputs: <code>IAgtB, IAltB, IAeqB</code>.<br>
+For 8-bit comparison:<br>
+- Low nibble comparator: set cascade inputs = 000 (equal start)<br>
+- High nibble comparator: connect cascade inputs from low nibble outputs<br>
+- If high nibbles equal, low nibble result propagates to final output<br><br>
+<strong>Delay:</strong> Cascaded comparators have O(N/k) delay (k = bits per stage). For high speed, use a tree of comparators.`},
+
+{c:"combo",d:"easy",q:"What is a tri-state buffer and where is it used in digital design?",
+a:`A tri-state buffer has three output states: Logic HIGH, Logic LOW, and High-Impedance (Hi-Z).<br><br>
+<strong>Control:</strong><br>
+- Enable=1: Output = Input (normal drive)<br>
+- Enable=0: Output = Hi-Z (effectively disconnected from the bus)<br><br>
+<strong>Symbol:</strong> Standard buffer with an enable input. Active-high or active-low enable variants exist.<br><br>
+<strong>Applications:</strong><br>
+1. <strong>Shared bus architectures:</strong> Multiple drivers on one bus (e.g., old ISA/PCI buses). Only one driver enabled at a time.<br>
+2. <strong>Bidirectional I/O pins:</strong> GPIO pad logic uses tri-state to switch between input and output modes.<br>
+3. <strong>Memory data buses:</strong> Multiple memory chips share a data bus; only selected chip drives.<br>
+4. <strong>Test scan chains:</strong> Tri-state can isolate sections of a bus during DFT.<br><br>
+<strong>RTL caution:</strong> Tri-state buses are hard to synthesize and simulate correctly. Modern FPGA designs avoid internal tri-state; only use at I/O boundary. In ASIC, prefer MUX-based bus structure over tri-state internally.`},
+
+{c:"combo",d:"hard",q:"Explain hazards in combinational circuits. What is the difference between a static-1, static-0, and dynamic hazard? How do you eliminate them?",
+a:`A <strong>hazard</strong> is an unwanted momentary glitch in output caused by unequal propagation delays through different logic paths.<br><br>
+<strong>Static-1 Hazard:</strong> Output should stay at 1, but momentarily glitches to 0 during an input transition.<br>
+Cause: Two product terms in SOP expression cover adjacent minterms, but neither covers the transition. The outgoing product term deactivates before the incoming activates.<br>
+Fix: Add a <em>consensus term</em> that covers the transition (bridges the gap in K-map).<br><br>
+<strong>Static-0 Hazard:</strong> Output should stay at 0, but glitches to 1.<br>
+Found in POS implementations. Fix: add consensus in the POS expression.<br><br>
+<strong>Dynamic Hazard:</strong> Output makes 3+ transitions (0→1→0→1 or reverse) when it should make only one transition. Occurs in multi-level logic with multiple path delays.<br>
+Fix: Restructure logic to eliminate reconvergent fanout causing multiple arrival times.<br><br>
+<strong>Why hazards matter in practice:</strong><br>
+- Asynchronous circuits: hazard glitches cause incorrect state transitions<br>
+- Synchronous circuits: if glitch reaches a flip-flop before clock edge, setup time may be violated<br>
+- Power: every glitch burns dynamic power (CV²f per transition)<br><br>
+<strong>RTL-level mitigation:</strong> Use registered outputs for state machines. Avoid latches driven by combinational logic with many fanin paths.`},
+
+{c:"combo",d:"easy",q:"What is a multiplexer-based logic implementation? How do you implement F = AB + BC using a 2-to-1 MUX tree?",
+a:`<strong>Any Boolean function can be implemented using MUX trees.</strong><br><br>
+<strong>Shannon expansion theorem:</strong><br>
+<code>F(A,B,C,...) = A'·F(0,B,C,...) + A·F(1,B,C,...)</code><br>
+This maps directly to a 2-to-1 MUX: A=select, F(0,...) and F(1,...) as inputs.<br><br>
+<strong>Implementing F = AB + BC:</strong><br>
+Expand on A (select):<br>
+<code>F = A'·(0·B + BC) + A·(1·B + BC)</code><br>
+<code>F = A'·(BC) + A·(B + BC)</code><br>
+<code>F = A'·(BC) + A·B</code><br>
+MUX1: select=A, I0=BC, I1=B → output = F<br>
+BC is computed by a second MUX (select=B, I0=0, I1=C) or an AND gate.<br><br>
+<strong>FPGA LUT connection:</strong> This is exactly how a 3-LUT evaluates F — it stores all 8 truth table values, effectively a 8-to-1 MUX with A,B,C as selects.`},
+
+{c:"combo",d:"med",q:"What is a ROM-based combinational logic implementation? Design a 2-bit multiplier using ROM.",
+a:`A ROM stores precomputed output values for every input combination. For an N-input, M-output function: ROM has 2^N locations × M bits.<br><br>
+<strong>2-bit multiplier:</strong> Inputs A[1:0] × B[1:0] → Product P[3:0].<br>
+Total inputs = 4 bits → ROM has 16 locations, each 4 bits wide = 64-bit ROM.<br><br>
+<strong>ROM contents (address = {A1,A0,B1,B0}, data = P3P2P1P0):</strong><br>
+<pre>
+Addr  A  B  Product
+0000  0×0 = 0000
+0001  0×1 = 0000
+0100  1×0 = 0000
+0101  1×1 = 0001
+1000  2×0 = 0000
+1001  2×1 = 0010
+1010  2×2 = 0100
+1111  3×3 = 1001
+...
+</pre>
+<strong>Advantages of ROM-based logic:</strong><br>
+- Timing is uniform (all paths same depth) — no hazards<br>
+- Easy to modify (reprogram ROM vs re-synthesize logic)<br>
+- Used in look-up tables for complex functions (sin, cos, log in DSP)<br><br>
+<strong>Disadvantage:</strong> Exponential area growth with inputs. 16-input function needs 64K-entry ROM.`},
+
+{c:"combo",d:"hard",q:"What is the Quine-McCluskey method and when is it preferred over K-maps?",
+a:`The Quine-McCluskey (QM) algorithm is a tabular method for minimizing Boolean functions to a minimal SOP form.<br><br>
+<strong>Algorithm steps:</strong><br>
+1. List all minterms in binary, grouped by number of 1s<br>
+2. Compare adjacent groups: if two terms differ by exactly 1 bit, combine them (replace differing bit with dash)<br>
+3. Repeat until no more combinations possible — all remaining are <em>prime implicants</em><br>
+4. Build a prime implicant chart: rows = prime implicants, columns = minterms<br>
+5. Select minimum set of prime implicants that covers all minterms (minimum cover = essential prime implicants + set covering)<br><br>
+<strong>When preferred over K-maps:</strong><br>
+- More than 4-5 variables (K-map becomes impractical to visualize)<br>
+- Multiple output functions (QM handles shared product terms)<br>
+- Computer implementation (EDA tools use variants of QM — Espresso heuristic)<br>
+- Formal verification requirement (QM produces provably minimal result)<br><br>
+<strong>Limitation:</strong> QM is NP-complete in the worst case. For large functions, Espresso heuristic (used in Berkeley SIS/ABC tools) provides near-minimal results much faster.`},
+
+{c:"combo",d:"easy",q:"What is the difference between a wired-AND and a wired-OR configuration? When are they used?",
+a:`When multiple gate outputs are directly connected together (without a buffer/OR gate), the result depends on the output type:<br><br>
+<strong>Wired-AND (Open-Collector / Open-Drain):</strong><br>
+Each driver can pull the line LOW (assert 0) or leave it floating (Hi-Z).<br>
+A pull-up resistor holds the line HIGH when no driver is active.<br>
+Result: line is LOW if ANY driver pulls low → logical AND of active-low signals.<br>
+Used in: I²C bus, SMBus, interrupt lines (multiple devices share one IRQ line).<br><br>
+<strong>Wired-OR (Emitter-Coupled Logic / ECL):</strong><br>
+Each driver can pull the line HIGH. Result: HIGH if ANY driver is active → OR function.<br>
+Used in ECL logic families, some custom bus designs.<br><br>
+<strong>Modern ASIC/FPGA:</strong> Avoid wired logic internally — use explicit MUX or OR gates. Tri-state buses in FPGAs only exist at I/O pads. Wired-AND is primarily seen at chip boundary (open-drain GPIO pins).`},
+
+{c:"combo",d:"med",q:"Explain how a carry-save adder (CSA) works and where it is used in multiplication hardware.",
+a:`A <strong>Carry-Save Adder</strong> takes 3 N-bit inputs and produces two N-bit outputs (partial sum + carry vector) without propagating carry across bits.<br><br>
+<strong>Operation:</strong> For each bit position i:<br>
+<code>Sum[i]   = A[i] XOR B[i] XOR C[i]</code><br>
+<code>Carry[i] = majority(A[i], B[i], C[i])</code>  (= full adder bit slice)<br>
+Carry[i] is passed to position i+1 in a subsequent addition — not propagated immediately.<br><br>
+<strong>Why useful:</strong> Adding three numbers with a CSA takes only O(1) time (one FA delay per bit), vs O(N) for a ripple adder. Carry propagation is deferred to a final fast adder.<br><br>
+<strong>Use in multipliers:</strong><br>
+Wallace Tree multiplier uses a tree of CSAs to reduce N partial products to 2 final values, then one final CLA/CPA for the last addition.<br>
+- CSA tree depth: O(log N) stages<br>
+- Total multiply delay: O(log N) + one final carry-propagate adder<br><br>
+<strong>Used in:</strong> All modern hardware multipliers (CPUs, GPUs, FPUs). Also in modular exponentiation for crypto hardware.`},
+
+/* ══════════════════════════════════════════
+   SEQUENTIAL LOGIC  (13 questions)
+══════════════════════════════════════════ */
+{c:"seq",d:"easy",q:"What is the difference between a latch and a flip-flop? Which is preferred in synchronous design and why?",
+a:`<strong>Latch (level-sensitive):</strong><br>
+Output changes whenever the enable/clock is HIGH (transparent). It continuously tracks input while enabled.<br>
+Sensitive to glitches on input while enabled → may capture wrong value.<br>
+SR, D, JK latches are common.<br><br>
+<strong>Flip-Flop (edge-triggered):</strong><br>
+Output changes only on a specific clock edge (rising or falling). Samples input at the edge; ignores input at all other times.<br>
+D, JK, T flip-flops are common.<br><br>
+<strong>Synchronous design preference: Flip-Flops.</strong><br>
+Reasons:<br>
+1. Deterministic sampling: value captured only at clock edge → no glitch sensitivity<br>
+2. Timing analysis is clean: STA tools model setup/hold relative to clock edge<br>
+3. Scan chain insertion (DFT) is straightforward with FFs<br>
+4. Latches create half-cycle paths that confuse STA tools unless handled carefully<br><br>
+<strong>When latches are acceptable:</strong> In high-performance designs, latches can borrow time across clock half-cycles (time borrowing). Used in custom datapath cells in IBM POWER CPUs for cycle-time optimization. Requires careful STA with latch-aware analysis.`},
+
+{c:"seq",d:"easy",q:"Explain the SR, JK, D, and T flip-flop types. What are the excitation equations for each?",
+a:`<strong>SR Flip-Flop:</strong><br>
+S=Set, R=Reset. Invalid state: S=R=1.<br>
+<code>Q+ = S + R'Q</code>   (Q+ = next state)<br><br>
+<strong>JK Flip-Flop:</strong><br>
+J=Set, K=Reset, J=K=1 → Toggle. Resolves SR's invalid state.<br>
+<code>Q+ = JQ' + K'Q</code><br><br>
+<strong>D Flip-Flop:</strong><br>
+Output follows input: Q+ = D. Most common in synchronous design.<br>
+<code>D = Q+</code> (trivial excitation; just connect desired next state to D)<br><br>
+<strong>T Flip-Flop:</strong><br>
+Toggle: T=1 → flip, T=0 → hold.<br>
+<code>Q+ = T XOR Q</code><br>
+<code>T = Q XOR Q+</code> (excitation equation)<br><br>
+<strong>Excitation table use (for state machine design):</strong><br>
+When designing a sequential circuit and you choose JK FF, the excitation table tells you what J and K inputs are needed to achieve each Q→Q+ transition:<br>
+<pre>
+Q→Q+  |  J  K
+0→0   |  0  X
+0→1   |  1  X
+1→0   |  X  1
+1→1   |  X  0
+</pre>
+<strong>Interview tip:</strong> D FF is always preferred in synthesis — synthesis tool assigns D=next_state expression directly.`},
+
+{c:"seq",d:"med",q:"What is metastability in a flip-flop? When does it occur and how do you mitigate it?",
+a:`<strong>Metastability:</strong> A flip-flop enters an indeterminate output state (neither valid 0 nor valid 1, typically VDD/2) when the setup or hold time is violated.<br><br>
+<strong>When it occurs:</strong><br>
+- Capturing asynchronous input (button press, UART data, external interrupt) that may transition near the clock edge<br>
+- Clock domain crossing (CDC): data from a slow domain captured by a fast-clock FF<br>
+- Any time the D input changes within the setup+hold window around the clock edge<br><br>
+<strong>Physics:</strong> The FF's internal cross-coupled inverters are in an unstable equilibrium. The output will eventually resolve to 0 or 1, but the resolution time Tr follows a distribution: P(Tr > t) ∝ exp(-t/τ) where τ is a technology-dependent constant (picoseconds range in modern CMOS).<br><br>
+<strong>Mean Time Between Failures (MTBF):</strong><br>
+<code>MTBF = exp(Tresolution/τ) / (f_clk × f_data × C)</code><br>
+Longer resolution time → exponentially better MTBF.<br><br>
+<strong>Mitigation — Synchronizer circuits:</strong><br>
+1. <strong>2-FF synchronizer:</strong> Chain two FFs. First FF may go metastable; second FF captures after one full clock period — enough resolution time for metastability to resolve in most cases.<br>
+2. <strong>3-FF synchronizer:</strong> For very high frequencies where one clock period isn't enough resolution time.<br>
+3. <strong>Handshake protocol:</strong> For multi-bit buses — use req/ack across domains. Never use a synchronizer directly on multi-bit data (Gray code or handshake required).`},
+
+{c:"seq",d:"med",q:"Design a 4-bit synchronous up-counter using D flip-flops. Write the next-state logic.",
+a:`<strong>4-bit synchronous counter (Q3Q2Q1Q0):</strong><br>
+In a synchronous counter, ALL flip-flops are clocked simultaneously. No ripple delay.<br><br>
+<strong>Next-state logic:</strong><br>
+<code>D0 = Q0'</code>  (toggles every cycle)<br>
+<code>D1 = Q1 XOR Q0</code>  (toggles when Q0=1)<br>
+<code>D2 = Q2 XOR (Q1·Q0)</code>  (toggles when Q1=Q0=1)<br>
+<code>D3 = Q3 XOR (Q2·Q1·Q0)</code>  (toggles when Q2=Q1=Q0=1)<br><br>
+<strong>Enable signal (EN):</strong><br>
+<code>D0 = Q0 XOR EN</code><br>
+<code>D1 = Q1 XOR (Q0·EN)</code>   etc. — counter holds when EN=0<br><br>
+<strong>Synchronous vs Asynchronous counter comparison:</strong><br>
+<pre>
+Feature         Sync Counter   Async (Ripple)
+Clock           All FFs same   FF0 clocks FF1 etc
+Delay           O(1)           O(N) — ripple delay
+Glitches        None           Yes — intermediate states
+Frequency       High           Limited by ripple
+STA analysis    Clean          Complex/avoid
+</pre>
+<strong>RTL:</strong> In Verilog, simply write <code>always @(posedge clk) count <= count + 1;</code> — synthesis maps to synchronous counter structure automatically.`},
+
+{c:"seq",d:"hard",q:"What is a Johnson counter and a ring counter? Compare their properties and applications.",
+a:`<strong>Ring Counter:</strong><br>
+N FFs in a shift register with direct feedback (Q of last FF → D of first FF).<br>
+- Valid states: only N states (one hot — one 1 rotating through)<br>
+- Initial load: must be seeded with exactly one 1 (e.g., 1000 for 4-bit)<br>
+- State sequence (4-bit): 1000→0100→0010→0001→1000<br>
+- Modulus = N (N FFs for N states)<br>
+- Decoding: trivial — each FF output directly indicates which state<br><br>
+<strong>Johnson (Möbius) Counter:</strong><br>
+N FFs with inverted feedback (Q' of last FF → D of first FF).<br>
+- Valid states: 2N states<br>
+- State sequence (4-bit): 0000→1000→1100→1110→1111→0111→0011→0001→0000<br>
+- Modulus = 2N (N FFs for 2N states)<br>
+- Decoding: only 2-input gates needed (efficient decoding)<br><br>
+<strong>Comparison:</strong><br>
+<pre>
+Property      Ring Counter  Johnson Counter
+States/N FFs  N             2N
+Decoding      Trivial (1 FF)  2-input AND/NAND
+Self-starting No (needs init)  No (needs init)
+Glitch-free   Yes           Yes
+</pre>
+<strong>Application:</strong> Timing/sequencing circuits. Johnson counter used in divide-by-2N frequency dividers. Ring counter used in one-hot state machines for speed (no decoder needed).`},
+
+{c:"seq",d:"med",q:"Explain setup time, hold time, and clock-to-Q delay in flip-flops. How do violations of each affect circuit behavior?",
+a:`<strong>Setup Time (Tsu):</strong><br>
+Minimum time the D input must be stable BEFORE the clock edge.<br>
+Violation: If D changes too close before the clock edge (within Tsu window), the FF may sample the wrong value or enter metastability.<br>
+Effect: Wrong data captured → functional failure or metastable output.<br><br>
+<strong>Hold Time (Th):</strong><br>
+Minimum time D must remain stable AFTER the clock edge.<br>
+Violation: D changes too soon after the clock edge → FF may capture a mix of old/new values or go metastable.<br>
+Effect: Intermittent functional failures, hard to debug.<br><br>
+<strong>Clock-to-Q delay (Tcq):</strong><br>
+Time from the active clock edge until the Q output is valid and stable.<br>
+This is the propagation delay of the flip-flop itself.<br><br>
+<strong>Timing budget equation:</strong><br>
+<code>T_clock ≥ Tcq + T_combo + Tsu + T_skew</code><br>
+Where T_combo = combinational logic delay between FFs.<br><br>
+<strong>Hold time check (must hold for ALL paths):</strong><br>
+<code>Tcq + T_combo_min ≥ Th + T_skew</code><br>
+Hold violations cannot be fixed by slowing the clock — they require adding buffer delay on the short path.<br><br>
+<strong>Common hold violation cause:</strong> Direct FF-to-FF connection with zero combinational logic. Solution: insert buffers/inverter pairs on the hold-critical path.`},
+
+{c:"seq",d:"hard",q:"What are the different types of shift registers? Design an 8-bit SISO shift register and explain its use in serial communication.",
+a:`<strong>Shift register types:</strong><br>
+<code>SISO</code>: Serial-In, Serial-Out — data shifts one bit per clock<br>
+<code>SIPO</code>: Serial-In, Parallel-Out — after N clocks, all bits available simultaneously<br>
+<code>PISO</code>: Parallel-In, Serial-Out — load N bits in parallel, shift out serially<br>
+<code>PIPO</code>: Parallel-In, Parallel-Out — universal shift register; can also hold (register)<br><br>
+<strong>8-bit SISO RTL (Verilog):</strong><br>
+<pre>
+module siso_8bit(
+  input  clk, rst, d_in,
+  output d_out
+);
+  reg [7:0] sr;
+  always @(posedge clk)
+    if (rst) sr <= 8'b0;
+    else     sr <= {sr[6:0], d_in};
+  assign d_out = sr[7];
+endmodule
+</pre>
+<strong>Serial communication use:</strong><br>
+UART TX path: Parallel byte from CPU → PISO shift register → serial bits on TX line (LSB first, at baud rate).<br>
+UART RX path: Serial bits from RX pin → SIPO shift register → parallel byte to CPU after 8 clocks.<br><br>
+<strong>Additional uses:</strong><br>
+- LFSR (Linear Feedback Shift Register) for pseudo-random number generation and CRC computation<br>
+- Scan chain in DFT — all FFs in a design connected as one long SISO shift register for test<br>
+- Delay lines — delay a signal by exactly N clock cycles`},
+
+{c:"seq",d:"med",q:"What is an LFSR (Linear Feedback Shift Register)? How is it used for PRBS generation and CRC computation?",
+a:`An LFSR is a shift register where the input bit is computed as a XOR (linear function) of specific feedback taps.<br><br>
+<strong>Example: 4-bit LFSR with taps at positions 4 and 3 (Fibonacci form):</strong><br>
+<pre>
+D4  D3  D2  D1
+ |   |           
+ +---+------→ XOR → D4_next
+</pre>
+<code>D_in = D4 XOR D3</code><br>
+Maximal-length sequence (m-sequence): an N-bit LFSR generates 2^N - 1 states before repeating (all zeros is the lock-up state).<br><br>
+<strong>PRBS (Pseudo-Random Bit Sequence):</strong><br>
+Used in high-speed link testing (SerDes, DDR). The receiver has the same LFSR and checks for bit errors. PRBS-7, PRBS-15, PRBS-31 are standard patterns.<br><br>
+<strong>CRC computation:</strong><br>
+CRC divides the data polynomial by a generator polynomial (XOR arithmetic). The LFSR implements this division:<br>
+- Feedback taps correspond to the CRC generator polynomial coefficients<br>
+- After shifting all data bits through, the LFSR state = CRC remainder<br>
+Example: CRC-32 uses polynomial 0x04C11DB7 → 32-bit LFSR with specific feedback taps.<br><br>
+<strong>Interview tip:</strong> LFSRs are also used in ATPG (test pattern generation) and scan chain BIST (Built-In Self-Test) in your IBM Power chip DFT flows.`},
+
+{c:"seq",d:"hard",q:"What is clock domain crossing (CDC)? Describe at least three safe methods for passing signals across clock domains.",
+a:`<strong>CDC problem:</strong> When a signal generated in clock domain A is sampled by logic in clock domain B (different frequency or phase), setup/hold violations and metastability can occur.<br><br>
+<strong>Method 1: Two-FF Synchronizer (single-bit)</strong><br>
+Chain two DFFs in the destination domain. First FF may go metastable; second FF samples after one full destination clock period (sufficient resolution time for modern CMOS at reasonable frequencies).<br>
+Use for: single-bit control signals, flags, pulses.<br><br>
+<strong>Method 2: Gray-Coded Counter</strong><br>
+For multi-bit counters crossing domains (e.g., FIFO read/write pointers): encode counter in Gray code before passing through a 2-FF synchronizer. Gray code ensures only 1 bit changes per count step → at most 1 bit metastable at a time.<br>
+Use for: async FIFO pointers, address counters.<br><br>
+<strong>Method 3: Handshake (REQ/ACK)</strong><br>
+Sender asserts REQ (synchronized to destination). Destination processes data, asserts ACK. Sender deasserts REQ only after ACK is seen. Full 4-phase handshake guarantees data stability.<br>
+Use for: infrequent, wide data transfers where latency is acceptable.<br><br>
+<strong>Method 4: Async FIFO</strong><br>
+For streaming data: decouple domains with a FIFO. Write ptr from write domain (Gray-coded, synchronized to read domain), read ptr from read domain (Gray-coded, synchronized to write domain). Flag empty/full from pointer comparison.<br>
+Use for: data stream between two clock domains (e.g., DDR controller ↔ CPU interface).<br><br>
+<strong>What NOT to do:</strong> Never directly sample multi-bit data through a synchronizer without Gray coding or handshake — different bits may be captured from different clock cycles.`},
+
+{c:"seq",d:"easy",q:"What is the difference between synchronous and asynchronous reset in flip-flops? Which is preferred and why?",
+a:`<strong>Synchronous Reset:</strong><br>
+Reset is sampled on the clock edge. <code>if (rst) Q <= 0; else Q <= D;</code><br>
+- Reset takes effect only at the next clock edge<br>
+- Reset path is part of the data path (setup/hold timing applies to rst signal)<br>
+- Synthesizes to a MUX before FF D input<br><br>
+<strong>Asynchronous Reset:</strong><br>
+Reset takes effect immediately, regardless of clock. <code>always @(posedge clk or posedge rst)</code><br>
+- Faster response; FF has dedicated async reset pin (no MUX needed)<br>
+- Reset de-assertion must be synchronized — if rst deasserts near clock edge → metastability on de-assertion<br><br>
+<strong>Which is preferred — industry practice varies:</strong><br>
+<ul>
+<li><strong>Synchronous preferred in FPGAs:</strong> Xilinx/Intel FPGAs have dedicated sync reset on FF; async uses slower paths</li>
+<li><strong>Async reset preferred in ASICs:</strong> Power-up initialization, faster reset assertion; BUT requires a reset synchronizer cell at the chip boundary</li>
+<li><strong>Hybrid (common in Power/IBM style):</strong> Async assert (guaranteed power-up reset) + synchronous release via a reset synchronizer (2-FF sync on de-assertion to prevent metastability)</li>
+</ul>
+<strong>Reset synchronizer:</strong> Two cascaded FFs driven by an asynchronous reset signal; output is used as the synchronized reset to the rest of the design.`},
+
+{c:"seq",d:"med",q:"Explain the concept of pipelining in digital design. What are the tradeoffs of adding more pipeline stages?",
+a:`<strong>Pipelining:</strong> Divides a long combinational path into shorter stages separated by flip-flops, allowing each stage to operate on different data simultaneously.<br><br>
+<strong>Effect on timing:</strong><br>
+If a combinational block has delay T and is split into N equal stages (each T/N), the clock period can be reduced to T/N + FF overhead.<br>
+Throughput ≈ 1 result per clock vs 1 result per T (un-pipelined).<br><br>
+<strong>Latency:</strong> Increases by (N-1) clock cycles (pipeline fill time).<br><br>
+<strong>Tradeoffs of more pipeline stages:</strong><br>
+<pre>
+More stages → PROS:
+  + Higher clock frequency
+  + Better throughput
+  + More opportunities for power gating idle stages
+
+More stages → CONS:
+  - Higher latency (worse for dependent operations)
+  - More flip-flop area (N-1 extra register stages)
+  - More power (more FF toggling)
+  - Pipeline hazards (data, control, structural)
+  - Harder branch prediction penalty (deeper pipeline → worse mispredict cost)
+  - More complex forwarding/bypass logic
+</pre>
+<strong>Real-world example:</strong> IBM POWER10 has ~15-16 pipeline stages in the integer execution unit. Very deep pipelines (Intel Prescott: 31 stages) were abandoned due to branch misprediction penalty exceeding throughput gains.`},
+
+{c:"seq",d:"hard",q:"What is a Gray code counter? Implement a 3-bit Gray code counter and explain its advantage over binary in certain applications.",
+a:`<strong>Gray code:</strong> A binary numeral system where adjacent values differ by exactly ONE bit.<br>
+3-bit Gray code sequence:<br>
+<pre>
+Decimal  Binary  Gray
+  0       000    000
+  1       001    001
+  2       010    011
+  3       011    010
+  4       100    110
+  5       101    111
+  6       110    101
+  7       111    100
+</pre>
+<strong>Binary to Gray conversion:</strong> <code>G[N] = B[N]; G[i] = B[i] XOR B[i+1]</code><br>
+<strong>Gray to Binary:</strong> <code>B[N] = G[N]; B[i] = G[i] XOR B[i+1]</code><br><br>
+<strong>3-bit Gray counter RTL:</strong><br>
+<pre>
+reg [2:0] bin_cnt;
+always @(posedge clk)
+  bin_cnt <= bin_cnt + 1;
+// Gray output: combinational conversion
+assign gray = {bin_cnt[2], bin_cnt[2]^bin_cnt[1], 
+               bin_cnt[1]^bin_cnt[0]};
+</pre>
+<strong>Advantage: only 1-bit changes per count step.</strong><br>
+Applications:<br>
+1. <strong>Async FIFO pointers:</strong> Multi-bit pointer crosses clock domain. 1-bit change → only 1 FF can go metastable → safe synchronizer behavior.<br>
+2. <strong>Rotary encoder position sensing:</strong> Mechanical noise can't cause multi-bit transitions.<br>
+3. <strong>Reducing glitch power</strong> in multi-bit buses that switch frequently.`},
+
+/* ══════════════════════════════════════════
+   TIMING & CLOCKING  (13 questions)
+══════════════════════════════════════════ */
+{c:"timing",d:"easy",q:"What is Static Timing Analysis (STA)? What are the key timing checks it performs?",
+a:`<strong>STA</strong> mathematically verifies that all timing paths in a design meet their timing constraints without requiring simulation vectors.<br><br>
+<strong>Core timing checks:</strong><br><br>
+<strong>1. Setup check (max delay path):</strong><br>
+Ensures data arrives at FF input early enough before clock edge.<br>
+<code>T_clock - T_skew ≥ Tcq + T_combo + Tsu</code><br>
+<strong>Slack = T_required_arrival - T_actual_arrival</strong><br>
+Negative slack = timing violation = design fails.<br><br>
+<strong>2. Hold check (min delay path):</strong><br>
+Ensures data doesn't propagate too fast and corrupt the FF that just captured it.<br>
+<code>Tcq_min + T_combo_min ≥ Th + T_skew</code><br>
+Hold violations require adding intentional delay (buffer insertion).<br><br>
+<strong>3. Clock skew analysis:</strong><br>
+Difference in clock arrival time at different FFs. Positive skew can relax setup; negative skew tightens setup. Both affect hold.<br><br>
+<strong>4. Clock jitter:</strong><br>
+Cycle-to-cycle variation in clock period. STA derates paths by jitter margin (setup margin reduced by jitter).<br><br>
+<strong>5. Pulse width checks:</strong><br>
+Minimum clock HIGH and LOW times must be met for FF internal operation.<br><br>
+<strong>Tools:</strong> Synopsys PrimeTime, Cadence Tempus, Ansys PathFinder. In your IBM Power12/Neela flow, STA signoff is mandatory at every stage (synthesis, P&R, post-route).`},
+
+{c:"timing",d:"med",q:"What is clock skew and clock jitter? How do they affect setup and hold timing margins?",
+a:`<strong>Clock Skew:</strong> Spatial variation — difference in clock arrival time at different flip-flops in the design due to different clock tree path lengths.<br>
+<code>Skew = T_clock_arrival(FF_dest) - T_clock_arrival(FF_src)</code><br><br>
+<strong>Effect on setup:</strong><br>
+Positive skew (dest clock arrives later) HELPS setup: data has more time to propagate.<br>
+<code>Setup slack = T_clk + Tskew - Tcq - Tcombo - Tsu</code><br><br>
+<strong>Effect on hold:</strong><br>
+Positive skew HURTS hold: dest FF captures early, data must arrive even sooner.<br>
+<code>Hold slack = Tcq_min + Tcombo_min - Th - Tskew</code><br><br>
+<strong>Clock Jitter:</strong> Temporal variation — cycle-to-cycle variation in the clock edge timing at a SINGLE point, caused by PLL noise, power supply noise, substrate coupling.<br>
+Types: period jitter, cycle-to-cycle jitter, long-term accumulated jitter.<br><br>
+<strong>Effect on timing:</strong><br>
+Jitter reduces effective setup margin: if clock arrives early by J amount, data has less time.<br>
+STA applies jitter as a derating: <code>T_eff = T_clk - T_jitter</code><br><br>
+<strong>Key difference:</strong><br>
+Skew is deterministic and path-dependent (can be measured, compensated in CTS).<br>
+Jitter is stochastic and frequency-dependent (must be budgeted, reduced by better PLL design).`},
+
+{c:"timing",d:"med",q:"What is the critical path in a digital design? How do you identify and optimize it?",
+a:`The <strong>critical path</strong> is the combinational logic path between two flip-flops with the maximum propagation delay — it determines the maximum clock frequency of the design.<br><br>
+<strong>Identification:</strong><br>
+STA tool reports paths sorted by negative slack (most critical first). The path with the worst (most negative) setup slack is the critical path.<br>
+Path report includes: launch FF → gate chain → capture FF → setup time.<br><br>
+<strong>Optimization techniques:</strong><br><br>
+<strong>1. Logic restructuring:</strong> Reduce logic depth. Replace wide adder tree with a faster carry lookahead structure. Decompose complex expressions.<br><br>
+<strong>2. Retiming:</strong> Move registers across combinational logic (forward/backward) to balance path delays without changing function. Synopsys DC supports compile_ultra retiming.<br><br>
+<strong>3. Path cloning / fanout reduction:</strong> High fanout nets have large RC load → add buffers to drive multiple loads. Reduces net delay.<br><br>
+<strong>4. Technology mapping:</strong> Replace multi-stage gate chain with a larger driving-strength cell or complex cell (AOI, OAI).<br><br>
+<strong>5. Pipeline the critical path:</strong> Insert an extra register stage to cut the long path into two shorter paths. Increases latency but raises Fmax.<br><br>
+<strong>6. Physical optimization:</strong> Place cells on critical path close together (reduces wire delay). Use higher-Vt cells only on non-critical paths to save power.`},
+
+{c:"timing",d:"hard",q:"Explain multi-cycle paths (MCP) and false paths in STA. Give a realistic example of each.",
+a:`<strong>Multi-Cycle Path (MCP):</strong><br>
+A timing path that is designed to take more than one clock cycle for data to propagate. STA by default assumes all paths complete in one cycle; you must tell the tool about MCPs to avoid false violations.<br><br>
+<strong>Example:</strong> A 64-bit multiply unit takes 3 clock cycles. The paths from the multiplier inputs to outputs are 3-cycle paths.<br>
+Constraint: <code>set_multicycle_path -setup 3 -from [get_pins mult/A*] -to [get_pins mult/P*]</code><br>
+Also set hold: <code>set_multicycle_path -hold 2 -from ... -to ...</code> (hold = setup - 1 usually).<br><br>
+<strong>False Path:</strong><br>
+A timing path that physically exists in the netlist but is logically impossible to sensitize during operation — data never actually propagates through it during normal operation.<br><br>
+<strong>Example:</strong><br>
+1. Scan test path: During functional mode, scan enable (SE) is 0. The mux output connected through scan is never active functionally. Path from scan_in to functional output = false path during mission mode.<br>
+2. Asynchronous reset path: <code>set_false_path -from [get_ports rst_n]</code> (if rst is handled by CDC constraints separately)<br>
+3. Mutually exclusive clock domains: Two clocks that never run simultaneously → paths between them are false paths.<br><br>
+<strong>Danger of over-constraining false paths:</strong> If a path is incorrectly declared false, STA won't check it, and a real violation could slip through. Always verify false path assumptions with simulation or formal verification.`},
+
+{c:"timing",d:"hard",q:"What is clock gating? How do you implement it safely in RTL and why does it save power?",
+a:`<strong>Clock gating</strong> disables the clock to a group of flip-flops when their outputs don't need to change, preventing unnecessary dynamic power consumption.<br><br>
+<strong>Power saving mechanism:</strong><br>
+Dynamic power: <code>P = α·C·V²·f</code><br>
+α = activity factor. Clock net has α=1 (toggles every cycle) and drives the largest capacitance in the chip (~30-40% of total dynamic power is clock network). Gating α reduces P proportionally.<br><br>
+<strong>Safe RTL implementation:</strong><br>
+<strong>Wrong (creates glitches):</strong><br>
+<pre>
+// NEVER DO THIS — glitch on gated_clk!
+assign gated_clk = clk AND enable;
+</pre>
+<strong>Correct — use latch-based ICG (Integrated Clock Gate):</strong><br>
+<pre>
+// Standard ICG cell
+always @(clk, enable)
+  if (!clk) latch_en <= enable;  // latch transparent when clk=0
+assign gated_clk = clk AND latch_en;
+</pre>
+The latch captures EN only when clock is LOW, ensuring EN is stable before the clock rises. This is why a negative-level latch is inside the ICG cell.<br><br>
+<strong>Modern flow:</strong> Synthesis tools automatically insert ICG cells from RTL constructs like:<br>
+<pre>
+always @(posedge clk)
+  if (enable) data <= d_in;
+</pre>
+Tool maps this to an ICG cell automatically during clock gating synthesis pass.<br><br>
+<strong>Typical power saving:</strong> 20-40% dynamic power reduction in data-path heavy designs.`},
+
+{c:"timing",d:"med",q:"What is PLL (Phase-Locked Loop) and how is it used in SoC clock generation?",
+a:`A PLL is an analog/mixed-signal feedback circuit that synchronizes its output clock phase and frequency to a reference input clock.<br><br>
+<strong>Core components:</strong><br>
+<code>Phase Detector (PD)</code>: Compares phase of reference and feedback. Outputs error signal.<br>
+<code>Loop Filter (LF)</code>: Low-pass filter smooths the error signal.<br>
+<code>Voltage-Controlled Oscillator (VCO)</code>: Generates output clock; frequency controlled by voltage.<br>
+<code>Frequency Divider (/N)</code>: Divides VCO output; feeds back to PD.<br><br>
+<strong>Frequency multiplication:</strong><br>
+If reference = Fref and divider = N → VCO output = N × Fref.<br>
+Example: 25 MHz reference, N=40 → 1 GHz output clock.<br><br>
+<strong>SoC clock generation uses:</strong><br>
+1. CPU core clock (highest frequency — 2–4 GHz)<br>
+2. Memory interface clock (DDR5: 3200 MHz)<br>
+3. Peripheral clocks (USB 480 MHz, PCIe 100 MHz reference × spread-spectrum PLL)<br>
+4. Spread-spectrum clocking: modulate PLL output frequency slightly (±0.5%) to reduce EMI<br><br>
+<strong>PLL lock time:</strong> Time for PLL to acquire lock after power-up or frequency change. Typical: microseconds to milliseconds. SoC power-up sequence must wait for PLL lock before releasing system reset.<br><br>
+<strong>Interview tip:</strong> In your DDR controller work — DDR PHY has a DLL (Delay-Locked Loop) rather than PLL. DLL adjusts delay (not frequency), aligning data strobe (DQS) to the data window.`},
+
+{c:"timing",d:"hard",q:"Explain timing closure. What techniques do you apply when a design fails timing after place and route?",
+a:`<strong>Timing closure</strong> is the process of ensuring all timing paths in a placed and routed design meet their constraints (setup, hold, pulse width).<br><br>
+<strong>Debug flow — when timing fails after P&R:</strong><br><br>
+<strong>Step 1: Identify the violation type</strong><br>
+- Setup violation (slack < 0 in setup report): path too slow<br>
+- Hold violation (slack < 0 in hold report): path too fast<br><br>
+<strong>Step 2: Analyze the failing path</strong><br>
+- What is the critical gate on the path? (highest % of path delay)<br>
+- Is it a logic delay or wire delay problem?<br>
+- Check fanout on critical net — high fanout = large RC = slow<br><br>
+<strong>Fixes for setup violations:</strong><br>
+1. Physical optimization: move cells closer (reduce wire delay)<br>
+2. Upsize driver cells (stronger drive strength)<br>
+3. Fanout splitting (clone high-fanout cells)<br>
+4. Restructure logic (synthesis re-run with tighter constraints)<br>
+5. Retiming (move a register to balance the path)<br>
+6. Reduce clock frequency (last resort)<br><br>
+<strong>Fixes for hold violations:</strong><br>
+1. Insert delay cells (buffers, inverter pairs) on short paths<br>
+2. Increase minimum path delay constraint<br>
+3. Adjust clock tree to reduce skew on the violating path<br><br>
+<strong>Systematic approach used in IBM Power12/Neela:</strong><br>
+Hierarchical closure: close timing block by block. Use physical guidance (floorplan) to keep critical paths short. ECO (Engineering Change Order) flow for incremental fixes post-GDS.`},
+
+{c:"timing",d:"med",q:"What is time borrowing across latches? When is it beneficial?",
+a:`<strong>Time borrowing:</strong> In a latch-based design, a latch that becomes transparent on the HIGH phase allows data arriving late (beyond the clock edge) to still be captured, "borrowing" time from the next clock phase.<br><br>
+<strong>How it works:</strong><br>
+Consider two paths: Path A is short (finishes at 40% of cycle), Path B is long (finishes at 60% of cycle).<br>
+In an FF-based design: Path B fails (requires 60%, budget is 50%).<br>
+In a latch-based design: L1 (transparent HIGH) captures Path B data up to the LOW phase start. Path B borrows ~10% of the cycle from L2's setup budget.<br><br>
+<strong>Condition for valid borrowing:</strong><br>
+<code>Borrow_B ≤ Available_slack_A</code><br>
+The short path "donates" its slack to the long path.<br><br>
+<strong>Benefits:</strong><br>
+1. Higher clock frequency for same logic depth<br>
+2. Avoids adding extra pipeline stage (saves latency)<br>
+3. Naturally balances unequal path delays<br><br>
+<strong>Drawbacks:</strong><br>
+1. STA must support latch-aware analysis (PrimeTime with -latch_time_borrow)<br>
+2. Harder to understand/debug<br>
+3. Functional simulation must handle transparency windows correctly<br><br>
+<strong>IBM Power / POWER chips historically used latches heavily</strong> in their execution pipelines for exactly this cycle-time benefit.`},
+
+{c:"timing",d:"med",q:"What is I/O timing? Explain input and output delay constraints and how they are derived.",
+a:`I/O timing constraints tell the STA tool about external timing requirements at chip pins, so it can verify that the chip interface meets its specifications.<br><br>
+<strong>Input delay constraint:</strong><br>
+<code>set_input_delay -max Tid -clock CLK [get_ports DATA_IN]</code><br>
+Tells STA: data arrives at the input pin Tid after the clock edge (at the board source).<br>
+This reduces the budget available for internal combinational logic after the input pin.<br>
+Internal path budget = T_clk - Tid - T_setup_internal<br><br>
+<strong>Output delay constraint:</strong><br>
+<code>set_output_delay -max Tod -clock CLK [get_ports DATA_OUT]</code><br>
+Tells STA: data must arrive at the output pin Tod before the next clock edge (at the board destination).<br>
+This reduces budget for internal logic driving the output pin.<br>
+Internal path budget = T_clk - Tod - T_internal_cq<br><br>
+<strong>How derived:</strong><br>
+From board-level timing analysis:<br>
+- Source synchronous interface (DDR, SDIO): input delay = board trace delay + source FF Tcq + source clock jitter<br>
+- System synchronous interface: use the full system timing budget and subtract external component delays<br><br>
+<strong>DDR-specific:</strong> DQS-based input timing requires special set_input_delay relative to DQS clock (not CK). Your DDR PHY work is directly relevant here.`},
+
+{c:"timing",d:"easy",q:"What is glitch power and how can it be reduced in a combinational logic block?",
+a:`<strong>Glitch power</strong> (also called spurious transitions or hazard power) is dynamic power consumed by unwanted transient transitions in combinational logic before the output settles to its final value.<br><br>
+<strong>Cause:</strong> Different input paths have different propagation delays. When an input changes, intermediate nodes toggle multiple times before the output stabilizes. Each toggle charges/discharges capacitance → power wasted.<br><br>
+<strong>Glitch power is significant:</strong> In deep logic chains (like adder trees), glitch power can be 20-40% of total dynamic power.<br><br>
+<strong>Reduction techniques:</strong><br>
+1. <strong>Logic balancing:</strong> Equalize path delays through the combinational cone. If all inputs arrive simultaneously, fewer glitches occur.<br>
+2. <strong>Pipeline insertion:</strong> Break long combinational paths with registers. Glitches within each stage don't propagate to the next stage.<br>
+3. <strong>Operand isolation / clock gating:</strong> Disable inputs to idle computation blocks (prevents transitions from propagating at all).<br>
+4. <strong>Reduce logic depth:</strong> Fewer levels = fewer reconvergent fanout paths = fewer hazards.<br>
+5. <strong>Dual-rail encoding (hazard-free logic):</strong> Used in asynchronous circuits; each signal has a true and complement rail — valid only when rails differ.<br><br>
+<strong>Tool support:</strong> Power-aware synthesis tools (Synopsys DC -power, Cadence Genus) optimize for glitch reduction by inserting balancing buffers on short paths.`},
+
+{c:"timing",d:"hard",q:"What is the difference between on-chip variation (OCV) and AOCV/POCV in signoff STA?",
+a:`<strong>On-Chip Variation (OCV / flat derating):</strong><br>
+Early OCV model applies a flat percentage derating to all cells:<br>
+- Launch path cells: slowed by +X% (early launch = hold; late launch = setup)<br>
+- Capture path cells: sped up by -X% (pessimistic for setup)<br>
+Simple but overly pessimistic — a single cell 1mm away from another cannot vary independently by the full OCV budget.<br><br>
+<strong>Advanced OCV (AOCV):</strong><br>
+Derating varies with logic depth and physical distance:<br>
+- Deep paths: variation averages out → lower derating<br>
+- Short paths: higher potential for local variation → higher derating<br>
+Look-up table: derate[distance_stage, depth_stage].<br>
+Less pessimistic than flat OCV → better correlation to silicon.<br><br>
+<strong>Parametric OCV (POCV / Statistical STA):</strong><br>
+Models variation statistically. Each cell delay is a Gaussian distribution. Path delay = statistical sum of cell delays. Slack is reported as a distribution → yield-based signoff (e.g., 3-sigma).<br>
+Most accurate; used at 7nm and below where variation is dominant.<br><br>
+<strong>Practical implication for Power12:</strong> IBM's 7nm / 5nm processes require POCV signoff. AOCV was the standard for 14nm. Flat OCV is now only for early feasibility checks.`},
+
+{c:"timing",d:"med",q:"What is a scan chain and how does it affect timing? What is scan compression?",
+a:`<strong>Scan chain:</strong> A DFT (Design for Testability) technique that connects all flip-flops in the design into one or more shift register chains.<br>
+In scan mode: data is shifted in serially (scan_in → FF1 → FF2 → ... → scan_out).<br>
+In capture mode: one clock pulse captures the combinational logic response into the FFs.<br><br>
+<strong>Timing impact of scan:</strong><br>
+1. Each FF has a scan MUX at its D input → adds ~1 gate delay to the data path (setup time increase).<br>
+2. Scan clock must meet timing through the entire chain.<br>
+3. At-speed scan (ATPG at functional frequency) must verify hold timing on capture cycle — this is a major timing challenge.<br><br>
+<strong>Scan compression:</strong><br>
+Without compression: a chip with 10M FFs needs 10M shift cycles per test pattern — test time = hours.<br>
+Compression logic (e.g., Synopsys DFT Compiler EDT) adds:<br>
+- Input decompressor: expands few tester channels (e.g., 10) into many scan chains (e.g., 1000) using XOR network<br>
+- Output compactor: compresses 1000 chain outputs to 10 tester channels using XOR trees<br>
+Compression ratio: 100:1 typical → 100× reduction in test time and tester memory.<br><br>
+<strong>Interview note:</strong> IBM Power12 uses EDT-based compression with multiple scan domains (functional, at-speed, IDDQ).`},
+
+/* ══════════════════════════════════════════
+   FSM DESIGN  (10 questions)
+══════════════════════════════════════════ */
+{c:"fsm",d:"easy",q:"What is the difference between a Moore FSM and a Mealy FSM? Give an example of when you'd choose each.",
+a:`<strong>Moore FSM:</strong> Output depends ONLY on the current state.<br>
+Output logic: <code>Output = f(State)</code><br>
+Output changes only on state transitions (synchronous if output is registered).<br><br>
+<strong>Mealy FSM:</strong> Output depends on BOTH the current state AND the current input.<br>
+Output logic: <code>Output = f(State, Input)</code><br>
+Output can change immediately when input changes (combinational output).<br><br>
+<strong>Comparison:</strong><br>
+<pre>
+Property        Moore       Mealy
+Output depends  State only  State + Input
+# of states     More        Fewer (inputs fold in)
+Output timing   State-synced  Async (input-driven)
+Glitch risk     Lower        Higher (input glitch→output glitch)
+</pre>
+<strong>When to choose Moore:</strong><br>
+- Output drives another synchronous block (no glitch tolerance)<br>
+- Output is a control signal that must be stable for a full cycle<br>
+- Safer default for RTL design<br><br>
+<strong>When to choose Mealy:</strong><br>
+- Need one-cycle faster response to input<br>
+- Fewer states needed (simpler state encoding)<br>
+- Serial protocol decoders (respond as soon as bit is received)<br><br>
+<strong>RTL implementation:</strong> In Verilog, register the outputs of a Mealy FSM to convert it effectively to a Moore machine (eliminates glitch risk at cost of 1 cycle latency).`},
+
+{c:"fsm",d:"med",q:"Design a sequence detector FSM that detects the pattern '1011' in a serial bit stream (overlapping detection allowed).",
+a:`<strong>States:</strong> S0=idle, S1=got 1, S2=got 10, S3=got 101, S4=got 1011(=detect)<br><br>
+<strong>State transition table (input X):</strong><br>
+<pre>
+State  X=0    X=1    Output(Moore)
+S0     S0     S1     0
+S1     S2     S1     0
+S2     S0     S3     0
+S3     S2     S4     0
+S4     S2     S1     1  ← detection
+</pre>
+<strong>Why S4→S2 on X=0:</strong> After detecting 1011, if next bit is 0, we have "10" which could start a new pattern → go to S2.<br>
+Why S4→S1 on X=1: After 1011, if next bit is 1, we have "1" → go to S1 (overlapping).<br><br>
+<strong>Verilog sketch:</strong><br>
+<pre>
+always @(posedge clk)
+  case (state)
+    S0: state <= x ? S1 : S0;
+    S1: state <= x ? S1 : S2;
+    S2: state <= x ? S3 : S0;
+    S3: state <= x ? S4 : S2;
+    S4: state <= x ? S1 : S2;
+  endcase
+assign detected = (state == S4);
+</pre>
+<strong>Interview tip:</strong> Always draw the state diagram first. Label every arc with input/output. Count states — if you have more states than needed, check for equivalent states. If you have fewer, check for missing arcs (incomplete specification).`},
+
+{c:"fsm",d:"med",q:"What are one-hot, binary, and Gray state encodings? When is each preferred?",
+a:`<strong>Binary encoding:</strong> States encoded as binary numbers. N states require ⌈log2(N)⌉ flip-flops.<br>
+- Minimum FFs<br>
+- Moderate decode logic (next-state uses all state bits)<br>
+- Preferred for ASIC when area matters<br><br>
+<strong>One-hot encoding:</strong> One FF per state. Exactly one FF is HIGH at any time.<br>
+- N states require N flip-flops<br>
+- Very simple decode logic (check only one FF per transition)<br>
+- Fast — next-state and output logic is minimal (sparse transitions)<br>
+- Preferred for FPGA (abundant FFs, routing is the bottleneck)<br>
+- Preferred for high-speed ASIC state machines (pipeline-friendly)<br><br>
+<strong>Gray encoding:</strong> Adjacent states differ by 1 bit.<br>
+- Reduces glitch power (only 1 FF toggles per transition)<br>
+- Useful when state transitions create output glitches (e.g., decoded state drives a bus)<br>
+- Only valid for linear or circular state sequences (not arbitrary FSMs)<br><br>
+<strong>Comparison table:</strong><br>
+<pre>
+Encoding   FFs needed   Logic complexity   Speed   Power
+Binary     log2(N)      High               Medium  Medium
+One-hot    N            Low                High    Higher (more FFs toggle)
+Gray       log2(N)      Medium             Medium  Lower
+</pre>
+<strong>RTL practice:</strong> Use <code>localparam</code> with defined state names — let synthesis tool choose encoding via synthesis constraints (<code>syn_encoding</code> attribute).`},
+
+{c:"fsm",d:"hard",q:"How do you handle FSM reset and unreachable states? What happens if an FSM enters an illegal state?",
+a:`<strong>Unreachable states:</strong> States that cannot be entered from any reachable state via any input sequence. They exist in the state space but are never visited in normal operation.<br><br>
+<strong>Why dangerous:</strong><br>
+If the FSM enters an unreachable state (due to power-up glitch, SEU — single-event upset from radiation, or async reset issue), it may:<br>
+1. Lock up — no defined transitions out<br>
+2. Produce incorrect outputs<br>
+3. Cycle through other illegal states indefinitely<br><br>
+<strong>How to handle:</strong><br>
+1. <strong>Default case in RTL:</strong><br>
+<pre>
+always @(posedge clk)
+  case (state)
+    S0: ...
+    S1: ...
+    // Handle illegal states:
+    default: state <= S_RESET;
+  endcase
+</pre>
+Always include a default case that returns to a safe state.<br><br>
+2. <strong>State encoding choice:</strong> One-hot is more robust — only one state is supposed to be active. If multiple FFs accidentally set, default case catches it. Binary encoding with default → FSM self-recovers.<br><br>
+3. <strong>Formal verification:</strong> Use model checking to prove all reachable states are valid (no illegal state is reachable from reset). Tools: JasperGold, VC Formal.<br><br>
+4. <strong>Synthesis tool directive:</strong> <code>syn_state_machine -safe</code> tells the tool to add logic for safe recovery from illegal states.<br><br>
+<strong>Interview answer summary:</strong> Always code an explicit reset state, always use default case in the state machine, and verify with formal tools for safety-critical designs.`},
+
+{c:"fsm",d:"hard",q:"Design a traffic light controller FSM for a 4-way intersection with pedestrian crossing support.",
+a:`<strong>Signals:</strong> NS_light (NS road), EW_light (EW road), PED_light (pedestrian).<br>
+<strong>Inputs:</strong> ped_btn (pedestrian button pressed), timer (timing pulse from counter)<br><br>
+<strong>States and transitions:</strong><br>
+<pre>
+State         NS    EW    PED   Duration
+NS_GREEN      GRN   RED   DON'T  T_NS (e.g., 30s)
+NS_YELLOW     YLW   RED   DON'T  T_Y  (e.g., 5s)
+EW_GREEN      RED   GRN   DON'T  T_EW (e.g., 30s)
+EW_YELLOW     RED   YLW   DON'T  T_Y  (5s)
+PED_CROSS     RED   RED   WALK   T_P  (e.g., 20s)
+ALL_RED       RED   RED   DON'T  T_AR (3s — safety gap)
+</pre>
+<strong>State diagram flow:</strong><br>
+NS_GREEN → NS_YELLOW → [if ped_btn: PED_CROSS → ALL_RED → EW_GREEN]<br>
+                     → [else: ALL_RED → EW_GREEN]<br>
+EW_GREEN → EW_YELLOW → [if ped_btn: PED_CROSS → ALL_RED → NS_GREEN]<br>
+                     → [else: ALL_RED → NS_GREEN]<br><br>
+<strong>Timer implementation:</strong> A separate counter counts clock cycles and asserts timer when duration expired. FSM transitions only on timer assertion.<br><br>
+<strong>Safety properties to verify (formal):</strong><br>
+1. NS_light=GREEN AND EW_light=GREEN is never simultaneously true<br>
+2. PED_CROSS only entered when both road lights are RED<br>
+3. No state is unreachable from RESET<br>
+4. FSM eventually serves every state (no livelock)`},
+
+{c:"fsm",d:"med",q:"What is state minimization? Explain the implication table (Mileage method) briefly.",
+a:`<strong>State minimization</strong> reduces the number of states in an FSM to a minimum equivalent form, saving flip-flops and logic.<br><br>
+<strong>Two states are equivalent if:</strong><br>
+1. They produce the same output for all inputs (Moore) or for all input/state combinations (Mealy)<br>
+2. For every input, they transition to equivalent (or the same) next states<br><br>
+<strong>Implication Table Method:</strong><br>
+1. Create a triangular table with all pairs of states as cells<br>
+2. Cross out pairs that produce different outputs (directly incompatible)<br>
+3. For remaining pairs, fill in implied pairs (the next states that must also be equivalent)<br>
+4. Iteratively cross out pairs whose implied pairs were already crossed out<br>
+5. Remaining uncrossed pairs = equivalent state pairs → merge them<br><br>
+<strong>Example outcome:</strong> If S2 and S5 are equivalent, replace all occurrences of S5 with S2, reducing state count by 1.<br><br>
+<strong>Importance for interviews:</strong><br>
+- Shows understanding of FSM optimization (beyond just drawing the diagram)<br>
+- Synthesis tools do this automatically (state minimization pass in DC/Genus)<br>
+- For manual design, minimized states → fewer FFs → lower area/power<br><br>
+<strong>Caveat:</strong> State minimization assumes deterministic FSM. For non-deterministic or incompletely specified FSMs, use compatible state method instead.`},
+
+{c:"fsm",d:"med",q:"What is a Mealy output glitch and how do you register FSM outputs to prevent it?",
+a:`<strong>Mealy output glitch cause:</strong><br>
+In a Mealy FSM, output is a combinational function of state AND input. If the input glitches (transitions multiple times before settling), the output will also glitch — even if the state doesn't change.<br><br>
+<strong>Example:</strong><br>
+Input changes: 0 → glitch 1 → settle 0. State stays S2. Output toggles twice unnecessarily. If this output drives a FF in another block, it may capture a wrong value.<br><br>
+<strong>Solution — register the output:</strong><br>
+<pre>
+// Unregistered (glitchy):
+assign out = (state == S2) && input_x;
+
+// Registered (glitch-free):
+always @(posedge clk)
+  out_reg <= (state == S2) && input_x;
+</pre>
+This adds 1 cycle latency but eliminates glitches. Effectively converts Mealy to Moore behavior.<br><br>
+<strong>Pipeline-pipelined FSM style:</strong><br>
+Separate three always blocks:<br>
+1. State register: sequential, updates state on clock edge<br>
+2. Next-state logic: combinational, computes next_state<br>
+3. Output register: sequential, registers output<br><br>
+This is the preferred RTL style for all production FSMs — clean, glitch-free, and STA-friendly.`},
+
+{c:"fsm",d:"hard",q:"How do you design a packet parser FSM for a simple protocol frame: [SOF(1B) | LEN(1B) | DATA(LEN bytes) | CRC(2B)]?",
+a:`<strong>States:</strong><br>
+<pre>
+IDLE      → waiting for SOF (0xAA)
+GOT_SOF   → next byte is LEN
+GOT_LEN   → DATA[0..LEN-1]
+DATA_RX   → receiving data bytes, counter = LEN
+CRC1      → first CRC byte
+CRC2      → second CRC byte
+VALIDATE  → check CRC, assert valid/invalid
+</pre>
+<strong>Datapath alongside FSM:</strong><br>
+- Byte counter: loaded with LEN in GOT_LEN state, decremented each DATA_RX clock<br>
+- CRC accumulator: XOR / CRC-16 running over DATA bytes; compare with received CRC1:CRC2<br>
+- Data buffer: shift register or FIFO accumulating data bytes<br><br>
+<strong>State transition logic:</strong><br>
+<pre>
+IDLE    : rx_valid && rx_data==SOF_BYTE → GOT_SOF
+GOT_SOF : rx_valid → load counter=rx_data → GOT_LEN
+GOT_LEN : rx_valid → DATA_RX (counter = LEN)
+DATA_RX : rx_valid && counter>1 → DATA_RX (cnt--)
+          rx_valid && counter==1 → CRC1
+CRC1    : rx_valid → latch crc_byte1 → CRC2
+CRC2    : rx_valid → latch crc_byte2 → VALIDATE
+VALIDATE: computed_crc==rx_crc → valid_pulse ; → IDLE
+          else → error_pulse ; → IDLE
+</pre>
+<strong>Key interview points:</strong><br>
+1. Handle flow control: what if rx_valid is de-asserted mid-frame? Add a timeout counter → ERROR state.<br>
+2. Handle frame abort: what if SOF appears mid-frame? Reset to GOT_SOF.<br>
+3. Pipelining: VALIDATE can run while next SOF is arriving.`},
+
+{c:"fsm",d:"easy",q:"What is a safe FSM and a one-hot encoded FSM? How do you code them in Verilog?",
+a:`<strong>One-hot FSM in Verilog:</strong><br>
+<pre>
+localparam [3:0]
+  S_IDLE  = 4'b0001,
+  S_FETCH = 4'b0010,
+  S_EXEC  = 4'b0100,
+  S_WB    = 4'b1000;
+
+reg [3:0] state, next;
+
+always @(posedge clk or posedge rst)
+  if (rst) state <= S_IDLE;
+  else     state <= next;
+
+always @(*) begin
+  next = S_IDLE;  // default prevents latches
+  case (1'b1)  // one-hot: check which bit is set
+    state[0]: next = start ? S_FETCH : S_IDLE;
+    state[1]: next = S_EXEC;
+    state[2]: next = S_WB;
+    state[3]: next = S_IDLE;
+    default:  next = S_IDLE;  // ← safe recovery
+  endcase
+end
+</pre>
+<strong>Safe FSM:</strong> An FSM that includes explicit handling for all possible state register values, including illegal ones (unused states), ensuring the FSM never gets stuck.<br><br>
+<strong>Key coding rules for production FSMs:</strong><br>
+1. Always initialize to a known state on reset<br>
+2. Always include <code>default</code> in case statement → prevents latches AND handles illegal states<br>
+3. Assign a default value to <code>next</code> and all outputs at the top of the combinational block<br>
+4. Use localparam for state names — never magic numbers<br>
+5. Use <code>/* synthesis syn_encoding = "one-hot" */</code> attribute if you want to force encoding`},
+
+{c:"fsm",d:"med",q:"Design an FSM-based UART receiver that detects start bit, samples 8 data bits, and verifies stop bit.",
+a:`<strong>UART frame:</strong> 1 start bit (LOW), 8 data bits (LSB first), 1 stop bit (HIGH).<br>
+Clock requirement: oversample at 16× baud rate for robust bit centering.<br><br>
+<strong>States:</strong><br>
+<pre>
+IDLE     → waiting for start bit (rx=1 normally)
+START    → detected rx=0; wait half-bit to center sample
+DATA     → sample 8 bits at full-bit intervals
+STOP     → verify stop bit (rx must be 1)
+DONE     → assert data_valid for one cycle
+ERROR    → framing error (stop bit was 0)
+</pre>
+<strong>Counters used:</strong><br>
+- <code>baud_cnt[3:0]</code>: 0..15 for 16× oversampling. Transition states every 16 counts. Move to center of START bit at count=8.<br>
+- <code>bit_cnt[2:0]</code>: 0..7 counts received data bits<br><br>
+<strong>Transition logic:</strong><br>
+<pre>
+IDLE  : rx==0 → clear baud_cnt → START
+START : baud_cnt==8 → sample check: rx==0 → DATA
+                                     rx==1 → IDLE (noise)
+DATA  : baud_cnt==15 → shift in rx → bit_cnt++
+        bit_cnt==7 and baud_cnt==15 → STOP
+STOP  : baud_cnt==15 → rx==1 → DONE ; rx==0 → ERROR
+DONE  : → IDLE (assert data_valid, output shift_reg)
+</pre>
+<strong>Metastability note:</strong> The rx pin is asynchronous → pass through 2-FF synchronizer before the FSM. This adds 2 cycles of latency (irrelevant at 16× oversampling).`},
+
+/* ══════════════════════════════════════════
+   DEBUG & VERIFICATION  (10 questions)
+══════════════════════════════════════════ */
+{c:"debug",d:"med",q:"What is assertion-based verification (ABV)? Give examples of SystemVerilog assertions for a FIFO.",
+a:`<strong>Assertion-Based Verification (ABV):</strong> Formal statements embedded in RTL that specify correct behavior. When violated during simulation or formal verification, they fire immediately pinpointing the bug.<br><br>
+<strong>Two types of SVA assertions:</strong><br>
+<code>assert property</code>: checked during simulation — fires error if false<br>
+<code>assume property</code>: used in formal verification to constrain inputs<br><br>
+<strong>FIFO assertions examples:</strong><br>
+<pre>
+// No overflow: push when full is illegal
+assert property (@(posedge clk) 
+  !(push && full)) else $error("FIFO overflow!");
+
+// No underflow: pop when empty is illegal  
+assert property (@(posedge clk) 
+  !(pop && empty)) else $error("FIFO underflow!");
+
+// Full flag correct: count==DEPTH implies full
+assert property (@(posedge clk) 
+  (count == DEPTH) |-> full);
+
+// Data integrity: what goes in must come out (in order)
+// (requires scoreboard/checker for complex version)
+
+// Pointer wrap-around: write ptr cycles correctly
+assert property (@(posedge clk) 
+  (wr_ptr == DEPTH-1 && push) |=> (wr_ptr == 0));
+</pre>
+<strong>Concurrent vs immediate assertions:</strong><br>
+- Immediate: <code>assert(expr)</code> — like an if-statement, checked at that simulation instant<br>
+- Concurrent: <code>assert property</code> — checked at clock edges, can span multiple cycles (sequence)<br><br>
+<strong>Benefits:</strong> Assertions catch bugs at the source, not symptoms. In a 10M-gate design, a bug caught at the assertion is 10× faster to debug than one caught at system-level.`},
+
+{c:"debug",d:"hard",q:"You have a simulation where a flip-flop output is 'X' (unknown). How do you systematically debug the source of the X?",
+a:`<strong>X-propagation is one of the most common and annoying RTL bugs.</strong><br><br>
+<strong>Common sources of X:</strong><br>
+1. Uninitialized register (no reset assigned)<br>
+2. Undriven net (floating wire in netlist)<br>
+3. Simulation library cell has X output for certain input combo (e.g., latch with conflicting S=R=1)<br>
+4. Out-of-range memory access<br>
+5. Division by zero<br>
+6. Metastability in simulation (some CDC synchronizer models)<br><br>
+<strong>Debug steps:</strong><br>
+<strong>Step 1: Trace the X backward in the waveform</strong><br>
+Find the first clock cycle where the X appears. Use simulator's "drivers" command to find the driver of that net.<br><br>
+<strong>Step 2: Check for missing reset</strong><br>
+If the X appears at time 0 and propagates on first clock edge: the FF has no reset. Add an initial block for simulation or add async reset.<br><br>
+<strong>Step 3: Check combinational sources</strong><br>
+Use <code>$display</code> tracing or add waveform probes on all inputs to the offending FF's D input. Which input is X?<br><br>
+<strong>Step 4: Check for latch inference</strong><br>
+Synthesized latch (unintended): if a variable is not assigned in all branches of combinational always block → X during undriven branch.<br><br>
+<strong>Step 5: Use X-propagation tools</strong><br>
+Synopsys VCS Xprop mode or Questa Xprop improves X-semantics. Tools like Mentor Questa X-check can automatically trace X sources.<br><br>
+<strong>Step 6: Check formal X-analysis</strong><br>
+JasperGold X-propagation analysis finds all possible X sources statically without simulation.`},
+
+{c:"debug",d:"med",q:"What is functional coverage and code coverage in RTL verification? How do you use them together?",
+a:`<strong>Code Coverage</strong> measures which RTL constructs were executed during simulation:<br>
+- <em>Line coverage:</em> which RTL lines were executed<br>
+- <em>Statement coverage:</em> which statements ran<br>
+- <em>Branch coverage:</em> both if/else branches taken<br>
+- <em>Condition coverage:</em> each Boolean sub-expression evaluated T and F<br>
+- <em>Toggle coverage:</em> each signal transitioned 0→1 and 1→0<br>
+- <em>FSM coverage:</em> all states visited, all transitions taken<br><br>
+<strong>Functional Coverage</strong> measures whether design-intent scenarios were exercised:<br>
+- Written by the verification engineer based on the specification<br>
+- Uses covergroups, coverpoints, cross-coverage in SystemVerilog<br><br>
+<strong>Example:</strong><br>
+<pre>
+covergroup cg_fifo @(posedge clk);
+  cp_fill: coverpoint fifo_count {
+    bins empty = {0};
+    bins half   = {[1:DEPTH/2-1]};
+    bins full   = {DEPTH};
+  }
+  cp_ops: coverpoint {push,pop} {
+    bins push_only = {2'b10};
+    bins pop_only  = {2'b01};
+    bins both      = {2'b11};  // simultaneous push+pop
+  }
+endgroup
+</pre>
+<strong>Using them together:</strong><br>
+High code coverage + low functional coverage = tested code but missing scenarios<br>
+High functional coverage + low code coverage = dead code might indicate spec gaps<br>
+Target: 100% code + 100% functional coverage for tape-out sign-off.`},
+
+{c:"debug",d:"hard",q:"What is formal verification? When should you use it instead of (or in addition to) simulation?",
+a:`<strong>Formal verification</strong> mathematically proves properties about a design for ALL possible inputs and states, not just the ones simulation vectors happen to exercise.<br><br>
+<strong>Key techniques:</strong><br>
+<em>Model Checking:</em> Exhaustively explores all reachable states of the design and verifies that properties hold in all of them. Tools: JasperGold (Cadence), VC Formal (Synopsys).<br>
+<em>Equivalence Checking:</em> Proves that two netlists (e.g., RTL vs gate-level) are functionally identical. Used in synthesis and ECO sign-off.<br>
+<em>Property Checking:</em> Verifies SVA properties exhaustively.<br><br>
+<strong>When to use formal instead of simulation:</strong><br>
+1. <strong>Deep corner cases:</strong> FSM illegal states, CDC handshake correctness — simulation may never hit these<br>
+2. <strong>Small, complex blocks:</strong> Arbiters, FIFOs, CDC synchronizers — small state space, critical correctness<br>
+3. <strong>Protocol correctness:</strong> AXI/CHI ordering properties — too many transaction interleavings to simulate exhaustively<br>
+4. <strong>X-propagation analysis:</strong> Find all possible X sources statically<br>
+5. <strong>Security properties:</strong> "Buffer A is never accessible from domain B" — simulation can't exhaustively prove it<br><br>
+<strong>Limitations of formal:</strong><br>
+State space explosion: for large designs, formal may not converge (can't prove, but also can't disprove). Solution: divide into smaller bounded proofs or use assume/guarantee decomposition.<br><br>
+<strong>IBM / Qualcomm practice:</strong> Formal used for CDC checks (Jasper CDC), connectivity checks (Synopsys VC LP), and FSM property checking. Simulation used for performance, integration, and scenario coverage.`},
+
+{c:"debug",d:"med",q:"What is a race condition in RTL? How does blocking vs non-blocking assignment in Verilog cause it?",
+a:`<strong>Race condition:</strong> When two or more concurrent processes read/write the same variable in an undefined order, and the result depends on which executes first — leading to non-deterministic simulation behavior.<br><br>
+<strong>Blocking assignment (<code>=</code>):</strong><br>
+Executes sequentially within an always block. RHS evaluated and LHS updated immediately before next statement.<br><br>
+<strong>Non-blocking assignment (<code>&lt;=</code>):</strong><br>
+RHS evaluated immediately, but LHS updated at the END of the time step (after all blocking assignments and process activations in that time step).<br><br>
+<strong>Classic race condition with blocking:</strong><br>
+<pre>
+// Two always blocks, both triggered by posedge clk
+always @(posedge clk) a = b;  // blocking
+always @(posedge clk) b = a;  // blocking
+// Simulator may execute either block first
+// Result depends on evaluation order: NOT deterministic
+</pre>
+<strong>Correct with non-blocking:</strong><br>
+<pre>
+always @(posedge clk) a <= b;  // captures old b
+always @(posedge clk) b <= a;  // captures old a
+// Both RHS evaluated before LHS updated: correct swap!
+</pre>
+<strong>Golden rules for synthesizable RTL:</strong><br>
+1. Sequential logic: ALWAYS use <code>&lt;=</code> (non-blocking)<br>
+2. Combinational logic: ALWAYS use <code>=</code> (blocking)<br>
+3. NEVER mix <code>=</code> and <code>&lt;=</code> in the same always block<br>
+4. NEVER use blocking assignments in a clocked always block<br><br>
+Violating these rules = race conditions in simulation + incorrect synthesis results.`},
+
+{c:"debug",d:"hard",q:"What is an async FIFO? How do you design one correctly to avoid metastability and pointer comparison bugs?",
+a:`An <strong>async FIFO</strong> decouples two clock domains using a shared buffer. The write side runs in the write clock domain (wclk); the read side runs in the read clock domain (rclk).<br><br>
+<strong>Core challenge:</strong> Write pointer (wptr) and read pointer (rptr) live in different clock domains. Comparing them for full/empty detection requires crossing clock domains safely.<br><br>
+<strong>Correct design steps:</strong><br><br>
+<strong>1. Use Gray-coded pointers:</strong><br>
+<pre>
+wptr_gray = wptr ^ (wptr >> 1);  // binary to Gray
+rptr_gray = rptr ^ (rptr >> 1);
+</pre>
+Gray code changes only 1 bit per count step → at most 1 bit can be metastable during synchronization.<br><br>
+<strong>2. Synchronize Gray pointer to opposite domain:</strong><br>
+<pre>
+// Sync wptr_gray into rclk domain (2-FF sync):
+always @(posedge rclk) {wptr_gray_r1, wptr_gray_rclk} <= 
+                       {wptr_gray, wptr_gray_r1};
+</pre>
+<strong>3. Full and empty detection:</strong><br>
+<pre>
+// Empty: read ptr == synchronized write ptr
+assign empty = (rptr_gray == wptr_gray_rclk);
+// Full: MSBs differ, remaining bits equal (with N+1 bit ptrs)
+assign full = (wptr_gray[N:N-1] == ~rptr_gray_wclk[N:N-1]) 
+           && (wptr_gray[N-2:0] == rptr_gray_wclk[N-2:0]);
+</pre>
+Use N+1 bit pointers to distinguish full from empty.<br><br>
+<strong>4. SRAM port timing:</strong><br>
+Write side: write enable = push && !full, address = wptr[N-1:0]<br>
+Read side: read enable = pop && !empty, address = rptr[N-1:0]<br><br>
+<strong>Common bugs:</strong> Using binary pointers directly across domains (wrong), forgetting the N+1 bit pointer trick (full=empty confusion), synchronizing data bus directly (wrong — use handshake or Gray code only).`},
+
+{c:"debug",d:"med",q:"A design passes simulation but fails on silicon. What are the common reasons and debug approaches?",
+a:`This is one of the most important practical interview questions. Common root causes:<br><br>
+<strong>1. Timing violations not caught in STA</strong><br>
+Unconstrained paths, incorrect timing exceptions (false path/MCP set incorrectly), process-voltage-temperature (PVT) corners not covered.<br>
+Debug: Re-run STA with tightened margins. Check all false path and MCP constraints. Run timing at worst-case PVT corner.<br><br>
+<strong>2. CDC issues not caught in CDC analysis</strong><br>
+Missing synchronizer on a control signal, multi-bit data bus crossing without handshake.<br>
+Debug: Run Jasper CDC or Questa CDC on the silicon-failing scenario. Check CDC waivers for correctness.<br><br>
+<strong>3. X-optimism in simulation</strong><br>
+Simulation treats X as "don't care" in some expressions (e.g., <code>X & 0 = 0</code> in sim, but CMOS may drive a 1). Silicon has no X — the wire is either 0 or 1.<br>
+Debug: Enable Xprop pessimism mode in simulator. Re-simulate with VCS Xprop or Questa Xprop enabled.<br><br>
+<strong>4. Analog/mixed-signal interface issues</strong><br>
+I/O timing between chip and board exceeds setup/hold. Power supply noise causing VDD droops on the chip.<br>
+Debug: Oscilloscope measurements at the chip pins. Power rail monitoring.<br><br>
+<strong>5. Power domain issues</strong><br>
+Incorrect power state sequence, missing isolation cells, retention register not restored correctly after power-up.<br>
+Debug: Check UPF/CPF power intent vs implementation. Re-run power-aware simulation.<br><br>
+<strong>6. Manufacturing defect</strong><br>
+If only some parts fail: process variation, ESD damage, metal shorts/opens.<br>
+Debug: ATPG test coverage → defective nets show as stuck-at faults.`},
+
+{c:"debug",d:"easy",q:"What is the difference between simulation and emulation in IC verification?",
+a:`<strong>Simulation (software-based):</strong><br>
+Runs the RTL model on a computer CPU/GPU. Cycle-accurate but slow.<br>
+- Speed: typically 10 KHz – 1 MHz simulated cycles/second<br>
+- Flexibility: full visibility into all signals, easy debug<br>
+- Cost: cheap (EDA tool license only)<br>
+- Use: unit-level verification, directed tests, assertion checking, coverage collection<br><br>
+<strong>Emulation (hardware-based — e.g., Palladium, Veloce, ZeBu):</strong><br>
+Compiles RTL and maps it to a large array of FPGAs or custom logic chips in hardware.<br>
+- Speed: 1 MHz – 50 MHz real clock rates (1000× faster than simulation)<br>
+- Visibility: limited (must add probes; can't see all signals simultaneously)<br>
+- Cost: very expensive ($1M–$10M systems; $50K+/month cloud rental)<br>
+- Use: software/firmware bring-up, system-level integration, OS boot verification, performance modeling<br><br>
+<strong>FPGA Prototyping:</strong><br>
+Maps RTL to actual FPGA chips. Even faster (full FPGA speed = tens to hundreds MHz). Used for pre-silicon software development and customer demos. Less flexible than emulation (requires significant RTL changes for FPGA targeting).<br><br>
+<strong>When each is used in IBM Power12 flow:</strong><br>
+- Unit/block level: simulation (VCS/Questa)<br>
+- Chip/system level: Palladium emulation for OS boot, RAS testing<br>
+- Firmware development: FPGA prototype`},
+
+{c:"debug",d:"hard",q:"What is power-aware verification? What issues does it check for in a multi-power-domain SoC?",
+a:`<strong>Power-aware verification (PAV)</strong> ensures that power management logic (power gating, voltage scaling, retention) is correctly implemented and that data integrity is maintained across power state transitions.<br><br>
+<strong>UPF/CPF power intent:</strong><br>
+Designers write a UPF (Unified Power Format) file specifying:<br>
+- Power domains and their supply voltages<br>
+- Power states (ON, OFF, RETENTION)<br>
+- Isolation cells (prevent floating signals from powered-off domain driving powered-on domain)<br>
+- Level shifters (between domains at different voltages)<br>
+- Retention registers (save state before power-off, restore after power-on)<br><br>
+<strong>Bugs caught by PAV:</strong><br>
+1. <strong>Missing isolation:</strong> Signal from OFF domain drives ON domain → floating input, X-propagation on silicon<br>
+2. <strong>Wrong isolation polarity:</strong> Isolation clamps to 1 but downstream logic expects 0 idle value → incorrect behavior<br>
+3. <strong>Retention restore timing:</strong> Retention register data restored before power rail stabilizes → corrupt restore<br>
+4. <strong>Level shifter missing:</strong> 0.6V domain signal drives 1.2V domain gate directly → wrong logic level interpretation<br>
+5. <strong>Power sequencing violation:</strong> Domain B powered on before Domain A (which Domain B depends on) → startup failure<br><br>
+<strong>Tools:</strong> Synopsys VCS PAV mode, Mentor Questa Power Aware, Cadence Incisive Power Aware.<br><br>
+<strong>In your IBM context:</strong> Power12/Neela likely has 10+ power domains (CPU cores, L2/L3 caches, I/O, PHY, etc.). PAV is mandatory before tapeout.`},
+
+/* ══════════════════════════════════════════
+   SOC / LOW POWER  (10 questions)
+══════════════════════════════════════════ */
+{c:"soc",d:"easy",q:"What are the main sources of power consumption in a digital CMOS chip? How is each minimized?",
+a:`CMOS power has three main components:<br><br>
+<strong>1. Dynamic (switching) power — dominant (~60-70%):</strong><br>
+<code>P_dyn = α·C·V²·f</code><br>
+α = switching activity, C = capacitance, V = supply voltage, f = frequency<br>
+Minimize by: reducing activity (clock gating, operand isolation), reducing voltage (DVFS), reducing frequency (DVFS), reducing capacitance (smaller transistors, shorter wires)<br><br>
+<strong>2. Short-circuit power (~10%):</strong><br>
+Both P and N transistors briefly ON during input transition → direct current path VDD→GND.<br>
+Minimize by: controlling input slew rate (not too slow), proper cell sizing<br><br>
+<strong>3. Static (leakage) power — increasingly dominant at smaller nodes:</strong><br>
+<code>P_static = I_leak × V</code><br>
+Sub-threshold leakage: transistors leak even when "off"<br>
+Gate oxide leakage: tunneling through thin oxide<br>
+Minimize by: high-Vt cells on non-critical paths (higher Vt → lower leakage, higher delay), power gating (cut VDD to idle blocks), back-biasing (increase Vt dynamically), multi-Vt design strategy<br><br>
+<strong>Multi-Vt strategy (used in IBM Power12):</strong><br>
+- LVT (Low Vt): used on critical timing paths — fast but leaky<br>
+- SVT (Standard Vt): balanced tradeoff<br>
+- HVT (High Vt): used on non-critical paths — slow but low leakage<br>
+Mix these to meet timing with minimum leakage.`},
+
+{c:"soc",d:"med",q:"What is DVFS (Dynamic Voltage and Frequency Scaling) and how does it work in a modern SoC?",
+a:`<strong>DVFS</strong> dynamically adjusts operating voltage and frequency based on workload, minimizing power while meeting performance targets.<br><br>
+<strong>Principle:</strong><br>
+Since dynamic power ∝ V²·f and maximum frequency ∝ (VDD - Vt), reducing VDD allows reducing f proportionally. Power scales as V² → a 20% voltage reduction → ~36% power reduction.<br><br>
+<strong>Operating points (OPP):</strong><br>
+SoC has pre-characterized voltage-frequency pairs (OPPs):<br>
+<pre>
+OPP   VDD    Freq
+High  1.0V   2.4GHz   (peak performance)
+Mid   0.85V  1.8GHz   (balanced)
+Low   0.7V   1.2GHz   (battery saver)
+Deep  0.6V   600MHz   (standby/light load)
+</pre>
+<strong>Implementation:</strong><br>
+1. Power Management IC (PMIC) adjusts VDD via I²C/SPI command<br>
+2. On-chip DVFS controller monitors workload (CPU utilization, thermal sensors, battery state)<br>
+3. For a frequency change: first lower frequency (to avoid violating setup at lower voltage), then lower voltage<br>
+For a frequency increase: first raise voltage, then raise frequency<br><br>
+<strong>STA interaction:</strong> Each OPP must have its own timing sign-off. PrimeTime runs timing at each VDD/frequency corner.<br><br>
+<strong>Thermal management:</strong> DVFS is also triggered by thermal events — CPU throttles frequency when junction temperature exceeds threshold (thermal throttling).`},
+
+{c:"soc",d:"med",q:"What is power gating? What are the key design considerations when implementing it?",
+a:`<strong>Power gating</strong> cuts the power supply (VDD or GND) to an entire block when it's idle, reducing both dynamic and static (leakage) power to near zero for that block.<br><br>
+<strong>Components needed:</strong><br>
+1. <strong>Header switch (PMOS):</strong> Gates VDD supply. PMOS in series with VDD.<br>
+2. <strong>Footer switch (NMOS):</strong> Gates VSS (GND). NMOS in series with GND. Faster switch-on but higher IR drop concerns.<br>
+3. <strong>Isolation cells:</strong> Clamp outputs of powered-off domain to a safe value (0 or 1) to prevent floating inputs driving other logic.<br>
+4. <strong>Retention registers:</strong> Small, always-on FFs (using a secondary low-leakage supply) that save critical state before power-off and restore it on power-on.<br>
+5. <strong>Power switch control logic:</strong> Always-on block that manages power sequence and wake-up.<br><br>
+<strong>Key design considerations:</strong><br>
+1. <strong>Inrush current:</strong> When power gate turns on, the decoupling capacitors in the block draw a large current surge. Use distributed smaller switch cells with staggered enable to limit inrush.<br>
+2. <strong>IR drop on virtual rail:</strong> The power switch has non-zero resistance → voltage drop under load. Analyze virtual VDD (VVDD) IR drop during active mode.<br>
+3. <strong>Wake-up latency:</strong> Turning on the power switch, restoring retention registers, and reinitializing logic takes cycles. Must be budgeted against system response requirements.<br>
+4. <strong>Power sequencing:</strong> Always-on control logic must ensure correct power-on/off sequence per UPF specification.`},
+
+{c:"soc",d:"hard",q:"What are isolation cells and level shifters in a multi-voltage SoC? Where exactly must they be placed?",
+a:`<strong>Isolation Cells:</strong><br>
+When domain A is powered OFF and drives a signal into domain B (powered ON), the signal from domain A is floating (undefined). Without isolation, domain B receives a floating input → potential latch-up, excessive current, X-propagation.<br>
+Isolation cells are placed on every signal crossing from a power-gated domain (A) into an always-on domain (B). They clamp the output to a known safe value when the enable (domain A power-up signal) is de-asserted.<br>
+<pre>
+Isolation types:
+  AND-type:  out = in AND iso_enable  → clamp to 0 when off
+  OR-type:   out = in OR  iso_enable  → clamp to 1 when off
+  Buffer:    Registered (saves area with Retention+Iso combined)
+</pre>
+<strong>Placement rule:</strong> Must be in the ALWAYS-ON domain, NOT in the power-gated domain (they'd lose power too).<br><br>
+<strong>Level Shifters:</strong><br>
+When domain A operates at voltage V1 and domain B at voltage V2, a logic-1 in domain A = V1. If V1 < V2, the receiving gate in domain B may not recognize V1 as a valid logic-1.<br>
+Level shifters translate voltage levels at domain crossings.<br>
+<pre>
+Types:
+  Low-to-High: V1 input → V2 output (step-up)
+  High-to-Low: V2 input → V1 output (step-down, simpler — standard FET threshold works)
+  Bidirectional: For I/O pins
+</pre>
+<strong>Placement rule:</strong> Level shifter powered by the HIGHER voltage domain. For low-to-high: typically in the receiving (high-voltage) domain.<br><br>
+<strong>Common mistakes:</strong> Forgetting level shifters on control signals (not just data), placing isolation cells in the wrong domain, missing level shifters on feedback paths.`},
+
+{c:"soc",d:"hard",q:"What is a memory BIST (Built-In Self-Test)? How is it implemented for an SRAM in a digital SoC?",
+a:`<strong>Memory BIST (MBIST)</strong> is an on-chip circuit that can test embedded SRAMs autonomously, without external test vectors, using standardized march algorithms.<br><br>
+<strong>Why needed:</strong><br>
+- External tester cannot directly access internal SRAM cells<br>
+- SRAM faults (stuck-at, transition, coupling, pattern-sensitive) require specific test patterns<br>
+- Production test time reduction (BIST runs at-speed on chip)<br><br>
+<strong>March algorithm example (March C-):</strong><br>
+<pre>
+Step 1: ↑(w0)     — write 0 to all cells, ascending
+Step 2: ↑(r0,w1)  — read 0, write 1, ascending
+Step 3: ↑(r1,w0)  — read 1, write 0, ascending
+Step 4: ↓(r0,w1)  — read 0, write 1, descending
+Step 5: ↓(r1,w0)  — read 1, write 0, descending
+Step 6: ↑(r0)     — read 0, ascending
+</pre>
+Detects: stuck-at-0, stuck-at-1, transition faults, coupling faults.<br><br>
+<strong>MBIST controller implementation:</strong><br>
+- Address generator: steps through all memory addresses<br>
+- Data generator: produces 0, 1, checkerboard, march patterns<br>
+- Expected data comparator: compares read data to expected → fail register<br>
+- Mode MUX: switches SRAM between functional and BIST access<br>
+- Repair logic (for yield): identifies failing bit-line row, applies redundancy row repair (eFuse programming)<br><br>
+<strong>In IBM Power12:</strong> All on-chip SRAMs (L1/L2/L3 caches, register files, TLBs) have MBIST. Scan-based repair flow uses MBIST failure data to program eFuses selecting redundant rows.`},
+
+{c:"soc",d:"med",q:"What is an on-chip interconnect? Compare ring bus, crossbar, and mesh network topologies for SoC.",
+a:`<strong>On-chip interconnect</strong> connects all IP blocks (CPUs, GPUs, memory controllers, I/O) in an SoC to transfer data and control information.<br><br>
+<strong>1. Ring Bus:</strong><br>
+All nodes connected in a ring; data travels around the ring.<br>
+- Simple to implement<br>
+- Low latency for small rings (4–8 nodes)<br>
+- Bandwidth bottleneck: every transaction traverses the ring<br>
+- Used in: Intel Ring Bus (Sandy Bridge to Skylake), IBM POWER6 L3 ring<br><br>
+<strong>2. Crossbar (Full Crossbar):</strong><br>
+Every master connected to every slave; N×M switch matrix.<br>
+- Non-blocking (any master to any slave simultaneously)<br>
+- Maximum bandwidth<br>
+- Area grows as O(N×M) — not scalable beyond ~8–16 nodes<br>
+- Used in: small SoC bus matrices, GPU register file ports<br><br>
+<strong>3. Mesh Network (2D/3D):</strong><br>
+Nodes arranged in a grid; packets routed hop-by-hop.<br>
+- Scalable to 100+ nodes<br>
+- Good bandwidth per unit area<br>
+- Higher latency (multi-hop)<br>
+- Used in: ARM CMN-600/700 (your Hanuma 1.0!), Intel's CCI, Tilera many-core<br><br>
+<strong>Comparison:</strong><br>
+<pre>
+Topology   Scalability  Latency  Bandwidth  Area
+Ring       Poor         Low*     Medium     Low
+Crossbar   Poor         Lowest   Highest    O(N²)
+Mesh       Excellent    Higher   High       O(N)
+</pre>
+*Ring latency degrades linearly with ring size`},
+
+{c:"soc",d:"med",q:"What is design-for-testability (DFT)? Name the key DFT techniques used in modern SoC design.",
+a:`<strong>DFT</strong> is a set of design techniques that make a chip easier to test after manufacturing, increasing fault coverage and reducing test time/cost.<br><br>
+<strong>Key DFT techniques:</strong><br><br>
+<strong>1. Scan Insertion:</strong><br>
+All FFs connected into scan chains. Enables stuck-at and transition fault testing via ATPG (Automatic Test Pattern Generation).<br><br>
+<strong>2. Scan Compression (EDT):</strong><br>
+Compresses test data using XOR decompressor/compactor. Reduces test time by 50-200×.<br><br>
+<strong>3. MBIST (Memory BIST):</strong><br>
+On-chip test engine for all embedded SRAMs. Tests stuck-at, transition, coupling faults in memories.<br><br>
+<strong>4. Boundary Scan (JTAG — IEEE 1149.1):</strong><br>
+Standard 4-wire interface (TDI, TDO, TCK, TMS) for board-level testing, in-system programming, and debug access. All I/O pins have boundary scan cells.<br><br>
+<strong>5. IJTAG (IEEE 1687):</strong><br>
+Hierarchical access to embedded instruments (MBIST controllers, ATPG compressors, sensors) via a standardized network.<br><br>
+<strong>6. LBIST (Logic BIST):</strong><br>
+On-chip pattern generation and response analysis using LFSR (for patterns) and MISR (Multiple Input Signature Register, for compacting responses). Test chip logic without external tester patterns.<br><br>
+<strong>7. On-chip debug:</strong><br>
+ARM CoreSight, RISC-V Nexus: embedded debug logic for processor state, trace, and breakpoints.<br><br>
+<strong>IBM Power12 DFT:</strong> Hierarchical scan, EDT compression, full MBIST with repair, LBIST for at-speed testing, JTAG boundary scan on all external pins.`},
+
+{c:"soc",d:"hard",q:"What is voltage droop and IR drop in a power grid? How do they affect chip timing and how are they mitigated?",
+a:`<strong>IR Drop (static):</strong><br>
+The resistive voltage drop across the power distribution network (metal grid) under DC current load.<br>
+<code>ΔV = I × R_grid</code><br>
+A cell at the far end of the power grid sees VDD - ΔV. Lower VDD → slower transistors → longer cell delays → potential timing violations.<br><br>
+<strong>Dynamic Droop (transient):</strong><br>
+When a large block switches simultaneously (e.g., cache read hit on 1M transistors), it draws a large burst current. The inductance L of package and board causes:<br>
+<code>ΔV = L × dI/dt</code><br>
+This creates a fast voltage droop — VDD can drop 10-20% for nanoseconds, severely degrading timing.<br><br>
+<strong>Impact on timing:</strong><br>
+Both IR drop and droop reduce effective VDD → cells slow down → setup time violations. Critical paths that barely meet timing at nominal VDD will fail at VDD - ΔV.<br><br>
+<strong>Mitigation strategies:</strong><br>
+<em>Power grid design:</em> Wide, multiple-layer power straps (M8/M9/RDL for current-carrying). Mesh topology for low resistance.<br>
+<em>Decoupling capacitors:</em> On-chip (explicit decap cells in filler areas) and package-level caps charge up and supply local burst current, reducing dI/dt peak.<br>
+<em>Power gating sequencing:</em> Stagger wake-up of large blocks to avoid simultaneous inrush current.<br>
+<em>Timing sign-off with IR drop:</em> Run PrimeTime with vectorized IR drop waveforms (from Voltus/Apache) — timing derated per cell based on local VDD.<br>
+<em>Adaptive Voltage Scaling (AVS):</em> On-chip monitor measures actual worst-case path timing; PMIC adjusts VDD to minimum needed voltage, compensating for IR drop.`},
+
+{c:"soc",d:"hard",q:"What is an eFuse and OTP memory? How are they used in SoC for trimming and configuration?",
+a:`<strong>eFuse (Electrical Fuse):</strong><br>
+A one-time programmable (OTP) element made from a thin metal or polysilicon wire. Programming: apply a large current pulse (~20mA) to blow (open-circuit) the fuse. Unprogrammed = 0 (conducting); Programmed = 1 (open).<br>
+Irreversible — cannot be un-blown.<br><br>
+<strong>OTP (One-Time Programmable) memory:</strong><br>
+Larger OTP arrays using antifuse (programming creates a short, not an open) or EEPROM-based cells. Holds hundreds to thousands of bits.<br><br>
+<strong>SoC uses of eFuse/OTP:</strong><br>
+1. <strong>Chip ID / Unique ID:</strong> Factory programs a unique serial number during test. Used for device authentication and traceability.<br>
+2. <strong>SRAM repair:</strong> MBIST identifies failing rows; repair algorithm selects redundant rows; eFuse stores the address mapping. On power-up, eFuse reader reconfigures SRAM to use redundant rows.<br>
+3. <strong>Frequency binning:</strong> Post-silicon speed test determines max operating frequency. Result fused into OTP. On boot, BIOS reads fuse to set max turbo frequency.<br>
+4. <strong>Security keys / Boot mode:</strong> Root-of-trust keys, secure boot enable bits stored in OTP (tamper-evident).<br>
+5. <strong>Analog trimming:</strong> ADC/DAC offset correction values, PLL trim codes, bandgap reference trim.<br>
+6. <strong>Feature enable/disable:</strong> Binning a part for a specific market (e.g., disable cores for lower-tier product).<br><br>
+<strong>IBM Power context:</strong> eFuses used for L3 cache repair (replacing defective SRAM rows with spares), chip ID, and DVFS frequency limits.`},
+
+{c:"soc",d:"easy",q:"What is the AXI bus protocol? Explain its key channels and compare it to APB and AHB.",
+a:`<strong>AXI (Advanced eXtensible Interface)</strong> — Part of ARM AMBA bus family, designed for high-performance SoC interconnects.<br><br>
+<strong>5 independent AXI channels:</strong><br>
+<code>AW</code>: Write Address — master sends address + burst info<br>
+<code>W</code>:  Write Data — master sends data beats<br>
+<code>B</code>:  Write Response — slave sends completion status<br>
+<code>AR</code>: Read Address — master sends address + burst info<br>
+<code>R</code>:  Read Data — slave returns data + status<br><br>
+Key features: out-of-order transactions (using AXI ID), burst transfers, separate read/write paths, handshake (valid/ready).<br><br>
+<strong>APB (Advanced Peripheral Bus):</strong><br>
+Simple, low-power bus for slow peripherals (UART, SPI, GPIO, timers).<br>
+- Single address phase + data phase<br>
+- No bursts, no out-of-order<br>
+- 2-stage pipeline (Setup → Access)<br>
+- Used for: register-mapped peripherals<br><br>
+<strong>AHB (Advanced High-performance Bus):</strong><br>
+Mid-range bus — pipelined but single master bus (no OoO).<br>
+- Pipelined address + data<br>
+- Burst support<br>
+- Single shared bus (arbitration needed for multiple masters)<br>
+- Used for: DMA, on-chip ROM, moderate-speed peripherals<br><br>
+<strong>Summary:</strong><br>
+<pre>
+Bus   OoO  Bursts  Multi-master  Target
+APB   No   No      No            Slow peripherals
+AHB   No   Yes     Arbitrated    Memory, DMA
+AXI   Yes  Yes     Full          CPU, GPU, HPC
+CHI   Yes  Yes     Full+coherent CPU+cache fabric
+</pre>`}
+
+]; // end QS
+
+let got = new Set(), currentCat = 'all', searchStr = '';
+const TOTAL = QS.length;
+
+function catMatch(q){
+  if(currentCat==='all') return true;
+  if(['easy','med','hard'].includes(currentCat)) return q.d===currentCat;
+  return q.c===currentCat;
+}
+function searchMatch(q){
+  if(!searchStr) return true;
+  return q.q.toLowerCase().includes(searchStr)||q.a.toLowerCase().includes(searchStr);
+}
+
+function updateStats(){
+  const done=got.size;
+  const hardDone=[...got].filter(i=>QS[i].d==='hard').length;
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-left').textContent=TOTAL-done;
+  document.getElementById('s-hard').textContent=hardDone;
+  document.getElementById('s-pct').textContent=Math.round(done/TOTAL*100)+'%';
+  document.getElementById('prog-fill').style.width=(done/TOTAL*100)+'%';
+  document.getElementById('prog-label').textContent=done+' / '+TOTAL;
+}
+
+function render(){
+  const list=document.getElementById('q-list');
+  const visible=QS.filter(q=>catMatch(q)&&searchMatch(q));
+  if(!visible.length){
+    list.innerHTML='<div class="no-result">// no questions match — try a different filter</div>';
+    return;
+  }
+  list.innerHTML=visible.map(q=>{
+    const idx=QS.indexOf(q);
+    const done=got.has(idx);
+    return `<div class="q-card${done?' done':''}" id="qc-${idx}">
+      <div class="q-header" onclick="toggle(${idx})">
+        <span class="q-num">${String(idx+1).padStart(2,'0')}.</span>
+        <div class="q-meta">
+          <div class="q-tags">
+            <span class="tag tag-${q.c}">${{combo:'combinational',seq:'sequential',timing:'timing',fsm:'fsm',debug:'debug',soc:'soc/low-power'}[q.c]}</span>
+            <span class="tag tag-${q.d}">${q.d}</span>
+            ${done?'<span class="tag tag-easy">✓ done</span>':''}
+          </div>
+          <div class="q-text">${q.q}</div>
+        </div>
+        <svg class="q-chev${document.getElementById('ans-'+idx)?.classList.contains('open')?' open':''}" id="chev-${idx}" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="ans-wrap" id="ans-${idx}">
+        <div class="ans-label">// ANSWER</div>
+        <div class="ans-box">${q.a}</div>
+        <div class="chk-row">
+          <button class="chk-btn${done?' got':''}" onclick="mark(${idx},true)">✓ Got it</button>
+          <button class="chk-btn" onclick="mark(${idx},false)">✕ Need review</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  updateStats();
+}
+
+function toggle(idx){
+  const a=document.getElementById('ans-'+idx);
+  const ch=document.getElementById('chev-'+idx);
+  if(!a) return;
+  const open=a.classList.contains('open');
+  a.classList.toggle('open',!open);
+  if(ch) ch.classList.toggle('open',!open);
+}
+function mark(idx,yes){
+  if(yes) got.add(idx); else got.delete(idx);
+  render();
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCat=btn.dataset.cat;
+    render();
+  });
+});
+document.getElementById('search').addEventListener('input',e=>{
+  searchStr=e.target.value.toLowerCase().trim();
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

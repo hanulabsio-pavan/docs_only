@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CHI Interview Prep — Hanuma 1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0a0c0e;
+  --bg2: #111418;
+  --bg3: #181c22;
+  --bg4: #1e242c;
+  --border: #252c36;
+  --border2: #2e3847;
+  --text: #d4dce8;
+  --text2: #7a90a8;
+  --text3: #4a5a6e;
+  --cyan: #00d4ff;
+  --cyan-dim: #003d4d;
+  --cyan-text: #00bfe0;
+  --amber: #ffb020;
+  --amber-dim: #3a2800;
+  --green: #00c07a;
+  --green-dim: #002e1e;
+  --rose: #ff5a7a;
+  --rose-dim: #3a0014;
+  --purple: #9b7fff;
+  --purple-dim: #1e1440;
+  --orange: #ff8c42;
+  --orange-dim: #3a1800;
+  --red: #ff4d4d;
+  --red-dim: #3a0000;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 32px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-mark {
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--cyan);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cyan);
+  letter-spacing: -0.5px;
+}
+
+.header-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.header-sub {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'IBM Plex Mono', monospace;
+  margin-top: 1px;
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-bar {
+  width: 120px;
+  height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+
+.progress-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  min-width: 36px;
+}
+
+/* ── MAIN LAYOUT ── */
+.main {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - 73px);
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  position: sticky;
+  top: 73px;
+  height: calc(100vh - 73px);
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  padding: 0 16px;
+  margin-bottom: 24px;
+}
+
+.sidebar-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  padding: 0 4px;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 2px;
+  text-align: left;
+}
+
+.filter-btn:hover { background: var(--bg3); color: var(--text); }
+
+.filter-btn.active {
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+}
+
+.filter-btn .count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  background: var(--bg4);
+  padding: 1px 6px;
+  border-radius: 10px;
+  color: var(--text3);
+}
+
+.filter-btn.active .count {
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan-text);
+}
+
+.diff-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 7px;
+  flex-shrink: 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.stat-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+
+.stat-n {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  display: block;
+}
+
+.stat-l {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+/* ── CONTENT ── */
+.content {
+  padding: 24px 28px;
+  max-width: 900px;
+}
+
+.search-bar {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  margin-bottom: 20px;
+  transition: border-color 0.2s;
+  position: relative;
+}
+
+.search-wrap {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.search-wrap::before {
+  content: '⌕';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.search-bar:focus { border-color: var(--cyan-text); }
+
+/* ── QUESTION CARDS ── */
+.q-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.q-card.done { border-color: rgba(0,192,122,0.4); }
+.q-card.done .q-header { background: rgba(0,192,122,0.03); }
+
+.q-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.q-header:hover { background: var(--bg3); }
+
+.q-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  min-width: 30px;
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+.q-meta { flex: 1; }
+
+.q-tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 7px;
+}
+
+.tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.tag-theory    { background: var(--cyan-dim);   color: var(--cyan-text); }
+.tag-practical { background: var(--green-dim);  color: var(--green); }
+.tag-debug     { background: var(--amber-dim);  color: var(--amber); }
+.tag-problem   { background: var(--purple-dim); color: var(--purple); }
+.tag-easy      { background: var(--green-dim);  color: var(--green); border: 1px solid rgba(0,192,122,0.2); }
+.tag-med       { background: var(--amber-dim);  color: var(--amber); border: 1px solid rgba(255,176,32,0.2); }
+.tag-hard      { background: var(--red-dim);    color: var(--red);   border: 1px solid rgba(255,77,77,0.2); }
+
+.q-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.65;
+  font-weight: 400;
+}
+
+.q-chevron {
+  color: var(--text3);
+  font-size: 14px;
+  transition: transform 0.25s;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.q-chevron.open { transform: rotate(180deg); }
+
+/* ── ANSWER ── */
+.ans-wrap {
+  display: none;
+  border-top: 1px solid var(--border);
+  padding: 16px;
+  background: var(--bg);
+}
+
+.ans-wrap.open { display: block; }
+
+.ans-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+
+.ans-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text);
+}
+
+.ans-box code {
+  font-family: 'IBM Plex Mono', monospace;
+  background: var(--bg4);
+  color: var(--cyan-text);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11.5px;
+}
+
+.ans-box pre {
+  font-family: 'IBM Plex Mono', monospace;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--cyan-text);
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.ans-box strong {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.chk-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chk-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 5px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chk-btn:hover { background: var(--bg4); color: var(--text); }
+.chk-btn.got   { background: var(--green-dim); color: var(--green); border-color: rgba(0,192,122,0.3); }
+.chk-btn.miss  { background: var(--amber-dim); color: var(--amber); border-color: rgba(255,176,32,0.3); }
+
+.no-result {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text3);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+}
+
+.done-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #000;
+  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: 8px;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+@media (max-width: 700px) {
+  .main { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .content { padding: 16px; }
+  .header { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-logo">
+    <div class="logo-mark">CHI</div>
+    <div>
+      <div class="header-title">AMBA-CHI Interview Prep</div>
+      <div class="header-sub">Hanuma 1.0 · 60 questions · Theory / Practical / Debug / Problem Solving</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+      <div class="progress-label" id="prog-label">0 / 60</div>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Category</div>
+      <button class="filter-btn active" data-cat="all">All questions <span class="count">60</span></button>
+      <button class="filter-btn" data-cat="theory">Theory <span class="count">18</span></button>
+      <button class="filter-btn" data-cat="practical">Practical <span class="count">18</span></button>
+      <button class="filter-btn" data-cat="debug">Debug <span class="count">12</span></button>
+      <button class="filter-btn" data-cat="problem">Problem solving <span class="count">12</span></button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Difficulty</div>
+      <button class="filter-btn" data-cat="easy"><span class="diff-dot" style="background:var(--green)"></span>Easy <span class="count">14</span></button>
+      <button class="filter-btn" data-cat="med"><span class="diff-dot" style="background:var(--amber)"></span>Medium <span class="count">28</span></button>
+      <button class="filter-btn" data-cat="hard"><span class="diff-dot" style="background:var(--red)"></span>Hard <span class="count">18</span></button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Stats</div>
+      <div class="stats-grid">
+        <div class="stat-card"><span class="stat-n" id="s-theory">18</span><div class="stat-l">Theory</div></div>
+        <div class="stat-card"><span class="stat-n" id="s-practical">18</span><div class="stat-l">Practical</div></div>
+        <div class="stat-card"><span class="stat-n" id="s-debug">12</span><div class="stat-l">Debug</div></div>
+        <div class="stat-card"><span class="stat-n" id="s-problem">12</span><div class="stat-l">Problem</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="search-wrap">
+      <input class="search-bar" id="search" placeholder="Search questions, topics, opcodes…" autocomplete="off"/>
+    </div>
+    <div id="q-list"></div>
+  </main>
+</div>
+
+<script>
+const QS = [
+{c:"theory",d:"easy",q:"What are the three main node types in CHI and what role does each play?",a:`<strong>RN-F (Request Node — Full)</strong>: Has a cache; can issue requests for data and receive snoops. Example: CPU core.<br><br><strong>HN-F (Home Node — Full)</strong>: Contains the snoop filter or point-of-coherence (PoC). Routes requests, issues snoops to caching agents, manages ordering. Example: CMN-700 HN-F node.<br><br><strong>SN-F (Slave Node — Full)</strong>: Provides memory; responds to HN-F read/write requests with data or acknowledge. Example: DDR controller.<br><br>Key caveat: RN-I and SN-I are IO variants that lack caching capability.`},
+{c:"theory",d:"easy",q:"Name all five CHI channel pairs and state the direction of each.",a:`CHI is a channel-based protocol. Each "link" has two directions:<br><br>
+<code>REQ</code>: Requester → Home (RN→HN), carries read/write/snoop requests<br>
+<code>RSP</code>: Bidirectional acknowledge/completion (RN↔HN, SN→HN)<br>
+<code>DAT</code>: Data payload; can flow RN→HN (WriteData), HN→RN (CompData), SN→HN (MemData)<br>
+<code>SNP</code>: Home → Requester (HN→RN), carries snoop requests to caching agents<br>
+<code>CREDIT</code>: Reverse direction of each channel — flow control tokens<br><br>
+Mnemonic: <em>RN shouts REQ, HN whispers SNP, data flows on DAT, everyone acknowledges on RSP.</em>`},
+{c:"theory",d:"easy",q:"What is the difference between PoC, PoS, and PoP in CHI?",a:`<strong>PoC (Point of Coherence)</strong>: The point in the system where all caches can see the same state for an address. HN-F is the PoC. A read that reaches PoC is guaranteed to see the latest committed write.<br><br>
+<strong>PoS (Point of Serialization)</strong>: Where conflicting transactions to the same cache line are serialized. Usually the same as PoC (HN-F). Ensures no two transactions to the same line run simultaneously.<br><br>
+<strong>PoP (Point of Persistence)</strong>: Where a write is considered persistent (durable). Usually at the memory controller / SN-F. A write ACK from PoP means data survived a power cycle.`},
+{c:"theory",d:"med",q:"Explain the CHI cache state machine. What are the valid states an RN-F cache line can be in?",a:`CHI uses a MOESI-like model:<br><br>
+<code>I  (Invalid)</code>: Line not present<br>
+<code>UC (Unique Clean)</code>: Only copy; matches memory; can silently evict<br>
+<code>UD (Unique Dirty)</code>: Only copy; differs from memory; must write back on eviction<br>
+<code>SC (Shared Clean)</code>: One of multiple clean copies<br>
+<code>SD (Shared Dirty)</code>: Dirty copy but HN-F allows other sharers; this node responsible for writeback<br>
+<code>UCE</code>: Unique Clean Empty — allocated but no data fetched yet (used in CMO flows)<br><br>
+Transitions: I→UC on ReadUnique; UC→UD on store; UD→I on Evict+WriteBack; UC/SC snoop can force I.`},
+{c:"theory",d:"med",q:"What is a snoop filter and why is it critical in a many-core CHI system?",a:`A snoop filter (SF) is a directory structure inside HN-F that tracks which RN-F nodes have a cached copy of each cache line.<br><br>
+<strong>Why needed:</strong> Without SF, every snoop must be broadcast to all RN-Fs. At 128 cores, broadcasting for every read is catastrophic — traffic grows O(N).<br><br>
+<strong>With SF:</strong> HN-F looks up the SF, identifies only the RN-Fs that have the line, and sends targeted snoops. Traffic scales much better.<br><br>
+<strong>SF states per line per RN-F:</strong> Invalid / Valid (shared) / Valid (unique). On eviction (MakeInvalid), RN-F sends EvictHint so SF can be updated.<br><br>
+CMN-700 uses a hierarchical SF with partial tags to reduce SRAM area at some false-positive cost.`},
+{c:"theory",d:"med",q:"What is RetryAck and PCrdGrant? Explain the credit mechanism.",a:`CHI uses a <em>retry</em> flow for flow control instead of simple backpressure on REQ:<br><br>
+1. RN-F sends a request (ReadShared, WriteUnique, etc.)<br>
+2. HN-F is out of tracker entries → sends <code>RetryAck</code> (no data, just "retry later")<br>
+3. HN-F later sends <code>PCrdGrant</code> (Protocol Credit Grant) when it has a free slot<br>
+4. RN-F re-sends the exact same request with <code>AllowRetry=0</code> to claim that slot<br><br>
+<strong>Key rule:</strong> The re-sent request MUST be identical (same TxnID, same opcode, same address). The HN-F has reserved a tracker slot for it.<br><br>
+<strong>Why this design:</strong> Separates flow control from request ordering. RN-F can keep issuing other transactions; the blocked one waits for its credit.`},
+{c:"theory",d:"hard",q:"Explain CHI ordering. What does it mean for a request to be 'ordered' and how does HN-F enforce it?",a:`CHI defines ordering at the PoS (HN-F).<br><br>
+<strong>Order field in REQ flit:</strong> 2 bits — 00=No order, 01=Request Accepted (RA), 10=Request Order (RO), 11=OWO (Ordered Write Observation)<br><br>
+<strong>How HN-F enforces order:</strong><br>
+- HN-F serializes all transactions to the same cache line in its MSHR/tracker<br>
+- A later request to the same address is stalled until the earlier one completes<br>
+- For PCI-Express style strong ordering, the requester uses <code>Order=RO</code><br><br>
+<strong>Programmatic viewpoint:</strong> A CPU store followed by a load to the same line appears ordered because HN-F serializes them. Different lines have no ordering guarantee unless <code>DMB</code>/<code>DSB</code> barriers are used (which generate CHI barrier transactions).`},
+{c:"theory",d:"hard",q:"What is the difference between ReadShared, ReadNotSharedDirty, ReadUnique, and ReadOnce?",a:`<code>ReadShared</code>: Request shared copy; HN-F can return SC or UC depending on snoop results. Most common read for loads.<br><br>
+<code>ReadNotSharedDirty</code>: Like ReadShared but HN-F must NOT return SD state. Used when the requester cannot handle dirty data forwarding.<br><br>
+<code>ReadUnique</code>: Request exclusive ownership for a write. HN-F must invalidate all other copies first. Returns UC or UD state.<br><br>
+<code>ReadOnce</code>: Non-allocating read — not cached after use. Used for IO / streaming. No snoop filter entry created. Data returned as transient; RN-F should not place in cache.<br><br>
+<code>ReadNoSnoop</code>: Even simpler — bypasses coherence entirely. Used by non-coherent RN-I nodes.`},
+{c:"theory",d:"med",q:"What is a CMO (Cache Maintenance Operation) and when would an SoC architect use one?",a:`CMOs are operations that manipulate cache state without transferring useful data to software:<br><br>
+<code>CleanShared</code>: Clean all dirty copies to memory; leave cache lines present<br>
+<code>CleanInvalid</code>: Clean + invalidate; used before DMA transfers<br>
+<code>MakeInvalid</code>: Invalidate without writeback (for ephemeral data)<br>
+<code>CleanUnique</code>: Gain unique ownership; used for atomic RMW operations<br><br>
+<strong>SoC use cases:</strong><br>
+- GPU wants to read a buffer a CPU wrote → CPU issues <code>CleanShared</code> to push dirty lines to memory<br>
+- DMA controller is going to overwrite a region → issue <code>MakeInvalid</code> first<br>
+- MPAM / QoS — use CMOs to evict low-priority data during memory pressure<br><br>
+CMOs propagate as snoops to all RN-Fs that have the line (via SF lookup at HN-F).`},
+{c:"theory",d:"hard",q:"Explain the Exclusive Monitor in the context of CHI. How do LDXR/STXR map to CHI transactions?",a:`The Exclusive Monitor (EX-MON) tracks exclusive reservations per PE at the RN-F level.<br><br>
+<strong>LDXR → ReadUnique with Excl=1:</strong><br>
+- RN-F sends <code>ReadUnique</code> with <code>Excl=1</code> to HN-F<br>
+- HN-F checks if it can grant an exclusive monitor entry<br>
+- If yes, HN-F returns <code>CompData</code> with <code>ExclOK=1</code> and marks that address<br><br>
+<strong>STXR → WriteUnique with Excl=1:</strong><br>
+- RN-F sends <code>WriteUnique</code> with <code>Excl=1</code><br>
+- HN-F checks if the exclusive reservation is still valid<br>
+- If valid → complete write, clear reservation, return pass (W=0 in ARM status)<br>
+- If cleared by another agent → return fail (W=1), data not written<br><br>
+<strong>What can break the reservation:</strong> any snoop that invalidates the line at that RN-F.`},
+{c:"theory",d:"easy",q:"What is TxnID and how does CHI use it for transaction tracking?",a:`<code>TxnID</code> is a 12-bit (CHI-B/E) identifier assigned by the Requester Node to uniquely identify an outstanding transaction.<br><br>
+<strong>Rules:</strong><br>
+- Must be unique among all outstanding transactions from a given RN-F<br>
+- All response flits (CompData, RetryAck, PCrdGrant) carry the same TxnID so the requester can match them<br>
+- HN-F also assigns its own <code>DBID</code> (Data Buffer ID) that the RN-F uses for WriteData responses<br><br>
+<strong>Common debug use:</strong> When you see a timeout in a CHI trace, search for the TxnID. If you find a REQ but no matching RSP/DAT, that's the stuck transaction. Follow the DBID to find where the write data was expected.<br><br>
+<strong>TxnID space:</strong> 12 bits = 4096 simultaneous transactions per RN-F.`},
+{c:"theory",d:"med",q:"What is Data Pull and when is it used in CHI?",a:`Data Pull is a mechanism that allows HN-F to instruct a snoop target (RN-F with a dirty line) to send data <em>directly</em> to the original requester (another RN-F), rather than routing data through HN-F.<br><br>
+<strong>Normal path (no data pull):</strong><br>
+RN-A → REQ → HN-F → SNP → RN-B → DAT → HN-F → DAT → RN-A (2 DAT hops)<br><br>
+<strong>Data Pull path:</strong><br>
+HN-F sends SnpResp with <code>DoNotDataPull=0</code>. RN-B sends DAT directly to RN-A (peer-to-peer). HN-F gets a smaller RSP instead.<br><br>
+<strong>Benefit:</strong> Reduces HN-F data buffer pressure and cuts latency by one hop.<br><br>
+<strong>Requirement:</strong> RN-A must be ready to accept data before the snoop completes. HN-F coordinates this.`},
+{c:"theory",d:"hard",q:"What is the role of HomeNID and SrcID in CHI flits?",a:`Every CHI flit carries addressing metadata to route responses back correctly:<br><br>
+<code>SrcID</code>: NodeID of the sender. Always set by the current sender. Allows the receiver to route RSP/DAT back.<br><br>
+<code>HomeNID</code>: Set by the original REQ sender. Tells intermediate nodes and completers where to send the completion. For a request from RN-F to HN-F, HomeNID = HN-F's NodeID. For snoops, HomeNID = the HN-F that issued the snoop (so RN-F snoop responses go back to HN-F).<br><br>
+<code>TgtID</code>: Destination NodeID. The interconnect uses this for routing.<br><br>
+<strong>Debug tip:</strong> If you see a DAT flit dropped, check TgtID. Misconfigured NodeID tables in the CMN-700 routing tables are a classic source of lost completions.`},
+{c:"theory",d:"easy",q:"What is the difference between CHI-A, CHI-B, CHI-E? Which version does Hanuma 1.0 target?",a:`<code>CHI-A (IHI0050A)</code>: Original release. 8-bit TxnID, basic opcode set.<br><br>
+<code>CHI-B (IHI0050B/C/D/E/F)</code>: Extended TxnID (12-bit), MTE support, Atomic operations (AtomicAdd, AtomicClr, etc.), StashOnce ops, TagOp for memory tagging. Most modern SoCs use CHI-B.<br><br>
+<code>CHI-E (IHI0050H)</code>: Latest — adds Combined Write+Invalidate, enhanced DMB/DSB support, wider NodeID space, PCIe ordering improvements.<br><br>
+<strong>Hanuma 1.0 targets CHI-B (IHI0050F)</strong> — good sweet spot with full atomic support and wide industry validation.`},
+{c:"theory",d:"med",q:"What is Stash and when would a GPU prefetcher use StashOnce?",a:`Stash operations hint to a remote RN-F to prefetch data into its cache <em>on behalf</em> of the requester, without the requester fetching the data itself.<br><br>
+<code>StashOnceUnique</code>: Ask target RN-F to prefetch a unique copy. Used when you know the target will write.<br>
+<code>StashOnceShared</code>: Ask target to prefetch shared copy. Used for read-only prefetch.<br><br>
+<strong>GPU use case:</strong> A DMA engine finishes writing a frame buffer. Before the GPU starts rendering, the DMA issues <code>StashOnceShared</code> targeting the GPU's RN-F cluster. The GPU core finds the data already in its L2 when it starts reading → zero-latency startup.<br><br>
+<strong>HN-F behavior:</strong> HN-F receives the Stash, does a SF lookup, decides whether to issue a <code>SnpStash</code> to the target. Target may accept or silently ignore (it's just a hint).`},
+{c:"theory",d:"med",q:"Explain the Atomic transaction family in CHI-B. How does AtomicStore differ from AtomicLoad?",a:`CHI-B atomic transactions allow indivisible read-modify-write operations at the PoC (HN-F or memory):<br><br>
+<code>AtomicStore</code>: Write a value to memory using an atomic operation (Add, Clr, Set, Xor, Smax, Smin, Umax, Umin). No data returned to the requester. "Fire and forget" style.<br><br>
+<code>AtomicLoad</code>: Same operations but return the <em>original</em> value before modification. Used for FETCH_AND_ADD patterns.<br><br>
+<code>AtomicSwap</code>: Swap — write new value, get old value back.<br><br>
+<code>AtomicCompare</code>: CAS — compare-and-swap. Send compare value + swap value; HN-F/SN-F atomically replaces if match.<br><br>
+<strong>Where atomics execute:</strong> Preferably at SN-F (memory controller). If SN doesn't support it, HN-F can execute it by doing a ReadUnique + modify + WriteUnique sequence internally.`},
+{c:"theory",d:"hard",q:"What is MPAM and how does it interact with CHI?",a:`MPAM is an ARM architecture for partitioning and monitoring memory system resources across workloads.<br><br>
+<strong>CHI interaction:</strong><br>
+- Each REQ flit carries a <code>MPAM</code> field (PartitionID + PMG — Performance Monitoring Group)<br>
+- The interconnect (CMN-700) uses the PartitionID to control which ways of a shared cache (HN-F L3) are available to that traffic class<br>
+- SN-F (DRAM controller) uses PMG to count bandwidth per workload<br><br>
+<strong>SoC use:</strong> In a cloud SoC running multiple VMs, VM-A gets PartitionID=1 → allowed 50% of L3 ways. VM-B gets PartitionID=2 → allowed 25%. Prevents noisy-neighbor thrashing.<br><br>
+<strong>Interview angle:</strong> MPAM fields are transparent to coherence. They don't affect cache state transitions — they only affect allocation and monitoring policies.`},
+{c:"theory",d:"med",q:"What is the purpose of the 'Resp' field in a CompData flit?",a:`The <code>Resp</code> field in a <code>CompData</code> flit tells the requester what cache state it has been granted for the returned data:<br><br>
+<code>000</code> = I — data returned but not to be cached (ReadOnce, error case)<br>
+<code>010</code> = SC — Shared Clean granted<br>
+<code>011</code> = SD — Shared Dirty granted (this node must write back on eviction)<br>
+<code>110</code> = UC — Unique Clean (can store without asking HN-F)<br>
+<code>111</code> = UD — Unique Dirty (got a dirty line, own it)<br><br>
+<strong>Why important in RTL:</strong> Your RN-F cache controller must decode <code>Resp</code> and set the correct tag state bits. If you misparse Resp=UC as SC, your core will issue unnecessary <code>MakeUnique</code> requests for every store — huge performance hit.`},
+{c:"theory",d:"hard",q:"What happens when two RN-Fs issue ReadUnique to the same cache line simultaneously?",a:`This is the <strong>conflicting request</strong> scenario — one of the most common HN-F design challenges:<br><br>
+1. RN-A and RN-B both send <code>ReadUnique</code> for address X at nearly the same time<br>
+2. HN-F serializes at PoS — only one transaction runs at a time<br>
+3. Say RN-A arrives first and is allocated a tracker slot<br>
+4. RN-B arrives → HN-F sees address X is already in-progress → sends <code>RetryAck</code> to RN-B<br>
+5. HN-F processes RN-A: snoops all sharers (including RN-B if it had the line), collects responses<br>
+6. HN-F sends <code>CompData</code> to RN-A with Resp=UC<br>
+7. Later HN-F sends <code>PCrdGrant</code> to RN-B; RN-B re-issues <code>ReadUnique</code><br>
+8. This time RN-A is a sharer → HN-F sends <code>SnpUnique</code> to RN-A → RN-A invalidates and responds → RN-B gets UC<br><br>
+<strong>RTL implication:</strong> HN-F MSHR must handle "retry-on-conflict" states carefully to avoid livelock if both nodes keep retrying.`},
+
+{c:"practical",d:"easy",q:"Draw the flit sequence for a simple ReadShared transaction where no snoop is needed (cold cache scenario).",a:`Cold cache — SF says nobody has the line, so no snoop issued:<br><br>
+<pre>
+RN-F          HN-F          SN-F (DRAM)
+ |                |                |
+ |--REQ(ReadShared, addr=X)------->|
+ |                |                |
+ |                |--REQ(ReadNoSnoop, X)->|
+ |                |                |
+ |                |<----DAT(CompData,data,Resp=SC)--|
+ |                |                |
+ |&lt;--DAT(CompData, data, Resp=SC)--|
+ |                |                |
+</pre>
+SF is updated: RN-F is now a SC sharer of address X.<br><br>
+<strong>Flit fields to verify in RTL/simulation:</strong><br>
+- REQ: <code>Opcode=ReadShared, TxnID=N, SrcID=RN-F, TgtID=HN-F</code><br>
+- DAT: <code>Opcode=CompData, TxnID=N, HomeNID=HN-F, Resp=SC</code><br>
+- RN-F sets cache line state = SC after receiving CompData`},
+{c:"practical",d:"med",q:"Describe the complete flit exchange for a WriteUnique transaction with separate CompAck.",a:`<pre>
+RN-F              HN-F            SN-F
+ |                  |               |
+ |--REQ(WriteUnique, addr=X, TxnID=5)->|
+ |                  |               |
+ |&lt;--RSP(DBIDResp, DBID=7, TxnID=5)-|
+ |                  |               |
+ |--DAT(NonCopyBackWrData, DBID=7)->|
+ |                  |               |
+ |&lt;--RSP(Comp, TxnID=5)------------|
+ |                  |               |
+ |--RSP(CompAck, TxnID=5)--------->|
+</pre>
+<strong>Why CompAck is required:</strong> HN-F cannot reclaim its tracker slot until it knows the RN-F received the Comp. Without CompAck, HN-F risks issuing conflicting ops against the same address.<br><br>
+<strong>CopyBack variant (WriteBackFull):</strong> Used when RN-F has a dirty UC line it wants to evict. Flow is similar but HN-F must forward the dirty data to SN-F. CompAck still required.`},
+{c:"practical",d:"med",q:"How does a MakeUnique transaction differ from ReadUnique? When would an RN-F use it?",a:`<code>ReadUnique</code>: Used when the RN-F does NOT have the cache line at all. It needs the data + exclusive ownership.<br><br>
+<code>MakeUnique</code>: Used when the RN-F ALREADY has the line in SC state and wants to upgrade to UC/UD without fetching data again.<br><br>
+<strong>Flow for MakeUnique:</strong><br>
+1. RN-F has line in SC (got it from earlier ReadShared)<br>
+2. CPU wants to store → RN-F issues <code>MakeUnique</code> (no data needed, just invalidation of other copies)<br>
+3. HN-F snoops all other SC holders with <code>SnpMakeInvalid</code><br>
+4. HN-F sends <code>Comp</code> to RN-F (no data flit needed)<br>
+5. RN-F transitions SC→UC, stores locally<br><br>
+<strong>RTL implication:</strong> MakeUnique must not be issued if the line is in I state — that's a protocol error. Your cache controller logic should gate MakeUnique on a valid SC tag hit.`},
+{c:"practical",d:"med",q:"What happens during a ReadUnique when the line is dirty in another RN-F (RN-B)?",a:`<strong>Snoop with data forwarding scenario:</strong><br><br>
+<pre>
+RN-A             HN-F             RN-B
+ |                 |                |
+ |--REQ(ReadUnique)-->|             |
+ |                 |--SNP(SnpUnique)->|
+ |                 |                |
+ |                 |&lt;--RSP(SnpResp_I_Dirty_Fwd) + DAT(dirty data)--|
+ |                 |                |
+ |&lt;--DAT(CompData, Resp=UC, data)--|
+ |                 |               
+ |--RSP(CompAck)-->|               
+</pre>
+<strong>What RN-B does:</strong><br>
+- Receives <code>SnpUnique</code><br>
+- Sends its dirty data + <code>SnpRespFwded</code> to HN-F<br>
+- Transitions its line to I state<br><br>
+<strong>HN-F behavior:</strong> Receives dirty data, optionally forwards to RN-A, updates SF to show only RN-A has the line.<br><br>
+<strong>What to check in debug:</strong> Verify SnpResp contains correct Resp field (DataPull=1 if data was pulled, else HN-F must send data).`},
+{c:"practical",d:"hard",q:"In CMN-700, how is a 4x4 mesh NodeID calculated? What is the NodeID of the HN-F at position (2,1)?",a:`<strong>Formula:</strong> <code>NodeID = (Y_coord × X_dimension × ports_per_XP) + (X_coord × ports_per_XP) + port_offset</code><br><br>
+In a typical 4×4 mesh with 4 ports per crosspoint (XP):<br>
+- XP at (x=2, y=1): NodeID base = (1 × 4 × 4) + (2 × 4) = 16 + 8 = 24<br>
+- HN-F attached to port 0 of that XP → NodeID = 24<br><br>
+<strong>Actual CMN-700 convention:</strong> NodeID bits [10:2] = XP NodeID (encodes mesh position), bits [1:0] = port within XP (00=HN-F, 01=second port, etc.).<br><br>
+<strong>RTL implication:</strong> Your routing tables in each XP must be programmed with correct NodeID↔port mappings. A mis-programmed entry causes the flit to be forwarded to the wrong XP, appearing as a protocol timeout at the requester.`},
+{c:"practical",d:"med",q:"Explain how Dimension-Ordered Routing (DOR) works in a CHI mesh and why it avoids deadlock.",a:`DOR routes all flits by first traversing in one dimension (X), then the other (Y):<br><br>
+<strong>X-first DOR:</strong><br>
+- Flit from (0,0) to (3,2): go East to (3,0), then go North to (3,2)<br>
+- Never go Y-first from (0,0) — only one routing decision per dimension<br><br>
+<strong>Deadlock freedom proof:</strong><br>
+DOR creates a "turn model" where only certain turns are allowed (e.g., East→North is OK, but North→East is NOT). This creates an acyclic channel dependency graph → no circular wait → no deadlock.<br><br>
+<strong>In Hanuma 1.0 RTL:</strong> Each XP needs logic to compute output port from (src_coord, dst_coord). DOR simplifies this to:<br>
+<code>if dst_x != my_x → route East/West; else route North/South</code><br><br>
+<strong>Limitation:</strong> DOR is not load-balanced — all traffic between two quadrants uses the same path.`},
+{c:"practical",d:"hard",q:"You are implementing a snoop filter in RTL. What SRAM organization would you choose for a 256-entry direct-mapped SF for 8 RN-F nodes?",a:`<strong>Design parameters:</strong><br>
+- 256 entries → 8-bit index<br>
+- 8 RN-F nodes → 8 presence bits per entry<br>
+- Each entry also needs: dirty bit per RN-F, valid bit, partial tag<br><br>
+<strong>One entry width:</strong><br>
+<code>Presence[7:0]</code> = 8 bits (which RN-Fs have the line)<br>
+<code>Dirty[7:0]</code>   = 8 bits (which are SD)<br>
+<code>Valid</code>         = 1 bit<br>
+<code>Tag</code>           = PA_width − 8 (index) − 6 (offset) bits. For 40-bit PA: 26 bits<br><br>
+<strong>Total per entry:</strong> 26 + 1 + 8 + 8 = 43 bits → round to 48 bits (word-aligned).<br>
+<strong>SRAM size:</strong> 256 × 48 = 12,288 bits ≈ 1.5 KB — tiny.<br><br>
+<strong>Improvement:</strong> Use a 4-way set-associative SF to reduce conflict misses. 256 entries, 4-way = 64 sets × 4 ways. Each set needs PLRU field (3 bits). Total ≈ 6 KB.`},
+{c:"practical",d:"med",q:"How does a CHI RN-F handle an incoming snoop while it has a pending read for the same address?",a:`This is a <strong>snoop collision</strong> — a key edge case in RN-F design:<br><br>
+<strong>Scenario:</strong> RN-F issued <code>ReadShared</code> for addr X (outstanding). HN-F sends <code>SnpShared</code> for the same address X.<br><br>
+<strong>Correct behavior per CHI spec:</strong><br>
+1. RN-F receives the snoop while its own REQ is in-flight<br>
+2. RN-F MUST respond to the snoop (cannot hold it)<br>
+3. Since it has no data yet, it responds with <code>SnpResp_I</code> (no data, I state)<br>
+4. RN-F's pending read will still complete — HN-F will return data from memory or another cache<br>
+5. After <code>CompData</code> arrives, RN-F gets the line in SC state as expected<br><br>
+<strong>RTL design implication:</strong> Your pending transaction buffer (PTB) must tag addresses and detect incoming snoops. When snoop matches pending REQ, generate SnpResp without blocking the REQ pipeline.`},
+{c:"practical",d:"hard",q:"What is the purpose of DMB and DSB in CHI and how do they translate to CHI barrier transactions?",a:`<strong>ARM memory barriers:</strong><br>
+<code>DMB (Data Memory Barrier)</code>: Ensures ordering of data accesses<br>
+<code>DSB (Data Synchronization Barrier)</code>: Stronger — ensures completion, not just ordering<br><br>
+<strong>CHI translation:</strong><br>
+<code>DMB</code> → <code>DVMOp (DVM Domain, Barrier type=NSH/ISH/OSH)</code><br>
+<code>DSB</code> → <code>DVMOp (type=Full)</code> + RN-F waits for <code>DVMResp</code><br><br>
+<strong>DVM (Distributed Virtual Memory) in CHI:</strong><br>
+- Sent from MN (Miscellaneous Node, typically the interconnect)<br>
+- Broadcast to all RN-Fs via SNP channel<br>
+- RN-Fs respond with <code>DVMResp</code> on RSP channel<br>
+- MN sends <code>Comp</code> back to originating RN-F only after ALL DVMResps received<br><br>
+<strong>Hanuma 1.0 implication:</strong> If your NoC doesn't implement MN functionality, barrier transactions will never complete. Either integrate an MN or stub it with an always-pass DVMResp (unsafe but acceptable for RTL bring-up).`},
+{c:"practical",d:"med",q:"Explain the CopyBack flow. When does an RN-F issue WriteBackFull vs WriteCleanFull?",a:`<code>WriteBackFull</code>: Evict a <strong>dirty unique</strong> (UD) line. RN-F is giving up ownership AND writing dirty data back. Cache line state: UD → I.<br><br>
+<code>WriteCleanFull</code>: Evict a <strong>dirty shared</strong> (SD) line. RN-F is writing dirty data back but may keep a clean copy. Cache line state: SD → SC.<br><br>
+<code>WriteEvictFull</code>: Evict a <strong>clean unique</strong> (UC) line. No data to write; just inform HN-F to remove from SF.<br><br>
+<strong>Flow detail (WriteBackFull):</strong><br>
+1. RN-F → HN-F: <code>REQ(WriteBackFull)</code><br>
+2. HN-F → RN-F: <code>RSP(DBIDResp)</code><br>
+3. RN-F → HN-F: <code>DAT(CopyBackWrData, dirty data)</code><br>
+4. HN-F → RN-F: <code>RSP(Comp)</code><br>
+5. RN-F → HN-F: <code>RSP(CompAck)</code>`},
+{c:"practical",d:"easy",q:"What is the maximum flit width on a CHI REQ channel, and what key fields does it carry?",a:`CHI REQ flit width: typically <strong>96-128 bits</strong> for CHI-B (implementation dependent).<br><br>
+<strong>Key fields:</strong><br>
+<code>QoS[3:0]</code>: Quality of Service priority<br>
+<code>TgtID[10:0]</code>: Destination NodeID<br>
+<code>SrcID[10:0]</code>: Source NodeID<br>
+<code>TxnID[11:0]</code>: Transaction ID<br>
+<code>ReturnNID[10:0]</code>: Where to send data (for snoops with data return)<br>
+<code>Opcode[6:0]</code>: ReadShared, WriteUnique, etc.<br>
+<code>Addr[51:0]</code>: Physical address (up to 52-bit PA space)<br>
+<code>Size[2:0]</code>: Transfer size (cacheline=110=64B)<br>
+<code>MemAttr[3:0]</code>: Memory attributes (cacheable, allocate, etc.)<br>
+<code>Order[1:0]</code>: Ordering requirement<br>
+<code>AllowRetry</code>: 0 = this is a retry, 1 = can be retried<br>
+<code>MPAM[10:0]</code>: Partition ID + PMG`},
+{c:"practical",d:"hard",q:"How would you implement a CHI RN-F transaction tracker in RTL? What fields does each entry need?",a:`A transaction tracker (MSHR for the requester side) must hold all state needed to drive a CHI transaction to completion:<br><br>
+<strong>Fields per tracker entry:</strong><br>
+<code>valid</code>: entry in use<br>
+<code>state[FSM]</code>: IDLE/WAIT_DBID/WAIT_DATA/WAIT_COMP/WAIT_COMPDATA/DONE<br>
+<code>TxnID</code>: assigned transaction ID (also index into tracker array)<br>
+<code>Opcode</code>: original request opcode<br>
+<code>Addr</code>: physical address of request<br>
+<code>SrcID</code>: our own NodeID<br>
+<code>DBID</code>: data buffer ID received from HN-F (needed for write data)<br>
+<code>ExpCompAck</code>: flag — do we need to send CompAck?<br>
+<code>DataReceived</code>: bitmask of 64-byte chunks received<br>
+<code>RetryCount</code>: times this txn was retried (watchdog)<br><br>
+<strong>Sizing:</strong> Number of entries = max OoO depth of attached CPU. Cortex-X3 can sustain ~64 outstanding transactions. Size tracker to 64+ entries.`},
+{c:"practical",d:"med",q:"What does SnpRespData look like in flit terms and how does it differ from CompData?",a:`<code>CompData</code>: Sent by HN-F (or SN-F) to the original requester. Carries the Comp + Data combined response. Resp field tells final cache state.<br><br>
+<code>SnpRespData</code>: Sent by a snooped RN-F to HN-F (or directly to requesting RN-F via Data Pull). Carries the dirty cache data during a snoop response. Resp field tells the state being relinquished (e.g., UD→I).<br><br>
+<strong>Flit differences:</strong><br>
+- <code>CompData</code>: TgtID = requester RN-F, TxnID = original REQ TxnID<br>
+- <code>SnpRespData</code>: TgtID = HN-F (or requesting RN-F for Data Pull), TxnID = Snoop TxnID (set by HN-F in SNP flit)<br><br>
+<strong>Debug tip:</strong> Confusing these two DAT opcodes is a common RTL error. If your trace shows a SnpRespData routed to a non-HN-F node when Data Pull was not negotiated, that's a TgtID bug.`},
+{c:"practical",d:"easy",q:"What is the flow for a non-coherent IO device (RN-I) issuing a burst write to DDR?",a:`RN-I has no cache. It issues non-coherent writes directly:<br><br>
+<pre>
+RN-I (PCIe EP)    HN-I/HN-F        SN-F (DDR)
+ |                    |                |
+ |--REQ(WriteNoSnoop)-->|              |
+ |                    |                |
+ |&lt;--RSP(DBIDResp)-----|              |
+ |                    |                |
+ |--DAT(NonCopyBackWrData)-->|         |
+ |                    |                |
+ |                    |--Fwd to SN-F-->|
+ |                    |                |
+ |&lt;--RSP(Comp)---------|              |
+</pre>
+<strong>Key differences from coherent write:</strong><br>
+- No CompAck needed (non-coherent path skips it per spec)<br>
+- No snoop filter update (RN-I is never snooped)<br>
+- HN-I handles it; HN-F for shared regions must ensure coherency with CPU caches — may need to issue CleanInvalid to relevant RN-Fs first`},
+{c:"practical",d:"hard",q:"Describe how you would implement write combining in a CHI RN-F to optimize short burst writes.",a:`Write combining (WC) batches multiple small writes to the same cache line before issuing a CHI transaction:<br><br>
+<strong>Mechanism in RN-F:</strong><br>
+1. CPU issues 8-byte store to addr X<br>
+2. Instead of immediately sending <code>WriteUnique</code>, RN-F allocates a WC buffer<br>
+3. Subsequent stores to the same 64-byte aligned line fill into WC buffer<br>
+4. On timer expiry OR WC buffer full → issue <code>WriteUnique</code> with full cacheline<br><br>
+<strong>CHI-specific implication:</strong><br>
+- If line is already in UC state in cache, stores are local → no CHI transaction<br>
+- If line is in SC → need <code>MakeUnique</code> first, then local stores<br>
+- WC buffer only makes sense for non-allocating MMIO writes or streaming stores<br><br>
+<strong>RTL design:</strong><br>
+- WC buffer: 4–8 entries, each 64B + 64-bit byte-enable mask + address<br>
+- Merge logic: new store → check if address matches existing WC entry → merge byte-enables and data<br>
+- Flush trigger: cache-line-full OR 4-cycle timer OR explicit fence`},
+
+{c:"debug",d:"med",q:"A simulation shows a CPU core is stuck waiting for a ReadShared to complete. The REQ flit was sent 10,000 cycles ago. How do you debug this?",a:`<strong>Step 1: Find the transaction in the trace</strong><br>
+Search for REQ flit with opcode=ReadShared, SrcID=stuck CPU's NodeID. Note TxnID.<br><br>
+<strong>Step 2: Check if HN-F received the REQ</strong><br>
+Look for the REQ flit arriving at HN-F input port. If not present → routing issue. Check TgtID in the REQ flit against HN-F's NodeID. Common cause: wrong NodeID configuration in the crosspoint routing table.<br><br>
+<strong>Step 3: Check for RetryAck</strong><br>
+Did HN-F send RetryAck? If yes → HN-F tracker full. Check PCrdGrant was sent. If PCrdGrant was sent but RN-F didn't re-issue → RN-F PCrd handling bug.<br><br>
+<strong>Step 4: Check if snoop was issued</strong><br>
+If HN-F received REQ, did it issue SnpShared to any RN-F? If yes → look for SnpResp. If SnpResp missing → the snooped RN-F is deadlocked or snoop was routed wrongly.<br><br>
+<strong>Step 5: Check SN-F path</strong><br>
+If no snoop needed, did HN-F send ReadNoSnoop to SN-F? If SN-F received it but never responded → DDR controller stall.<br><br>
+<strong>Root cause taxonomy:</strong> (a) routing misconfiguration, (b) HN-F tracker exhaustion, (c) snooped RN-F deadlock, (d) SN-F pipeline stall, (e) credit starvation on DAT channel.`},
+{c:"debug",d:"hard",q:"Your CHI simulation shows data corruption: a CPU reads a stale value after another CPU wrote to the same address. What are the possible root causes?",a:`<strong>Systematic debug approach:</strong><br><br>
+<strong>1. Check snoop filter accuracy</strong><br>
+Was the writer's RN-F in the SF when the read was issued? If SF missed the writer, HN-F did not snoop it. Cause: SF eviction policy too aggressive or capacity miss.<br><br>
+<strong>2. Check ReadUnique vs ReadShared</strong><br>
+Did the writer use ReadUnique before storing? If it used ReadShared and stored locally without upgrading → protocol violation at writer side.<br><br>
+<strong>3. Check CompAck timing</strong><br>
+Writer may have received Comp but not sent CompAck. HN-F then allowed reader's transaction before write was truly committed.<br><br>
+<strong>4. Check memory writeback path</strong><br>
+Writer evicted the line (WriteBackFull) — was it committed to SN-F before the reader fetched from SN-F? Check SN-F pipeline ordering.<br><br>
+<strong>5. Check cache state machine in RN-F RTL</strong><br>
+A common bug: cache tag hit but data SRAM write enable not asserted → data stays stale in SRAM while tag says valid.<br><br>
+<strong>6. Check SnpResp Resp field</strong><br>
+After the writer was snooped, did it respond with SnpResp_I? If it responded SnpResp_SC instead, HN-F won't fetch fresh data from SN-F.`},
+{c:"debug",d:"hard",q:"A deadlock checker fires in your CHI interconnect simulation. No transaction is making progress. What systematic approach do you take?",a:`<strong>Step 1: Identify blocked transactions</strong><br>
+Find all REQ/SNP flits that have been waiting > threshold cycles.<br><br>
+<strong>Step 2: Map channel dependencies</strong><br>
+CHI spec requires agents to be able to accept SNP while waiting for DAT response. If your RN-F accepts SNP only when tracker is free, and tracker is full waiting for CompData that requires HN-F to process a SNP response first → classic circular wait.<br><br>
+<strong>Common CHI deadlock patterns:</strong><br>
+(a) <em>SNP channel blocked by full RSP buffer:</em> RN-F can't accept new SNP because RSP channel back-pressure is full. Fix: Separate SNP-triggered RSP buffer from REQ-triggered RSP buffer.<br>
+(b) <em>DAT channel full:</em> All RN-F DAT credits consumed; HN-F waiting for DAT (SnpRespData) but RN-F can't send because HN-F DAT input is full.<br>
+(c) <em>Retry livelock:</em> RN-A keeps retrying and consuming PCrd credits that RN-B needs. Fix: Fair arbitration on PCrd grants.<br><br>
+<strong>Step 3: Check channel credit counts</strong><br>
+Use protocol VIP or assertion: <code>assert(rxsnp_credits > 0 || no_pending_snp_response_needed)</code><br><br>
+<strong>Fix philosophy:</strong> Per CHI spec, SNP response buffers must be independent of REQ completion resources.`},
+{c:"debug",d:"med",q:"You see a TxnID collision error flagged by your CHI VIP. What does this mean and how do you fix it?",a:`<strong>TxnID collision:</strong> An RN-F reused a TxnID that is still outstanding.<br><br>
+<strong>Why it matters:</strong> HN-F uses TxnID to match responses back to the originating request. If TxnID is reused, HN-F may route a CompData flit to the wrong transaction.<br><br>
+<strong>How to find in RTL:</strong><br>
+Add an assertion: <code>assert(txn_tracker[new_txnid].valid == 0)</code> whenever a new REQ flit is issued.<br><br>
+<strong>Common RTL bugs:</strong><br>
+(a) One-hot encoder for free-list has a glitch, returning a slot that wasn't freed<br>
+(b) CompAck was sent prematurely, freeing the slot before HN-F sent its final response<br>
+(c) Free-list counter wrapped around in high-OoO design<br><br>
+<strong>Fix:</strong> Use a bitmap of in-flight TxnIDs. Only mark free after CompAck is sent (for write) or after CompData/Comp is received (for read).`},
+{c:"debug",d:"med",q:"Your AXI-to-CHI bridge fails to complete transactions when the CHI fabric issues RetryAck. Debug the issue.",a:`<strong>The bridge must implement the retry flow correctly.</strong><br><br>
+<strong>Expected behavior:</strong><br>
+1. Bridge issues REQ with <code>AllowRetry=1</code><br>
+2. HN-F sends <code>RetryAck</code><br>
+3. Bridge waits for <code>PCrdGrant</code><br>
+4. Bridge re-issues the SAME request with <code>AllowRetry=0</code> and same TxnID<br><br>
+<strong>Common bugs in AXI-CHI bridges:</strong><br><br>
+(a) <em>Bridge ignores RetryAck:</em> RSP channel parser doesn't handle Opcode=RetryAck. Fix: Add RetryAck opcode to RSP handler FSM.<br><br>
+(b) <em>Bridge sends AllowRetry=1 on retry:</em> HN-F will issue another RetryAck → infinite loop. Fix: Always set AllowRetry=0 on any re-issued transaction after PCrdGrant.<br><br>
+(c) <em>Bridge uses new TxnID on retry:</em> HN-F reserved a slot for the original TxnID. Fix: Re-use the exact original TxnID.<br><br>
+(d) <em>PCrdGrant handling missing:</em> Bridge doesn't track received PCrdGrants. Fix: Add a PCrd credit counter per QoS class.`},
+{c:"debug",d:"hard",q:"A snoop response arrives at HN-F after the HN-F has already timed out the transaction and freed its tracker slot. What went wrong and what are the consequences?",a:`<strong>This is a tracker slot reuse hazard.</strong><br><br>
+<strong>What went wrong:</strong><br>
+HN-F had a snoop outstanding. The snoop timer expired. HN-F declared transaction failed and freed the tracker slot. Later, the late SnpResp arrives.<br><br>
+<strong>Consequences:</strong><br>
+1. HN-F may have allocated that tracker slot to a new transaction (same slot, different TxnID)<br>
+2. The late SnpResp's TxnID now matches the NEW transaction<br>
+3. HN-F processes the late SnpResp as belonging to the new transaction → coherence violation or hang<br><br>
+<strong>Root cause options:</strong><br>
+(a) Snoop flit was queued in a network buffer for too long (congestion)<br>
+(b) RN-B had a very deep snoop processing pipeline<br>
+(c) HN-F snoop timeout was too aggressive<br><br>
+<strong>Fixes:</strong><br>
+(a) Increase HN-F snoop timeout based on worst-case network latency + RN-F snoop service time<br>
+(b) Add "late response" detection logic: if SnpResp TxnID matches a freed slot, drop it safely<br>
+(c) Use per-snoop sequence numbers to distinguish late responses from valid new ones`},
+{c:"debug",d:"hard",q:"A CHI VIP reports 'ordering violation': a later store appears to complete before an earlier store to the same address. Both used WriteUnique. Debug.",a:`<strong>CHI ordering violation — the PoS must serialize same-address writes.</strong><br><br>
+<strong>Step 1: Verify both requests arrived at the same HN-F</strong><br>
+If the two addresses map to different HN-F nodes (due to address interleaving), ordering is not guaranteed. Verify address mapping.<br><br>
+<strong>Step 2: Check HN-F MSHR conflict detection</strong><br>
+The HN-F should detect both WriteUnique target the same address. If the MSHR conflict detection uses only partial address bits, two addresses with same index but different tags could slip through. Check the MSHR CAM logic.<br><br>
+<strong>Step 3: Check Comp + CompAck ordering</strong><br>
+HN-F should send Comp for W1 only after W1's data reaches SN-F AND W1's CompAck is received. If HN-F sends W2's Comp before W1's CompAck, W2 can proceed early.<br><br>
+<strong>Step 4: Check SN-F write ordering</strong><br>
+Even if HN-F serializes correctly, the DDR controller may reorder writes internally for DRAM efficiency. Before accepting W2 to address X, flush W1 from the write buffer.`},
+{c:"debug",d:"med",q:"An exclusive store (STXR equivalent) always fails even when no other agent accessed the address. Debug.",a:`<strong>Step 1: Check LDXR transaction (ReadUnique with Excl=1)</strong><br>
+Did the RN-F issue a REQ with <code>Excl=1</code>? If not, the exclusive monitor was never set.<br><br>
+<strong>Step 2: Check HN-F ExclOK response</strong><br>
+Did HN-F return <code>CompData</code> with <code>ExclOK=1</code>? If ExclOK=0, HN-F refused to grant an exclusive monitor entry (tracker full, or exclusive not supported — check MemAttr field: Exclusive is only valid for Normal memory, not Device memory).<br><br>
+<strong>Step 3: Check for intervening snoop</strong><br>
+Was a <code>SnpUnique</code> or <code>SnpMakeInvalid</code> issued to this RN-F between LDXR and STXR? Any snoop that invalidates the line automatically clears the exclusive reservation.<br><br>
+<strong>Step 4: Check RN-F local exclusive monitor</strong><br>
+The RN-F maintains a local ExMon table. If the STXR address doesn't match the LDXR address (even by 1 byte), the monitor won't match. Check address comparison logic: must be cacheline-aligned.<br><br>
+<strong>Step 5: Verify HN-F exclusive monitor table</strong><br>
+If HN-F's table was evicted (LRU replacement) between LDXR and STXR, it will respond with fail.`},
+{c:"debug",d:"med",q:"CMN-700 performance counters show HN-F L3 hit rate is only 30% despite a well-tuned workload. What could be wrong?",a:`<strong>1. Check MemAttr on REQ flits</strong><br>
+Are requesters sending <code>Allocate=0</code>? If so, HN-F will not allocate the line in L3. Common cause: firmware/boot code runs with non-cacheable attributes and that setting persists.<br><br>
+<strong>2. Check CMO traffic</strong><br>
+Excessive <code>CleanInvalid</code> or <code>MakeInvalid</code> CMOs from a DMA engine can thrash the L3. Check DMA descriptor flags — many DMA engines issue CleanInvalid by default for every transfer.<br><br>
+<strong>3. Check SF eviction rate</strong><br>
+If the Snoop Filter is evicting entries frequently, HN-F may think no RN-F has the line and re-fetch from SN-F unnecessarily. Check SF occupancy counters.<br><br>
+<strong>4. Check address interleaving</strong><br>
+If too many hot lines map to the same HN-F set, conflict misses dominate. Try a XOR-based hashing scheme instead of simple bit-slice.<br><br>
+<strong>5. Check exclusive access patterns</strong><br>
+Frequent ReadUnique/MakeUnique causes lines to bounce between caches. If cores fight over the same lock variable, the line is invalidated on every access.`},
+
+{c:"problem",d:"med",q:"Design a 4-node CHI system with 2 CPU clusters (RN-F), 1 DDR controller (SN-F), and 1 HN-F. Specify NodeID allocation and routing table for each crosspoint in a 2x2 mesh.",a:`<strong>Node placement (2×2 mesh):</strong><br><br>
+<pre>
+(0,1)XP --- (1,1)XP
+  |               |
+(0,0)XP --- (1,0)XP
+</pre>
+<strong>NodeID allocation (4-bit NodeID for simplicity):</strong><br>
+- XP(0,0): Port0=RN-F_A (NodeID=0), Port1=HN-F (NodeID=1)<br>
+- XP(1,0): Port0=RN-F_B (NodeID=4), Port1=SN-F (NodeID=5)<br>
+- XP(0,1) and XP(1,1): unused<br><br>
+<strong>Routing (DOR X-first):</strong><br>
+- XP(0,0) → NodeID 4 (RN-F_B): route East to XP(1,0)<br>
+- XP(0,0) → NodeID 5 (SN-F): route East to XP(1,0)<br>
+- XP(1,0) → NodeID 0 (RN-F_A): route West to XP(0,0)<br>
+- XP(1,0) → NodeID 1 (HN-F): route West to XP(0,0)<br><br>
+<strong>Programming the routing table (CMN-700 style):</strong><br>
+Each XP has a 16-entry table indexed by destination NodeID. Each entry = output port (N/S/E/W or local port 0/1).`},
+{c:"problem",d:"hard",q:"You need to add an AI accelerator (RN-I, no cache) to Hanuma 1.0. The accelerator does 256-byte burst writes to a shared DDR buffer that the CPU also reads. What protocol events must you handle to maintain coherency?",a:`<strong>Challenge:</strong> RN-I has no cache and issues non-coherent writes. CPU (RN-F) may have stale cached copies of the shared buffer.<br><br>
+<strong>Required protocol events:</strong><br><br>
+<strong>1. Before accelerator writes (software-managed):</strong><br>
+CPU must issue <code>CleanInvalid</code> CMO on the shared buffer region before handing off to the accelerator. This flushes dirty CPU cache lines to DDR and invalidates them. HN-F broadcasts SnpCleanInvalid to all RN-Fs with copies.<br><br>
+<strong>2. Accelerator writes:</strong><br>
+RN-I issues <code>WriteNoSnoop</code> flits. HN-F (or HN-I) routes to SN-F. No snoop filter update (RN-I is never an SF entry).<br><br>
+<strong>3. After accelerator finishes:</strong><br>
+CPU must issue a memory barrier (DSB → DVMOp Full) before reading the buffer. This ensures accelerator writes are committed to DDR before CPU fetch.<br><br>
+<strong>4. CPU read after accelerator write:</strong><br>
+CPU issues <code>ReadShared</code>. HN-F SF check shows no sharers. HN-F fetches from SN-F (DDR) — gets fresh accelerator data. ✓<br><br>
+<strong>Hanuma 1.0 RTL task:</strong> Add a buffer descriptor register accessible by software (MMIO). When set, issue the CleanInvalid sequence via your HN-F CMO logic before asserting the "accelerator start" signal.`},
+{c:"problem",d:"hard",q:"Estimate the minimum number of CHI DAT channel flits needed to service 100 simultaneous ReadShared requests from 100 different RN-F nodes, assuming all addresses are unique and cold cache.",a:`<strong>Cold cache → all lines fetched from SN-F → each needs a CompData flit.</strong><br><br>
+<strong>Per ReadShared (cold, unique address):</strong><br>
+- 0 SnpRespData flits (no sharers, no dirty copy)<br>
+- 1 DAT flit: SN-F → HN-F (ReadNoSnoop response, internal)<br>
+- 1 DAT flit: HN-F → RN-F (CompData)<br>
+- DAT flit count per transaction = 2<br><br>
+<strong>Total for 100 requests:</strong><br>
+= 100 × 2 = <strong>200 DAT flits minimum</strong><br><br>
+<strong>Throughput bottleneck:</strong> If HN-F has one DAT output port at 1 flit/cycle, these 200 flits take ≥200 cycles + HN-F arbitration + SN-F latency. At 100 concurrent requests, HN-F tracker depth must be ≥100.<br><br>
+<strong>Note on partial transfers:</strong> On a 128-bit (16-byte) DAT bus, one 64-byte line = 4 physical data beats. If you count beats: 100 × 2 DAT flits × 4 beats = 800 beats minimum.`},
+{c:"problem",d:"hard",q:"Design the FSM for an HN-F MSHR entry handling a ReadShared request where the snoop filter indicates a dirty copy exists at RN-B.",a:`<strong>HN-F MSHR FSM for ReadShared with dirty sharer:</strong><br><br>
+<pre>
+IDLE
+  ↓ [REQ(ReadShared) received from RN-A]
+SEND_SNOOP
+  ↓ [Issue SnpShared to RN-B; start snoop timer]
+WAIT_SNOOP_RESP
+  ↓ [SnpRespData(dirty data, I state) received from RN-B]
+SEND_DATA_TO_REQUESTER
+  ↓ [Forward data as CompData to RN-A with Resp=SC]
+  ↓ [Update SF: RN-A=SC sharer, RN-B=invalid]
+  ↓ [Write dirty data to SN-F via WriteNoSnoop]
+WAIT_COMP_ACK
+  ↓ [CompAck received from RN-A]
+IDLE
+</pre>
+<strong>Parallel activities in WAIT_SNOOP_RESP:</strong><br>
+- Snoop timer running (detect hung snoop)<br>
+- Accept only responses with matching TxnID<br><br>
+<strong>Error states to add:</strong><br>
+- SNOOP_TIMEOUT → escalate (NMI or retry)<br>
+- RETRY_RECEIVED → stall; wait for PCrdGrant<br><br>
+<strong>RTL note:</strong> The dirty data writeback to SN-F can happen in parallel with sending CompData to RN-A (pipelining). But CompAck must be received before freeing the MSHR slot.`},
+{c:"problem",d:"med",q:"A system has 4 RN-F nodes each with a 64KB L1 cache. The HN-F has a 2MB snoop filter. How would you calculate if the SF can track all possible sharers without overflow?",a:`<strong>SF capacity check:</strong><br><br>
+<strong>Given:</strong><br>
+- 4 RN-F nodes<br>
+- Each L1 = 64KB with 64-byte lines → 1024 lines per L1<br>
+- Max total cached lines across all RN-Fs = 4 × 1024 = 4096 lines<br><br>
+<strong>SF requirement:</strong><br>
+SF needs one entry per unique cache line address present in any RN-F. Worst case = all 4 RN-Fs have entirely different lines → 4096 unique entries.<br><br>
+<strong>SF entry size:</strong><br>
+Per line: tag (26 bits for 40-bit PA) + 4 presence bits + 4 dirty bits + valid = ~36 bits ≈ 5 bytes.<br><br>
+<strong>SF SRAM needed:</strong> 4096 × 5 bytes = 20 KB<br><br>
+<strong>Given SF is 2MB:</strong> 2MB / 5 bytes ≈ 400,000 entries — massively over-provisioned for 4 RN-Fs.<br><br>
+<strong>Conclusion:</strong> Zero overflow risk. For Hanuma 1.0's small design, a 32KB–64KB SF SRAM is more than sufficient.`},
+{c:"problem",d:"hard",q:"Calculate the theoretical peak read bandwidth (in GB/s) achievable from a CHI SN-F with a 128-bit data bus at 2 GHz.",a:`<strong>Raw bus bandwidth:</strong><br>
+= bus_width × frequency = 128 bits × 2 GHz = 256 Gbps = 32 GB/s<br><br>
+<strong>Protocol overhead analysis:</strong><br>
+Each ReadShared transaction:<br>
+- 1 REQ flit (REQ channel, negligible)<br>
+- 1 CompData flit on DAT channel = 64 bytes of useful data<br>
+- 1 CompAck RSP (no data)<br><br>
+On a 128-bit (16-byte) DAT bus, one 64-byte CompData = 4 clock cycles. No overhead beats (CHI flits are back-to-back).<br><br>
+<strong>At 100% bus utilization:</strong><br>
+2G/4 beats/txn = 500M transactions/sec × 64B = <strong>32 GB/s peak</strong><br><br>
+<strong>Realistic deduction (~70-80% efficiency):</strong><br>
+Arbitration gaps, RetryAck cycles, snoop latency → ~22–26 GB/s real<br><br>
+<strong>Interview tip:</strong> Compare to LPDDR5 bandwidth (≈68 GB/s at 6400 MT/s, 64-bit bus). The CHI interconnect is rarely the bottleneck — the DRAM interface usually is.`},
+{c:"problem",d:"med",q:"How would you use CHI QoS fields to prioritize latency-critical CPU traffic over best-effort DMA in Hanuma 1.0?",a:`<strong>CHI QoS field:</strong> 4-bit priority on every REQ flit (0=lowest, 15=highest).<br><br>
+<strong>Design approach for Hanuma 1.0:</strong><br><br>
+<strong>1. Assign QoS values at source:</strong><br>
+- CPU REQ flits: QoS=12 (high priority, latency sensitive)<br>
+- GPU compute REQ: QoS=8 (medium)<br>
+- DMA bulk transfer: QoS=4 (best effort)<br>
+- Background CMO: QoS=2<br><br>
+<strong>2. HN-F arbitration:</strong><br>
+Implement weighted round-robin (WRR) or strict priority arbitration at HN-F REQ input queues, sorted by QoS. High-QoS requests get MSHR slots first.<br><br>
+<strong>3. SN-F (DDR controller) priority:</strong><br>
+Pass QoS from CHI REQ into DDR controller request queue. Map QoS[3:2] to DDR priority.<br><br>
+<strong>4. Credit allocation by QoS class:</strong><br>
+Reserve PCrdType credits per QoS class. CPU class always has credits; DMA shares a pool.<br><br>
+<strong>RTL note:</strong> Don't use strict priority without a starvation guard. Add a DMA promotion timer: after T cycles of waiting, bump DMA QoS by 1.`},
+{c:"problem",d:"hard",q:"In Hanuma 1.0, you want to support PCIe write transactions ordered with respect to CPU writes to the same memory region. How do you map PCIe ordering to CHI ordering?",a:`<strong>PCIe ordering model vs CHI ordering model — mapping is non-trivial.</strong><br><br>
+<strong>PCIe ordering rules relevant here:</strong><br>
+- Posted Writes (MWr) are weakly ordered within a traffic class<br>
+- PCIe has a "relaxed ordering" bit (RO) and "ID-based ordering" (IDO)<br><br>
+<strong>CHI ordering mechanism:</strong><br>
+- Use <code>Order=RO</code> (Request Order) in REQ flits from the PCIe bridge RN-I<br>
+- Order=RO ensures HN-F serializes this request after all previous requests from the same SrcID<br><br>
+<strong>Practical mapping:</strong><br>
+1. PCIe MWr with RO=0 (strict ordering required) → CHI WriteNoSnoop with Order=RO<br>
+2. PCIe MWr with RO=1 (relaxed) → CHI WriteNoSnoop with Order=0<br>
+3. When CPU and PCIe both target the same region, software must issue a DSB before signaling the PCIe device<br><br>
+<strong>Hardware assist:</strong> Add a "sync register" in your RN-I bridge. CPU writes 1 to sync register → bridge issues a WriteNoSnoop with Order=OWO to that address → when Comp arrives, signal PCIe device. This is the hardware handshake pattern.`},
+{c:"problem",d:"hard",q:"Your Hanuma 1.0 simulation shows the HN-F MSHR is always 90% full, causing frequent RetryAck. How would you architect a fix?",a:`<strong>MSHR pressure → RetryAck flood → latency degradation.</strong><br><br>
+<strong>1. Increase MSHR depth (simplest)</strong><br>
+Double the MSHR entries from N to 2N. But area cost grows linearly. First check: is the MSHR full because transactions are stuck, or because traffic is genuinely high?<br><br>
+<strong>2. Reduce transaction latency (root cause fix)</strong><br>
+If MSHR entries stay occupied for 500 cycles when they should take 50, the SN-F (DDR) is the bottleneck. Add a write-combining buffer in HN-F to batch small writes → fewer SN-F round trips per MSHR entry.<br><br>
+<strong>3. Snoop optimization</strong><br>
+Use aggressive snoop timeout tuning. Implement negative SF (evict-on-clean): reduce SF overshoot so fewer unnecessary snoops are issued.<br><br>
+<strong>4. Request throttling</strong><br>
+When MSHR > 80% full, only accept QoS ≥ 8. Block QoS &lt; 8 at credit allocation time.<br><br>
+<strong>5. Traffic classification and MSHR partitioning</strong><br>
+Reserve 25% of MSHR for read traffic, 50% for write traffic, 25% for CMOs.<br><br>
+<strong>Diagnosis first:</strong> Profile with perf counters — are MSHR entries stuck waiting for SnpResp, SN-F response, or CompAck? Each root cause has a different fix.`},
+];
+
+let got = new Set(), currentCat = 'all', searchStr = '';
+const TOTAL = QS.length;
+
+function catMatch(q) {
+  if (currentCat === 'all') return true;
+  if (currentCat === 'easy' || currentCat === 'med' || currentCat === 'hard') return q.d === currentCat;
+  return q.c === currentCat;
+}
+function searchMatch(q) {
+  if (!searchStr) return true;
+  return q.q.toLowerCase().includes(searchStr) || q.a.toLowerCase().includes(searchStr);
+}
+
+function render() {
+  const list = document.getElementById('q-list');
+  const visible = QS.filter(q => catMatch(q) && searchMatch(q));
+  if (!visible.length) {
+    list.innerHTML = '<div class="no-result">// no questions match — try a different filter</div>';
+    return;
+  }
+  list.innerHTML = visible.map(q => {
+    const idx = QS.indexOf(q);
+    const isDone = got.has(idx);
+    return `<div class="q-card${isDone?' done':''}" id="qc-${idx}">
+      <div class="q-header" onclick="toggle(${idx})">
+        <span class="q-num">${String(idx+1).padStart(2,'0')}.</span>
+        <div class="q-meta">
+          <div class="q-tags">
+            <span class="tag tag-${q.c}">${q.c}</span>
+            <span class="tag tag-${q.d}">${q.d}</span>
+            ${isDone ? '<span class="tag" style="background:var(--green-dim);color:var(--green)">✓ done</span>' : ''}
+          </div>
+          <div class="q-text">${q.q}</div>
+        </div>
+        <svg class="q-chevron${document.getElementById('ans-'+idx)?.classList.contains('open')?' open':''}" id="chev-${idx}" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="ans-wrap" id="ans-${idx}">
+        <div class="ans-label">// ANSWER</div>
+        <div class="ans-box">${q.a}</div>
+        <div class="chk-row">
+          <button class="chk-btn${isDone?' got':''}" onclick="mark(${idx},true)">✓ Got it</button>
+          <button class="chk-btn${!isDone&&got.size?'':''}" onclick="mark(${idx},false)">✕ Need review</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  updateProgress();
+}
+
+function toggle(idx) {
+  const a = document.getElementById('ans-'+idx);
+  const ch = document.getElementById('chev-'+idx);
+  if (!a) return;
+  const open = a.classList.contains('open');
+  a.classList.toggle('open', !open);
+  if (ch) ch.classList.toggle('open', !open);
+}
+
+function mark(idx, yes) {
+  if (yes) got.add(idx); else got.delete(idx);
+  render();
+}
+
+function updateProgress() {
+  const done = got.size;
+  const pct = Math.round(done/TOTAL*100);
+  document.getElementById('prog-fill').style.width = pct+'%';
+  document.getElementById('prog-label').textContent = done + ' / ' + TOTAL;
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCat = btn.dataset.cat;
+    render();
+  });
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  searchStr = e.target.value.toLowerCase().trim();
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

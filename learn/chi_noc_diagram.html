@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hanuma SoC — CHI NoC Interactive Architecture</title>
+<style>
+/* ============================================================
+   ROOT & RESET
+   ============================================================ */
+:root {
+  --bg:        #08080f;
+  --bg1:       #0f0f1a;
+  --bg2:       #14141f;
+  --bg3:       #1c1c2e;
+  --bg4:       #242438;
+  --border:    #2a2a45;
+  --border2:   #383858;
+  --txt:       #d8d8f0;
+  --txt2:      #9090b8;
+  --txt3:      #5a5a7a;
+  --accent:    #4a8fff;
+  --accent2:   #7b5fff;
+
+  /* Node type colours */
+  --rnf:       #2e7d32;
+  --rnf-glow:  #43a047;
+  --rnf-lt:    #1b5e20;
+  --rni:       #1565c0;
+  --rni-glow:  #1e88e5;
+  --rni-lt:    #0d47a1;
+  --hnf:       #e65100;
+  --hnf-glow:  #ff7043;
+  --hnf-lt:    #bf360c;
+  --hni:       #6a1b9a;
+  --hni-glow:  #9c27b0;
+  --hni-lt:    #4a148c;
+  --snf:       #b71c1c;
+  --snf-glow:  #ef5350;
+  --snf-lt:    #7f0000;
+  --sni:       #37474f;
+  --sni-glow:  #607d8b;
+  --sni-lt:    #263238;
+  --router:    #1a237e;
+  --router-gl: #3949ab;
+
+  /* CHI channel colours */
+  --req:       #ff7043;
+  --rsp:       #00bcd4;
+  --snp:       #e91e63;
+  --dat:       #8bc34a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+header {
+  background: linear-gradient(135deg, #0a0a1a 0%, #0f0f28 50%, #0a0a1a 100%);
+  border-bottom: 1px solid var(--border2);
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo {
+  width: 42px; height: 42px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 18px; color: #fff;
+  box-shadow: 0 0 18px rgba(74,143,255,0.4);
+}
+.header-title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+.header-sub   { font-size: 12px; color: var(--txt3); margin-top: 2px; }
+.header-badges { display: flex; gap: 8px; }
+.badge {
+  padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  border: 1px solid;
+}
+.badge-chi  { color: var(--req); border-color: var(--req); background: rgba(255,112,67,0.08); }
+.badge-ms1  { color: var(--dat); border-color: var(--dat); background: rgba(139,195,74,0.08); }
+.badge-1g   { color: var(--rsp); border-color: var(--rsp); background: rgba(0,188,212,0.08); }
+
+/* ============================================================
+   TABS
+   ============================================================ */
+nav {
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; gap: 4px;
+}
+.tab {
+  padding: 12px 20px;
+  cursor: pointer;
+  color: var(--txt2);
+  font-size: 13px; font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
+  white-space: nowrap;
+}
+.tab:hover  { color: var(--txt); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ============================================================
+   PANELS
+   ============================================================ */
+.panel { display: none; padding: 28px 32px; }
+.panel.active { display: block; }
+
+/* ============================================================
+   SECTION HEADINGS
+   ============================================================ */
+.section-title {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--txt3);
+  margin-bottom: 16px; margin-top: 32px;
+}
+.section-title:first-child { margin-top: 0; }
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 13px; font-weight: 700; color: var(--txt2);
+  letter-spacing: 0.8px; text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title::before {
+  content: '';
+  display: inline-block; width: 3px; height: 14px;
+  background: var(--accent); border-radius: 2px;
+}
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  background: var(--bg3);
+  color: var(--txt2);
+  font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 10px 14px;
+  text-align: left; font-weight: 600;
+  border-bottom: 1px solid var(--border2);
+}
+tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--txt);
+  vertical-align: middle;
+}
+tbody tr:hover td { background: var(--bg3); }
+tbody tr:last-child td { border-bottom: none; }
+.mono { font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 12px; }
+
+/* ============================================================
+   NODE TYPE PILL
+   ============================================================ */
+.pill {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 12px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  border: 1px solid; white-space: nowrap;
+}
+.pill-rnf  { color: var(--rnf-glow); border-color: var(--rnf-glow); background: rgba(46,125,50,0.15); }
+.pill-rni  { color: var(--rni-glow); border-color: var(--rni-glow); background: rgba(21,101,192,0.15); }
+.pill-hnf  { color: var(--hnf-glow); border-color: var(--hnf-glow); background: rgba(230,81,0,0.15); }
+.pill-hni  { color: var(--hni-glow); border-color: var(--hni-glow); background: rgba(106,27,154,0.15); }
+.pill-snf  { color: var(--snf-glow); border-color: var(--snf-glow); background: rgba(183,28,28,0.15); }
+.pill-sni  { color: var(--sni-glow); border-color: var(--sni-glow); background: rgba(55,71,79,0.3); }
+
+/* channel pills */
+.pill-req  { color: var(--req); border-color: var(--req); background: rgba(255,112,67,0.12); }
+.pill-rsp  { color: var(--rsp); border-color: var(--rsp); background: rgba(0,188,212,0.12); }
+.pill-snp  { color: var(--snp); border-color: var(--snp); background: rgba(233,30,99,0.12); }
+.pill-dat  { color: var(--dat); border-color: var(--dat); background: rgba(139,195,74,0.12); }
+
+/* ============================================================
+   LEGEND
+   ============================================================ */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 14px 18px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 20px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; color: var(--txt2);
+}
+.legend-dot {
+  width: 12px; height: 12px; border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   SVG DIAGRAMS — common
+   ============================================================ */
+.diagram-wrap {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.diagram-wrap svg { display: block; width: 100%; }
+
+/* ============================================================
+   TOOLTIP
+   ============================================================ */
+#tooltip {
+  position: fixed;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--txt);
+  pointer-events: none;
+  z-index: 999;
+  max-width: 280px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  display: none;
+  line-height: 1.7;
+}
+#tooltip .tt-title {
+  font-weight: 700; font-size: 13px; color: #fff;
+  margin-bottom: 6px; border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+#tooltip .tt-row { display: flex; justify-content: space-between; gap: 16px; }
+#tooltip .tt-key { color: var(--txt3); }
+#tooltip .tt-val { color: var(--txt); font-family: monospace; }
+
+/* ============================================================
+   MESH GRID
+   ============================================================ */
+.mesh-wrap {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 24px; margin-bottom: 20px;
+}
+.mesh-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 0;
+  position: relative;
+  max-width: 700px; margin: 0 auto;
+}
+.mesh-cell {
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 6px; position: relative;
+  background: var(--bg3);
+}
+.mesh-cell:hover { z-index: 10; transform: scale(1.04); box-shadow: 0 0 20px rgba(74,143,255,0.3); }
+.mesh-cell.active { box-shadow: 0 0 0 2px var(--accent); z-index: 10; }
+.mesh-cell .mc-coord { font-size: 9px; color: var(--txt3); position: absolute; top: 4px; left: 5px; }
+.mesh-cell .mc-id    { font-size: 9px; color: var(--txt3); position: absolute; top: 4px; right: 5px; }
+.mesh-cell .mc-icon  { font-size: 20px; margin-bottom: 3px; }
+.mesh-cell .mc-label { font-size: 10px; font-weight: 700; text-align: center; line-height: 1.2; }
+.mesh-cell .mc-type  { font-size: 9px; margin-top: 2px; opacity: 0.8; }
+
+/* ============================================================
+   DETAIL PANEL (right side)
+   ============================================================ */
+.two-col { display: grid; grid-template-columns: 1fr 360px; gap: 20px; align-items: start; }
+.detail-panel {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px; position: sticky; top: 80px;
+}
+.detail-panel h3 { font-size: 14px; color: #fff; margin-bottom: 14px; }
+.dp-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.dp-row:last-child { border-bottom: none; }
+.dp-key { color: var(--txt3); }
+.dp-val { color: var(--txt); font-family: monospace; text-align: right; }
+
+/* ============================================================
+   FLOW DIAGRAM (Protocol tab)
+   ============================================================ */
+.flow-step {
+  display: flex; align-items: flex-start; gap: 14px; margin-bottom: 12px;
+}
+.step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--bg4); border: 1px solid var(--border2);
+  color: var(--accent); font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.step-body { flex: 1; }
+.step-title { font-size: 13px; font-weight: 600; color: var(--txt); }
+.step-desc  { font-size: 12px; color: var(--txt2); margin-top: 2px; }
+.step-channel { margin-top: 5px; display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ============================================================
+   SIGNAL TABLE
+   ============================================================ */
+.sig-dir {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  padding: 2px 7px; border-radius: 3px;
+}
+.sig-dir-out { background: rgba(74,143,255,0.15); color: var(--accent); }
+.sig-dir-in  { background: rgba(139,195,74,0.15);  color: var(--dat); }
+.sig-dir-bi  { background: rgba(233,30,99,0.15);   color: var(--snp); }
+
+/* ============================================================
+   STAT TILES
+   ============================================================ */
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-tile {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px;
+  text-align: center;
+}
+.stat-val { font-size: 28px; font-weight: 800; color: var(--accent); letter-spacing: -1px; }
+.stat-lbl { font-size: 11px; color: var(--txt3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.8px; }
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; }
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
+  nav { overflow-x: auto; }
+  header { padding: 14px 16px; }
+  .panel { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOOLTIP
+     ============================================================ -->
+<div id="tooltip"></div>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header>
+  <div class="header-left">
+    <div class="logo">H</div>
+    <div>
+      <div class="header-title">hanuma SoC</div>
+      <div class="header-sub">CHI NoC Interconnect Architecture — Interactive Diagram</div>
+    </div>
+  </div>
+  <div class="header-badges">
+    <span class="badge badge-chi">CHI Issue E</span>
+    <span class="badge badge-ms1">Milestone 1</span>
+    <span class="badge badge-1g">1 GHz NoC</span>
+  </div>
+</header>
+
+<!-- ============================================================
+     NAVIGATION
+     ============================================================ -->
+<nav>
+  <div class="tab active" data-panel="overview">SoC Overview</div>
+  <div class="tab" data-panel="mesh">4×4 Mesh Topology</div>
+  <div class="tab" data-panel="protocol">CHI Protocol</div>
+  <div class="tab" data-panel="nodes">Node Architecture</div>
+  <div class="tab" data-panel="interfaces">Interface Signals</div>
+</nav>
+
+<!-- ============================================================
+     PANEL 1: SoC OVERVIEW
+     ============================================================ -->
+<div class="panel active" id="panel-overview">
+
+  <div class="stat-row">
+    <div class="stat-tile"><div class="stat-val">16</div><div class="stat-lbl">NoC Tiles</div></div>
+    <div class="stat-tile"><div class="stat-val">4</div><div class="stat-lbl">Virtual Channels</div></div>
+    <div class="stat-tile"><div class="stat-val">44b</div><div class="stat-lbl">Physical Address</div></div>
+    <div class="stat-tile"><div class="stat-val">256b</div><div class="stat-lbl">Data Bus Width</div></div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div>RN-F (Fully Coherent Requester)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>RN-I (IO Coherent Requester)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e65100"></div>HN-F (Home Node + LLC/Dir)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#6a1b9a"></div>HN-I (Non-Coherent MMIO)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#b71c1c"></div>SN-F (Slave / DDR)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#37474f"></div>SN-I (Non-Coherent Slave)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1a237e"></div>Router Tile</div>
+  </div>
+
+  <!-- CHI Channel Legend -->
+  <div class="legend" style="margin-bottom:0">
+    <span style="font-size:11px;color:var(--txt3);margin-right:4px;">CHI Channels:</span>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--req);border-radius:50%"></div>REQ (RN→HN)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--rsp);border-radius:50%"></div>RSP (Bidirectional)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--snp);border-radius:50%"></div>SNP (HN→RN)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--dat);border-radius:50%"></div>DAT (Bidirectional)</div>
+  </div>
+
+  <div style="height:16px"></div>
+
+  <!-- MAIN SoC BLOCK DIAGRAM SVG -->
+  <div class="diagram-wrap">
+    <svg id="soc-svg" viewBox="0 0 1160 600" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <p class="section-title">Node Type Summary</p>
+  <div class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th><th>Label</th><th>Count</th><th>Function</th><th>Cache</th><th>Coherency</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pill pill-rnf">RN-F</span></td>
+          <td class="mono">cpu_cluster_0..3</td>
+          <td>4</td>
+          <td>CPU cluster — issues coherent reads/writes, responds to snoops</td>
+          <td>L1i + L1d + L2</td>
+          <td>Full MESI/MOESI</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-rni">RN-I</span></td>
+          <td class="mono">dma_engine, accel_0</td>
+          <td>2</td>
+          <td>IO-coherent requester — DMA and accelerator engines</td>
+          <td>None</td>
+          <td>IO Coherent</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-hnf">HN-F</span></td>
+          <td class="mono">llc_dir_slice_0..1</td>
+          <td>2</td>
+          <td>Directory controller + LLC slice + snoop orchestrator</td>
+          <td>LLC 4 MB/slice</td>
+          <td>Directory-based</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-hni">HN-I</span></td>
+          <td class="mono">mmio_hub</td>
+          <td>1</td>
+          <td>Routes non-cacheable MMIO region accesses to peripherals</td>
+          <td>None</td>
+          <td>Non-coherent</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-snf">SN-F</span></td>
+          <td class="mono">ddr5_ctrl_0..1</td>
+          <td>2</td>
+          <td>Memory controller — AXI4 bridge to DDR5 DRAM (64 GB each)</td>
+          <td>None</td>
+          <td>Slave, coherent port</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-sni">SN-I</span></td>
+          <td class="mono">periph_bus, nor_flash</td>
+          <td>2</td>
+          <td>Non-coherent peripheral bus and boot ROM</td>
+          <td>None</td>
+          <td>Non-coherent</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL 2: 4×4 MESH TOPOLOGY
+     ============================================================ -->
+<div class="panel" id="panel-mesh">
+  <div class="two-col">
+    <div>
+      <p class="section-title">4 × 4 Mesh — Node Placement</p>
+      <div class="mesh-wrap">
+        <div class="mesh-grid" id="mesh-grid">
+          <!-- Cells injected by JS, row 3 (top, Y=3) → row 0 (bottom, Y=0) -->
+        </div>
+      </div>
+
+      <p class="section-title">Mesh Routing Rules</p>
+      <div class="card">
+        <div class="card-title">XY Deterministic Routing</div>
+        <div class="flow-step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Route in X direction first</div>
+            <div class="step-desc">If dst_x &gt; my_x → go EAST; if dst_x &lt; my_x → go WEST.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Route in Y direction second</div>
+            <div class="step-desc">Once X matches, if dst_y &gt; my_y → go NORTH; dst_y &lt; my_y → go SOUTH.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Eject to Local port</div>
+            <div class="step-desc">When both X and Y match destination, deliver to local CHI node.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table>
+          <thead><tr><th>Port</th><th>Direction</th><th>XY Rule</th><th>Boundary Condition</th></tr></thead>
+          <tbody>
+            <tr><td><span class="mono">PORT_EAST</span></td><td>→</td><td>dst_x &gt; my_x</td><td>Terminated at right column</td></tr>
+            <tr><td><span class="mono">PORT_WEST</span></td><td>←</td><td>dst_x &lt; my_x</td><td>Terminated at left column</td></tr>
+            <tr><td><span class="mono">PORT_NORTH</span></td><td>↑</td><td>dst_y &gt; my_y (after X match)</td><td>Terminated at top row</td></tr>
+            <tr><td><span class="mono">PORT_SOUTH</span></td><td>↓</td><td>dst_y &lt; my_y (after X match)</td><td>Terminated at bottom row</td></tr>
+            <tr><td><span class="mono">PORT_LOCAL</span></td><td>↕</td><td>dst == my position</td><td>Always present</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Detail panel -->
+    <div>
+      <div class="detail-panel" id="mesh-detail">
+        <h3 id="detail-title" style="color:var(--txt2)">Click a tile for details</h3>
+        <div id="detail-body" style="color:var(--txt3);font-size:12px">
+          Select any router tile to see its node assignment, coordinates, and CHI interface configuration.
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">Virtual Channel Assignment</div>
+        <table>
+          <thead><tr><th>VC</th><th>CHI Channels</th><th>Class</th></tr></thead>
+          <tbody>
+            <tr><td><span class="mono">VC 0</span></td><td><span class="pill pill-req">REQ</span> <span class="pill pill-snp" style="margin-left:4px">SNP</span></td><td>Request class</td></tr>
+            <tr><td><span class="mono">VC 1</span></td><td><span class="pill pill-rsp">RSP</span></td><td>Response class</td></tr>
+            <tr><td><span class="mono">VC 2</span></td><td><span class="pill pill-dat">DAT</span></td><td>Data class</td></tr>
+            <tr><td><span class="mono">VC 3</span></td><td><span class="pill pill-rsp">RSP-HI</span></td><td>High-priority / retry</td></tr>
+          </tbody>
+        </table>
+        <div style="font-size:11px;color:var(--txt3);margin-top:10px;padding:8px;background:var(--bg3);border-radius:6px;">
+          ⚠ Response class (VC1) is never blocked by request class (VC0) — deadlock-free by construction.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Router Pipeline</div>
+        <div id="pipeline-svg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL 3: CHI PROTOCOL
+     ============================================================ -->
+<div class="panel" id="panel-protocol">
+
+  <p class="section-title">Transaction Flow — ReadShared (RN-F → HN-F → SN-F)</p>
+  <div class="diagram-wrap">
+    <svg id="flow-svg" viewBox="0 0 1100 340" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+    <div>
+      <p class="section-title">REQ Channel Opcodes</p>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table>
+          <thead><tr><th>Opcode</th><th>Hex</th><th>Class</th><th>Description</th></tr></thead>
+          <tbody id="req-opcodes-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <p class="section-title">RSP / SNP / DAT Opcodes</p>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table>
+          <thead><tr><th>Channel</th><th>Opcode</th><th>Description</th></tr></thead>
+          <tbody id="rsp-opcodes-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <p class="section-title">Flit Field Widths</p>
+  <div class="diagram-wrap">
+    <svg id="flit-svg" viewBox="0 0 1100 260" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <p class="section-title">Cache State Transitions (at HN-F Directory)</p>
+  <div class="diagram-wrap">
+    <svg id="state-svg" viewBox="0 0 1100 320" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL 4: NODE ARCHITECTURE
+     ============================================================ -->
+<div class="panel" id="panel-nodes">
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;" id="node-cards"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 5: INTERFACE SIGNALS
+     ============================================================ -->
+<div class="panel" id="panel-interfaces">
+
+  <p class="section-title">CHI Link Interface — chi_link_if.sv</p>
+  <div class="card" style="padding:12px 16px;margin-bottom:16px;border-left:3px solid var(--accent);">
+    <span style="font-size:12px;color:var(--txt2)">
+      One <span class="mono" style="color:var(--accent)">chi_link_if</span> instance per directional link. Contains all 4 CHI channels (REQ, RSP, SNP, DAT) with full pend/valid/flit/lcrdv signals. Credit return handled by the link layer.
+    </span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div>
+      <p class="section-title">REQ Channel Signals</p>
+      <div class="card" style="padding:0;overflow:hidden;"><table id="req-sig-table"></table></div>
+      <p class="section-title" style="margin-top:20px">RSP Channel Signals</p>
+      <div class="card" style="padding:0;overflow:hidden;"><table id="rsp-sig-table"></table></div>
+    </div>
+    <div>
+      <p class="section-title">SNP Channel Signals</p>
+      <div class="card" style="padding:0;overflow:hidden;"><table id="snp-sig-table"></table></div>
+      <p class="section-title" style="margin-top:20px">DAT Channel Signals</p>
+      <div class="card" style="padding:0;overflow:hidden;"><table id="dat-sig-table"></table></div>
+    </div>
+  </div>
+
+  <p class="section-title">Link Activation State Machine</p>
+  <div class="diagram-wrap">
+    <svg id="link-sm-svg" viewBox="0 0 1100 220" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <p class="section-title">Credit Flow Mechanism</p>
+  <div class="diagram-wrap">
+    <svg id="credit-svg" viewBox="0 0 1100 180" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <p class="section-title">Modport Summary</p>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table>
+      <thead><tr><th>Modport</th><th>Role</th><th>TX Channels</th><th>RX Channels</th><th>Used By</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">requester</td><td>Initiates transactions</td><td>REQ, RSP, DAT</td><td>RSP, SNP, DAT</td><td>chi_rn.sv</td></tr>
+        <tr><td class="mono">completer</td><td>Receives &amp; responds</td><td>RSP, SNP, DAT</td><td>REQ, RSP, DAT</td><td>chi_hn.sv, chi_sn.sv</td></tr>
+        <tr><td class="mono">monitor</td><td>Passive observation</td><td>—</td><td>All (read-only)</td><td>UVM agents</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function svgEl(tag, attrs={}, text='') {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k,v] of Object.entries(attrs)) el.setAttribute(k,v);
+  if (text) el.textContent = text;
+  return el;
+}
+
+function svgText(svg, x, y, text, attrs={}) {
+  const el = svgEl('text', {x, y, 'text-anchor':'middle', 'dominant-baseline':'middle', ...attrs});
+  el.textContent = text;
+  svg.appendChild(el);
+  return el;
+}
+
+function svgRect(svg, x, y, w, h, attrs={}) {
+  const el = svgEl('rect', {x, y, width:w, height:h, rx:6, ...attrs});
+  svg.appendChild(el);
+  return el;
+}
+
+function svgLine(svg, x1, y1, x2, y2, attrs={}) {
+  const el = svgEl('line', {x1,y1,x2,y2,...attrs});
+  svg.appendChild(el);
+  return el;
+}
+
+function svgPath(svg, d, attrs={}) {
+  const el = svgEl('path', {d, ...attrs});
+  svg.appendChild(el);
+  return el;
+}
+
+/* ============================================================
+   COLOUR MAP
+   ============================================================ */
+const C = {
+  rnf:    '#2e7d32', rnfg: '#43a047', rnflt: '#1b5e20',
+  rni:    '#1565c0', rnig: '#1e88e5', rnilt: '#0d47a1',
+  hnf:    '#e65100', hnfg: '#ff7043', hnflt: '#bf360c',
+  hni:    '#6a1b9a', hnig: '#9c27b0', hnilt: '#4a148c',
+  snf:    '#b71c1c', snfg: '#ef5350', snflt: '#7f0000',
+  sni:    '#37474f', snig: '#607d8b', snilt: '#263238',
+  router: '#1a237e', routerg: '#3949ab',
+  req:    '#ff7043', rsp:  '#00bcd4', snp:  '#e91e63', dat: '#8bc34a',
+  bg2:    '#14141f', bg3:  '#1c1c2e', bg4:  '#242438',
+  txt:    '#d8d8f0', txt2: '#9090b8', txt3: '#5a5a7a',
+  border: '#2a2a45', border2: '#383858',
+  accent: '#4a8fff'
+};
+
+/* ============================================================
+   TOOLTIP
+   ============================================================ */
+const tt = document.getElementById('tooltip');
+
+function showTT(e, title, rows) {
+  tt.innerHTML = `<div class="tt-title">${title}</div>` +
+    rows.map(([k,v]) => `<div class="tt-row"><span class="tt-key">${k}</span><span class="tt-val">${v}</span></div>`).join('');
+  tt.style.display = 'block';
+  moveTT(e);
+}
+function moveTT(e) {
+  const x = e.clientX + 14, y = e.clientY + 14;
+  tt.style.left = (x + 290 > window.innerWidth ? e.clientX - 300 : x) + 'px';
+  tt.style.top  = (y + 160 > window.innerHeight ? e.clientY - 170 : y) + 'px';
+}
+function hideTT() { tt.style.display = 'none'; }
+
+/* ============================================================
+   TAB SWITCHING
+   ============================================================ */
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.panel).classList.add('active');
+  });
+});
+
+/* ============================================================
+   NODE DATA
+   ============================================================ */
+const NODES = [
+  // [x, y, id, type, label, sublabel, specs]
+  [0,3, 24, 'rni', 'DVM / MN',      'Misc Node',       {Type:'MN (Misc Node)', NodeID:'24', 'CHI Port':'RN-D', Function:'DVM broadcast'}],
+  [1,3, 25, 'snf', 'DDR5 Ctrl 1',   'SN-F',            {Type:'SN-F', NodeID:'25', 'DDR Ch':'Channel 1', Capacity:'64 GB', Freq:'3200 MHz'}],
+  [2,3, 26, 'sni', 'NOR Flash',     'SN-I',            {Type:'SN-I', NodeID:'26', Access:'Read-only', Bus:'SPI/QSPI', Size:'256 MB'}],
+  [3,3, 27, 'sni', 'Reserved',      '—',               {Type:'RSVD', NodeID:'27', Status:'Future use'}],
+  [0,2, 16, 'rni', 'Accel Engine',  'RN-I (ML)',       {Type:'RN-I', NodeID:'16', 'DMA Width':'256b', Channels:'8', IOMMU:'Yes'}],
+  [1,2, 17, 'rni', 'DMA Engine',    'RN-I',            {Type:'RN-I', NodeID:'17', Channels:'16', 'Max Burst':'256B', Priority:'4 levels'}],
+  [2,2, 18, 'hni', 'MMIO Hub',      'HN-I',            {Type:'HN-I', NodeID:'18', Regions:'UART,SPI,I2C,GPIO', Base:'0x0800_0000', Size:'128 MB'}],
+  [3,2, 19, 'sni', 'Periph Bus',    'SN-I',            {Type:'SN-I', NodeID:'19', Protocol:'APB3', Freq:'200 MHz', Devices:'UART×2, SPI, I2C, GPIO'}],
+  [0,1,  8, 'rnf', 'CPU Cluster 2', 'RN-F (4× RISC)',  {Type:'RN-F', NodeID:'8',  Cores:'4×RISC', L1:'64KB/core', L2:'1 MB', Protocol:'CHI RN-F'}],
+  [1,1,  9, 'rnf', 'CPU Cluster 3', 'RN-F (4× RISC)',  {Type:'RN-F', NodeID:'9',  Cores:'4×RISC', L1:'64KB/core', L2:'1 MB', Protocol:'CHI RN-F'}],
+  [2,1, 10, 'hnf', 'LLC / Dir 0',   'HN-F',            {Type:'HN-F', NodeID:'10', LLC:'4 MB', Dir:'512 sets × 8 ways', 'Snoop Filter':'Yes'}],
+  [3,1, 11, 'hnf', 'LLC / Dir 1',   'HN-F',            {Type:'HN-F', NodeID:'11', LLC:'4 MB', Dir:'512 sets × 8 ways', 'Snoop Filter':'Yes'}],
+  [0,0,  0, 'rnf', 'CPU Cluster 0', 'RN-F (4× RISC)',  {Type:'RN-F', NodeID:'0',  Cores:'4×RISC', L1:'64KB/core', L2:'1 MB', Protocol:'CHI RN-F'}],
+  [1,0,  1, 'rnf', 'CPU Cluster 1', 'RN-F (4× RISC)',  {Type:'RN-F', NodeID:'1',  Cores:'4×RISC', L1:'64KB/core', L2:'1 MB', Protocol:'CHI RN-F'}],
+  [2,0,  2, 'rni', 'DMA Engine 0',  'RN-I',            {Type:'RN-I', NodeID:'2',  Channels:'16', 'Max Burst':'256B', Priority:'4 levels'}],
+  [3,0,  3, 'snf', 'DDR5 Ctrl 0',   'SN-F',            {Type:'SN-F', NodeID:'3',  'DDR Ch':'Channel 0', Capacity:'64 GB', Freq:'3200 MHz'}],
+];
+
+const NODE_ICONS = { rnf:'⬡', rni:'◈', hnf:'⬢', hni:'◇', snf:'▣', sni:'▫' };
+const NODE_COLORS = {
+  rnf: C.rnf, rni: C.rni, hnf: C.hnf, hni: C.hni, snf: C.snf, sni: C.sni
+};
+
+/* ============================================================
+   BUILD MESH GRID
+   ============================================================ */
+function buildMesh() {
+  const grid = document.getElementById('mesh-grid');
+  // Display: row Y=3 at top, Y=0 at bottom
+  for (let row = 3; row >= 0; row--) {
+    for (let col = 0; col < 4; col++) {
+      const nd = NODES.find(n => n[0] === col && n[1] === row);
+      const cell = document.createElement('div');
+      cell.className = 'mesh-cell';
+      const color = nd ? NODE_COLORS[nd[3]] : C.router;
+      cell.style.borderColor = color + '55';
+      cell.style.background = color + '18';
+
+      cell.innerHTML = `
+        <span class="mc-coord">(${col},${row})</span>
+        <span class="mc-id">ID:${nd ? nd[2] : '—'}</span>
+        <span class="mc-icon" style="color:${color}">${nd ? NODE_ICONS[nd[3]] : '⬛'}</span>
+        <span class="mc-label" style="color:${color}">${nd ? nd[4] : 'Router'}</span>
+        <span class="mc-type" style="color:${color+'aa'}">${nd ? nd[5] : ''}</span>
+      `;
+
+      cell.addEventListener('click', () => {
+        document.querySelectorAll('.mesh-cell').forEach(c => c.classList.remove('active'));
+        cell.classList.add('active');
+        if (nd) showMeshDetail(nd);
+      });
+
+      if (nd) {
+        cell.addEventListener('mouseenter', e => showTT(e, nd[4], Object.entries(nd[6])));
+        cell.addEventListener('mousemove',  moveTT);
+        cell.addEventListener('mouseleave', hideTT);
+      }
+      grid.appendChild(cell);
+    }
+  }
+}
+buildMesh();
+
+function showMeshDetail(nd) {
+  const color = NODE_COLORS[nd[3]];
+  document.getElementById('detail-title').style.color = color;
+  document.getElementById('detail-title').textContent = nd[4];
+  document.getElementById('detail-body').innerHTML =
+    `<div style="margin-bottom:10px;color:var(--txt3);font-size:11px">Position (${nd[0]}, ${nd[1]}) · Node ID ${nd[2]}</div>` +
+    Object.entries(nd[6]).map(([k,v]) =>
+      `<div class="dp-row"><span class="dp-key">${k}</span><span class="dp-val">${v}</span></div>`
+    ).join('');
+}
+
+/* ============================================================
+   ROUTER PIPELINE SVG (in mesh detail panel)
+   ============================================================ */
+function buildPipelineSVG() {
+  const stages = ['RC','VA','SA','ST','LT'];
+  const labels = ['Route\nCompute','VC\nAlloc','Switch\nAlloc','Switch\nTraversal','Link\nTraversal'];
+  const w = 300, h = 56, pad = 10;
+  let html = `<svg viewBox="0 0 ${w} ${h}" xmlns="${SVG_NS}" style="width:100%">`;
+  const bw = (w - pad*2 - 4*(4)) / 5;
+  stages.forEach((s,i) => {
+    const x = pad + i*(bw+4);
+    const f = `hsl(${210 + i*14}, 60%, 30%)`;
+    html += `<rect x="${x}" y="4" width="${bw}" height="${h-8}" rx="4" fill="${f}" stroke="#3949ab55"/>`;
+    html += `<text x="${x + bw/2}" y="${h/2 - 5}" text-anchor="middle" fill="#ccc" font-size="11" font-weight="700">${s}</text>`;
+    html += `<text x="${x + bw/2}" y="${h/2 + 9}" text-anchor="middle" fill="#8890b8" font-size="8">${labels[i].split('\n')[0]}</text>`;
+    if (i < 4) html += `<polygon points="${x+bw},${h/2} ${x+bw+4},${h/2-5} ${x+bw+4},${h/2+5}" fill="#3949ab"/>`;
+  });
+  html += '</svg>';
+  document.getElementById('pipeline-svg').innerHTML = html;
+}
+buildPipelineSVG();
+
+/* ============================================================
+   SoC OVERVIEW SVG
+   ============================================================ */
+function buildSoCDiagram() {
+  const svg = document.getElementById('soc-svg');
+  const W = 1160, H = 600;
+
+  // Background grid
+  const defs = svgEl('defs');
+  const pat = svgEl('pattern', {id:'grid',width:'40',height:'40',patternUnits:'userSpaceOnUse'});
+  pat.appendChild(svgEl('path', {d:'M 40 0 L 0 0 0 40', fill:'none', stroke:'#1e1e30', 'stroke-width':'0.5'}));
+  defs.appendChild(pat);
+
+  // Arrow markers for channels
+  const channels = [{id:'req',color:C.req},{id:'rsp',color:C.rsp},{id:'snp',color:C.snp},{id:'dat',color:C.dat}];
+  channels.forEach(ch => {
+    const mk = svgEl('marker', {id:`arr-${ch.id}`,markerWidth:'8',markerHeight:'6',refX:'7',refY:'3',orient:'auto'});
+    mk.appendChild(svgEl('polygon',{points:'0 0, 8 3, 0 6',fill:ch.color}));
+    defs.appendChild(mk);
+    const mk2 = svgEl('marker', {id:`arr-${ch.id}-rev`,markerWidth:'8',markerHeight:'6',refX:'1',refY:'3',orient:'auto'});
+    mk2.appendChild(svgEl('polygon',{points:'8 0, 0 3, 8 6',fill:ch.color}));
+    defs.appendChild(mk2);
+  });
+  svg.appendChild(defs);
+
+  // Grid background
+  svgRect(svg, 0, 0, W, H, {fill:'url(#grid)'});
+
+  /* ---- NOC FABRIC BAR ---- */
+  const nocY = 265, nocH = 70;
+  const nocGrad = svgEl('linearGradient', {id:'nocGrad', x1:'0', y1:'0', x2:'1', y2:'0'});
+  [{offset:'0%',color:'#1a237e'},{offset:'30%',color:'#283593'},{offset:'70%',color:'#283593'},{offset:'100%',color:'#1a237e'}].forEach(s=>{
+    const stop = svgEl('stop'); stop.setAttribute('offset',s.offset); stop.setAttribute('stop-color',s.color); nocGrad.appendChild(stop);
+  });
+  defs.appendChild(nocGrad);
+
+  svgRect(svg, 30, nocY, W-60, nocH, {fill:'url(#nocGrad)', stroke:'#3949ab', 'stroke-width':'1.5', rx:'8'});
+  svgText(svg, W/2, nocY+22, 'CHI NoC Fabric — 4×4 Mesh @ 1 GHz', {fill:'#c5cae9','font-size':'15','font-weight':'700','letter-spacing':'1'});
+  svgText(svg, W/2, nocY+44, 'XY Routing  ·  4 Virtual Channels  ·  Credit-Based Flow Control  ·  64 Outstanding Transactions / HN', {fill:'#7986cb','font-size':'11'});
+
+  /* ---- TOP NODES: RN-F × 4, RN-I × 2 ---- */
+  const topNodes = [
+    {x:40,  w:170, type:'rnf', label:'CPU Cluster 0', sub:'RN-F · 4×RISC · L1+L2', id:'N0'},
+    {x:240, w:170, type:'rnf', label:'CPU Cluster 1', sub:'RN-F · 4×RISC · L1+L2', id:'N1'},
+    {x:440, w:170, type:'rnf', label:'CPU Cluster 2', sub:'RN-F · 4×RISC · L1+L2', id:'N2'},
+    {x:640, w:170, type:'rnf', label:'CPU Cluster 3', sub:'RN-F · 4×RISC · L1+L2', id:'N3'},
+    {x:840, w:140, type:'rni', label:'DMA Engine',    sub:'RN-I · 16ch · IO Coh', id:'N4'},
+    {x:998, w:132, type:'rni', label:'AI Accel',      sub:'RN-I · ML Engine', id:'N5'},
+  ];
+
+  const topY = 30, topH = 90;
+  topNodes.forEach(nd => {
+    const cc = C[nd.type], cg = C[nd.type+'g'];
+    // glow
+    svgRect(svg, nd.x-2, topY-2, nd.w+4, topH+4, {fill:'none', stroke:cc+'66', 'stroke-width':'1', rx:'9'});
+    svgRect(svg, nd.x, topY, nd.w, topH, {fill:cc+'28', stroke:cg, 'stroke-width':'1.5', rx:'8'});
+    svgText(svg, nd.x+nd.w/2, topY+32, nd.label, {fill:'#fff','font-size':'12','font-weight':'700'});
+    svgText(svg, nd.x+nd.w/2, topY+52, nd.sub, {fill:cg,'font-size':'10'});
+    const pill = ['RN-F','RN-F','RN-F','RN-F','RN-I','RN-I'][topNodes.indexOf(nd)];
+    svgRect(svg, nd.x + nd.w/2 - 20, topY+62, 40, 16, {fill:cc+'55', stroke:cg, 'stroke-width':'1', rx:'8'});
+    svgText(svg, nd.x+nd.w/2, topY+70, pill, {fill:'#fff','font-size':'9','font-weight':'700'});
+  });
+
+  /* ---- BOTTOM NODES ---- */
+  const botNodes = [
+    {x:40,  w:170, type:'hnf', label:'LLC / Dir 0',  sub:'HN-F · 4MB LLC · Dir'},
+    {x:240, w:170, type:'hnf', label:'LLC / Dir 1',  sub:'HN-F · 4MB LLC · Dir'},
+    {x:440, w:140, type:'hni', label:'MMIO Hub',     sub:'HN-I · Periph Router'},
+    {x:610, w:170, type:'snf', label:'DDR5 Ctrl 0',  sub:'SN-F · 64 GB · AXI4'},
+    {x:810, w:170, type:'snf', label:'DDR5 Ctrl 1',  sub:'SN-F · 64 GB · AXI4'},
+    {x:998, w:132, type:'sni', label:'Periph Bus',   sub:'SN-I · APB3 · 200MHz'},
+  ];
+
+  const botY = 420, botH = 90;
+  botNodes.forEach(nd => {
+    const cc = C[nd.type], cg = C[nd.type+'g'];
+    svgRect(svg, nd.x-2, botY-2, nd.w+4, botH+4, {fill:'none', stroke:cc+'66', 'stroke-width':'1', rx:'9'});
+    svgRect(svg, nd.x, botY, nd.w, botH, {fill:cc+'28', stroke:cg, 'stroke-width':'1.5', rx:'8'});
+    svgText(svg, nd.x+nd.w/2, botY+30, nd.label, {fill:'#fff','font-size':'12','font-weight':'700'});
+    svgText(svg, nd.x+nd.w/2, botY+50, nd.sub, {fill:cg,'font-size':'10'});
+    const typeMap = {'hnf':'HN-F','hni':'HN-I','snf':'SN-F','sni':'SN-I'};
+    const pill = typeMap[nd.type];
+    svgRect(svg, nd.x+nd.w/2-20, botY+62, 40, 16, {fill:cc+'55', stroke:cg,'stroke-width':'1',rx:'8'});
+    svgText(svg, nd.x+nd.w/2, botY+70, pill, {fill:'#fff','font-size':'9','font-weight':'700'});
+  });
+
+  /* ---- CONNECTION LINES ---- */
+  // Top nodes → NoC (4 channel lines per node)
+  function drawChannels(fromX, fromW, fromY, toY, direction, isTop) {
+    const cx = fromX + fromW/2;
+    const offsets = [-18, -6, 6, 18];
+    const chans = ['req','rsp','snp','dat'];
+    const colors = [C.req, C.rsp, C.snp, C.dat];
+    const sy = isTop ? fromY + (direction === 'down' ? 90 : 0) : fromY;
+    const ey = toY;
+    offsets.forEach((off, i) => {
+      const x = cx + off;
+      const dash = chans[i] === 'snp' ? '4 3' : (chans[i]==='rsp' ? '6 3' : 'none');
+      svgLine(svg, x, sy, x, ey, {
+        stroke: colors[i], 'stroke-width': '1.5',
+        'stroke-dasharray': dash,
+        opacity: '0.75'
+      });
+    });
+  }
+
+  topNodes.forEach(nd => drawChannels(nd.x, nd.w, topY, nocY, 'down', true));
+  botNodes.forEach(nd => drawChannels(nd.x, nd.w, nocY+nocH, botY, 'down', false));
+
+  /* ---- MEMORY SUB-SYSTEM LABELS ---- */
+  svgText(svg, 695, botY+topH+28, 'DDR5 Memory Subsystem (128 GB Total)',
+    {fill:C.snfg, 'font-size':'11', 'font-weight':'600'});
+  svgLine(svg, 610, botY+botH+4, 980, botY+botH+4, {stroke:C.snf+'66','stroke-width':'1','stroke-dasharray':'4 3'});
+  svgLine(svg, 610, botY-1, 610, botY+botH+4, {stroke:C.snf+'44','stroke-width':'1'});
+  svgLine(svg, 980, botY-1, 980, botY+botH+4, {stroke:C.snf+'44','stroke-width':'1'});
+
+  /* ---- ADDRESS INTERLEAVE NOTE ---- */
+  const ilY = 526;
+  svgRect(svg, 40, ilY, 550, 22, {fill:C.bg3, stroke:C.border, rx:'5'});
+  svgText(svg, 316, ilY+11, 'Address interleave: PA[13] → HN-F 0 (even) / HN-F 1 (odd)',
+    {fill:C.txt3,'font-size':'10'});
+
+  /* ---- KEY labels on lines ---- */
+  const chanLabels = [
+    {x:120, y:180, ch:'req', label:'REQ'},
+    {x:140, y:195, ch:'rsp', label:'RSP'},
+    {x:160, y:180, ch:'snp', label:'SNP'},
+    {x:180, y:195, ch:'dat', label:'DAT'},
+  ];
+  chanLabels.forEach(cl => {
+    svgRect(svg, cl.x-14, cl.y-9, 30, 16, {fill:C[cl.ch]+'20',stroke:C[cl.ch]+'88',rx:'4'});
+    svgText(svg, cl.x+1, cl.y, cl.label, {fill:C[cl.ch],'font-size':'8','font-weight':'700'});
+  });
+}
+
+buildSoCDiagram();
+
+/* ============================================================
+   TRANSACTION FLOW SVG
+   ============================================================ */
+function buildFlowSVG() {
+  const svg = document.getElementById('flow-svg');
+  const W = 1100, H = 340;
+
+  svgRect(svg, 0, 0, W, H, {fill:C.bg2});
+
+  const actors = [
+    {x:120, label:'RN-F', sub:'CPU Cluster', color:C.rnf, g:C.rnfg},
+    {x:350, label:'NoC',  sub:'Mesh Router', color:C.router, g:C.routerg},
+    {x:580, label:'HN-F', sub:'LLC + Dir',   color:C.hnf, g:C.hnfg},
+    {x:810, label:'NoC',  sub:'Mesh Router', color:C.router, g:C.routerg},
+    {x:990, label:'SN-F', sub:'DDR5 Ctrl',   color:C.snf, g:C.snfg},
+  ];
+
+  // Actor boxes
+  actors.forEach(a => {
+    svgRect(svg, a.x-55, 15, 110, 46, {fill:a.color+'30', stroke:a.g, 'stroke-width':'1.5', rx:'6'});
+    svgText(svg, a.x, 32, a.label, {fill:'#fff','font-size':'13','font-weight':'700'});
+    svgText(svg, a.x, 48, a.sub, {fill:a.g,'font-size':'10'});
+    // Life line
+    svgLine(svg, a.x, 61, a.x, H-20, {stroke:a.g+'44','stroke-width':'1','stroke-dasharray':'5 4'});
+  });
+
+  // Arrow helper
+  function arrow(fromA, toA, y, label, color, dash='none') {
+    const x1 = actors[fromA].x + (toA > fromA ? 55 : -55);
+    const x2 = actors[toA].x - (toA > fromA ? 55 : -55);
+    svgLine(svg, x1, y, x2, y, {stroke:color,'stroke-width':'1.5','stroke-dasharray':dash});
+    const arrowDir = toA > fromA ? 1 : -1;
+    svgPath(svg, `M ${x2} ${y} L ${x2-arrowDir*8} ${y-4} L ${x2-arrowDir*8} ${y+4} Z`, {fill:color});
+    const mx = (x1+x2)/2;
+    svgRect(svg, mx-42, y-15, 84, 14, {fill:C.bg3, stroke:color+'55', rx:'3'});
+    svgText(svg, mx, y-8, label, {fill:color,'font-size':'9','font-weight':'600'});
+  }
+
+  // Life-line activity boxes
+  function actBox(actorIdx, y1, y2) {
+    const a = actors[actorIdx];
+    svgRect(svg, a.x-6, y1, 12, y2-y1, {fill:a.g+'60', stroke:a.g, 'stroke-width':'1', rx:'2'});
+  }
+
+  arrow(0, 1, 90,  'REQ: ReadShared (addr, txnid, qos)', C.req);
+  arrow(1, 2, 110, 'REQ flit routed via mesh', C.req);
+  actBox(2, 110, 200);
+  arrow(2, 3, 140, 'SNP: SnpShared (to all RN-F sharers)', C.snp, '4 3');
+  arrow(3, 0, 160, 'SNP: SnpShared forwarded', C.snp, '4 3');
+  arrow(0, 1, 185, 'RSP: SnpResp (state=SC, no data)', C.rsp, '5 3');
+  arrow(1, 2, 200, 'RSP: SnpResp routed', C.rsp, '5 3');
+  actBox(2, 200, 265);
+  arrow(2, 3, 225, 'REQ: ReadNoSnp → SN (fetch from DRAM)', C.req);
+  arrow(3, 4, 240, 'REQ forwarded', C.req);
+  actBox(4, 240, 270);
+  arrow(4, 3, 265, 'DAT: CompData (data + state=SC)', C.dat);
+  arrow(3, 2, 280, 'DAT forwarded', C.dat);
+  arrow(2, 1, 295, 'DAT: CompData → RN-F', C.dat);
+  arrow(1, 0, 310, 'DAT: CompData delivered', C.dat);
+  arrow(0, 2, 325, 'RSP: CompAck (closes transaction)', C.rsp, '3 3');
+
+  // Step labels on left
+  const steps = [[90,'① RN issues ReadShared'],[140,'② HN snoops sharers'],[185,'③ SnpResp (no data needed)'],[225,'④ HN fetches from SN'],[265,'⑤ DDR returns data'],[310,'⑥ Data delivered to RN'],[325,'⑦ RN sends CompAck']];
+  steps.forEach(([y,lbl]) => svgText(svg, 42, y, lbl, {fill:C.txt3,'font-size':'9','text-anchor':'start'}));
+}
+buildFlowSVG();
+
+/* ============================================================
+   FLIT SVG
+   ============================================================ */
+function buildFlitSVG() {
+  const svg = document.getElementById('flit-svg');
+  const W = 1100, H = 260;
+  svgRect(svg, 0, 0, W, H, {fill:C.bg2});
+
+  const flits = [
+    {name:'REQ', total:88, color:C.req, fields:[
+      {n:'QoS[3:0]',w:4},   {n:'TgtID[6:0]',w:7}, {n:'SrcID[6:0]',w:7},
+      {n:'TxnID[11:0]',w:12},{n:'Addr[43:0]',w:44},{n:'Opcode[6:0]',w:7},
+      {n:'Misc',w:7}
+    ]},
+    {name:'RSP', total:46, color:C.rsp, fields:[
+      {n:'QoS[3:0]',w:4},{n:'TgtID[6:0]',w:7},{n:'SrcID[6:0]',w:7},
+      {n:'TxnID[11:0]',w:12},{n:'Opcode[4:0]',w:5},{n:'DBID[11:0]',w:11}
+    ]},
+    {name:'SNP', total:84, color:C.snp, fields:[
+      {n:'QoS[3:0]',w:4},{n:'SrcID[6:0]',w:7},{n:'TxnID[11:0]',w:12},
+      {n:'Addr[43:0]',w:44},{n:'Opcode[5:0]',w:6},{n:'Misc',w:11}
+    ]},
+    {name:'DAT', total:368, color:C.dat, fields:[
+      {n:'Header[42:0]',w:43},{n:'Data[255:0]',w:256},{n:'BE[31:0]',w:32},
+      {n:'Tag[15:0]',w:16},{n:'Misc',w:21}
+    ]},
+  ];
+
+  flits.forEach((flit, fi) => {
+    const y = 20 + fi * 56;
+    const barW = 1000, barH = 36;
+    const x0 = 70;
+    svgText(svg, 32, y+18, flit.name, {fill:flit.color,'font-size':'11','font-weight':'700','text-anchor':'middle'});
+    svgText(svg, 32, y+30, flit.total+'b', {fill:flit.color+'aa','font-size':'9','text-anchor':'middle'});
+
+    let cx = x0;
+    flit.fields.forEach((f, i) => {
+      const fw = Math.max(Math.round((f.w / flit.total) * barW), 2);
+      const alpha = 0.25 + (i % 2) * 0.15;
+      svgRect(svg, cx, y, fw, barH, {fill:flit.color + Math.round(alpha*255).toString(16).padStart(2,'0'), stroke:flit.color+'55','stroke-width':'0.5', rx:'0'});
+      if (fw > 28) {
+        svgText(svg, cx+fw/2, y+14, f.n.split('[')[0], {fill:'#fff','font-size':'8','font-weight':'600'});
+        svgText(svg, cx+fw/2, y+26, f.n.includes('[') ? '['+f.n.split('[')[1] : f.w+'b', {fill:flit.color+'cc','font-size':'7.5'});
+      }
+      cx += fw;
+    });
+    // Width bracket
+    svgLine(svg, x0, y+barH+4, x0+barW, y+barH+4, {stroke:flit.color+'44','stroke-width':'0.8'});
+    svgText(svg, x0+barW+18, y+barH/2, flit.total + ' bits total', {fill:flit.color+'99','font-size':'9','text-anchor':'start'});
+  });
+}
+buildFlitSVG();
+
+/* ============================================================
+   CACHE STATE SVG
+   ============================================================ */
+function buildStateSVG() {
+  const svg = document.getElementById('state-svg');
+  const W = 1100, H = 320;
+  svgRect(svg, 0, 0, W, H, {fill:C.bg2});
+
+  const mk = svgEl('marker', {id:'sarr',markerWidth:'8',markerHeight:'6',refX:'7',refY:'3',orient:'auto'});
+  mk.appendChild(svgEl('polygon',{points:'0 0, 8 3, 0 6',fill:'#5a5a8a'}));
+  const d2 = document.createElementNS(SVG_NS,'defs'); d2.appendChild(mk); svg.appendChild(d2);
+
+  const states = [
+    {id:'I',  x:100,  y:140, label:'I',  sub:'Invalid',      color:'#455a64'},
+    {id:'SC', x:320,  y:60,  label:'SC', sub:'Shared Clean',  color:'#1565c0'},
+    {id:'UC', x:540,  y:60,  label:'UC', sub:'Unique Clean',  color:'#2e7d32'},
+    {id:'UD', x:760,  y:60,  label:'UD', sub:'Unique Dirty',  color:'#e65100'},
+    {id:'SD', x:540,  y:220, label:'SD', sub:'Shared Dirty',  color:'#6a1b9a'},
+    {id:'M',  x:960,  y:140, label:'M',  sub:'Modified',      color:'#b71c1c'},
+  ];
+
+  const transitions = [
+    {from:'I',  to:'SC', label:'ReadShared', color:C.req},
+    {from:'I',  to:'UC', label:'ReadClean', color:C.req},
+    {from:'I',  to:'UD', label:'ReadUnique', color:C.req},
+    {from:'UC', to:'M',  label:'Store', color:C.dat},
+    {from:'M',  to:'I',  label:'WriteBack', color:C.req},
+    {from:'M',  to:'SC', label:'SnpShared', color:C.snp},
+    {from:'SC', to:'UC', label:'ReadUnique (snoop others)', color:C.req},
+    {from:'UC', to:'I',  label:'Evict', color:C.rsp},
+    {from:'SD', to:'M',  label:'MakeUnique', color:C.req},
+    {from:'UC', to:'SD', label:'SnpShared (dirty)', color:C.snp},
+  ];
+
+  const stateMap = {};
+  states.forEach(s => { stateMap[s.id] = s; });
+
+  transitions.forEach(tr => {
+    const from = stateMap[tr.from], to = stateMap[tr.to];
+    const dx = to.x - from.x, dy = to.y - from.y;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const ux = dx/len, uy = dy/len;
+    const r = 28;
+    const x1 = from.x + ux*r, y1 = from.y + uy*r;
+    const x2 = to.x   - ux*r, y2 = to.y   - uy*r;
+    const mx = (x1+x2)/2, my = (y1+y2)/2;
+    const cx = mx - uy*25, cy = my + ux*25;
+    svgPath(svg, `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`,
+      {fill:'none', stroke:tr.color+'88','stroke-width':'1.2','marker-end':'url(#sarr)'});
+    svgText(svg, (x1+x2)/2, (y1+y2)/2-12, tr.label, {fill:tr.color+'cc','font-size':'8.5'});
+  });
+
+  states.forEach(s => {
+    const r = 28;
+    svgEl('circle', {cx:s.x, cy:s.y, r:r+2, fill:s.color+'22', stroke:s.color+'44','stroke-width':'1'});
+    const c = svgEl('circle', {cx:s.x, cy:s.y, r, fill:s.color+'50', stroke:s.color,'stroke-width':'1.8'});
+    svg.appendChild(c);
+    svgText(svg, s.x, s.y-4, s.label,  {fill:'#fff','font-size':'13','font-weight':'800'});
+    svgText(svg, s.x, s.y+12, s.sub,   {fill:s.color+'dd','font-size':'8'});
+  });
+
+  svgText(svg, 550, 295, 'Directory State Machine — Transitions driven by REQ (orange), SNP (pink), DAT (green)',
+    {fill:C.txt3,'font-size':'10'});
+}
+buildStateSVG();
+
+/* ============================================================
+   REQ OPCODES TABLE
+   ============================================================ */
+const reqOpcodes = [
+  ['ReadShared',       '0x08', 'Read',    'Read with shared intent → SC or UC'],
+  ['ReadUnique',       '0x0B', 'Read',    'Read for exclusive modify → UC/UD'],
+  ['ReadClean',        '0x06', 'Read',    'Read expecting clean → UC'],
+  ['ReadNotSharedDirty','0x07','Read',    'Read, result not SD → SC/UC/UD'],
+  ['ReadOnce',         '0x03', 'Read',    'Streaming read, no state allocated'],
+  ['WriteBackFull',    '0x30', 'Write',   'Write dirty cacheline back to HN'],
+  ['WriteUniqueFull',  '0x28', 'Write',   'Transfer ownership + full data'],
+  ['WriteUniquePtl',   '0x29', 'Write',   'Transfer ownership + partial data (BE)'],
+  ['WriteNoSnpFull',   '0x20', 'Write',   'Non-coherent full-line write to SN'],
+  ['CleanUnique',      '0x11', 'CMO',     'Writeback dirty lines, become unique owner'],
+  ['MakeUnique',       '0x12', 'CMO',     'Invalidate all sharers, claim exclusive'],
+  ['CleanInvalid',     '0x1A', 'CMO',     'Invalidate and writeback to memory'],
+  ['Evict',            '0x13', 'CMO',     'Relinquish clean unique line'],
+  ['AtomicStore',      '0x40', 'Atomic',  'Atomic store to memory'],
+  ['AtomicLoad',       '0x41', 'Atomic',  'Atomic load from memory'],
+  ['DVMOp',            '0x65', 'DVM',     'DVM broadcast for TLB/cache invalidate'],
+];
+const classColor = {Read:C.rsp, Write:C.dat, CMO:C.hnfg, Atomic:C.accent, DVM:C.hni};
+document.getElementById('req-opcodes-tbody').innerHTML = reqOpcodes.map(([op,hex,cls,desc]) =>
+  `<tr><td class="mono">${op}</td><td class="mono" style="color:${C.txt3}">${hex}</td>
+       <td><span style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid ${classColor[cls]||'#555'};color:${classColor[cls]||'#999'};background:${classColor[cls]||'#555'}18">${cls}</span></td>
+       <td style="color:${C.txt2};font-size:12px">${desc}</td></tr>`
+).join('');
+
+const rspOpcodes = [
+  ['RSP', 'Comp',         'HN→RN: Transaction complete (no data)'],
+  ['RSP', 'CompDBIDResp', 'HN→RN: Complete + data buffer ID'],
+  ['RSP', 'DBIDResp',     'SN→HN: Data buffer ID (write ack)'],
+  ['RSP', 'CompAck',      'RN→HN: Acknowledge completion'],
+  ['RSP', 'RetryAck',     'HN→RN: Retry with credit type'],
+  ['RSP', 'PCrdGrant',    'HN→RN: Protocol credit granted'],
+  ['RSP', 'ReadReceipt',  'SN→HN: Read request accepted'],
+  ['SNP', 'SnpShared',    'HN→RN: Downgrade to shared clean'],
+  ['SNP', 'SnpUnique',    'HN→RN: Invalidate, become unique'],
+  ['SNP', 'SnpCleanInvalid','HN→RN: Invalidate + writeback'],
+  ['SNP', 'SnpDVMOp',     'HN→RN: DVM broadcast snoop'],
+  ['DAT', 'CompData',     'HN/SN→RN: Response + data payload'],
+  ['DAT', 'SnpRespData',  'RN→HN: Snoop response with data'],
+  ['DAT', 'CopyBackWrData','RN→HN/SN: Write data after DBID'],
+  ['DAT', 'NonCopyBackWrData','RN→HN: Non-copyback write data'],
+];
+document.getElementById('rsp-opcodes-tbody').innerHTML = rspOpcodes.map(([ch,op,desc]) => {
+  const color = {RSP:C.rsp, SNP:C.snp, DAT:C.dat}[ch];
+  return `<tr>
+    <td><span class="pill pill-${ch.toLowerCase()}">${ch}</span></td>
+    <td class="mono" style="font-size:11px">${op}</td>
+    <td style="color:${C.txt2};font-size:11px">${desc}</td>
+  </tr>`;
+}).join('');
+
+/* ============================================================
+   NODE CARDS
+   ============================================================ */
+const nodeCards = [
+  {
+    type:'rnf', label:'RN-F — Request Node (Fully Coherent)',
+    desc:'Implements the full CHI requester-side protocol. Generates reads, writes, CMOs, and responds to snoops. Connects to the L1/L2 cache hierarchy.',
+    params:[
+      ['Module','chi_rn.sv'],['NODE_TYPE','CHI_NODE_RNF'],
+      ['Outstanding TXN','16 per RN'],['TXNID Width','12 bits'],
+      ['Snoop Queue','8 entries'],['Addr Width','44 bits'],
+    ],
+    internals:['TX REQ engine','TXNID allocator','Credit manager (REQ/RSP/DAT)','Snoop queue','Snoop response FSM','CompAck generator','Retry/PCrd handler','Link active FSM'],
+  },
+  {
+    type:'hnf', label:'HN-F — Home Node (Fully Coherent)',
+    desc:'Central coherency orchestrator. Performs directory lookup, issues snoops to all RN-F sharers, fetches from SN on miss, and manages all outstanding coherency transactions.',
+    params:[
+      ['Module','chi_hn.sv'],['NODE_TYPE','CHI_NODE_HNF'],
+      ['Outstanding TXN','64 slots'],['Dir Sets','512'],
+      ['Dir Ways','8'],['LLC Size','4 MB / slice'],
+    ],
+    internals:['REQ arbitration (N RN ports)','Directory lookup pipeline (4 cycles)','Snoop issue logic','Snoop bitmap tracker','SN request engine','CompData forwarding','RetryAck / PCrdGrant','Transaction timeout monitor'],
+  },
+  {
+    type:'snf', label:'SN-F — Slave Node (Fully Coherent)',
+    desc:'Memory-side bridge between CHI and the DDR5 controller. Receives ReadNoSnp/WriteNoSnp from HN-F, issues AXI4 transactions to the DRAM, and returns CompData.',
+    params:[
+      ['Module','chi_sn.sv'],['NODE_TYPE','CHI_NODE_SNF'],
+      ['Outstanding TXN','32 slots'],['Mem Interface','AXI4'],
+      ['Data Width','256 bits'],['Capacity','64 GB / port'],
+    ],
+    internals:['REQ receive + slot alloc','DBIDResp / Comp generator','AXI4 AR/AW/W/R/B channels','CompData builder','Error detection (RESPERR_DERR)','Outstanding tracker','Timeout management'],
+  },
+  {
+    type:'router', label:'Router — 5-Port Wormhole Router',
+    desc:'5-port (N/S/E/W/Local) wormhole router with 4 virtual channels. Five-stage pipeline: RC→VA→SA→ST→LT. XY routing, round-robin arbitration, credit-based output flow control.',
+    params:[
+      ['Module','router_top.sv'],['Ports','5 (N/S/E/W/Local)'],
+      ['VCs','4 per port'],['Buffer Depth','8 flits/VC'],
+      ['Pipeline','5 stages'],['Flit Width','368 bits'],
+    ],
+    internals:['Route Compute Unit (XY)','VC Allocator','Switch Allocator (round-robin)','N×N Crossbar (non-blocking)','Input port FIFOs','Output port registers','Credit return logic','Status / PM events'],
+  },
+  {
+    type:'link', label:'Link Layer — CHI Link Layer',
+    desc:'Manages link activation handshake, per-channel credit initialization, flit pend-to-valid timing, and TX/RX channel gating. One instance per physical link direction.',
+    params:[
+      ['Module','chi_link_layer.sv'],['Init REQ Crd','8'],
+      ['Init RSP Crd','8'],['Init DAT Crd','4'],
+      ['Init SNP Crd','8'],['State Machine','5 states'],
+    ],
+    internals:['Link state FSM (RESET→ACTIVATE→ACTIVE)','4× credit_manager instances','TX channel gating','RX credit return','TxLinkActiveReq/Ack handshake','Clock gating enable'],
+  },
+  {
+    type:'dir', label:'Directory Controller',
+    desc:'Set-associative directory maintaining per-cacheline state and sharer bitmaps for all RN-F nodes. Two-cycle lookup pipeline for SRAM timing closure. LRU replacement.',
+    params:[
+      ['Module','directory_ctrl.sv'],['Sets','512'],
+      ['Ways','8'],['Tag Width','32 bits'],
+      ['Sharers','8 bits (1 per RN-F)'],['Lookup Latency','2 cycles'],
+    ],
+    internals:['Tag + set decomposition','2-stage lookup pipeline','Hit/miss detection','State update port','Eviction logic (LRU)','Dirty bit tracking','Sharer bitmap'],
+  },
+];
+
+const typeStyle = {
+  rnf:{color:C.rnfg,bg:C.rnf},rni:{color:C.rnig,bg:C.rni},
+  hnf:{color:C.hnfg,bg:C.hnf},hni:{color:C.hnig,bg:C.hni},
+  snf:{color:C.snfg,bg:C.snf},sni:{color:C.snig,bg:C.sni},
+  router:{color:C.routerg,bg:C.router},
+  link:{color:'#4dd0e1',bg:'#00838f'},
+  dir:{color:C.hnfg,bg:'#4e342e'},
+};
+
+document.getElementById('node-cards').innerHTML = nodeCards.map(nc => {
+  const s = typeStyle[nc.type] || {color:C.txt2, bg:C.bg4};
+  return `
+  <div class="card" style="border-left:3px solid ${s.color};padding:0;overflow:hidden;">
+    <div style="padding:16px;background:${s.bg}18">
+      <div style="font-weight:700;font-size:13px;color:#fff;margin-bottom:4px">${nc.label}</div>
+      <div style="font-size:11px;color:${C.txt2};line-height:1.6">${nc.desc}</div>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid ${C.border}">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:${C.txt3};text-transform:uppercase;margin-bottom:8px">Parameters</div>
+      ${nc.params.map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid ${C.border};font-size:11px"><span style="color:${C.txt3}">${k}</span><span style="color:${C.txt};font-family:monospace">${v}</span></div>`).join('')}
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid ${C.border}">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:${C.txt3};text-transform:uppercase;margin-bottom:8px">Internal Blocks</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${nc.internals.map(i => `<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${s.bg}30;border:1px solid ${s.color}44;color:${s.color}">${i}</span>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}).join('');
+
+/* ============================================================
+   SIGNAL TABLES
+   ============================================================ */
+function buildSigTable(tableId, signals) {
+  const head = `<thead><tr><th>Signal</th><th>Width</th><th>Dir</th><th>Channel</th><th>Description</th></tr></thead>`;
+  const body = `<tbody>` + signals.map(([sig,w,dir,ch,desc]) => {
+    const dc = {OUT:'sig-dir-out',IN:'sig-dir-in','BI':'sig-dir-bi'}[dir] || '';
+    const cc = {REQ:C.req,RSP:C.rsp,SNP:C.snp,DAT:C.dat}[ch] || C.txt3;
+    return `<tr>
+      <td class="mono" style="color:#ccc">${sig}</td>
+      <td class="mono" style="color:${C.txt3}">${w}</td>
+      <td><span class="sig-dir ${dc}">${dir}</span></td>
+      <td><span style="color:${cc};font-size:10px;font-weight:700">${ch}</span></td>
+      <td style="font-size:11px;color:${C.txt2}">${desc}</td>
+    </tr>`;
+  }).join('') + `</tbody>`;
+  document.getElementById(tableId).innerHTML = head + body;
+}
+
+buildSigTable('req-sig-table', [
+  ['txreqflitpend','1','OUT','REQ','Flit pending (1 cycle before valid)'],
+  ['txreqflitv',   '1','OUT','REQ','Flit valid — requester sending'],
+  ['txreqflit',   '88b','OUT','REQ','REQ flit payload'],
+  ['txreqlcrdv',   '1','OUT','REQ','Link credit return to completer'],
+  ['rxreqflitpend','1','IN', 'REQ','Flit pending from completer'],
+  ['rxreqflitv',   '1','IN', 'REQ','Flit valid from completer'],
+  ['rxreqflit',   '88b','IN', 'REQ','REQ flit from completer'],
+  ['rxreqlcrdv',   '1','IN', 'REQ','Link credit return from completer'],
+]);
+buildSigTable('rsp-sig-table', [
+  ['txrspflitpend','1','OUT','RSP','RSP flit pending'],
+  ['txrspflitv',   '1','OUT','RSP','RSP flit valid'],
+  ['txrspflit',   '46b','OUT','RSP','RSP flit payload'],
+  ['txrsplcrdv',   '1','OUT','RSP','RSP link credit return'],
+  ['rxrspflitv',   '1','IN', 'RSP','RSP flit valid from far end'],
+  ['rxrspflit',   '46b','IN', 'RSP','RSP flit from far end'],
+  ['rxrsplcrdv',   '1','IN', 'RSP','RSP link credit return inbound'],
+]);
+buildSigTable('snp-sig-table', [
+  ['txsnpflitpend','1','OUT','SNP','SNP flit pending (completer→requester)'],
+  ['txsnpflitv',   '1','OUT','SNP','SNP flit valid'],
+  ['txsnpflit',   '84b','OUT','SNP','SNP flit payload'],
+  ['txsnplcrdv',   '1','OUT','SNP','SNP link credit return'],
+  ['rxsnpflitv',   '1','IN', 'SNP','SNP flit valid (inbound)'],
+  ['rxsnpflit',   '84b','IN', 'SNP','SNP flit payload (inbound)'],
+  ['rxsnplcrdv',   '1','IN', 'SNP','SNP credit return (inbound)'],
+]);
+buildSigTable('dat-sig-table', [
+  ['txdatflitpend','1',  'OUT','DAT','DAT flit pending'],
+  ['txdatflitv',   '1',  'OUT','DAT','DAT flit valid'],
+  ['txdatflit',  '368b','OUT','DAT','DAT flit payload (incl. 256b data)'],
+  ['txdatlcrdv',   '1',  'OUT','DAT','DAT link credit return'],
+  ['rxdatflitv',   '1',  'IN', 'DAT','DAT flit valid inbound'],
+  ['rxdatflit',  '368b','IN', 'DAT','DAT flit inbound'],
+  ['rxdatlcrdv',   '1',  'IN', 'DAT','DAT credit return inbound'],
+]);
+
+/* ============================================================
+   LINK STATE MACHINE SVG
+   ============================================================ */
+function buildLinkSMSVG() {
+  const svg = document.getElementById('link-sm-svg');
+  const W = 1100, H = 220;
+  svgRect(svg, 0, 0, W, H, {fill:C.bg2});
+
+  const d3 = svgEl('defs');
+  const mk = svgEl('marker',{id:'smarr',markerWidth:'8',markerHeight:'6',refX:'7',refY:'3',orient:'auto'});
+  mk.appendChild(svgEl('polygon',{points:'0 0, 8 3, 0 6',fill:'#4a8fff'}));
+  d3.appendChild(mk); svg.appendChild(d3);
+
+  const states = [
+    {x:80,  y:110, label:'RESET',    color:'#455a64'},
+    {x:270, y:110, label:'ACTIVATE', color:'#1565c0'},
+    {x:490, y:110, label:'ACTIVE',   color:C.rnfg},
+    {x:710, y:110, label:'DEACT_REQ',color:C.hnfg},
+    {x:930, y:110, label:'STOP',     color:C.snfg},
+  ];
+  const trans = [
+    {from:0,to:1,label:'rst_n deassert',y:-28},
+    {from:1,to:2,label:'TxLinkActiveAck',y:-28},
+    {from:2,to:3,label:'idle & deact request',y:28},
+    {from:3,to:4,label:'deact ack received',y:28},
+    {from:4,to:0,label:'full reset',curved:true},
+  ];
+
+  states.forEach(s => {
+    svgRect(svg, s.x-55, s.y-22, 110, 44, {fill:s.color+'30',stroke:s.color,'stroke-width':'1.5',rx:'6'});
+    svgText(svg, s.x, s.y-5, s.label, {fill:'#fff','font-size':'11','font-weight':'700'});
+    svgText(svg, s.x, s.y+10, 'link_layer.sv', {fill:s.color+'aa','font-size':'8.5'});
+  });
+
+  trans.forEach(tr => {
+    const from = states[tr.from], to = states[tr.to];
+    if (tr.curved) {
+      svgPath(svg, `M ${from.x+55} ${from.y} Q ${(from.x+to.x)/2} ${from.y-80} ${to.x-55} ${to.y}`,
+        {fill:'none',stroke:'#4a8fff88','stroke-width':'1.2','marker-end':'url(#smarr)','stroke-dasharray':'5 3'});
+      svgText(svg, (from.x+to.x)/2, from.y-90, tr.label, {fill:C.txt3,'font-size':'9'});
+    } else {
+      const x1 = from.x+55, x2 = to.x-55;
+      const my = from.y + (tr.y||0);
+      svgPath(svg, `M ${x1} ${from.y} Q ${(x1+x2)/2} ${my} ${x2} ${to.y}`,
+        {fill:'none',stroke:'#4a8fff88','stroke-width':'1.2','marker-end':'url(#smarr)'});
+      svgText(svg, (x1+x2)/2, my + (tr.y < 0 ? -12 : 12), tr.label, {fill:C.txt3,'font-size':'9'});
+    }
+  });
+
+  // Active state pulsing note
+  svgRect(svg, 435, 145, 110, 20, {fill:C.rnfg+'20',stroke:C.rnfg+'55',rx:'4'});
+  svgText(svg, 490, 155, '← operational mode', {fill:C.rnfg+'aa','font-size':'9'});
+}
+buildLinkSMSVG();
+
+/* ============================================================
+   CREDIT FLOW SVG
+   ============================================================ */
+function buildCreditSVG() {
+  const svg = document.getElementById('credit-svg');
+  const W = 1100, H = 180;
+  svgRect(svg, 0, 0, W, H, {fill:C.bg2});
+
+  const d4 = svgEl('defs');
+  ['fwd','ret'].forEach((id,i) => {
+    const mk = svgEl('marker',{id:`carr-${id}`,markerWidth:'8',markerHeight:'6',refX:'7',refY:'3',orient:'auto'});
+    mk.appendChild(svgEl('polygon',{points:'0 0, 8 3, 0 6',fill:i===0?C.req:C.dat}));
+    d4.appendChild(mk);
+  });
+  svg.appendChild(d4);
+
+  const sx = 100, ex = 1000, my = 90;
+
+  svgRect(svg, sx-60, my-30, 120, 60, {fill:C.rnf+'30',stroke:C.rnfg,'stroke-width':'1.5',rx:'6'});
+  svgText(svg, sx, my-8, 'TX Node', {fill:'#fff','font-size':'12','font-weight':'700'});
+  svgText(svg, sx, my+8, '(Requester)', {fill:C.rnfg,'font-size':'10'});
+
+  svgRect(svg, ex-60, my-30, 120, 60, {fill:C.hnf+'30',stroke:C.hnfg,'stroke-width':'1.5',rx:'6'});
+  svgText(svg, ex, my-8, 'RX Node', {fill:'#fff','font-size':'12','font-weight':'700'});
+  svgText(svg, ex, my+8, '(Completer)', {fill:C.hnfg,'font-size':'10'});
+
+  // Flit forward arrow
+  svgLine(svg, sx+60, my-10, ex-60, my-10, {stroke:C.req,'stroke-width':'1.8','marker-end':'url(#carr-fwd)'});
+  svgText(svg, 550, my-22, 'Flit transmission (consumes 1 credit)', {fill:C.req,'font-size':'11'});
+
+  // Credit return arrow
+  svgLine(svg, ex-60, my+12, sx+60, my+12, {stroke:C.dat,'stroke-width':'1.8','marker-end':'url(#carr-ret)'});
+  svgText(svg, 550, my+30, 'LCrdV = 1 (credit return, after flit consumed)', {fill:C.dat,'font-size':'11'});
+
+  // Credit counter box
+  svgRect(svg, 480, 130, 140, 36, {fill:C.bg3,stroke:C.border2,rx:'6'});
+  svgText(svg, 550, 142, 'TX Credit Count', {fill:C.txt3,'font-size':'9','font-weight':'700'});
+  svgText(svg, 550, 157, 'MAX=15  ·  INIT via link training  ·  min=0 blocks TX', {fill:C.txt2,'font-size':'9'});
+}
+buildCreditSVG();
+
+/* mouse tracking for tooltip */
+document.addEventListener('mousemove', moveTT);
+</script>
+</body>
+</html>

@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L1 Cache Subsystem — Architecture Specification | hanuma SoC</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --accent: #58a6ff;       /* blue  – L1I / general */
+    --accent-d: #3fb950;     /* green – L1D */
+    --accent3: #d29922;      /* amber – REC / warn */
+    --accent4: #f78166;      /* red   – danger/dirty */
+    --accent5: #bc8cff;      /* purple – MMU/TLB */
+    --accent6: #39d353;      /* bright green – hit */
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --text-bright: #e6edf3;
+    --rec: #d2992222;
+    --rec-border: #d29922;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.7; display: flex; }
+
+  /* ── Sidebar ── */
+  #sidebar { width: 260px; min-width: 260px; background: var(--surface); border-right: 1px solid var(--border); height: 100vh; position: sticky; top: 0; overflow-y: auto; padding: 20px 0; }
+  #sidebar-header { padding: 0 16px 16px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+  #sidebar-header .proj { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  #sidebar-header .title { color: var(--accent); font-weight: 700; font-size: 13px; margin-top: 4px; }
+  .nav-group { padding: 4px 0; }
+  .nav-group-label { padding: 4px 16px; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-dim); font-weight: 600; }
+  .nav-link { display: block; padding: 5px 16px 5px 24px; color: var(--text-dim); text-decoration: none; font-size: 13px; border-left: 2px solid transparent; transition: all .12s; }
+  .nav-link:hover, .nav-link.active { color: var(--text-bright); background: var(--surface2); border-left-color: var(--accent); }
+
+  /* ── Main ── */
+  #main { flex: 1; overflow-y: auto; padding: 32px 48px; max-width: calc(100vw - 260px); }
+
+  /* ── Hero ── */
+  .hero { background: linear-gradient(135deg, #1c2333 0%, #0d1117 100%); border: 1px solid var(--border); border-radius: 12px; padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -40px; right: -40px; width: 280px; height: 280px; background: radial-gradient(circle, #3fb95010 0%, transparent 65%); pointer-events: none; }
+  .hero h1 { font-size: 24px; color: var(--text-bright); font-weight: 700; margin-bottom: 6px; }
+  .hero .subtitle { color: var(--text-dim); font-size: 13px; margin-bottom: 18px; }
+  .hero-meta { display: flex; gap: 24px; flex-wrap: wrap; }
+  .hero-meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .hero-meta-item .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); }
+  .hero-meta-item .val { font-size: 13px; color: var(--text-bright); font-weight: 500; }
+
+  /* ── Sections ── */
+  .section { margin-bottom: 44px; scroll-margin-top: 20px; }
+  h2 { font-size: 18px; color: var(--text-bright); font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  h2 .sn { background: var(--accent); color: #000; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+  h2 .sn.green { background: var(--accent-d); }
+  h2 .sn.purple { background: var(--accent5); }
+  h3 { font-size: 14px; color: var(--accent); font-weight: 600; margin: 20px 0 10px; }
+
+  /* ── Tables ── */
+  .tw { overflow-x: auto; margin: 12px 0; border-radius: 8px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: var(--surface2); }
+  th { padding: 10px 14px; text-align: left; font-weight: 600; color: var(--text-bright); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--border); }
+  td { padding: 9px 14px; border-bottom: 1px solid #21262d; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #1c2333; }
+  code { background: #1c2333; padding: 2px 6px; border-radius: 4px; font-family: 'SF Mono','Fira Code',monospace; font-size: 12px; color: #79c0ff; }
+  .rec-row td { background: #d2992214 !important; }
+  .rec-tag { background: #d2992222; border: 1px solid var(--rec-border); color: var(--accent3); font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; white-space: nowrap; }
+
+  /* ── Badges ── */
+  .badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 10px; margin-left: 4px; font-weight: 600; vertical-align: middle; }
+  .b-draft { background: #d2992233; color: var(--accent3); }
+  .b-exists { background: #3fb95022; color: var(--accent-d); }
+  .b-future { background: #58a6ff22; color: var(--accent); }
+  .b-p1 { background: #3fb95022; color: var(--accent-d); }
+  .b-p2 { background: #58a6ff22; color: var(--accent); }
+  .b-future2 { background: #bc8cff22; color: var(--accent5); }
+
+  /* ── Stat grid ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 10px; margin: 16px 0 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 12px; text-align: center; }
+  .stat-card .num { font-size: 28px; font-weight: 700; }
+  .stat-card .unit { font-size: 12px; color: var(--text-dim); }
+  .stat-card .lbl2 { font-size: 11px; color: var(--text-bright); margin-top: 4px; }
+  .blue .num { color: var(--accent); }
+  .green .num { color: var(--accent-d); }
+  .amber .num { color: var(--accent3); }
+  .purple .num { color: var(--accent5); }
+
+  /* ── Alerts ── */
+  .alert { border-radius: 6px; padding: 10px 14px; margin: 12px 0; font-size: 13px; border-left: 3px solid; }
+  .a-info { background: #1a3050; border-color: var(--accent); }
+  .a-warn { background: #3a2a1a; border-color: var(--accent3); }
+  .a-success { background: #1a3a1a; border-color: var(--accent-d); }
+  .a-purple { background: #2a1a3a; border-color: var(--accent5); }
+
+  /* ── Addr breakdown ── */
+  .addr-breakdown { display: flex; font-family: monospace; font-size: 13px; margin: 14px 0; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .addr-field { display: flex; flex-direction: column; align-items: center; padding: 10px 6px; border-right: 1px solid var(--border); }
+  .addr-field:last-child { border-right: none; }
+  .addr-field .bits { font-size: 10px; color: var(--text-dim); margin-bottom: 3px; }
+  .addr-field .name { font-weight: 700; }
+  .addr-field .width { font-size: 10px; color: var(--text-dim); margin-top: 3px; }
+  .af-tag32 { background: #1a3050; color: #79c0ff; flex: 32; }
+  .af-idx { background: #1f3a1f; color: #56d364; flex: 6; }
+  .af-off { background: #3a1f1f; color: #ffa657; flex: 6; }
+  .af-vpn { background: #2a1a3a; color: #d2a8ff; flex: 9; }
+  .af-pg { background: #1a2a1a; color: #56d364; flex: 12; }
+
+  /* ── Pipeline ── */
+  .pipeline { display: flex; gap: 0; margin: 14px 0; overflow-x: auto; }
+  .ps { flex: 1; min-width: 130px; background: var(--surface2); border: 1px solid var(--border); border-right: none; padding: 12px 10px; position: relative; }
+  .ps:first-child { border-radius: 8px 0 0 8px; }
+  .ps:last-child { border-right: 1px solid var(--border); border-radius: 0 8px 8px 0; }
+  .ps::after { content: '▶'; position: absolute; right: -10px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 13px; z-index: 1; }
+  .ps:last-child::after { display: none; }
+  .ps .sn2 { font-size: 10px; color: var(--accent); font-weight: 700; text-transform: uppercase; }
+  .ps .snm { font-size: 12px; color: var(--text-bright); font-weight: 600; margin: 4px 0 2px; }
+  .ps .sd { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+
+  /* ── Mermaid ── */
+  .mmd { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 12px 0; overflow-x: auto; }
+
+  /* ── Diagram box ── */
+  .dbox { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; margin: 12px 0; overflow-x: auto; }
+  .dbox pre { font-family: 'SF Mono','Fira Code',monospace; font-size: 12px; color: #a5d6ff; white-space: pre; line-height: 1.55; }
+
+  /* ── Split compare ── */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+  .split-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .split-card.i-card { border-top: 3px solid var(--accent); }
+  .split-card.d-card { border-top: 3px solid var(--accent-d); }
+  .split-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+  .split-card.i-card h4 { color: var(--accent); }
+  .split-card.d-card h4 { color: var(--accent-d); }
+
+  /* ── Block cards ── */
+  .block-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 10px; margin: 12px 0; }
+  .block-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; border-top: 3px solid var(--accent); }
+  .block-card.g { border-top-color: var(--accent-d); }
+  .block-card.p { border-top-color: var(--accent5); }
+  .block-card.a { border-top-color: var(--accent3); }
+  .block-card.r { border-top-color: var(--accent4); }
+  .block-card h4 { font-size: 13px; color: var(--text-bright); font-weight: 600; margin-bottom: 5px; }
+  .block-card p { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+  /* ── MSHR fields ── */
+  .mshr-fields { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .mf { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 12px; }
+  .mf .fn { color: var(--accent); font-weight: 600; }
+  .mf .fb { color: var(--text-dim); font-size: 11px; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: -1px; flex-wrap: wrap; }
+  .tab { padding: 7px 14px; border: 1px solid var(--border); border-bottom: none; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 13px; color: var(--text-dim); background: var(--surface); transition: all .12s; }
+  .tab.active { color: var(--text-bright); background: var(--surface2); border-color: var(--accent); border-bottom-color: var(--surface2); }
+  .tab-content { border: 1px solid var(--border); border-radius: 0 8px 8px 8px; background: var(--surface2); padding: 16px; display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── ECC bars ── */
+  .ecc-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; font-size: 13px; }
+  .ecc-bar { flex: 1; height: 8px; border-radius: 4px; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── Topbar ── */
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+  .topbar a { color: var(--text-dim); text-decoration: none; }
+  .topbar a:hover { color: var(--accent); }
+  .topbar span.sep { color: var(--border); }
+
+  @media (max-width: 900px) { #sidebar { display: none; } #main { max-width: 100vw; padding: 20px; } }
+  @media (max-width: 600px) { .split { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav id="sidebar">
+  <div id="sidebar-header">
+    <div class="proj">hanuma SoC · per-core</div>
+    <div class="title">L1 Cache Subsystem</div>
+    <div style="margin-top:8px; display:flex; gap:5px; flex-wrap:wrap;">
+      <span class="badge b-draft">DRAFT</span>
+      <span class="badge b-future">RV64GC</span>
+      <span class="badge b-future">Sv39</span>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Overview</div>
+    <a href="#params" class="nav-link">Parameters</a>
+    <a href="#summary" class="nav-link">Executive Summary</a>
+    <a href="#arch" class="nav-link">Architecture Overview</a>
+    <a href="#funcs" class="nav-link">Functional Requirements</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Cache Design</div>
+    <a href="#l1i" class="nav-link">L1I Architecture</a>
+    <a href="#l1d" class="nav-link">L1D Architecture</a>
+    <a href="#vipt" class="nav-link">VIPT Organization</a>
+    <a href="#uarch" class="nav-link">Internal µArch</a>
+    <a href="#pipeline" class="nav-link">Pipeline</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Integration</div>
+    <a href="#rv64gc" class="nav-link">RV64GC Integration</a>
+    <a href="#xlat" class="nav-link">Address Translation</a>
+    <a href="#l1l2" class="nav-link">L1–L2 Interface</a>
+    <a href="#coherency" class="nav-link">Coherency</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Quality & Policy</div>
+    <a href="#mshr" class="nav-link">Miss Handling (MSHR)</a>
+    <a href="#writepol" class="nav-link">Write Policies</a>
+    <a href="#repl" class="nav-link">Replacement Policy</a>
+    <a href="#perf" class="nav-link">Performance Features</a>
+    <a href="#ecc" class="nav-link">ECC & Reliability</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Verification &amp; Scale</div>
+    <a href="#verif" class="nav-link">Verification</a>
+    <a href="#scale" class="nav-link">Scalability</a>
+    <a href="#recs" class="nav-link">Design Summary</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Appendices</div>
+    <a href="#ifa" class="nav-link">Core Interface</a>
+    <a href="#ifb" class="nav-link">L1–L2 Signals</a>
+    <a href="#ifc" class="nav-link">Key Structures</a>
+    <a href="#ifd" class="nav-link">Parameters</a>
+  </div>
+</nav>
+
+<!-- Main -->
+<main id="main">
+
+  <!-- Breadcrumb -->
+  <div class="topbar">
+    <a href="#">hanuma SoC</a><span class="sep">/</span>
+    <a href="#">docs</a><span class="sep">/</span>
+    <a href="#">architecture</a><span class="sep">/</span>
+    <a href="#">L1</a><span class="sep">/</span>
+    <span style="color:var(--text)">l1_cache_subsystem</span>
+    <span class="badge b-draft" style="margin-left:auto">v0.1 DRAFT</span>
+    <a href="../L2/l2_cache_controller.html" style="color:var(--accent-d); font-size:12px; text-decoration:none; border:1px solid var(--accent-d); padding:2px 8px; border-radius:4px;">↗ L2 Spec</a>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>L1 Cache Subsystem</h1>
+    <div class="subtitle">Architecture Specification — hanuma SoC · Private L1I + L1D per RV64GC core · VIPT · Sv39 · CHI-free</div>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><span class="lbl">Owner</span><span class="val">Cache / Core Team</span></div>
+      <div class="hero-meta-item"><span class="lbl">Core Target</span><span class="val">RV64GC (future)</span></div>
+      <div class="hero-meta-item"><span class="lbl">Translation</span><span class="val">Sv39 (ASID)</span></div>
+      <div class="hero-meta-item"><span class="lbl">Coherence Point</span><span class="val">Unified L2 / HN-F</span></div>
+      <div class="hero-meta-item"><span class="lbl">Status</span><span class="val">Draft · pre-RTL</span></div>
+    </div>
+  </div>
+
+  <!-- Key stats -->
+  <div class="stat-grid">
+    <div class="stat-card blue"><div class="num">32</div><div class="unit">KB</div><div class="lbl2">L1I Size</div></div>
+    <div class="stat-card green"><div class="num">32</div><div class="unit">KB</div><div class="lbl2">L1D Size</div></div>
+    <div class="stat-card blue"><div class="num">8</div><div class="unit">way</div><div class="lbl2">Associativity</div></div>
+    <div class="stat-card amber"><div class="num">64</div><div class="unit">B</div><div class="lbl2">Line Size</div></div>
+    <div class="stat-card green"><div class="num">8</div><div class="unit">MSHRs</div><div class="lbl2">L1D Outstanding</div></div>
+    <div class="stat-card blue"><div class="num">2–4</div><div class="unit">MSHRs</div><div class="lbl2">L1I Outstanding</div></div>
+    <div class="stat-card purple"><div class="num">Sv39</div><div class="unit">VA</div><div class="lbl2">Translation</div></div>
+    <div class="stat-card amber"><div class="num">2</div><div class="unit">GHz</div><div class="lbl2">Core Clock</div></div>
+    <div class="stat-card blue"><div class="num">44</div><div class="unit">bit</div><div class="lbl2">Physical Addr</div></div>
+    <div class="stat-card green"><div class="num">1–2</div><div class="unit">cycle</div><div class="lbl2">Hit Latency</div></div>
+  </div>
+
+  <!-- §0: Parameters -->
+  <section class="section" id="params">
+    <h2><span class="sn">§0</span> System Parameters</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Parameter</th><th>Value</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>Physical address width</td><td>44 bits</td><td><code>global_defines.svh (PA_WIDTH)</code>, <code>chi_config.yaml</code></td></tr>
+          <tr><td>Cache line size</td><td>64 B</td><td><code>global_defines.svh (PA_CACHELINE_BYTES)</code>, <code>chi_config.yaml</code></td></tr>
+          <tr><td>Page size</td><td>4 KB</td><td><code>global_defines.svh (PA_PAGE_BYTES)</code>, <code>chi_config.yaml</code></td></tr>
+          <tr><td>Core clock</td><td>2 GHz</td><td><code>global_defines.svh (CLK_CORE_FREQ_MHZ)</code></td></tr>
+          <tr><td>L2 data beat / CHI granule</td><td>256 b / 64 B</td><td><code>chi_config.yaml (data_width)</code>, L2 spec</td></tr>
+          <tr><td>L2 outstanding (downstream budget)</td><td>16</td><td><code>chi_config.yaml (rn_outstanding)</code></td></tr>
+          <tr><td>Coherency point</td><td>L2 / HN-F directory</td><td>L2 spec, <code>coherency_tracker.sv</code></td></tr>
+          <tr><td>Address translation</td><td>Sv39 (stage-1 ASID)</td><td>RV64GC Linux baseline; ASID model in <code>hanuma_memory_map.yaml</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- §1: Executive Summary -->
+  <section class="section" id="summary">
+    <h2><span class="sn">§1</span> Executive Summary</h2>
+    <div class="alert a-info">The L1 Cache Subsystem provides the <strong>first level of private caching</strong> for a single RV64GC core: an L1I feeding the fetch unit and an L1D serving the load/store unit. <strong>The L1 never touches CHI directly</strong> — all coherency flows through the L2, which is the cluster's sole CHI RN-F agent.</div>
+
+    <h3>1.1 Position in the SoC</h3>
+    <div class="dbox"><pre>
+   RV64GC Core (2 GHz, future)
+   ├── IFU ──────────► L1I ─┐
+   └── LSU ──────────► L1D ─┤  ← this document
+                            │
+                     Unified L2 Cache Controller  (docs/architecture/L2)
+                            │  CHI RN-F
+                     CHI 4×4 Mesh NoC  (exists, M1)
+                            │
+                     HN-F (LLC + Directory + Snoop Filter)
+                            │
+                     SN-F → DDR5  (future, M2)</pre></div>
+
+    <h3>1.2 Performance Goals <span class="rec-tag">REC</span></h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Metric</th><th>Target</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr class="rec-row"><td>L1I / L1D hit latency</td><td><strong>1–2 core cycles</strong></td><td>VIPT, hit under load-use</td></tr>
+          <tr class="rec-row"><td>L1 hit bandwidth</td><td><strong>1 fetch + 1–2 loads/store per cycle</strong></td><td>Banked / dual-ported L1D</td></tr>
+          <tr class="rec-row"><td>Outstanding L1D misses</td><td><strong>8 MSHRs</strong></td><td>Non-blocking, ≤ L2's 16 budget</td></tr>
+          <tr class="rec-row"><td>L1 miss → L2 hit latency</td><td><strong>~10–15 core cycles</strong></td><td>Dominated by L2 lookup + CDC</td></tr>
+          <tr><td>IPC sensitivity</td><td>Hide L2 latency</td><td>Non-blocking + prefetch</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>1.3 Design Philosophy</h3>
+    <div class="block-grid">
+      <div class="block-card">
+        <h4>⚡ Small, Fast, Private</h4>
+        <p>1–2 cycle hit at 2 GHz. Push all coherency complexity down to L2.</p>
+      </div>
+      <div class="block-card g">
+        <h4>🔌 Non-Blocking</h4>
+        <p>8 L1D MSHRs + 2–4 L1I MSHRs. Independent banks keep flowing when one misses.</p>
+      </div>
+      <div class="block-card p">
+        <h4>🗺️ VIPT, Alias-Free</h4>
+        <p>Index within page offset ⇒ no virtual aliasing. Physical tags ⇒ no context-switch flush.</p>
+      </div>
+      <div class="block-card a">
+        <h4>📐 Scalable</h4>
+        <p>Every structural parameter is an RTL parameter. Same block from FPGA prototype to multicore ASIC.</p>
+      </div>
+      <div class="block-card r">
+        <h4>↩️ Write-Back / Write-Allocate</h4>
+        <p>Minimize downstream write traffic to L2 / CHI / DDR5. Coalesces stores in the write buffer.</p>
+      </div>
+      <div class="block-card">
+        <h4>🔄 CHI-Free Interface</h4>
+        <p>L1 sees only simple request/refill/invalidate contract to L2. No flits, TxnIDs, or credits.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- §2: Architectural Overview -->
+  <section class="section" id="arch">
+    <h2><span class="sn">§2</span> Architectural Overview</h2>
+    <h3>2.1 Top-Level Data Flow</h3>
+    <div class="mmd">
+      <div class="mermaid">
+flowchart LR
+  IFU -->|VA fetch| L1I
+  L1I -->|hit| IFU
+  L1I -->|miss line req| ADP[L1→L2 Adapter]
+  LSU -->|load VA| L1D
+  L1D -->|hit data| LSU
+  LSU -->|store| WB[Write Buffer]
+  WB --> L1D
+  L1D -->|miss / evict| ADP
+  MMU -->|Sv39 PTE| TLB[(i/d TLB)]
+  TLB --> L1I
+  TLB --> L1D
+  ADP -->|line req / wb| L2[Unified L2]
+  L2 -->|refill / back-invalidate| ADP
+      </div>
+    </div>
+
+    <h3>2.2 Core-Side Interfaces <span class="rec-tag">REC</span></h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Interface</th><th>Dir</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Fetch request (VA, fetch width)</td><td>IFU → L1I</td><td>Aligned fetch group request</td></tr>
+          <tr><td>Fetch response (instr bytes, fault)</td><td>L1I → IFU</td><td>Instruction bytes + access-fault/page-fault status</td></tr>
+          <tr><td>Fetch redirect / flush</td><td>IFU → L1I</td><td>Branch redirect, pipeline flush</td></tr>
+          <tr><td>Load request (VA, size, signed)</td><td>LSU → L1D</td><td>Load issue</td></tr>
+          <tr><td>Load response (data, fault, ready)</td><td>L1D → LSU</td><td>Aligned/forwarded load data</td></tr>
+          <tr><td>Store request (VA, size, data)</td><td>LSU → L1D</td><td>Store issue (to write buffer)</td></tr>
+          <tr><td>Atomic / LR-SC / AMO request</td><td>LSU → L1D</td><td>RV64A atomics (§6.6)</td></tr>
+          <tr><td>TLB / fence / SFENCE.VMA</td><td>MMU → L1</td><td>Translation + fence ops</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>2.3 Full Subsystem Block Diagram</h3>
+    <div class="dbox"><pre>
+     ┌────────────────────────── L1 CACHE SUBSYSTEM (2 GHz) ─────────────────────────┐
+     │                                                                                │
+IFU──fetch VA──►┌──────────┐  ┌──────────┐                                           │
+ PC ◄─instr─────┤   L1I    │─►│  iTLB    │ (Sv39, from MMU)                          │
+                │ (RO,VIPT)│  └──────────┘                                           │
+                └────────┬─┘── miss ────────────────────┐                            │
+                         │                              │                            │
+LSU──load/store VA──────►┌──────────┐  ┌──────────┐    ▼  ┌────────────┐ ┌────────┐ │
+◄──load data/fault───────┤   L1D    │─►│  dTLB    │  ┌────┤ L1 Miss/  │ │ L1→L2  ├─┼──► L2
+                         │ (RW,VIPT,│  └──────────┘  │   │ Refill/   │◄┤ Adapter│◄─┼─── L2
+                         │  WB/WA)  │─store─►[WBuf]──┘   │ Writeback │ └────────┘  │
+                         └──────────┘                     └────────────┘            │
+     │                        ▲                                                      │
+     │                  ┌─────┴──────┐                                               │
+     │                  │  MMU/PTW   │ (PTW uses L1D/L2 path)                        │
+     │                  └────────────┘                                               │
+     └────────────────────────────────────────────────────────────────────────────────┘</pre></div>
+  </section>
+
+  <!-- §3: Functional Requirements -->
+  <section class="section" id="funcs">
+    <h2><span class="sn">§3</span> Functional Requirements</h2>
+    <div class="split">
+      <div class="split-card i-card">
+        <h4>L1I — Instruction Cache</h4>
+        <div class="tw" style="margin:0">
+          <table>
+            <thead><tr><th>Function</th><th>Requirement</th></tr></thead>
+            <tbody>
+              <tr><td>Instruction fetch</td><td>≥ 32 B/cycle; support unaligned RVC fetch across line boundaries</td></tr>
+              <tr><td>Cache-line fill</td><td>64 B from L2 on miss, critical-word-first, early restart</td></tr>
+              <tr><td>Miss handling</td><td>Non-blocking: ≥ 2 outstanding I-fetch misses</td></tr>
+              <tr><td>Branch-target fetch</td><td>Accept fetch redirects mid-flight; squash without corrupting MSHR state</td></tr>
+              <tr><td>I-cache coherence</td><td>Not snooped; coherence via <code>FENCE.I</code> (SW-managed, RISC-V)</td></tr>
+              <tr><td>Read-only</td><td>No store path; no dirty state; eviction is silent drop</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="split-card d-card">
+        <h4>L1D — Data Cache</h4>
+        <div class="tw" style="margin:0">
+          <table>
+            <thead><tr><th>Function</th><th>Requirement</th></tr></thead>
+            <tbody>
+              <tr><td>Load support</td><td>1–2 loads/cycle; store-to-load forwarding from write buffer</td></tr>
+              <tr><td>Store support</td><td>Write-back, write-allocate; stores retire into write buffer</td></tr>
+              <tr><td>Atomic support</td><td>RV64A: LR/SC (per-line reservation) + AMO* (RMW with line ownership)</td></tr>
+              <tr><td>Cache-line fill</td><td>64 B from L2, critical-word-first, write-allocate on store miss</td></tr>
+              <tr><td>Eviction</td><td>Write-back dirty victims to L2; clean victims dropped</td></tr>
+              <tr><td>Fence ordering</td><td>Honour <code>FENCE</code>, <code>FENCE.I</code>, <code>SFENCE.VMA</code>; drain write buffer</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- §4: L1I -->
+  <section class="section" id="l1i">
+    <h2><span class="sn" style="background:var(--accent)">§4</span> L1I Cache Architecture</h2>
+
+    <h3>4.1 Trade Study</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Option</th><th>Size</th><th>Ways</th><th>Sets</th><th>Index bits</th><th>VIPT-safe?</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td>16 KB</td><td>4</td><td>64</td><td>6</td><td>✅ yes (6+6=12)</td><td>Small, low area</td></tr>
+          <tr class="rec-row"><td><strong>B ✓</strong></td><td><strong>32 KB</strong></td><td><strong>8</strong></td><td><strong>64</strong></td><td><strong>6</strong></td><td>✅ <strong>yes</strong></td><td><strong>Best knee for Linux</strong></td></tr>
+          <tr><td>C</td><td>32 KB</td><td>4</td><td>128</td><td>7</td><td>❌ no (13 > 12 → alias)</td><td>Needs aliasing handling</td></tr>
+          <tr><td>D</td><td>64 KB</td><td>8</td><td>128</td><td>7</td><td>❌ no</td><td>Larger, alias risk</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert a-success">✓ <strong>Option B recommended</strong>: 32 KB, 8-way, 64 B line, VIPT — alias-free, strong fetch hit rate for OS + application working sets. <span class="rec-tag">REC</span></div>
+
+    <h3>4.2 Address Breakdown (PA 44, 64 sets, 64 B line)</h3>
+    <div class="addr-breakdown">
+      <div class="addr-field af-tag32" style="flex:32">
+        <span class="bits">PA[43:12]</span>
+        <span class="name">TAG</span>
+        <span class="width">32 bits</span>
+      </div>
+      <div class="addr-field af-idx" style="flex:6">
+        <span class="bits">PA[11:6]</span>
+        <span class="name">INDEX</span>
+        <span class="width">6 bits → 64 sets</span>
+      </div>
+      <div class="addr-field af-off" style="flex:6">
+        <span class="bits">PA[5:0]</span>
+        <span class="name">OFFSET</span>
+        <span class="width">6 bits → 64 B</span>
+      </div>
+    </div>
+    <p style="font-size:12px; color:var(--text-dim); margin-top:6px;">Index (PA[11:6]) lies within the page offset → available before TLB completes → VIPT. Tag compared after physical translation.</p>
+
+    <h3>4.3 Arrays</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Array</th><th>Geometry</th><th>Protection</th></tr></thead>
+        <tbody>
+          <tr><td>Tag</td><td>64 sets × 8 ways × (32 tag + valid + parity/ECC)</td><td>Parity — RO array, re-fetchable on error <span class="rec-tag">REC</span></td></tr>
+          <tr><td>Data</td><td>32 KB, banked for fetch-width access</td><td>Parity — re-fetchable on error <span class="rec-tag">REC</span></td></tr>
+          <tr><td>PLRU</td><td>64 sets × 7 b (Tree-PLRU)</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert a-info">L1I is read-only and always re-fillable from L2 → <strong>parity (detect) is sufficient</strong>. A detected error triggers invalidate + refill rather than needing SECDED correction.</div>
+  </section>
+
+  <!-- §5: L1D -->
+  <section class="section" id="l1d">
+    <h2><span class="sn green">§5</span> L1D Cache Architecture</h2>
+
+    <h3>5.1 Trade Study</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Option</th><th>Size</th><th>Ways</th><th>Sets</th><th>VIPT-safe?</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td>16 KB</td><td>4</td><td>64</td><td>✅ yes</td><td>Low area</td></tr>
+          <tr class="rec-row"><td><strong>B ✓</strong></td><td><strong>32 KB</strong></td><td><strong>8</strong></td><td><strong>64</strong></td><td>✅ <strong>yes</strong></td><td><strong>Matches L1I, alias-free</strong></td></tr>
+          <tr><td>C</td><td>48 KB</td><td>12</td><td>64</td><td>✅ yes</td><td>More capacity, 12-way mux cost</td></tr>
+          <tr><td>D</td><td>64 KB</td><td>8</td><td>128</td><td>❌ no</td><td>Alias handling required</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert a-success">✓ <strong>Option B recommended</strong>: 32 KB, 8-way, 64 B line, VIPT, write-back + write-allocate. Symmetric with L1I — simplifies physical design and verification. <span class="rec-tag">REC</span></div>
+
+    <h3>5.2 Load/Store Bandwidth <span class="rec-tag">REC</span></h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Capability</th><th>Target</th><th>Mechanism</th></tr></thead>
+        <tbody>
+          <tr><td>Loads/cycle</td><td>1 (Phase 1) → 2 (Phase 2)</td><td>2 data banks / dual read ports</td></tr>
+          <tr><td>Stores/cycle</td><td>1 (drained from write buffer)</td><td>Write buffer decouples retire from array write</td></tr>
+          <tr><td>Store→load forward</td><td>Same-cycle</td><td>Write-buffer CAM on load address</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- §8: VIPT -->
+  <section class="section" id="vipt">
+    <h2><span class="sn purple">§8</span> VIPT Organization</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Scheme</th><th>Index</th><th>Tag</th><th>Pros</th><th>Cons</th></tr></thead>
+        <tbody>
+          <tr><td>VIVT</td><td>virtual</td><td>virtual</td><td>Fastest (no TLB on hit)</td><td>Aliasing + homonyms; flush on context switch; bad for Linux</td></tr>
+          <tr><td>PIPT</td><td>physical</td><td>physical</td><td>No aliasing; simple coherence</td><td>TLB on critical path before index → slower</td></tr>
+          <tr class="rec-row"><td><strong>VIPT ✓</strong></td><td><strong>virtual (page-offset bits)</strong></td><td><strong>physical</strong></td><td><strong>TLB lookup overlaps array read; alias-free when index ⊆ page offset</strong></td><td>Constrains size×ways per way ≤ page size</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert a-info">
+      <strong>VIPT constraint:</strong> index_bits + offset_bits ≤ 12 (4 KB page offset). For 64 B lines (6 offset bits): 6 index bits = 64 sets per way group.<br>
+      32 KB / 8-way / 64 B = 64 sets → <strong>exactly alias-free</strong>. Growing capacity is done by <em>adding ways</em>, not sets.
+    </div>
+
+    <h3>VIPT Timing Overlap</h3>
+    <div class="pipeline">
+      <div class="ps">
+        <div class="sn2">Cycle 0</div>
+        <div class="snm">Index + TLB</div>
+        <div class="sd">VA[11:6] → SRAM read<br>VA[38:12] → iTLB/dTLB translate in parallel</div>
+      </div>
+      <div class="ps">
+        <div class="sn2">Cycle 1</div>
+        <div class="snm">Tag Compare</div>
+        <div class="sd">Physical tag (PA[43:12]) from TLB compared against 8 SRAM way tags</div>
+      </div>
+      <div class="ps">
+        <div class="sn2">Cycle 1–2</div>
+        <div class="snm">Hit / Miss</div>
+        <div class="sd">Way select on hit → data forward<br>Miss → MSHR alloc → L2 request</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- §7 / §9: µArch -->
+  <section class="section" id="uarch">
+    <h2><span class="sn">§9</span> Internal Microarchitecture</h2>
+
+    <h3>9.1 L1I Pipeline</h3>
+    <div class="mmd">
+      <div class="mermaid">
+flowchart TD
+  FR([Fetch req VA from IFU]) --> IDX[Index = VA 11:6]
+  IDX --> TR[Tag SRAM read — 8 ways]
+  IDX --> DR[Data SRAM read — 8 ways]
+  FR --> ITLB[iTLB: VA→PA 43:12]
+  ITLB --> CMP[Physical tag compare]
+  TR --> CMP
+  CMP -->|hit| SEL[Way select + align bytes]
+  SEL --> IFUout([Instr to IFU])
+  CMP -->|miss| IMSHR[I-MSHR alloc]
+  IMSHR --> REF[Line req to L2]
+  REF -->|fill beats| WR[Write data+tag, early restart]
+  WR --> IFUout
+  style FR fill:#1a3050,stroke:#58a6ff,color:#c9d1d9
+  style IFUout fill:#1f3a1f,stroke:#3fb950,color:#c9d1d9
+  style IMSHR fill:#3a2a1a,stroke:#d29922,color:#c9d1d9
+      </div>
+    </div>
+
+    <h3>9.2 L1D Pipeline</h3>
+    <div class="mmd">
+      <div class="mermaid">
+flowchart TD
+  REQ([Load/Store VA from LSU]) --> DIDX[Index = VA 11:6]
+  DIDX --> DTR[Tag SRAM read]
+  DIDX --> DDR[Data SRAM read]
+  REQ --> DTLB[dTLB: VA→PA]
+  DTLB --> DCMP[Physical tag compare]
+  DTR --> DCMP
+  DCMP -->|load hit| FWD[Way select + WB-forward]
+  FWD --> LD([Load data to LSU])
+  REQ -->|store| WBUF[Write Buffer + store-load CAM]
+  WBUF -->|drain| DARR[Write data array, set dirty]
+  DCMP -->|miss| DMSHR[D-MSHR alloc + victim select]
+  DMSHR -->|dirty victim| EVW[Writeback engine → L2]
+  DMSHR --> DREF[Line req to L2]
+  DREF -->|fill beats| DWR[Write line, wake waiters]
+  DWR --> LD
+  style REQ fill:#1f3a1f,stroke:#3fb950,color:#c9d1d9
+  style LD fill:#1a3050,stroke:#58a6ff,color:#c9d1d9
+  style DMSHR fill:#3a2a1a,stroke:#d29922,color:#c9d1d9
+  style EVW fill:#3a1f1f,stroke:#f78166,color:#c9d1d9
+      </div>
+    </div>
+
+    <div class="alert a-info">Both caches share a common <strong>L1→L2 adapter</strong> that serializes line requests, refills, write-backs, and back-invalidations onto the L2 upstream port.</div>
+  </section>
+
+  <!-- §10: Pipeline -->
+  <section class="section" id="pipeline">
+    <h2><span class="sn">§10</span> Pipeline Architecture</h2>
+
+    <h3>10.1 L1I Pipeline Stages <span class="rec-tag">REC</span></h3>
+    <div class="pipeline">
+      <div class="ps">
+        <div class="sn2">F0 — Request</div>
+        <div class="snm">Index + TLB</div>
+        <div class="sd">Compute index VA[11:6]; launch tag+data SRAM read; iTLB lookup</div>
+      </div>
+      <div class="ps">
+        <div class="sn2">F1 — Lookup</div>
+        <div class="snm">Tag Compare</div>
+        <div class="sd">Physical tag compare (TLB PA); way select</div>
+      </div>
+      <div class="ps">
+        <div class="sn2">F2 — Hit</div>
+        <div class="snm">Align / Deliver</div>
+        <div class="sd">Align/rotate fetch bytes → IFU <em>(1–2 cycle hit)</em><br>On miss → I-MSHR → L2 line request</div>
+      </div>
+      <div class="ps">
+        <div class="sn2">Rn — Refill</div>
+        <div class="snm">Fill Beats</div>
+        <div class="sd">Beats from L2, critical-word-first, early restart, install tag</div>
+      </div>
+    </div>
+
+    <h3>10.2 L1D Pipeline Stages <span class="rec-tag">REC</span></h3>
+    <div class="pipeline">
+      <div class="ps" style="border-top:2px solid var(--accent-d)">
+        <div class="sn2">A0</div>
+        <div class="snm">Addr + dTLB</div>
+        <div class="sd">addr/index + dTLB translate</div>
+      </div>
+      <div class="ps" style="border-top:2px solid var(--accent-d)">
+        <div class="sn2">A1</div>
+        <div class="snm">Tag Compare</div>
+        <div class="sd">tag compare + way select</div>
+      </div>
+      <div class="ps" style="border-top:2px solid var(--accent-d)">
+        <div class="sn2">A2</div>
+        <div class="snm">Forward + Align</div>
+        <div class="sd">data forward / align → LSU</div>
+      </div>
+    </div>
+
+    <h3>10.3 Load-Miss Sequence Diagram</h3>
+    <div class="mmd">
+      <div class="mermaid">
+sequenceDiagram
+    participant LSU
+    participant L1D
+    participant MS as D-MSHR
+    participant L2
+    LSU->>L1D: load VA
+    L1D->>L1D: A0..A1 lookup = MISS
+    L1D->>MS: allocate MSHR, pick victim
+    alt victim dirty
+      MS->>L2: writeback victim line
+    end
+    MS->>L2: line request (read, PA)
+    L2-->>MS: refill beats (critical word first)
+    MS->>L1D: install line, set valid
+    L1D-->>LSU: critical-word data (early restart), wake
+    MS->>MS: free MSHR
+      </div>
+    </div>
+  </section>
+
+  <!-- §6: RV64GC -->
+  <section class="section" id="rv64gc">
+    <h2><span class="sn">§6</span> RV64GC Integration</h2>
+    <div class="alert a-warn">⚠️ The RV64GC core does not exist yet. This section specifies the <strong>expected interaction surface</strong> so the L1 is drop-in ready for any conventional in-order or lightly-OoO Linux-capable core.</div>
+
+    <h3>RV64A Atomic Instructions</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Op</th><th>L1D Handling</th></tr></thead>
+        <tbody>
+          <tr><td><code>LR.W/D</code></td><td>Load + set a per-hart <strong>reservation</strong> (line address + valid)</td></tr>
+          <tr><td><code>SC.W/D</code></td><td>Succeeds only if reservation still valid (no intervening write/back-invalidate); else fail</td></tr>
+          <tr><td><code>AMO*</code></td><td>Acquire line in writable/owned state via L2 (write-allocate if miss), perform RMW at L1D, mark dirty</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert a-purple">🔐 A back-invalidation from L2 (remote write) <strong>clears any matching reservation</strong>, giving correct LR/SC semantics across cores once multicore coherency is active.</div>
+  </section>
+
+  <!-- §7: Address Translation -->
+  <section class="section" id="xlat">
+    <h2><span class="sn purple">§7</span> Address Translation — Sv39</h2>
+
+    <h3>Sv39 Virtual Address Layout</h3>
+    <div class="addr-breakdown">
+      <div class="addr-field af-vpn" style="flex:9">
+        <span class="bits">VA[38:30]</span>
+        <span class="name">VPN[2]</span>
+        <span class="width">9 bits</span>
+      </div>
+      <div class="addr-field af-vpn" style="flex:9">
+        <span class="bits">VA[29:21]</span>
+        <span class="name">VPN[1]</span>
+        <span class="width">9 bits</span>
+      </div>
+      <div class="addr-field af-vpn" style="flex:9">
+        <span class="bits">VA[20:12]</span>
+        <span class="name">VPN[0]</span>
+        <span class="width">9 bits</span>
+      </div>
+      <div class="addr-field af-pg" style="flex:12">
+        <span class="bits">VA[11:0]</span>
+        <span class="name">page offset</span>
+        <span class="width">12 bits (4 KB)</span>
+      </div>
+    </div>
+    <p style="font-size:12px; color:var(--text-dim); margin-top:6px; margin-bottom:12px;">39-bit VA → PA up to 44 bits. VA[11:0] is translation-invariant (page offset).</p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>TLB Interaction</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td>Index source</td><td>VA[11:6] — within page offset, no TLB needed for indexing → VIPT overlap</td></tr>
+          <tr><td>Tag source</td><td>PA[43:12] from TLB — compared physically after translation completes</td></tr>
+          <tr><td>Page-table walk</td><td>Up to 3 dependent loads (Sv39 levels) through L1D/L2 cacheable path. L1D treats PTW as ordinary cacheable loads.</td></tr>
+          <tr><td>SFENCE.VMA</td><td>Invalidates TLB entries by VA/ASID. Physical tags mean <strong>caches need not be flushed</strong> — only TLBs.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- §11: L1-L2 Interface -->
+  <section class="section" id="l1l2">
+    <h2><span class="sn">§11</span> L1–L2 Interface</h2>
+    <div class="alert a-info">L1 attaches to the <strong>unified L2's upstream port</strong> (documented as L1-agnostic in <code>docs/architecture/L2/l2_cache_controller.md §2.1, §7</code>). The L2 owns the clock-domain crossing (2 GHz core → 1 GHz NoC) and is the coherence point.</div>
+
+    <h3>11.1 Channels <span class="rec-tag">REC</span></h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Channel</th><th>Dir</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>L1 request</td><td>L1 → L2</td><td>Line read (I-fetch / load), read-for-ownership (store/AMO), upgrade</td></tr>
+          <tr><td>Refill response</td><td>L2 → L1</td><td>Line data beats (2 × 256 b), critical-word-first, with status</td></tr>
+          <tr><td>Write-back</td><td>L1 → L2</td><td>Dirty victim line + data (write-back, write-allocate eviction)</td></tr>
+          <tr><td>Eviction notify (clean)</td><td>L1 → L2</td><td>Optional clean-drop notice to keep L2 inclusion bits accurate</td></tr>
+          <tr><td>Back-invalidate / downgrade</td><td>L2 → L1</td><td>L2 (inclusive) invalidates/downgrades an L1 line on snoop/eviction</td></tr>
+          <tr><td>Reservation clear</td><td>L2 → L1</td><td>Implied by back-invalidate; clears LR/SC reservation</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>11.2 Request Opcodes</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>L1 Op</th><th>Mapped to CHI REQ (by L2)</th></tr></thead>
+        <tbody>
+          <tr><td><code>ReadI</code></td><td>ReadShared</td></tr>
+          <tr><td><code>ReadShared</code></td><td>ReadShared</td></tr>
+          <tr><td><code>ReadForOwnership</code></td><td>ReadUnique</td></tr>
+          <tr><td><code>Upgrade</code></td><td>MakeUnique</td></tr>
+          <tr><td><code>WriteBack</code></td><td>WriteBackFull</td></tr>
+          <tr><td><code>EvictNotify</code></td><td>Evict</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert a-success">The L1 emits <strong>no CHI</strong>. CHI mapping is entirely the L2's responsibility.</div>
+  </section>
+
+  <!-- §12: Coherency -->
+  <section class="section" id="coherency">
+    <h2><span class="sn">§12</span> Coherency Considerations</h2>
+    <div class="alert a-warn">⚠️ <strong>The L2 is the coherency point; the L1 caches are private.</strong> The L1 is not a CHI agent, is not directly snooped from the NoC, and holds no MOESI bus state.</div>
+
+    <h3>12.1 L1D Private States</h3>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin:12px 0;">
+      <div style="background:#21262d; border:1px solid #30363d; border-radius:6px; padding:10px 18px; text-align:center;">
+        <div style="font-weight:700; font-size:16px; color:#8b949e; font-family:monospace;">I</div>
+        <div style="font-size:11px; color:#8b949e;">Invalid</div>
+      </div>
+      <div style="background:#1f3a1f; border:1px solid #3fb950; border-radius:6px; padding:10px 18px; text-align:center;">
+        <div style="font-weight:700; font-size:16px; color:#56d364; font-family:monospace;">C</div>
+        <div style="font-size:11px; color:#56d364;">Clean</div>
+      </div>
+      <div style="background:#3a1f1f; border:1px solid #d29922; border-radius:6px; padding:10px 18px; text-align:center;">
+        <div style="font-weight:700; font-size:16px; color:#ffa657; font-family:monospace;">D</div>
+        <div style="font-size:11px; color:#ffa657;">Dirty</div>
+      </div>
+      <div style="align-self:center; font-size:12px; color:var(--text-dim); max-width:300px;">
+        L1D holds only private {Invalid, Clean, Dirty}. The richer MOESI (I/SC/UC/UD/SD) lives <strong>only in the L2</strong>.
+      </div>
+    </div>
+
+    <h3>12.2 L2 Actions on L1</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>L2 Action to L1</th><th>L1I Response</th><th>L1D Response</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Invalidate</strong> (make-invalid)</td><td>Drop line</td><td>Drop line, clear reservation; data must have been WB'd</td></tr>
+          <tr><td><strong>Clean-invalidate</strong></td><td>Drop line</td><td>Write back if dirty, then drop</td></tr>
+          <tr><td><strong>Downgrade</strong> (to shared/clean)</td><td>n/a</td><td>Write back dirty data, keep clean copy</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>12.3 Instruction/Data Coherence</h3>
+    <div class="alert a-warn">⚠️ L1I is <strong>not kept coherent with stores in hardware</strong> (standard RISC-V). Software uses <code>FENCE.I</code> to invalidate L1I after self-modifying code. L1I exposes a full / address-ranged invalidate for this.</div>
+  </section>
+
+  <!-- §13: MSHR -->
+  <section class="section" id="mshr">
+    <h2><span class="sn">§13</span> Miss Handling Architecture (MSHR)</h2>
+
+    <div class="split">
+      <div class="split-card i-card">
+        <h4>L1I MSHR — 2–4 entries <span class="rec-tag">REC</span></h4>
+        <p style="font-size:12px; color:var(--text-dim);">Overlap sequential + branch-target fetch misses.</p>
+      </div>
+      <div class="split-card d-card">
+        <h4>L1D MSHR — 8 entries <span class="rec-tag">REC</span></h4>
+        <p style="font-size:12px; color:var(--text-dim);">Non-blocking loads under misses; ≤ L2's 16-deep outstanding budget so L1 never over-subscribes the RN.</p>
+      </div>
+    </div>
+
+    <h3>MSHR Entry Fields</h3>
+    <div class="mshr-fields">
+      <div class="mf"><div class="fn">Valid</div><div class="fb">1 bit</div></div>
+      <div class="mf"><div class="fn">Line PA</div><div class="fb">38 bits</div></div>
+      <div class="mf"><div class="fn">Op / state target</div><div class="fb">encoded</div></div>
+      <div class="mf"><div class="fn">Victim way + dirty</div><div class="fb">way index + 1 bit</div></div>
+      <div class="mf"><div class="fn">Requester list</div><div class="fb">per-port</div></div>
+      <div class="mf"><div class="fn">Critical-word index</div><div class="fb">beat selector</div></div>
+      <div class="mf"><div class="fn">Sub-state</div><div class="fb">issued/waiting/writing/done</div></div>
+    </div>
+
+    <h3>13.2 Hazard Handling</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Hazard</th><th>Detection</th><th>Resolution</th></tr></thead>
+        <tbody>
+          <tr><td>Load after store, same line</td><td>Write-buffer CAM</td><td>Forward from write buffer</td></tr>
+          <tr><td>Store to line with open miss</td><td>MSHR CAM</td><td>Merge; complete store on fill</td></tr>
+          <tr><td>Back-invalidate vs in-flight miss</td><td>MSHR vs invalidate addr</td><td>Order per L2 contract; squash/refetch if needed</td></tr>
+          <tr><td>Eviction vs incoming refill to victim way</td><td>Victim sub-state</td><td>Way not reused until writeback accepted by L2</td></tr>
+          <tr><td>LR reservation vs back-invalidate</td><td>Reservation address compare</td><td>Clear reservation → subsequent SC fails</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- §14: Write Policy -->
+  <section class="section" id="writepol">
+    <h2><span class="sn">§14</span> Write Policies</h2>
+
+    <div class="tabs" id="wt">
+      <div class="tab active" onclick="showTab('wt','wtwb')">Write-Through vs Write-Back</div>
+      <div class="tab" onclick="showTab('wt','wawna')">Write-Allocate vs No-Write-Allocate</div>
+    </div>
+    <div class="tab-content active" id="wt-wtwb">
+      <div class="tw">
+        <table>
+          <thead><tr><th>Policy</th><th>Pros</th><th>Cons</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr><td>Write-through</td><td>Simple; L2 always current; easier coherence</td><td>High L1→L2 write bandwidth; store-bound</td><td>❌ Reject</td></tr>
+            <tr class="rec-row"><td><strong>Write-back ✓</strong></td><td><strong>Minimal downstream write traffic; coalesces stores</strong></td><td>Needs dirty tracking + writeback engine</td><td>✅ <strong>Adopt</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-content" id="wt-wawna">
+      <div class="tw">
+        <table>
+          <thead><tr><th>Policy</th><th>Pros</th><th>Cons</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr class="rec-row"><td><strong>Write-allocate ✓</strong></td><td><strong>Store working set cached; pairs with write-back; good OS/app locality</strong></td><td>Refill on store miss</td><td>✅ <strong>Adopt</strong></td></tr>
+            <tr><td>No-write-allocate</td><td>Avoids refill on streaming stores</td><td>Repeated store misses bypass cache</td><td>❌ Reject (offer write-combine for streaming, §16)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="alert a-success">✓ <strong>Write-back + write-allocate</strong> for L1D. Minimizes L1→L2 / CHI / DDR write bandwidth. Aligns with L2/HN-F write-back coherence model downstream. <span class="rec-tag">REC</span></div>
+  </section>
+
+  <!-- §15: Replacement -->
+  <section class="section" id="repl">
+    <h2><span class="sn">§15</span> Replacement Policy</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Policy</th><th>Bits/set (8-way)</th><th>Hit-rate vs LRU</th><th>HW cost</th><th>Timing</th></tr></thead>
+        <tbody>
+          <tr><td>Random</td><td>~0</td><td>worst</td><td>trivial</td><td>best</td></tr>
+          <tr><td>PLRU (MRU)</td><td>8</td><td>~1–2% worse</td><td>low</td><td>good</td></tr>
+          <tr class="rec-row"><td><strong>Tree-PLRU ✓</strong></td><td><strong>7</strong></td><td><strong>~0.5–1% worse</strong></td><td><strong>low</strong></td><td><strong>good</strong></td></tr>
+          <tr><td>True LRU</td><td>~24</td><td>best</td><td>high</td><td>update on critical path</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert a-success">✓ <strong>Tree-PLRU</strong> for both L1I and L1D (8-way): 7 bits/set, simple path-flip off critical path, near-LRU hit rate. Matches L2's replacement choice — keeps hierarchy consistent. <span class="rec-tag">REC</span></div>
+  </section>
+
+  <!-- §16: Performance Features -->
+  <section class="section" id="perf">
+    <h2><span class="sn">§16</span> Performance Features</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Feature</th><th>Phase</th><th>Rationale</th></tr></thead>
+        <tbody>
+          <tr><td>Critical-word-first refill</td><td><span class="badge b-p1">Phase 1</span></td><td>Cheap (2-beat line); deliver needed word first</td></tr>
+          <tr><td>Early restart</td><td><span class="badge b-p1">Phase 1</span></td><td>Wake waiting load/fetch on the critical beat</td></tr>
+          <tr><td>Non-blocking caches (MSHRs)</td><td><span class="badge b-p1">Phase 1</span></td><td>Essential to hide L2/DDR latency; L1D 8 / L1I 2–4</td></tr>
+          <tr><td>Store buffer / write buffer</td><td><span class="badge b-p1">Phase 1</span></td><td>Decouples store retire from array write; store-to-load forward</td></tr>
+          <tr><td>Next-line / stride prefetch (L1D)</td><td><span class="badge b-p2">Phase 2</span></td><td>High value once LSU access patterns exist; tag-only probe to avoid pollution</td></tr>
+          <tr><td>L1I next-line prefetch / stream buffer</td><td><span class="badge b-p2">Phase 2</span></td><td>Sequential fetch benefits strongly</td></tr>
+          <tr><td>Write combining (streaming stores)</td><td><span class="badge b-p2">Phase 2</span></td><td>Coalesce non-temporal stores, avoid allocate</td></tr>
+          <tr><td>Banked dual-load L1D</td><td><span class="badge b-p2">Phase 2</span></td><td>2 loads/cycle for higher IPC</td></tr>
+          <tr><td>HW prefetch (correlated / IP-stride)</td><td><span class="badge b-future2">Future</span></td><td>Needs profiling on real core; leave MSHR/prefetch-bit hooks</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert a-info"><strong>Phase 1</strong> (verifiable without a real core): CWF, early restart, non-blocking MSHRs, write buffer. <strong>Phase 2</strong> adds prefetch, write combining, dual-load.</div>
+  </section>
+
+  <!-- §17: ECC -->
+  <section class="section" id="ecc">
+    <h2><span class="sn">§17</span> ECC and Reliability</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Structure</th><th>Protection</th><th>Detect / Correct</th><th>Rationale</th></tr></thead>
+        <tbody>
+          <tr><td>L1I tag</td><td>Parity</td><td>Detect only</td><td>RO + re-fetchable → invalidate &amp; refill on error</td></tr>
+          <tr><td>L1I data</td><td>Parity</td><td>Detect only</td><td>Re-fillable from L2; no correction needed</td></tr>
+          <tr><td>L1D tag</td><td><strong>SECDED ECC</strong></td><td>1-correct / 2-detect</td><td>Tag flip → false hit/miss → must correct</td></tr>
+          <tr><td>L1D data (clean)</td><td>Parity</td><td>Detect only</td><td>Re-fillable → invalidate &amp; refill</td></tr>
+          <tr class="rec-row"><td><strong>L1D data (dirty)</strong></td><td><strong>SECDED ECC</strong></td><td><strong>1-correct / 2-detect</strong></td><td><strong>Dirty data is the only copy → must correct</strong></td></tr>
+          <tr><td>Write buffer / MSHR</td><td>Parity</td><td>Detect only</td><td>Short-lived</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>ECC Coverage Visualization</h3>
+    <div style="margin: 12px 0;">
+      <div class="ecc-row"><span style="width:160px;font-size:12px;">L1I tag</span><div class="ecc-bar" style="background:linear-gradient(90deg,#d29922 50%,#21262d 50%)"></div><span style="font-size:12px;color:var(--accent3);width:160px;">Parity (detect)</span></div>
+      <div class="ecc-row"><span style="width:160px;font-size:12px;">L1I data</span><div class="ecc-bar" style="background:linear-gradient(90deg,#d29922 50%,#21262d 50%)"></div><span style="font-size:12px;color:var(--accent3);width:160px;">Parity (detect)</span></div>
+      <div class="ecc-row"><span style="width:160px;font-size:12px;">L1D tag</span><div class="ecc-bar" style="background:linear-gradient(90deg,#3fb950 100%,transparent 100%)"></div><span style="font-size:12px;color:var(--accent-d);width:160px;">SECDED (72,64)</span></div>
+      <div class="ecc-row"><span style="width:160px;font-size:12px;">L1D data (clean)</span><div class="ecc-bar" style="background:linear-gradient(90deg,#d29922 50%,#21262d 50%)"></div><span style="font-size:12px;color:var(--accent3);width:160px;">Parity (detect)</span></div>
+      <div class="ecc-row"><span style="width:160px;font-size:12px;">L1D data (dirty)</span><div class="ecc-bar" style="background:linear-gradient(90deg,#f78166 100%,transparent 100%)"></div><span style="font-size:12px;color:var(--accent4);width:160px;">SECDED — only copy!</span></div>
+      <div class="ecc-row"><span style="width:160px;font-size:12px;">WB / MSHR</span><div class="ecc-bar" style="background:linear-gradient(90deg,#d29922 35%,#21262d 35%)"></div><span style="font-size:12px;color:var(--accent3);width:160px;">Parity (detect)</span></div>
+    </div>
+    <div class="alert a-warn">⚠️ <strong>Asymmetric protection:</strong> parity where data is re-fillable; SECDED where data is unique or correctness-critical (L1D tags, dirty L1D data). Uncorrectable 2-bit errors surface as precise access faults.</div>
+  </section>
+
+  <!-- §18: Verification -->
+  <section class="section" id="verif">
+    <h2><span class="sn">§18</span> Verification Strategy</h2>
+    <div class="alert a-success">Both L1s are driven by a <strong>synthesizable IFU/LSU traffic generator</strong> and an <strong>L2 stub</strong> (refills + back-invalidations) — fully verifiable before the RV64GC core exists.</div>
+
+    <h3>18.1 Verification Levels</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Level</th><th>Focus</th><th>Method</th></tr></thead>
+        <tbody>
+          <tr><td>Unit</td><td>Tag pipeline, MSHR, write buffer, PLRU, ECC/parity, reservation logic</td><td>Directed + UVM/cocotb benches; reuse <code>tb/</code>, <code>sim/</code></td></tr>
+          <tr><td>L1I</td><td>Fetch/redirect/squash, line fill, FENCE.I invalidate, RVC boundary fetch</td><td>Directed + constrained-random fetch streams</td></tr>
+          <tr><td>L1D</td><td>Load/store/forwarding, write-back/allocate, eviction, atomics (LR/SC, AMO)</td><td>Constrained-random with golden memory model</td></tr>
+          <tr><td>MMU interaction</td><td>Sv39 walk via L1D, TLB miss/refill, SFENCE.VMA, superpages, page faults</td><td>Directed translation tests + random VA streams</td></tr>
+          <tr><td>Atomics</td><td>LR/SC success/fail vs back-invalidate, AMO RMW correctness</td><td>Directed litmus + random interleavings</td></tr>
+          <tr><td>Coherency readiness</td><td>Back-invalidate/downgrade handling, inclusion victim, reservation clear</td><td>Drive L1 from L2-stub issuing invalidations</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>18.2 Coverage Goals <span class="rec-tag">REC</span></h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Coverage Class</th><th>Goal</th></tr></thead>
+        <tbody>
+          <tr><td>Hit/miss × way × set</td><td>All ways hit; representative sets</td></tr>
+          <tr><td>MSHR occupancy (0…max), merge depth</td><td>All bins including full + secondary merge</td></tr>
+          <tr><td>Write buffer occupancy + forward</td><td>Full + forward-from-every-slot</td></tr>
+          <tr><td>Atomics (LR/SC pass/fail, each AMO)</td><td>100% of ops; reservation race bins</td></tr>
+          <tr><td>Back-invalidate vs in-flight miss</td><td>All hazard orderings</td></tr>
+          <tr><td>ECC/parity 0/1/2-bit per array</td><td>All</td></tr>
+          <tr><td>TLB miss / superpage / page-fault</td><td>All translation outcomes</td></tr>
+          <tr><td>Replacement victim per way</td><td>All ways</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- §19: Scalability -->
+  <section class="section" id="scale">
+    <h2><span class="sn">§19</span> Scalability Roadmap</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Stage</th><th>Evolution</th><th>L1 Impact</th></tr></thead>
+        <tbody>
+          <tr><td>Single core</td><td>1× (L1I+L1D) → L2 → RN-F</td><td>Baseline this spec</td></tr>
+          <tr><td>Dual core</td><td>2× private L1+L2, 2 RN-F sockets</td><td><strong>None</strong> — L1 already private + invalidation-ready</td></tr>
+          <tr><td>Quad core</td><td>4× private L1+L2 (fills all 4 RN-F sockets in <code>mesh_4x4.yaml</code>)</td><td><strong>None</strong> — replicate</td></tr>
+          <tr><td>Shared LLC</td><td>HN-F LLC slices behind mesh</td><td><strong>None</strong> — L1 unaffected; L2/HN handle</td></tr>
+          <tr><td>System cache (SLC)</td><td>Optional tier behind HN-F</td><td><strong>None</strong></td></tr>
+          <tr><td>Full CHI coherency</td><td>HN-F directory snoops L2s; L2 back-invalidates L1</td><td>L1 already honours back-invalidate + reservation clear</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert a-success">The L1 architecture is <strong>multicore-ready by construction</strong> — it pushed all coherence to the L2. Scaling requires only replication of the (L1+L2) cluster.</div>
+  </section>
+
+  <!-- §20: Design Summary -->
+  <section class="section" id="recs">
+    <h2><span class="sn">§20</span> Design Recommendations Summary</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Decision</th><th>Recommendation <span class="rec-tag">REC</span></th><th>Justification</th></tr></thead>
+        <tbody>
+          <tr class="rec-row"><td>L1I config</td><td>32 KB, 8-way, 64 B line, VIPT, parity</td><td>Alias-free, strong fetch hit rate, re-fillable → parity suffices</td></tr>
+          <tr class="rec-row"><td>L1D config</td><td>32 KB, 8-way, 64 B line, VIPT, WB/WA</td><td>Symmetric, alias-free, low downstream write BW</td></tr>
+          <tr><td>Cache line size</td><td>64 B (fixed)</td><td>Equals coherence granule / CHI transfer / L2 line</td></tr>
+          <tr class="rec-row"><td>Associativity</td><td>8-way</td><td>Keeps index ⊆ 4 KB page offset (alias-free) at 32 KB</td></tr>
+          <tr class="rec-row"><td>Organization</td><td>VIPT, physical tags</td><td>PIPT correctness at near-VIVT latency; no context-switch flush</td></tr>
+          <tr class="rec-row"><td>Write policy</td><td>Write-back + write-allocate</td><td>Minimizes CHI/DDR write traffic, exploits store locality</td></tr>
+          <tr class="rec-row"><td>Replacement</td><td>Tree-PLRU</td><td>Near-LRU, 7 b/set, off-critical-path update</td></tr>
+          <tr class="rec-row"><td>MSHRs</td><td>L1D 8 / L1I 2–4</td><td>Non-blocking, within L2's 16 outstanding budget</td></tr>
+          <tr class="rec-row"><td>ECC</td><td>Parity (re-fillable) + SECDED (L1D tags &amp; dirty data)</td><td>Protect only what can't be re-fetched</td></tr>
+          <tr><td>Coherence</td><td>L2 is point of coherence; L1 private + back-invalidate</td><td>Scales to multicore with no L1 redesign</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Appendix A -->
+  <section class="section" id="ifa">
+    <h2><span class="sn">A</span> L1 ↔ Core Interface <span class="rec-tag">REC</span></h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Signal Group</th><th>Dir</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>if_req {valid, vaddr, fetch_width}</code></td><td>IFU→L1I</td><td>Fetch group request</td></tr>
+          <tr><td><code>if_resp {valid, instr_bytes, fault}</code></td><td>L1I→IFU</td><td>Bytes + access/page fault</td></tr>
+          <tr><td><code>if_redirect {valid, new_pc}</code></td><td>IFU→L1I</td><td>Squash + redirect</td></tr>
+          <tr><td><code>ld_req {valid, vaddr, size, signed}</code></td><td>LSU→L1D</td><td>Load</td></tr>
+          <tr><td><code>ld_resp {valid, data, fault}</code></td><td>L1D→LSU</td><td>Load result</td></tr>
+          <tr><td><code>st_req {valid, vaddr, size, data}</code></td><td>LSU→L1D</td><td>Store → write buffer</td></tr>
+          <tr><td><code>amo_req {valid, vaddr, op, data}</code></td><td>LSU→L1D</td><td>RV64A LR/SC/AMO</td></tr>
+          <tr><td><code>fence {fence_i, sfence_vma, asid/va}</code></td><td>core→L1</td><td>Ordering/translation fences</td></tr>
+          <tr><td><code>tlb_xchg {va, asid, pa, perms, fault}</code></td><td>MMU↔L1</td><td>Parallel translation</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Appendix B -->
+  <section class="section" id="ifb">
+    <h2><span class="sn">B</span> L1 ↔ L2 Interface Signals</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Signal Group</th><th>Dir</th><th>L2-Side Mapping</th></tr></thead>
+        <tbody>
+          <tr><td><code>l1_req {valid, op, paddr, size, qos, id}</code></td><td>L1→L2</td><td>L2 upstream arbiter (<code>cache_req_*</code> after L2 logic)</td></tr>
+          <tr><td><code>l1_refill {valid, beat_data(256), crit, status, id}</code></td><td>L2→L1</td><td>L2 fill engine output</td></tr>
+          <tr><td><code>l1_wb {valid, paddr, data, id}</code></td><td>L1→L2</td><td>L2 write-back/eviction intake</td></tr>
+          <tr><td><code>l1_inval {valid, paddr, type(inv/cleaninv/downgrade)}</code></td><td>L2→L1</td><td>L2 back-invalidation (inclusion)</td></tr>
+          <tr><td><code>l1_resv_clear</code></td><td>L2→L1</td><td>Implied by inval; clears LR/SC</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Appendix C -->
+  <section class="section" id="ifc">
+    <h2><span class="sn">C</span> Key Internal Structures <span class="rec-tag">REC</span></h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Structure</th><th>Size</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>L1I data</td><td>32 KB, banked</td><td>Parity</td></tr>
+          <tr><td>L1I tag</td><td>64 sets × 8 × (32 tag + V + parity)</td><td>RO</td></tr>
+          <tr><td>L1D data</td><td>32 KB, 2 banks</td><td>Parity (clean) / SECDED (dirty)</td></tr>
+          <tr><td>L1D tag</td><td>64 sets × 8 × (32 tag + V + D + ECC)</td><td>SECDED</td></tr>
+          <tr><td>PLRU (each)</td><td>64 sets × 7 b</td><td>Tree-PLRU</td></tr>
+          <tr><td>L1D MSHR</td><td>8 entries</td><td>≤ L2 16 budget</td></tr>
+          <tr><td>L1I MSHR</td><td>2–4 entries</td><td>Fetch overlap</td></tr>
+          <tr><td>Write buffer</td><td>8–16 entries × 64 B (sub-line)</td><td>Store-load CAM</td></tr>
+          <tr><td>iTLB / dTLB</td><td>32–64 entries, fully-assoc</td><td>Sv39, ASID-tagged</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Appendix D -->
+  <section class="section" id="ifd">
+    <h2><span class="sn">D</span> RTL Parameter Reference</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Parameter <span class="rec-tag">REC</span></th><th>Default</th><th>Bound by Repo Fact</th></tr></thead>
+        <tbody>
+          <tr class="rec-row"><td><code>L1x_SIZE_KB</code></td><td>32</td><td>Recommendation (alias-free knee)</td></tr>
+          <tr class="rec-row"><td><code>L1x_WAYS</code></td><td>8</td><td>Keeps index ⊆ 4 KB page offset</td></tr>
+          <tr><td><code>L1_LINE_BYTES</code></td><td>64</td><td><code>PA_CACHELINE_BYTES=64</code> (fixed)</td></tr>
+          <tr><td><code>PA_WIDTH</code></td><td>44</td><td><code>PA_WIDTH</code> (fixed)</td></tr>
+          <tr><td><code>PAGE_BYTES</code></td><td>4096</td><td><code>PA_PAGE_BYTES</code> (fixed)</td></tr>
+          <tr><td><code>REFILL_BEAT_BITS</code></td><td>256</td><td>L2/CHI <code>data_width=256</code> (fixed)</td></tr>
+          <tr class="rec-row"><td><code>L1D_MSHRS</code></td><td>8</td><td>≤ <code>rn_outstanding=16</code></td></tr>
+          <tr><td><code>translation</code></td><td>Sv39</td><td>RV64GC Linux baseline</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert a-warn" style="margin-top:16px;">Items marked <span class="rec-tag">REC</span> are architectural recommendations to be ratified at RTL kickoff. Unmarked parameters are traceable to existing repository configuration, the L2 specification, or the RV64GC/Sv39 baseline.</div>
+  </section>
+
+  <div style="height:40px;"></div>
+</main>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      background: '#161b22',
+      primaryColor: '#1a3050',
+      primaryTextColor: '#c9d1d9',
+      primaryBorderColor: '#58a6ff',
+      lineColor: '#58a6ff',
+      secondaryColor: '#1c2333',
+      tertiaryColor: '#1f2937',
+      nodeTextColor: '#c9d1d9',
+    },
+    flowchart: { curve: 'basis', htmlLabels: true },
+    sequence: { actorMargin: 50, mirrorActors: false }
+  });
+
+  function showTab(groupId, tabId) {
+    const group = document.getElementById(groupId);
+    group.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll(`[id^="${groupId}-"]`).forEach(c => {
+      if (c.classList.contains('tab-content')) c.classList.remove('active');
+    });
+    document.getElementById(`${groupId}-${tabId}`).classList.add('active');
+  }
+
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const a = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -60% 0px' });
+  sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

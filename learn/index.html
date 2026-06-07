@@ -2,342 +2,565 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HANUMA SoC Architecture Portal</title>
 
-  <title>HANUMA Learning Portal</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(255, 255, 255, 0.05);
 
-  <style>
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
 
-    * {
-      box-sizing: border-box;
-    }
+            --accent: #38bdf8;
+            --border: rgba(255, 255, 255, 0.08);
+        }
 
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #0f172a, #1e293b, #111827);
-      color: white;
-      min-height: 100vh;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .hanuma-page {
-      padding: 40px 20px;
-    }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(135deg,
+                    #020617 0%,
+                    #0f172a 45%,
+                    #111827 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
 
-    .hanuma-container {
-      max-width: 1200px;
-      margin: auto;
-    }
+        .container {
+            max-width: 1500px;
+            margin: auto;
+            padding: 40px 24px 80px;
+        }
 
-    .hanuma-title {
-      text-align: center;
-      font-size: 52px;
-      color: #38bdf8;
-      margin-bottom: 12px;
-    }
+        /* ------------------------------------------------ */
+        /* HERO                                             */
+        /* ------------------------------------------------ */
 
-    .hanuma-subtitle {
-      text-align: center;
-      color: #cbd5e1;
-      margin-bottom: 45px;
-      font-size: 18px;
-    }
+        .hero {
+            text-align: center;
+            margin-bottom: 50px;
+        }
 
-    .hanuma-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
-    }
+        .hero h1 {
+            font-size: 58px;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
 
-    .hanuma-card {
-      display: block;
-      text-decoration: none;
-      color: white;
-      background: rgba(255,255,255,0.08);
-      border-radius: 18px;
-      padding: 24px;
-      border: 1px solid rgba(255,255,255,0.08);
-      transition: all 0.25s ease;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.25);
-      backdrop-filter: blur(10px);
-    }
+        .hero p {
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
 
-    .hanuma-card:hover {
-      transform: translateY(-6px) scale(1.02);
-      background: rgba(56,189,248,0.15);
-      border-color: #38bdf8;
-      box-shadow: 0 16px 30px rgba(0,0,0,0.45);
-    }
+        /* ------------------------------------------------ */
+        /* STATS                                            */
+        /* ------------------------------------------------ */
 
-    .hanuma-icon {
-      font-size: 34px;
-      margin-bottom: 14px;
-    }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 60px;
+        }
 
-    .hanuma-card-title {
-      font-size: 22px;
-      font-weight: bold;
-      margin-bottom: 12px;
-    }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
 
-    .hanuma-card-desc {
-      color: #d1d5db;
-      line-height: 1.6;
-      font-size: 14px;
-    }
+        .stat-number {
+            font-size: 30px;
+            font-weight: bold;
+            color: var(--accent);
+        }
 
-    .hanuma-footer {
-      text-align: center;
-      margin-top: 50px;
-      color: #94a3b8;
-      font-size: 14px;
-      padding-bottom: 30px;
-    }
+        .stat-label {
+            margin-top: 8px;
+            color: var(--text-muted);
+        }
 
-    @media (max-width: 600px) {
+        /* ------------------------------------------------ */
+        /* SECTION                                          */
+        /* ------------------------------------------------ */
 
-      .hanuma-title {
-        font-size: 36px;
-      }
+        .section {
+            margin-bottom: 60px;
+        }
 
-      .hanuma-card-title {
-        font-size: 18px;
-      }
+        .section-title {
+            font-size: 30px;
+            color: var(--accent);
+            margin-bottom: 24px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
 
-      .hanuma-subtitle {
-        font-size: 15px;
-      }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit,
+                    minmax(280px, 1fr));
+            gap: 22px;
+        }
 
-    }
+        /* ------------------------------------------------ */
+        /* CARD                                             */
+        /* ------------------------------------------------ */
 
-  </style>
+        .card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+
+            padding: 24px;
+
+            transition: all 0.25s ease;
+
+            backdrop-filter: blur(12px);
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.10);
+            box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .card-desc {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        /* ------------------------------------------------ */
+        /* FOOTER                                           */
+        /* ------------------------------------------------ */
+
+        footer {
+            text-align: center;
+            margin-top: 80px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            padding-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+
+            .hero h1 {
+                font-size: 40px;
+            }
+
+            .section-title {
+                font-size: 24px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-  <div class="hanuma-page">
+    <div class="container">
 
-    <div class="hanuma-container">
+        <!-- HERO -->
 
-      <h1 class="hanuma-title">🚀 HANUMA Portal</h1>
+        <div class="hero">
+            <h1>🚀 HANUMA</h1>
+            <p>
+                RV64GC • AMBA CHI • NoC • Cache • DDR5 Controller
+            </p>
+        </div>
 
-      <div class="hanuma-subtitle">
-        AMBA CHI • NoC • Cache • RTL Learning Platform
-      </div>
+        <!-- STATS -->
 
-      <div class="hanuma-grid">
+        <div class="stats">
 
-        <a class="hanuma-card" href="iron-protocol-dashboard-v2.html">
-          <div class="hanuma-icon">🛡️</div>
-          <div class="hanuma-card-title">IRON Protocol Dashboard</div>
-          <div class="hanuma-card-desc">
-            Interactive protocol dashboard for coherency and transaction flow visualization.
-          </div>
-        </a>
-		
-		<a class="hanuma-card" href="claude_products_guide.html">
-			<div class="hanuma-icon">🤖</div>
-			<div class="hanuma-card-title">Claude Products Guide</div>
-			<div class="hanuma-card-desc">
-				Overview of Claude models, capabilities, subscriptions and product offerings.
-			</div>
-		</a>
+            <div class="stat-card">
+                <div class="stat-number">4×4</div>
+                <div class="stat-label">CHI Mesh NoC</div>
+            </div>
 
-        <a class="hanuma-card" href="AMBA_CHI_Issue_F_Master_Guide.html">
-          <div class="hanuma-icon">🧠</div>
-          <div class="hanuma-card-title">CHI Roadmap</div>
-          <div class="hanuma-card-desc">
-            Complete AMBA CHI roadmap and architecture learning guide.
-          </div>
-        </a>
-				
-		<a class="hanuma-card" href="axi_chi_diagram.html">
-			<div class="hanuma-icon">🔄</div>
-			<div class="hanuma-card-title">AXI ↔ CHI Diagram</div>
-			<div class="hanuma-card-desc">
-				Visual mapping between AXI and CHI transactions, channels and protocol flows.
-			</div>
-		</a>
+            <div class="stat-card">
+                <div class="stat-number">17</div>
+                <div class="stat-label">CHI Nodes</div>
+            </div>
 
-		<a class="hanuma-card" href="chi_signal_list.html">
-			<div class="hanuma-icon">📋</div>
-			<div class="hanuma-card-title">CHI Signal List</div>
-			<div class="hanuma-card-desc">
-				Comprehensive CHI signal reference with descriptions and usage details.
-			</div>
-		</a>
+            <div class="stat-card">
+                <div class="stat-number">DDR5</div>
+                <div class="stat-label">Memory Subsystem</div>
+            </div>
 
-		<a class="hanuma-card" href="chi_snoop_link.html">
-			<div class="hanuma-icon">🔍</div>
-			<div class="hanuma-card-title">CHI Snoop Link</div>
-			<div class="hanuma-card-desc">
-				Snoop link architecture, message flow and coherency interactions.
-			</div>
-		</a>
+            <div class="stat-card">
+                <div class="stat-number">RV64GC</div>
+                <div class="stat-label">Target CPU</div>
+            </div>
 
-		<a class="hanuma-card" href="chi_read_transaction.html">
-			<div class="hanuma-icon">📖</div>
-			<div class="hanuma-card-title">CHI Read Transaction</div>
-			<div class="hanuma-card-desc">
-				Step-by-step analysis of CHI read transactions, responses and data flow.
-			</div>
-		</a>
+        </div>
 
-		<a class="hanuma-card" href="chi_read_with_snoop.html">
-			<div class="hanuma-icon">🛰️</div>
-			<div class="hanuma-card-title">CHI Read with Snoop</div>
-			<div class="hanuma-card-desc">
-				Detailed walkthrough of read transactions involving snoop requests and coherency updates.
-			</div>
-		</a>
+        <!-- ===================================================== -->
+        <!-- CHI PROTOCOL                                           -->
+        <!-- ===================================================== -->
 
-        <a class="hanuma-card" href="cache_hierarchy_reference.html">
-          <div class="hanuma-icon">⚡</div>
-          <div class="hanuma-card-title">Cache Reference</div>
-          <div class="hanuma-card-desc">
-            Cache hierarchy, coherency and memory architecture reference.
-          </div>
-        </a>
+        <section class="section">
 
-        <a class="hanuma-card" href="chi_flits_reference.html">
-          <div class="hanuma-icon">📦</div>
-          <div class="hanuma-card-title">CHI Flit Reference</div>
-          <div class="hanuma-card-desc">
-            Request, response, snoop and data flit explanations.
-          </div>
-        </a>
+            <h2 class="section-title">🧠 CHI Protocol</h2>
 
-        <a class="hanuma-card" href="chi_noc_microarch.html">
-          <div class="hanuma-icon">🌐</div>
-          <div class="hanuma-card-title">NoC Microarch</div>
-          <div class="hanuma-card-desc">
-            Network-on-Chip microarchitecture concepts and design details.
-          </div>
-        </a>
+            <div class="card-grid">
 
-        <a class="hanuma-card" href="chi_node_topology.html">
-          <div class="hanuma-icon">🕸️</div>
-          <div class="hanuma-card-title">Node Topology</div>
-          <div class="hanuma-card-desc">
-            CHI node topology and interconnect connectivity structures.
-          </div>
-        </a>
+                <a class="card" href="AMBA_CHI_Issue_F_Master_Guide.html">
+                    <div class="card-icon">📘</div>
+                    <div class="card-title">CHI Roadmap</div>
+                    <div class="card-desc">
+                        Complete AMBA CHI learning roadmap and architecture guide.
+                    </div>
+                </a>
 
-        <a class="hanuma-card" href="chi_snoop_filter.html">
-          <div class="hanuma-icon">🔍</div>
-          <div class="hanuma-card-title">Snoop Filter</div>
-          <div class="hanuma-card-desc">
-            Snoop filtering mechanisms and coherency optimization concepts.
-          </div>
-        </a>
+                <a class="card" href="chi_signal_list.html">
+                    <div class="card-icon">📋</div>
+                    <div class="card-title">CHI Signal List</div>
+                    <div class="card-desc">
+                        Comprehensive CHI signal reference and descriptions.
+                    </div>
+                </a>
 
-        <a class="hanuma-card" href="plru_dashboard.html">
-          <div class="hanuma-icon">♻️</div>
-          <div class="hanuma-card-title">Cache Replacement</div>
-          <div class="hanuma-card-desc">
-            PLRU cache replacement algorithms and dashboard visualization.
-          </div>
-        </a>
+                <a class="card" href="chi_flits_reference.html">
+                    <div class="card-icon">📦</div>
+                    <div class="card-title">CHI Flits Reference</div>
+                    <div class="card-desc">
+                        REQ, RSP, SNP and DAT flit definitions and formats.
+                    </div>
+                </a>
 
-		<a class="hanuma-card" href="interfaces_explorer.html">
-			<div class="hanuma-icon">🔌</div>
-			<div class="hanuma-card-title">RTL Interface Explorer</div>
-			<div class="hanuma-card-desc">
-				Interactive explorer for HANUMA SoC RTL interfaces, signal groups, protocols and connectivity visualization.
-			</div>
-		</a>
+                <a class="card" href="chi_snoop_link.html">
+                    <div class="card-icon">🔍</div>
+                    <div class="card-title">CHI Snoop Link</div>
+                    <div class="card-desc">
+                        Snoop architecture and coherency interactions.
+                    </div>
+                </a>
 
-        <a class="hanuma-card" href="lesson_01_chi_foundations.html">
-          <div class="hanuma-icon">📘</div>
-          <div class="hanuma-card-title">HANUMA RTL Lesson 1</div>
-          <div class="hanuma-card-desc">
-            CHI foundations and introductory RTL implementation concepts.
-          </div>
-        </a>
+                <a class="card" href="chi_read_transaction.html">
+                    <div class="card-icon">📖</div>
+                    <div class="card-title">CHI Read Transaction</div>
+                    <div class="card-desc">
+                        Detailed walkthrough of CHI read transactions.
+                    </div>
+                </a>
 
-        <a class="hanuma-card" href="lesson_02_leaf_primitives.html">
-          <div class="hanuma-icon">🧩</div>
-          <div class="hanuma-card-title">HANUMA RTL Lesson 2</div>
-          <div class="hanuma-card-desc">
-            Leaf primitives and reusable RTL hardware structures.
-          </div>
-        </a>
+                <a class="card" href="chi_read_with_snoop.html">
+                    <div class="card-icon">🛰️</div>
+                    <div class="card-title">CHI Read with Snoop</div>
+                    <div class="card-desc">
+                        Read transaction flow with snoop processing.
+                    </div>
+                </a>
 
-        <a class="hanuma-card" href="lesson_03_arbitration_routing.html">
-          <div class="hanuma-icon">🚦</div>
-          <div class="hanuma-card-title">HANUMA RTL Lesson 3</div>
-          <div class="hanuma-card-desc">
-            Arbitration algorithms, routing logic and traffic management.
-          </div>
-        </a>
+            </div>
 
-        <a class="hanuma-card" href="lesson_04_router_building_blocks.html">
-          <div class="hanuma-icon">🏗️</div>
-          <div class="hanuma-card-title">HANUMA RTL Lesson 4</div>
-          <div class="hanuma-card-desc">
-            Router building blocks, datapaths and scalable NoC architecture.
-          </div>
-        </a>
+        </section>
 
-        <a class="hanuma-card" href="lesson_05_router_top.html">
-          <div class="hanuma-icon">🌉</div>
-          <div class="hanuma-card-title">HANUMA RTL Lesson 5</div>
-          <div class="hanuma-card-desc">
-            Top-level router integration and system-level connectivity.
-          </div>
-        </a>
+        <!-- ===================================================== -->
+        <!-- NOC                                                    -->
+        <!-- ===================================================== -->
 
-		<a class="hanuma-card" href="lesson_06_noc_fabric.html">
-			<div class="hanuma-icon">🕸️</div>
-			<div class="hanuma-card-title">HANUMA RTL Lesson 6</div>
-			<div class="hanuma-card-desc">
-				NoC fabric architecture, connectivity and scalable interconnect design.
-			</div>
-		</a>
+        <section class="section">
 
-		<a class="hanuma-card" href="lesson_07_link_layer.html">
-			<div class="hanuma-icon">🔗</div>
-			<div class="hanuma-card-title">HANUMA RTL Lesson 7</div>
-			<div class="hanuma-card-desc">
-				Link layer design, flow control and reliable communication mechanisms.
-			</div>
-		</a>
+            <h2 class="section-title">🌐 Network-on-Chip</h2>
 
-		<a class="hanuma-card" href="lesson_08_transport_packetization.html">
-			<div class="hanuma-icon">📨</div>
-			<div class="hanuma-card-title">HANUMA RTL Lesson 8</div>
-			<div class="hanuma-card-desc">
-				Transport layer concepts, packetization and transaction handling.
-			</div>
-		</a>
+            <div class="card-grid">
 
-		<a class="hanuma-card" href="lesson_09_chi_nodes.html">
-			<div class="hanuma-icon">⚙️</div>
-			<div class="hanuma-card-title">HANUMA RTL Lesson 9</div>
-			<div class="hanuma-card-desc">
-				CHI node architecture, functionality and inter-node communication.
-			</div>
-		</a>
+                <a class="card" href="chi_noc_diagram.html">
+                    <div class="card-icon">🕸️</div>
+                    <div class="card-title">CHI NoC Diagram</div>
+                    <div class="card-desc">
+                        Interactive visualization of HANUMA 4×4 CHI mesh.
+                    </div>
+                </a>
 
-		<a class="hanuma-card" href="lesson_10_support_monitoring.html">
-			<div class="hanuma-icon">📊</div>
-			<div class="hanuma-card-title">HANUMA RTL Lesson 10</div>
-			<div class="hanuma-card-desc">
-				Support infrastructure, monitoring systems, debug visibility and health tracking mechanisms.
-			</div>
-		</a>
+                <a class="card" href="noc_interconnect_spec.html">
+                    <div class="card-icon">📐</div>
+                    <div class="card-title">NoC Interconnect Spec</div>
+                    <div class="card-desc">
+                        Architecture, routing, QoS and flow-control specification.
+                    </div>
+                </a>
 
-      </div>
+                <a class="card" href="chi_noc_microarch.html">
+                    <div class="card-icon">⚙️</div>
+                    <div class="card-title">NoC Microarchitecture</div>
+                    <div class="card-desc">
+                        Router datapath and fabric implementation details.
+                    </div>
+                </a>
 
-      <div class="hanuma-footer">
-        HANUMA • Advanced SoC Architecture Learning Platform
-      </div>
+                <a class="card" href="chi_node_topology.html">
+                    <div class="card-icon">🔗</div>
+                    <div class="card-title">Node Topology</div>
+                    <div class="card-desc">
+                        CHI node placement and connectivity architecture.
+                    </div>
+                </a>
+
+            </div>
+
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- CACHE                                                  -->
+        <!-- ===================================================== -->
+
+        <section class="section">
+
+            <h2 class="section-title">⚡ Cache Subsystem</h2>
+
+            <div class="card-grid">
+
+                <a class="card" href="cache_hierarchy_reference.html">
+                    <div class="card-icon">🏛️</div>
+                    <div class="card-title">Cache Reference</div>
+                    <div class="card-desc">
+                        Cache hierarchy and coherency architecture.
+                    </div>
+                </a>
+
+                <a class="card" href="l1_cache_subsystem.html">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">L1 Cache Subsystem</div>
+                    <div class="card-desc">
+                        RV64GC L1 I-Cache and D-Cache architecture.
+                    </div>
+                </a>
+
+                <a class="card" href="l2_cache_controller.html">
+                    <div class="card-icon">🧠</div>
+                    <div class="card-title">L2 Cache Controller</div>
+                    <div class="card-desc">
+                        Unified coherent L2 controller architecture.
+                    </div>
+                </a>
+
+                <a class="card" href="chi_snoop_filter.html">
+                    <div class="card-icon">🔍</div>
+                    <div class="card-title">Snoop Filter</div>
+                    <div class="card-desc">
+                        Snoop filtering and coherency optimization.
+                    </div>
+                </a>
+
+                <a class="card" href="plru_dashboard.html">
+                    <div class="card-icon">♻️</div>
+                    <div class="card-title">PLRU Dashboard</div>
+                    <div class="card-desc">
+                        Cache replacement policy visualization.
+                    </div>
+                </a>
+
+            </div>
+
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- MEMORY                                                 -->
+        <!-- ===================================================== -->
+
+        <section class="section">
+
+            <h2 class="section-title">💾 Memory Subsystem</h2>
+
+            <div class="card-grid">
+
+                <a class="card" href="mc_high_level_architecture.html">
+                    <div class="card-icon">🏛️</div>
+                    <div class="card-title">MC High-Level Architecture</div>
+                    <div class="card-desc">
+                        CHI SN-F to DFI 5.0 DDR5 memory controller architecture.
+                    </div>
+                </a>
+
+                <a class="card" href="mc_low_level_implementation_spec.html">
+                    <div class="card-icon">🔧</div>
+                    <div class="card-title">MC Implementation Spec</div>
+                    <div class="card-desc">
+                        Schedulers, timing engines and DDR5 command generation.
+                    </div>
+                </a>
+
+            </div>
+
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- TOOLS                                                  -->
+        <!-- ===================================================== -->
+
+        <section class="section">
+
+            <h2 class="section-title">🛠️ Tools & Dashboards</h2>
+
+            <div class="card-grid">
+
+                <a class="card" href="iron-protocol-dashboard-v2.html">
+                    <div class="card-icon">🛡️</div>
+                    <div class="card-title">IRON Dashboard</div>
+                    <div class="card-desc">
+                        Protocol visualization and transaction analysis dashboard.
+                    </div>
+                </a>
+
+                <a class="card" href="axi_chi_diagram.html">
+                    <div class="card-icon">🔄</div>
+                    <div class="card-title">AXI ↔ CHI Diagram</div>
+                    <div class="card-desc">
+                        AXI to CHI bridge architecture and mapping.
+                    </div>
+                </a>
+
+                <a class="card" href="interfaces_explorer.html">
+                    <div class="card-icon">🔌</div>
+                    <div class="card-title">RTL Interface Explorer</div>
+                    <div class="card-desc">
+                        Interactive RTL interface and connectivity explorer.
+                    </div>
+                </a>
+
+                <a class="card" href="claude_products_guide.html">
+                    <div class="card-icon">🤖</div>
+                    <div class="card-title">Claude Products Guide</div>
+                    <div class="card-desc">
+                        Claude ecosystem, models and subscriptions.
+                    </div>
+                </a>
+
+            </div>
+
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- RTL LESSONS                                            -->
+        <!-- ===================================================== -->
+
+        <section class="section">
+
+            <h2 class="section-title">🎓 HANUMA RTL Lessons</h2>
+
+            <div class="card-grid">
+
+                <a class="card" href="lesson_01_chi_foundations.html">
+                    <div class="card-icon">1️⃣</div>
+                    <div class="card-title">Lesson 01</div>
+                    <div class="card-desc">
+                        CHI Foundations
+                    </div>
+                </a>
+
+                <a class="card" href="lesson_02_leaf_primitives.html">
+                    <div class="card-icon">2️⃣</div>
+                    <div class="card-title">Lesson 02</div>
+                    <div class="card-desc">
+                        Leaf Primitives
+                    </div>
+                </a>
+
+                <a class="card" href="lesson_03_arbitration_routing.html">
+                    <div class="card-icon">3️⃣</div>
+                    <div class="card-title">Lesson 03</div>
+                    <div class="card-desc">
+                        Arbitration & Routing
+                    </div>
+                </a>
+
+                <a class="card" href="lesson_04_router_building_blocks.html">
+                    <div class="card-icon">4️⃣</div>
+                    <div class="card-title">Lesson 04</div>
+                    <div class="card-desc">
+                        Router Building Blocks
+                    </div>
+                </a>
+
+                <a class="card" href="lesson_05_router_top.html">
+                    <div class="card-icon">5️⃣</div>
+                    <div class="card-title">Lesson 05</div>
+                    <div class="card-desc">
+                        Router Top Integration
+                    </div>
+                </a>
+
+                <a class="card" href="lesson_06_noc_fabric.html">
+                    <div class="card-icon">6️⃣</div>
+                    <div class="card-title">Lesson 06</div>
+                    <div class="card-desc">
+                        NoC Fabric
+                    </div>
+                </a>
+
+                <a class="card" href="lesson_07_link_layer.html">
+                    <div class="card-icon">7️⃣</div>
+                    <div class="card-title">Lesson 07</div>
+                    <div class="card-desc">
+                        Link Layer
+                    </div>
+                </a>
+
+                <a class="card" href="lesson_08_transport_packetization.html">
+                    <div class="card-icon">8️⃣</div>
+                    <div class="card-title">Lesson 08</div>
+                    <div class="card-desc">
+                        Transport & Packetization
+                    </div>
+                </a>
+
+                <a class="card" href="lesson_09_chi_nodes.html">
+                    <div class="card-icon">9️⃣</div>
+                    <div class="card-title">Lesson 09</div>
+                    <div class="card-desc">
+                        CHI Nodes
+                    </div>
+                </a>
+
+                <a class="card" href="lesson_10_support_monitoring.html">
+                    <div class="card-icon">🔟</div>
+                    <div class="card-title">Lesson 10</div>
+                    <div class="card-desc">
+                        Monitoring & Debug
+                    </div>
+                </a>
+
+            </div>
+
+        </section>
+
+        <footer>
+            HANUMA • High Performance Open SoC Architecture Platform
+        </footer>
 
     </div>
-
-  </div>
 
 </body>
 
