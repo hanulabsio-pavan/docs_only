@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SETU — Firmware Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #16a085;
+            --cyan: #0e7490;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --hv-zone: #fff5f5;
+            --lv-zone: #f0fff4;
+            --bg: #f4f7f6;
+            --text: #333;
+            --white: #ffffff;
+            --border: #dee2e6;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border-radius: 12px;
+        }
+        header {
+            border-bottom: 4px solid var(--accent);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+        .status-badge {
+            display: inline-block;
+            background: var(--warning);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            float: right;
+        }
+        h1 { color: var(--primary); margin: 0; font-size: 2.2rem; }
+        .subtitle { font-style: italic; color: #666; margin-top: 5px; }
+        h2 {
+            color: var(--primary);
+            border-left: 6px solid var(--accent);
+            padding-left: 15px;
+            margin-top: 50px;
+            background: #f8f9fa;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+        h3 { color: var(--accent); margin-top: 30px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        h4 { color: var(--primary); margin-bottom: 6px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.92rem;
+        }
+        th, td {
+            padding: 10px 13px;
+            text-align: left;
+            border: 1px solid var(--border);
+            vertical-align: top;
+        }
+        th { background-color: #f1f3f5; color: var(--primary); font-weight: 600; }
+        tr:nth-child(even) { background-color: #fcfcfc; }
+
+        .callout {
+            background: #e7f5f1;
+            border: 1px solid #b8e0d6;
+            border-left: 4px solid var(--accent);
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-size: 0.92rem;
+        }
+        .callout-header { font-weight: bold; color: var(--accent); margin-bottom: 5px; display: block; }
+        .callout-warn { background: #fff3cd; border-color: #ffeeba; border-left-color: var(--warning); }
+        .callout-warn .callout-header { color: #856404; }
+
+        .mermaid { margin: 40px 0; background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--border); text-align: center; }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-critical { background: var(--danger); color: white; }
+        .badge-high { background: var(--warning); color: white; }
+        .badge-medium { background: var(--primary); color: white; }
+
+        code {
+            background: #e9ecef;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #0e7490;
+            font-size: 0.88rem;
+        }
+        pre {
+            background: #0d1117;
+            color: #e6edf3;
+            padding: 18px 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+        pre code { background: none; color: inherit; padding: 0; }
+
+        ul, ol { font-size: 0.95rem; }
+        .toc {
+            background: #f8f9fa;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 30px;
+            margin: 30px 0;
+            columns: 2;
+            column-gap: 40px;
+            font-size: 0.9rem;
+        }
+        .toc a { color: var(--accent); text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+
+        footer {
+            text-align: center;
+            color: #888;
+            margin-top: 60px;
+            font-size: 0.85rem;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        a { color: var(--cyan); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <span class="status-badge">PRE-IMPLEMENTATION DRAFT v0.1</span>
+            <h1>SETU — Firmware Architecture</h1>
+            <p class="subtitle">Premium IoT Smart Switch Board | Embedded Software Architecture &amp; Module Design</p>
+            <p style="margin-top: 20px; font-size: 0.9rem;"><strong>Date:</strong> June 2026 | <strong>Target:</strong> ESP-IDF v5.x · ESP32-S3 | <strong>Project:</strong> setu1.0</p>
+        </header>
+
+        <div class="callout">
+            <span class="callout-header">Document Scope</span>
+            This is the <strong>single source of truth for SETU firmware</strong>: runtime architecture, the RTOS task
+            graph, every driver and middleware module, the connectivity stack (WiFi / Matter / cloud), the voice + theme
+            engine, OTA &amp; security, persistence, fault handling, the memory budget, the build/partition layout, and the
+            test strategy. It maps onto the committed <code>firmware/</code> skeleton and the ESP32-S3 pin allocation in
+            <a href="SETU_Hardware_Implementation_Draft.html">Hardware Implementation Draft</a>.
+        </div>
+
+        <div class="toc">
+            <a href="#goals">1. Design Goals &amp; Constraints</a><br>
+            <a href="#platform">2. Target Platform &amp; Toolchain</a><br>
+            <a href="#layers">3. Layered Architecture</a><br>
+            <a href="#tree">4. Source Tree Layout</a><br>
+            <a href="#rtos">5. RTOS Task Graph</a><br>
+            <a href="#eventbus">6. Event Bus</a><br>
+            <a href="#boot">7. Boot &amp; Init Sequence</a><br>
+            <a href="#drivers">8. Driver Layer</a><br>
+            <a href="#middleware">9. Middleware / Services</a><br>
+            <a href="#app">10. Application Layer</a><br>
+            <a href="#partitions">11. Flash Partitions &amp; Build</a><br>
+            <a href="#security">12. Security Architecture</a><br>
+            <a href="#fault">13. Fault Handling &amp; Recovery</a><br>
+            <a href="#memory">14. Memory Budget</a><br>
+            <a href="#connectivity">15. Connectivity Summary</a><br>
+            <a href="#test">16. Test Strategy</a><br>
+            <a href="#standards">17. Coding Standards</a><br>
+            <a href="#roadmap">18. Roadmap Mapping</a><br>
+            <a href="#open">19. Open Items &amp; Next Actions</a>
+        </div>
+
+        <!-- 1 -->
+        <section id="goals">
+            <h2>1. Design Goals &amp; Constraints</h2>
+            <table>
+                <thead><tr><th>#</th><th>Goal</th><th>Driving Constraint</th></tr></thead>
+                <tbody>
+                    <tr><td>G1</td><td><strong>Instant, reliable touch response</strong></td><td>Touch-to-relay latency budget <strong>&lt; 50 ms</strong> end-to-end. Touch works even with WiFi/cloud down.</td></tr>
+                    <tr><td>G2</td><td><strong>Local-first control</strong></td><td>All gang on/off logic runs on-device; cloud is an <em>enhancement</em>, never a dependency.</td></tr>
+                    <tr><td>G3</td><td><strong>Always-recoverable</strong></td><td>No OTA, network glitch, or crash may leave a relay stuck or the device bricked. Watchdog + A/B OTA + rollback.</td></tr>
+                    <tr><td>G4</td><td><strong>Matter + app + voice parity</strong></td><td>Every control path drives the <em>same</em> state machine — one source of truth per gang.</td></tr>
+                    <tr><td>G5</td><td><strong>Low standby power</strong></td><td>Board budget <strong>&lt; 2 W quiescent</strong>; firmware uses light-sleep + modem-sleep when idle.</td></tr>
+                    <tr><td>G6</td><td><strong>Secure by default</strong></td><td>Secure Boot v2 + Flash Encryption + signed OTA + TLS 1.2/1.3. No plaintext secrets in flash.</td></tr>
+                    <tr><td>G7</td><td><strong>Field-updatable</strong></td><td>OTA from day one; telemetry + remote diagnostics for the 500u pilot fleet.</td></tr>
+                    <tr><td>G8</td><td><strong>Certifiable</strong></td><td>WPC uses the pre-certified WROOM module radio — firmware must not alter RF calibration or use a custom antenna.</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Hard vs. soft real-time split:</strong> the hard path
+            (touch&nbsp;→&nbsp;debounce&nbsp;→&nbsp;relay GPIO) runs at high RTOS priority and is never blocked by network I/O.
+            WiFi, Matter, MQTT, OTA, telemetry and voice inference are soft, lower-priority and fully preemptible.</p>
+        </section>
+
+        <!-- 2 -->
+        <section id="platform">
+            <h2>2. Target Platform &amp; Toolchain</h2>
+            <table>
+                <thead><tr><th>Item</th><th>Selection</th><th>Notes</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Primary MCU</strong></td><td>ESP32-S3-WROOM-1-N8R8</td><td>Dual-core Xtensa LX7 @ 240 MHz, 512 KB SRAM, 8 MB PSRAM, 8 MB flash</td></tr>
+                    <tr><td><strong>Touch controller</strong></td><td>CAP1296 (I2C slave)</td><td>Dedicated touch silicon — no touch firmware on a second MCU in the baseline</td></tr>
+                    <tr><td><strong>RTOS</strong></td><td>FreeRTOS (in ESP-IDF)</td><td>SMP dual-core scheduler</td></tr>
+                    <tr><td><strong>SDK / framework</strong></td><td>ESP-IDF v5.x</td><td>CMake build, component model, native OTA, Matter via ESP-Matter</td></tr>
+                    <tr><td><strong>Language</strong></td><td>C (C11); C++17 where ESP-Matter requires</td><td>connectedhomeip is C++</td></tr>
+                    <tr><td><strong>Build</strong></td><td><code>idf.py build</code> from <code>firmware/</code></td><td>CMake + Kconfig</td></tr>
+                    <tr><td><strong>Debug</strong></td><td>USB-Serial-JTAG + OpenOCD</td><td>Built-in USB or ESP-Prog</td></tr>
+                    <tr><td><strong>Unit test</strong></td><td>Unity + CMock</td><td><code>firmware/tests/unit/</code></td></tr>
+                    <tr><td><strong>Integration test</strong></td><td>pytest-embedded</td><td><code>firmware/tests/integration/</code></td></tr>
+                </tbody>
+            </table>
+            <div class="callout">
+                <span class="callout-header">Architecture note — single-MCU baseline</span>
+                The charter lists an STM32L0 (touch) + ESP32-S3 split. The hardware draft selected the
+                <strong>CAP1296 dedicated touch IC</strong> over STM32 TSC, so the <strong>baseline firmware is single-MCU</strong>:
+                CAP1296 senses in hardware and signals the ESP32-S3 over I2C + an ALERT interrupt. §13.1 documents the
+                dual-MCU fallback (UART/SPI inter-MCU protocol) for a future variant.
+            </div>
+        </section>
+
+        <!-- 3 -->
+        <section id="layers">
+            <h2>3. Layered Architecture</h2>
+            <p>Layers depend <strong>downward only</strong>. Cross-layer communication goes through the
+            <a href="#eventbus">event bus</a>, not direct calls — keeping the touch→relay hard path decoupled from network code.</p>
+<pre><code>┌──────────────────────────────────────────────────────────────────────┐
+│  APPLICATION LAYER  (firmware/src/main)                                │
+│  app_main · device state model · gang state machines · theme engine    │
+│  scene/automation rules · orchestration of all control sources         │
+├──────────────────────────────────────────────────────────────────────┤
+│  MIDDLEWARE / SERVICES  (firmware/src/middleware)                      │
+│  wifi_mgr · matter_svc · cloud_mqtt · ota_mgr · voice_engine ·         │
+│  config_store(NVS) · time_sync(SNTP) · telemetry · provisioning        │
+├──────────────────────────────────────────────────────────────────────┤
+│  RTOS LAYER  (firmware/src/rtos)                                       │
+│  task creation · queues · semaphores · event groups · timers ·         │
+│  event_bus (central pub/sub) · watchdog wiring                         │
+├──────────────────────────────────────────────────────────────────────┤
+│  DRIVER LAYER  (firmware/src/drivers)                                  │
+│  touch_cap1296 · relay · led_status · audio_i2s(mic) · button          │
+├──────────────────────────────────────────────────────────────────────┤
+│  HAL / BSP  (firmware/src/hal)                                         │
+│  board pin map · i2c_bus · gpio_wrap · pwm(ledc) · nvs_hal · power_mgmt │
+├──────────────────────────────────────────────────────────────────────┤
+│  ESP-IDF / FreeRTOS / Vendor (esp_wifi, esp_matter, esp_https_ota)     │
+└──────────────────────────────────────────────────────────────────────┘</code></pre>
+        </section>
+
+        <!-- 4 -->
+        <section id="tree">
+            <h2>4. Source Tree Layout</h2>
+            <p>Maps onto the committed <code>firmware/</code> skeleton:</p>
+<pre><code>firmware/
+├── CMakeLists.txt                # top-level project
+├── sdkconfig.defaults            # Kconfig defaults (flash, PSRAM, secure boot…)
+├── partitions.csv                # custom partition table (§11)
+├── include/
+│   ├── setu_config.h             # compile-time config (gang count, GPIOs, versions)
+│   ├── setu_events.h             # event-bus event IDs + payload structs
+│   └── setu_types.h              # gang_state_t, theme_t, error codes
+├── src/
+│   ├── main/
+│   │   ├── app_main.c            # entry point, init sequencer, task spawn
+│   │   ├── device_model.c        # global device state, gang[] array, persistence
+│   │   ├── gang_sm.c             # per-gang finite state machine
+│   │   ├── theme_engine.c        # Devotional/Party/Movie/Sleep/Morning scenes
+│   │   └── automation.c          # local rules/schedules (sunset, timers)
+│   ├── middleware/
+│   │   ├── wifi_mgr.c            # provisioning + connect/reconnect state machine
+│   │   ├── matter_svc.c          # ESP-Matter data-model + cluster callbacks
+│   │   ├── cloud_mqtt.c          # MQTT over TLS to SETU cloud
+│   │   ├── ota_mgr.c             # esp_https_ota wrapper, A/B, rollback
+│   │   ├── voice_engine.c        # wake-word + command classifier (TFLite-Micro)
+│   │   ├── config_store.c        # NVS namespaces, schema, migration
+│   │   ├── time_sync.c           # SNTP + timezone (IST)
+│   │   ├── telemetry.c           # metrics/heartbeat publisher
+│   │   └── provisioning.c        # BLE/SoftAP commissioning + Matter onboarding
+│   ├── rtos/
+│   │   ├── event_bus.c           # central pub/sub over a FreeRTOS queue
+│   │   ├── tasks.c               # task table, priorities, stack sizes
+│   │   └── watchdog.c            # task WDT registration + feed policy
+│   ├── drivers/
+│   │   ├── touch_cap1296.c       # I2C driver + ISR + event emit
+│   │   ├── relay.c               # GPIO drive, interlock, debounce, state readback
+│   │   ├── led_status.c          # LEDC/PWM, per-gang + WiFi LED, theme animations
+│   │   ├── audio_i2s.c           # I2S MEMS mic capture ring buffer (Phase 2)
+│   │   └── button.c              # EN/boot/factory-reset long-press handling
+│   └── hal/
+│       ├── board.h               # pin map (mirrors HW pin allocation table)
+│       ├── i2c_bus.c             # shared I2C master init + mutex
+│       ├── gpio_wrap.c           # debounced GPIO helpers
+│       ├── pwm.c                 # LEDC channel allocation
+│       ├── power_mgmt.c          # light-sleep / modem-sleep policy
+│       └── nvs_hal.c             # NVS flash partition init + encryption
+├── tests/{unit,integration}/
+├── tools/                        # flashing, key gen, factory provisioning
+└── docs/{api,test-plans}/</code></pre>
+        </section>
+
+        <!-- 5 -->
+        <section id="rtos">
+            <h2>5. RTOS Task Graph</h2>
+            <p>FreeRTOS SMP across two LX7 cores. <strong>Core 0</strong> hosts the WiFi/BT stacks (pinned by ESP-IDF);
+            <strong>Core 1</strong> hosts the time-critical control tasks so radio activity never delays touch→relay.</p>
+            <table>
+                <thead><tr><th>Task</th><th>Core</th><th>Prio</th><th>Stack</th><th>Trigger</th><th>Responsibility</th></tr></thead>
+                <tbody>
+                    <tr><td><code>tsk_touch</code></td><td>1</td><td>9</td><td>3 KB</td><td>ALERT ISR → sem</td><td>Read CAP1296 over I2C, debounce, emit <code>EVT_TOUCH</code></td></tr>
+                    <tr><td><code>tsk_control</code></td><td>1</td><td>8</td><td>4 KB</td><td>event bus</td><td>Owns gang state machines; <strong>only</strong> task that drives relay GPIO</td></tr>
+                    <tr><td><code>tsk_event_bus</code></td><td>1</td><td>7</td><td>3 KB</td><td>queue</td><td>Central pub/sub router (fan-out)</td></tr>
+                    <tr><td><code>tsk_voice</code></td><td>1</td><td>6</td><td>16 KB + PSRAM</td><td>I2S ring buf</td><td>Wake-word + command inference (Phase 2)</td></tr>
+                    <tr><td><code>tsk_wifi</code></td><td>0</td><td>5</td><td>4 KB</td><td>event group</td><td>WiFi connect/reconnect + provisioning</td></tr>
+                    <tr><td><code>tsk_matter</code></td><td>0</td><td>5</td><td>8 KB</td><td>Matter stack</td><td>ESP-Matter loop, attribute callbacks</td></tr>
+                    <tr><td><code>tsk_mqtt</code></td><td>0</td><td>4</td><td>5 KB</td><td>event group</td><td>Cloud MQTT pub/sub, command intake</td></tr>
+                    <tr><td><code>tsk_led</code></td><td>1</td><td>4</td><td>2 KB</td><td>timer + events</td><td>Status LEDs / theme animations via LEDC</td></tr>
+                    <tr><td><code>tsk_ota</code></td><td>0</td><td>3</td><td>8 KB</td><td>on-demand</td><td>Download + verify + write OTA image</td></tr>
+                    <tr><td><code>tsk_telemetry</code></td><td>0</td><td>2</td><td>3 KB</td><td>timer</td><td>Heartbeat + metrics publish</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Priority rationale:</strong> <code>tsk_touch</code> (9) &gt; <code>tsk_control</code> (8) &gt;
+            <code>tsk_event_bus</code> (7) &gt; <code>tsk_voice</code> (6) &gt; network (3–5) &gt; telemetry (2). The hard path
+            always preempts everything on Core 1; network/OTA on Core 0 can never stall a relay action.</p>
+
+            <h3>5.1 Synchronization Primitives</h3>
+            <table>
+                <thead><tr><th>Primitive</th><th>Name</th><th>Purpose</th></tr></thead>
+                <tbody>
+                    <tr><td>Binary semaphore</td><td><code>sem_touch_isr</code></td><td>CAP1296 ALERT ISR → <code>tsk_touch</code> (defer I2C read out of ISR)</td></tr>
+                    <tr><td>Mutex</td><td><code>mtx_i2c</code></td><td>Serialize CAP1296 access on the shared I2C bus</td></tr>
+                    <tr><td>Mutex</td><td><code>mtx_device_model</code></td><td>Guard global <code>gang[]</code> + theme state</td></tr>
+                    <tr><td>Queue</td><td><code>q_event_bus</code> (32)</td><td>Central event pub/sub backbone</td></tr>
+                    <tr><td>Queue</td><td><code>q_relay_cmd</code> (16)</td><td>Serialized relay commands into <code>tsk_control</code></td></tr>
+                    <tr><td>Event group</td><td><code>eg_connectivity</code></td><td>WIFI_UP, IP_GOT, CLOUD_UP, MATTER_COMMISSIONED, TIME_SYNCED</td></tr>
+                    <tr><td>Event group</td><td><code>eg_system</code></td><td>OTA_IN_PROGRESS, FACTORY_RESET_REQ, LOW_POWER</td></tr>
+                    <tr><td>SW timer</td><td><code>tmr_led_anim</code></td><td>30 Hz LED animation tick</td></tr>
+                    <tr><td>SW timer</td><td><code>tmr_relay_debounce</code></td><td>Per-gang command debounce / anti-chatter</td></tr>
+                </tbody>
+            </table>
+
+            <h3>5.2 Task Interaction</h3>
+            <div class="mermaid">
+graph LR
+    ISR["CAP1296 ALERT (ISR)"] -->|give sem| T_TOUCH["tsk_touch"]
+    T_TOUCH -->|EVT_TOUCH| BUS(("event_bus"))
+    MATTER["tsk_matter"] -->|EVT_CMD_SET| BUS
+    MQTT["tsk_mqtt"] -->|EVT_CMD_SET| BUS
+    VOICE["tsk_voice"] -->|EVT_VOICE_INTENT| BUS
+    AUTO["automation/timers"] -->|EVT_SCHED| BUS
+    BUS --> T_CTRL["tsk_control (gang SMs)"]
+    T_CTRL -->|gpio set| RELAY["relay driver GPIO7-10"]
+    T_CTRL -->|EVT_STATE_CHANGED| BUS
+    BUS --> T_LED["tsk_led"]
+    BUS --> MQTT
+    BUS --> MATTER
+    T_CTRL -->|persist| NVS["config_store (NVS)"]
+            </div>
+        </section>
+
+        <!-- 6 -->
+        <section id="eventbus">
+            <h2>6. Event Bus (Central Messaging)</h2>
+            <p>All cross-module communication uses one typed event bus instead of ad-hoc notifications. This decouples
+            <em>sources</em> of control (touch, app, Matter, voice, schedule) from the <em>one</em> consumer that mutates
+            relay state (<code>tsk_control</code>).</p>
+<pre><code>// include/setu_events.h
+typedef enum {
+    EVT_TOUCH,            // a touch zone was pressed/released/held
+    EVT_CMD_SET,          // set gang N on/off/level (app/matter/cloud)
+    EVT_VOICE_INTENT,     // voice classifier produced an intent
+    EVT_SCHED,            // automation/schedule fired
+    EVT_THEME_SET,        // activate a theme
+    EVT_STATE_CHANGED,    // gang/device state changed (fan-out to reporters)
+    EVT_CONN_CHANGED,     // connectivity bit changed
+    EVT_OTA_PROGRESS,     // OTA lifecycle
+    EVT_FAULT,            // driver/system fault
+} setu_event_id_t;
+
+typedef struct {
+    setu_event_id_t id;
+    uint8_t         gang;     // 0..N-1, or GANG_ALL
+    int32_t         value;    // on/off, level, intent code…
+    setu_src_t      source;   // SRC_TOUCH, SRC_APP, SRC_MATTER, SRC_CLOUD, SRC_VOICE, SRC_SCHED
+    uint32_t        ts_ms;
+} setu_event_t;</code></pre>
+            <p><strong>Publish:</strong> <code>event_bus_post(&amp;evt)</code> (ISR-safe variant <code>event_bus_post_isr</code>).
+            <strong>Subscribe:</strong> tasks register a callback + event-id mask; the bus fans out. Every event carries its
+            <code>source</code>, used for arbitration, telemetry attribution, and echoing state back to the other control
+            surfaces (a touch press updates the Matter attribute + cloud shadow + LED).</p>
+        </section>
+
+        <!-- 7 -->
+        <section id="boot">
+            <h2>7. Boot &amp; Initialization Sequence</h2>
+            <p><code>app_main()</code> is a deterministic init sequencer — safety-critical I/O first, network last, so the
+            device is locally usable within ~200 ms even before WiFi.</p>
+            <div class="mermaid">
+sequenceDiagram
+    participant Boot as 2nd-stage bootloader
+    participant App as app_main
+    participant HAL
+    participant DRV as drivers
+    participant SVC as middleware
+    Boot->>Boot: Secure Boot verify → select OTA slot
+    Boot->>App: jump to app
+    App->>App: esp_event_loop + NVS init (encrypted)
+    App->>HAL: board_init() — GPIO, I2C, LEDC, power_mgmt
+    App->>DRV: relay_init() — ALL RELAYS OFF (safe default)
+    App->>SVC: config_store_load() — restore last states + theme
+    App->>DRV: relay_restore(saved) — re-apply if configured
+    App->>DRV: touch_cap1296_init() — thresholds, enable ALERT
+    App->>DRV: led_status_init() — boot animation
+    App->>App: event_bus_init() + spawn control/touch/led tasks
+    App->>SVC: ota_mark_valid() — confirm image healthy (cancel rollback)
+    App->>SVC: wifi_mgr_start() — connect or provisioning
+    SVC-->>App: WIFI_UP / IP_GOT
+    App->>SVC: time_sync, matter, mqtt, telemetry, voice (Phase 2)
+    Note over App: Device locally functional before this line;<br/>cloud/voice are enhancements
+            </div>
+            <div class="callout callout-warn">
+                <span class="callout-header">Safe-state guarantee</span>
+                <code>relay_init()</code> drives all gangs <strong>OFF</strong> before anything else. Restoring last-known state is
+                an explicit, configurable step (<code>restore_on_boot</code>) — "all off" and "restore" are both available per
+                the power-loss policy, so loads never energize unexpectedly after a power blip.
+            </div>
+        </section>
+
+        <!-- 8 -->
+        <section id="drivers">
+            <h2>8. Driver Layer</h2>
+
+            <h3>8.1 Touch Driver — <code>touch_cap1296.c</code></h3>
+            <ul>
+                <li><strong>Bus:</strong> I2C master @ 400 kHz, guarded by <code>mtx_i2c</code>.</li>
+                <li><strong>Interrupt-driven:</strong> CAP1296 <code>ALERT</code> (active-low) → GPIO5 ISR → <code>xSemaphoreGiveFromISR</code>. No polling — saves power and meets the latency budget.</li>
+                <li><strong><code>tsk_touch</code> flow:</strong> wait on semaphore → read Main/Sensor status → clear INT → map channel→gang → debounce → emit <code>EVT_TOUCH</code> (press/hold/release).</li>
+                <li><strong>Gestures:</strong> short tap = toggle; long-hold (≥800 ms) = theme cycle / dim ramp; multi-touch reserved for scenes.</li>
+                <li><strong>Config:</strong> per-channel sensitivity, 50 Hz mains noise filter (critical inside a 230 VAC box), active shield (<code>CS_SHLD</code>), standby/active groups.</li>
+                <li><strong>Resilience:</strong> I2C NACK/hang → bus recovery → re-init; emit <code>EVT_FAULT(TOUCH_BUS)</code> if persistent. Touch failure must not crash control of already-on loads.</li>
+            </ul>
+
+            <h3>8.2 Relay Driver — <code>relay.c</code></h3>
+            <ul>
+                <li><strong>Output:</strong> GPIO7–10 → 1 kΩ → BSS138 gate → relay coil (active-high = load ON). Mirrors the HW pin map.</li>
+                <li><strong>Single-writer:</strong> only <code>tsk_control</code> calls <code>relay_set()</code>; all other paths post events. Eliminates load races.</li>
+                <li><strong>Debounce / anti-chatter:</strong> min dwell between toggles (default 300 ms) protects contacts (100 K electrical ops).</li>
+                <li><strong>Interlock hooks:</strong> optional mutual-exclusion groups for future motorized loads.</li>
+                <li><strong>State readback:</strong> firmware holds commanded state authoritatively (no contact-sense in baseline HW); persisted to NVS.</li>
+                <li><strong>Inrush staggering:</strong> multi-gang restore/theme energizes relays with a few-ms stagger to limit inrush.</li>
+            </ul>
+
+            <h3>8.3 LED Status Driver — <code>led_status.c</code></h3>
+            <ul>
+                <li><strong>Channels:</strong> GPIO11–14 per-gang + GPIO15 WiFi LED via LEDC (PWM) for brightness/breathing.</li>
+                <li><strong>Semantics:</strong> solid = ON; off = OFF; WiFi LED — slow blink = provisioning, fast = connecting, solid = cloud up, double-blink = OTA, error patterns for faults.</li>
+                <li><strong>Theme animations:</strong> <code>tmr_led_anim</code> @ ~30 Hz drives scene effects (Party chase, Devotional warm glow). RGB is a future variant.</li>
+                <li><strong>Night dimming:</strong> auto-dim on Sleep theme / after sunset via <code>time_sync</code>.</li>
+            </ul>
+
+            <h3>8.4 Audio / Mic Driver — <code>audio_i2s.c</code> <span class="badge badge-medium">Phase 2</span></h3>
+            <p>I2S MEMS mic on GPIO16/17/18 (Phase 2+ per HW pin map). DMA into a ring buffer feeding <code>tsk_voice</code>;
+            compiled out in Phase 1 builds via Kconfig.</p>
+
+            <h3>8.5 Button Driver — <code>button.c</code></h3>
+            <p>Handles EN/reset and a factory-reset gesture (long-press combo) → <code>FACTORY_RESET_REQ</code> →
+            <code>config_store</code> wipe + re-provision.</p>
+        </section>
+
+        <!-- 9 -->
+        <section id="middleware">
+            <h2>9. Middleware / Services</h2>
+
+            <h3>9.1 WiFi Manager — <code>wifi_mgr.c</code></h3>
+            <p>State machine <code>IDLE → PROVISIONING → CONNECTING → CONNECTED → (RECONNECT backoff) → CONNECTED</code>.
+            BLE/SoftAP provisioning on first boot; creds in encrypted NVS (never logged); exponential jittered backoff
+            (1→60 s cap); modem-sleep when idle. <strong>WiFi loss never affects local touch control.</strong></p>
+
+            <h3>9.2 Matter Service — <code>matter_svc.c</code></h3>
+            <p>Built on ESP-Matter / connectedhomeip. Each gang is an On/Off endpoint (+ Level Control where dimming applies).
+            Matter writes → <code>EVT_CMD_SET</code>; <code>EVT_STATE_CHANGED</code> → attribute report. Matter-over-WiFi
+            (no 802.15.4 radio → no Thread). Multi-admin / multi-fabric; commissioning payload provisioned at factory.</p>
+
+            <h3>9.3 Cloud MQTT — <code>cloud_mqtt.c</code></h3>
+            <ul>
+                <li>MQTT over <strong>TLS 1.2/1.3</strong>; server-auth via CA bundle, device-auth via per-device X.509 cert (encrypted NVS / eFuse-bound).</li>
+                <li>Topics: <code>setu/&lt;id&gt;/state</code>, <code>/cmd</code>, <code>/ota</code>, <code>/telemetry</code>.</li>
+                <li>Publishes consolidated state on every <code>EVT_STATE_CHANGED</code>; reconciles desired-vs-reported on reconnect. Cloud is an enhancement (remote control, voice ASR fallback, telemetry, OTA trigger).</li>
+            </ul>
+
+            <h3>9.4 OTA Manager — <code>ota_mgr.c</code></h3>
+            <div class="callout">
+                <span class="callout-header">Summary — full design in <code>SETU_OTA_Update_Protocol.md</code></span>
+            </div>
+            <ul>
+                <li><strong>Mechanism:</strong> <code>esp_https_ota</code> over TLS; image from a signed URL via MQTT <code>ota</code> topic.</li>
+                <li><strong>A/B partitions:</strong> <code>ota_0</code>/<code>ota_1</code> + <code>otadata</code>. Download to inactive slot, verify signature + SHA-256, set boot, reboot.</li>
+                <li><strong>Signed images:</strong> Secure Boot v2 (RSA-3072) checked by bootloader <em>and</em> app before commit.</li>
+                <li><strong>Rollback:</strong> new image boots <em>pending-verify</em>; <code>app_main</code> self-tests then calls <code>esp_ota_mark_app_valid_cancel_rollback()</code>. A crash/WDT-reset before validation auto-reverts to the last good slot.</li>
+                <li><strong>Safety:</strong> OTA refused mid high-power transition; relays hold state across reboot; <code>OTA_IN_PROGRESS</code> blocks conflicting actions.</li>
+            </ul>
+
+            <h3>9.5 Voice Engine — <code>voice_engine.c</code> <span class="badge badge-medium">Phase 2</span></h3>
+            <ul>
+                <li><strong>On-device wake-word</strong> ("Hey SETU") via ESP-SR / TFLite-Micro in PSRAM (the N8R8's 8 MB PSRAM exists for this).</li>
+                <li><strong>Pipeline:</strong> I2S mic → ring buffer → AFE (noise suppression / AEC) → wake-word → command classifier → <code>EVT_VOICE_INTENT</code>.</li>
+                <li><strong>Hybrid:</strong> small fixed command set recognized on-device; open-ended phrases optionally to cloud ASR when connected.</li>
+                <li><strong>Themes by voice:</strong> intents map to <code>EVT_THEME_SET</code> (Devotional, Party, Movie, Sleep, Morning).</li>
+                <li><strong>Privacy:</strong> audio processed locally; nothing streamed unless a wake-word fired and cloud ASR is user-enabled.</li>
+            </ul>
+
+            <h3>9.6 Config Store — <code>config_store.c</code></h3>
+            <p>NVS over an <strong>encrypted</strong> dedicated partition. Namespaces:</p>
+            <table>
+                <thead><tr><th>Namespace</th><th>Contents</th></tr></thead>
+                <tbody>
+                    <tr><td><code>sys</code></td><td>firmware schema version, device serial, boot count</td></tr>
+                    <tr><td><code>gang</code></td><td>per-gang name, last state, restore-on-boot flag, interlock group</td></tr>
+                    <tr><td><code>theme</code></td><td>active theme, per-theme parameters, schedules</td></tr>
+                    <tr><td><code>net</code></td><td>WiFi creds (encrypted), hostname, static-IP opt</td></tr>
+                    <tr><td><code>cloud</code></td><td>broker URL, device cert refs, telemetry interval</td></tr>
+                    <tr><td><code>matter</code></td><td>Matter fabric/commissioning data (ESP-Matter managed)</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Schema migration:</strong> <code>sys.schema_version</code> gates a boot-time migration so OTA can evolve the
+            NVS layout without bricking field units.</p>
+
+            <h3>9.7 Time Sync — <code>time_sync.c</code></h3>
+            <p>SNTP after IP; timezone <strong>IST (Asia/Kolkata)</strong>. Drives schedules, sunset/sunrise automation, log
+            timestamps. Falls back to relative timers when offline.</p>
+
+            <h3>9.8 Telemetry — <code>telemetry.c</code></h3>
+            <p>Heartbeat: uptime, free/min-free heap, RSSI, reset reason, OTA version, per-gang switch counts, fault counters.
+            For pilot-fleet monitoring; rate-limited and dropped silently offline.</p>
+
+            <h3>9.9 Provisioning — <code>provisioning.c</code></h3>
+            <p>First-boot / factory-reset flow: BLE or SoftAP credential entry <em>and</em> Matter commissioning + device-cert
+            binding; coordinates with <code>wifi_mgr</code> and <code>matter_svc</code>.</p>
+        </section>
+
+        <!-- 10 -->
+        <section id="app">
+            <h2>10. Application Layer</h2>
+
+            <h3>10.1 Device Model — <code>device_model.c</code></h3>
+            <p>Global, mutex-guarded singleton — the <strong>single source of truth</strong>. Every control surface reads/writes
+            it only through <code>tsk_control</code> (via events); every change fans out via <code>EVT_STATE_CHANGED</code> and is persisted.</p>
+<pre><code>typedef struct {
+    gang_state_t gang[SETU_GANG_COUNT];  // {on/off, level, name, group, last_change_ts}
+    theme_t      active_theme;
+    bool         locked;                  // child-lock / cleaning mode
+    conn_state_t conn;                    // mirror of eg_connectivity
+    fw_info_t    fw;                       // version, build, running slot
+} device_model_t;</code></pre>
+
+            <h3>10.2 Per-Gang State Machine — <code>gang_sm.c</code></h3>
+            <div class="mermaid">
+stateDiagram-v2
+    [*] --> OFF
+    OFF --> ON: CMD(on) / TOUCH(tap) / theme
+    ON --> OFF: CMD(off) / TOUCH(tap) / theme
+    ON --> ON: level change (dim variant)
+    OFF --> LOCKED: lock engaged
+    ON --> LOCKED: lock engaged
+    LOCKED --> OFF: unlock
+            </div>
+            <p><strong>Arbitration:</strong> last-writer wins, but <strong>touch takes precedence over a stale cloud command</strong>
+            (touch carries a fresh timestamp). Relay GPIO is driven only here; debounce dwell is enforced; state is persisted.</p>
+
+            <h3>10.3 Theme Engine — <code>theme_engine.c</code></h3>
+            <table>
+                <thead><tr><th>Theme</th><th>Behavior (baseline)</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Devotional</strong></td><td>Warm steady glow on designated gang(s), others off; gentle LED.</td></tr>
+                    <tr><td><strong>Party</strong></td><td>All gangs on, dynamic LED chase/brightness (RGB variant), max brightness.</td></tr>
+                    <tr><td><strong>Movie</strong></td><td>Ambient/low subset on, mains off; dimmed LEDs to avoid glare.</td></tr>
+                    <tr><td><strong>Sleep</strong></td><td>All loads off (or one dim nightlight), LEDs at minimum / off.</td></tr>
+                    <tr><td><strong>Morning</strong></td><td>Gradual ramp-on of selected gangs (sunrise simulation) on schedule.</td></tr>
+                </tbody>
+            </table>
+            <p>Themes are <strong>data-driven</strong> (stored in the <code>theme</code> NVS namespace) so new themes/parameters ship
+            via OTA or app push without firmware changes.</p>
+
+            <h3>10.4 Automation — <code>automation.c</code></h3>
+            <p>Local schedules and rules (timer on/off, sunset-triggered, Morning ramp) run on-device so automations fire even
+            when the cloud is unreachable; the cloud only edits the rule set.</p>
+        </section>
+
+        <!-- 11 -->
+        <section id="partitions">
+            <h2>11. Flash Partition Layout &amp; Build</h2>
+            <p><code>partitions.csv</code> — 8 MB flash, A/B OTA + encrypted NVS:</p>
+            <table>
+                <thead><tr><th>Name</th><th>Type</th><th>SubType</th><th>Size</th><th>Purpose</th></tr></thead>
+                <tbody>
+                    <tr><td><code>nvs</code></td><td>data</td><td>nvs</td><td>24 KB</td><td>general NVS (encrypted)</td></tr>
+                    <tr><td><code>otadata</code></td><td>data</td><td>ota</td><td>8 KB</td><td>A/B boot selector</td></tr>
+                    <tr><td><code>phy_init</code></td><td>data</td><td>phy</td><td>4 KB</td><td>RF calibration (WPC-relevant — untouched)</td></tr>
+                    <tr><td><code>nvs_keys</code></td><td>data</td><td>nvs_keys</td><td>4 KB</td><td>NVS encryption keys</td></tr>
+                    <tr><td><code>ota_0</code></td><td>app</td><td>ota_0</td><td>~3.2 MB</td><td>firmware slot A</td></tr>
+                    <tr><td><code>ota_1</code></td><td>app</td><td>ota_1</td><td>~3.2 MB</td><td>firmware slot B</td></tr>
+                    <tr><td><code>storage</code></td><td>data</td><td>littlefs</td><td>~512 KB</td><td>voice model, theme assets, certs</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Key Kconfig:</strong> flash 8 MB, PSRAM (octal) on, Secure Boot v2 (prod), Flash Encryption (release),
+            Task WDT on, 240 MHz, FreeRTOS SMP, brownout detector on. <strong>Build profiles:</strong>
+            <code>dev</code> (no secure boot, JTAG, verbose, voice off) · <code>pilot</code> (secure boot + encryption, telemetry +
+            voice on) · <code>prod</code> (locked eFuses, release logging).</p>
+        </section>
+
+        <!-- 12 -->
+        <section id="security">
+            <h2>12. Security Architecture</h2>
+            <table>
+                <thead><tr><th>Layer</th><th>Control</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Boot</strong></td><td>Secure Boot v2 (RSA-3072) — bootloader only runs SETU-signed images.</td></tr>
+                    <tr><td><strong>Flash</strong></td><td>Flash Encryption (AES-256, release) — firmware + NVS unreadable if flash is dumped.</td></tr>
+                    <tr><td><strong>OTA</strong></td><td>TLS fetch + app signature + SHA-256 + bootloader signature check + rollback.</td></tr>
+                    <tr><td><strong>Transport</strong></td><td>TLS 1.2/1.3 for MQTT + OTA; server cert pinned to SETU CA.</td></tr>
+                    <tr><td><strong>Device identity</strong></td><td>Per-device X.509 cert + key at factory; private key in encrypted NVS, optionally eFuse-bound.</td></tr>
+                    <tr><td><strong>Secrets</strong></td><td>No plaintext credentials in source or logs; creds only in encrypted NVS.</td></tr>
+                    <tr><td><strong>Debug</strong></td><td>JTAG/USB-Serial-JTAG disabled via eFuse in <code>prod</code>; UART log gated.</td></tr>
+                    <tr><td><strong>Matter</strong></td><td>Matter attestation (DAC/PAI) + commissioning security.</td></tr>
+                </tbody>
+            </table>
+            <div class="callout callout-warn">
+                <span class="callout-header">WPC / RF</span>
+                Firmware must not modify <code>phy_init</code> calibration or RF power tables beyond the module's certified profile —
+                this keeps the WPC module certification valid (HW doc §12).
+            </div>
+        </section>
+
+        <!-- 13 -->
+        <section id="fault">
+            <h2>13. Fault Handling, Watchdog &amp; Recovery</h2>
+            <ul>
+                <li><strong>Task Watchdog:</strong> <code>tsk_control</code>, <code>tsk_touch</code>, <code>tsk_event_bus</code> must feed within window; a stall → logged panic + reset.</li>
+                <li><strong>Interrupt WDT</strong> + <strong>brownout detector</strong> enabled (brownout important on the 230 VAC-derived rail).</li>
+                <li><strong>Safe state on fault:</strong> unrecoverable fault → NVS crash-counter → reset. Relay GPIOs default to a defined state out of reset; boot policy decides restore-vs-off.</li>
+                <li><strong>Crash diagnostics:</strong> <code>esp_core_dump</code> to the <code>storage</code> partition; reset reason + summary published via telemetry next boot.</li>
+                <li><strong>OTA self-heal:</strong> pending-verify + rollback recovers from a bad update automatically.</li>
+                <li><strong>Network resilience:</strong> network tasks are restart-safe; their failure degrades features, never the local switch.</li>
+            </ul>
+            <h3>13.1 Dual-MCU Fallback (non-baseline)</h3>
+            <p>If a variant reintroduces the STM32L0 for touch, the ESP32-S3 firmware adds <code>inter_mcu.c</code>: a UART/SPI
+            framed protocol (STM32→ESP32 touch events, ESP32→STM32 LED/config) with CRC + heartbeat. The event abstraction
+            (§6) means only the touch <em>source</em> changes — <code>tsk_control</code> and above are unaffected.</p>
+        </section>
+
+        <!-- 14 -->
+        <section id="memory">
+            <h2>14. Memory Budget (Indicative)</h2>
+            <table>
+                <thead><tr><th>Resource</th><th>Budget</th><th>Notes</th></tr></thead>
+                <tbody>
+                    <tr><td>Internal SRAM (512 KB)</td><td>WiFi/BT stacks + tasks + heap</td><td>Matter is the largest consumer</td></tr>
+                    <tr><td>PSRAM (8 MB)</td><td>Voice model + AFE buffers + large TLS buffers</td><td>Phase 2 voice lives here</td></tr>
+                    <tr><td>App image per slot</td><td>≤ ~3.2 MB</td><td>fits ota_0/ota_1 with margin</td></tr>
+                    <tr><td>Min-free-heap guard</td><td>telemetry alarm if &lt; 20 KB</td><td>catches field leaks</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 15 -->
+        <section id="connectivity">
+            <h2>15. Connectivity &amp; Control-Path Summary</h2>
+            <div class="mermaid">
+graph TD
+    subgraph Local["On-Device (always available)"]
+        TOUCH["Touch (CAP1296)"] --> CTRL["Gang State Machines<br/>(single source of truth)"]
+        SCHED["Schedules/Automation"] --> CTRL
+        CTRL --> RELAYS["Relays / Loads"]
+        CTRL --> LEDS["Status LEDs"]
+    end
+    subgraph Net["Network (enhancement)"]
+        APP["SETU App"] --> CLOUD["SETU Cloud (MQTT/TLS)"]
+        CLOUD --> CTRL
+        MATTERFAB["Matter Fabric"] --> CTRL
+        VOICE["Voice (wake-word)"] --> CTRL
+        OTA["OTA Server"] -.->|signed image| DEV["Device"]
+    end
+    CTRL -->|state echo| CLOUD
+    CTRL -->|attr report| MATTERFAB
+            </div>
+            <p>Four control surfaces (touch, app/cloud, Matter, voice) + automation converge on <strong>one</strong> state machine.
+            Local control is dependency-free; everything network-side can fail without affecting the switch.</p>
+        </section>
+
+        <!-- 16 -->
+        <section id="test">
+            <h2>16. Test Strategy</h2>
+            <table>
+                <thead><tr><th>Level</th><th>Where</th><th>What</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Unit (host)</strong></td><td><code>tests/unit</code> (Unity + CMock)</td><td>gang SM, theme engine, event-bus routing, config schema/migration, arbitration — mocked HAL</td></tr>
+                    <tr><td><strong>Unit (on-target)</strong></td><td><code>tests/unit</code> (IDF test app)</td><td>I2C/CAP1296 register sequences, relay timing/debounce, NVS encryption</td></tr>
+                    <tr><td><strong>Integration / HIL</strong></td><td><code>tests/integration</code> (pytest-embedded)</td><td>touch→relay latency (&lt;50 ms), WiFi reconnect, OTA + rollback, Matter commissioning, brownout recovery</td></tr>
+                    <tr><td><strong>Soak</strong></td><td>bench fleet</td><td>72 h: relay cycling, reconnect storms, heap-leak watch via telemetry</td></tr>
+                    <tr><td><strong>Cert pre-check</strong></td><td>bench</td><td>leakage/EMI behavior with firmware active (BIS/EMC); confirm RF profile unchanged (WPC)</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Coverage target:</strong> ≥ 80% on application + middleware logic (state machines, arbitration, theme
+            engine, OTA decision logic) — the parts testable host-side without hardware.</p>
+        </section>
+
+        <!-- 17 -->
+        <section id="standards">
+            <h2>17. Coding Standards &amp; Conventions</h2>
+            <ul>
+                <li><strong>Style:</strong> C11, Espressif style; <code>clang-format</code> enforced; Kconfig for all compile-time options.</li>
+                <li><strong>Naming:</strong> <code>setu_&lt;module&gt;_&lt;action&gt;()</code>; types <code>*_t</code>; events <code>EVT_*</code>; GPIO/pins only in <code>board.h</code>.</li>
+                <li><strong>Error model:</strong> functions return <code>esp_err_t</code>; <code>ESP_ERROR_CHECK</code> only in init/boot, never on the hard path (must degrade gracefully).</li>
+                <li><strong>No blocking on the hard path:</strong> <code>tsk_touch</code>/<code>tsk_control</code> never call network/flash-erase APIs synchronously.</li>
+                <li><strong>Logging:</strong> <code>ESP_LOGx</code> with per-module tags; no secrets; level gated by build profile.</li>
+                <li><strong>Reviews:</strong> every PR maps to a module in this doc; new control surfaces route through the event bus, not <code>relay_set()</code> directly.</li>
+            </ul>
+        </section>
+
+        <!-- 18 -->
+        <section id="roadmap">
+            <h2>18. Roadmap Mapping</h2>
+            <table>
+                <thead><tr><th>Phase</th><th>Firmware Deliverable</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Phase 1 (Q1–Q2 2025)</strong></td><td>Bring-up: HAL + drivers (touch, relay, LED), gang state machines, event bus, WiFi provisioning, basic app/MQTT control, OTA skeleton. Voice off.</td></tr>
+                    <tr><td><strong>Phase 2 (Q3–Q4 2025)</strong></td><td>Matter certification path, full OTA + rollback hardening, voice wake-word + theme engine, secure boot + flash encryption on pilot units.</td></tr>
+                    <tr><td><strong>Phase 3 (Q1–Q2 2026)</strong></td><td>Pilot fleet (500u) telemetry + remote diagnostics, NVS migration tooling, field OTA campaigns, soak/reliability.</td></tr>
+                    <tr><td><strong>Phase 4 (Q3–Q4 2026)</strong></td><td>Scale hardening, prod eFuse lock-down, multi-variant builds (gang count, RGB, dimming), voice/theme localization.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 19 -->
+        <section id="open">
+            <h2>19. Open Items &amp; Next Actions</h2>
+            <table>
+                <thead><tr><th>Item</th><th>Priority</th><th>Owner</th><th>Timeline</th></tr></thead>
+                <tbody>
+                    <tr><td>ESP-IDF project skeleton + <code>partitions.csv</code> + Kconfig profiles</td><td><span class="badge badge-critical">Critical</span></td><td>FW Eng</td><td>Week 1</td></tr>
+                    <tr><td>CAP1296 driver bring-up on DevKitC + eval board</td><td><span class="badge badge-critical">Critical</span></td><td>FW Eng</td><td>Week 1–2</td></tr>
+                    <tr><td>Event bus + gang state machine + relay driver (hard path)</td><td><span class="badge badge-critical">Critical</span></td><td>FW Eng</td><td>Week 2–3</td></tr>
+                    <tr><td>WiFi provisioning + MQTT control end-to-end</td><td><span class="badge badge-high">High</span></td><td>FW Eng</td><td>Month 2</td></tr>
+                    <tr><td>Matter On/Off endpoint + commissioning PoC</td><td><span class="badge badge-high">High</span></td><td>FW Eng</td><td>Month 2–3</td></tr>
+                    <tr><td>OTA + A/B + rollback validated on bench</td><td><span class="badge badge-high">High</span></td><td>FW Eng</td><td>Month 3</td></tr>
+                    <tr><td>Secure Boot + Flash Encryption + key management</td><td><span class="badge badge-high">High</span></td><td>FW Eng / Security</td><td>Month 3</td></tr>
+                    <tr><td>Voice wake-word PoC in PSRAM (ESP-SR)</td><td><span class="badge badge-medium">Medium</span></td><td>FW Eng</td><td>Phase 2</td></tr>
+                    <tr><td>Host-side unit test harness (Unity/CMock) + CI</td><td><span class="badge badge-medium">Medium</span></td><td>FW Eng</td><td>Month 2</td></tr>
+                    <tr><td>Telemetry schema + cloud ingestion contract</td><td><span class="badge badge-medium">Medium</span></td><td>FW + Cloud</td><td>Month 3</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <footer>
+            SETU — Firmware Architecture v0.1 Draft · June 2026 · setu1.0<br>
+            Next document: <code>SETU_OTA_Update_Protocol.md</code> · Reference:
+            <a href="SETU_Hardware_Implementation_Draft.html">Hardware Implementation Draft</a>
+        </footer>
+    </div>
+</body>
+</html>

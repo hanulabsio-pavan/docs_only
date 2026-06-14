@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SETU — Repository Structure Guide</title>
+<style>
+  :root{
+    --bg:#0f1220; --panel:#171b2e; --panel2:#1d2238; --ink:#e8ebf5; --muted:#9aa3c0;
+    --line:#2a3052; --accent:#c8a24a; --accent2:#5b8cff; --green:#4ec98a; --red:#e9698a;
+    --codebg:#0b0e1a; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:linear-gradient(160deg,#0f1220,#141831); color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px}
+  header.hero{
+    padding:56px 0 36px; border-bottom:1px solid var(--line); margin-bottom:8px;
+  }
+  .badge{display:inline-block; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); border:1px solid var(--accent); border-radius:999px; padding:4px 12px; margin-bottom:18px}
+  h1{font-size:40px; margin:0 0 8px; letter-spacing:-.5px}
+  h1 .dot{color:var(--accent)}
+  .tagline{color:var(--muted); font-size:18px; margin:0}
+  .meta{margin-top:18px; color:var(--muted); font-size:13px}
+  .layout{display:grid; grid-template-columns:230px 1fr; gap:34px; align-items:start; padding:30px 0 70px}
+  nav.toc{position:sticky; top:24px; font-size:14px}
+  nav.toc h4{margin:0 0 10px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+  nav.toc a{display:block; color:var(--ink); text-decoration:none; padding:6px 10px; border-radius:8px; opacity:.82}
+  nav.toc a:hover{background:var(--panel2); opacity:1; color:#fff}
+  section{margin-bottom:42px; scroll-margin-top:24px}
+  h2{font-size:24px; margin:0 0 6px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+  h2 .num{color:var(--accent); font-weight:600; margin-right:10px}
+  h3{font-size:17px; margin:26px 0 8px; color:#fff}
+  p{color:#cfd5ea}
+  .lead{color:var(--muted)}
+  code{font-family:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:13.5px}
+  .tree{
+    background:var(--codebg); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px 22px; overflow-x:auto; font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:13.5px; line-height:1.75; color:#cdd6f4;
+    white-space:pre; tab-size:2;
+  }
+  .tree .dir{color:var(--accent2); font-weight:600}
+  .tree .cmt{color:#6f7aa0}
+  .tree .root{color:var(--accent); font-weight:700}
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:14px; background:var(--panel); border-radius:var(--radius); overflow:hidden}
+  th,td{text-align:left; padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{background:var(--panel2); color:#fff; font-size:12px; letter-spacing:.06em; text-transform:uppercase}
+  tr:last-child td{border-bottom:none}
+  td code{color:var(--accent)}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 22px; margin:14px 0}
+  .pill{display:inline-block; font-size:12px; padding:2px 9px; border-radius:999px; font-weight:600}
+  .pill.src{background:rgba(91,140,255,.16); color:#9db8ff; border:1px solid rgba(91,140,255,.4)}
+  .pill.prod{background:rgba(233,105,138,.14); color:#f1a0b6; border:1px solid rgba(233,105,138,.4)}
+  .note{border-left:3px solid var(--accent); background:var(--panel2); padding:12px 18px; border-radius:0 10px 10px 0; color:#d7ddf2; margin:16px 0}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .legend{display:flex; gap:22px; flex-wrap:wrap; margin:10px 0 4px; font-size:13px; color:var(--muted)}
+  footer{border-top:1px solid var(--line); padding:26px 0 60px; color:var(--muted); font-size:13px; text-align:center}
+  @media(max-width:860px){
+    .layout{grid-template-columns:1fr} nav.toc{position:static; margin-bottom:10px}
+    .grid2{grid-template-columns:1fr} h1{font-size:30px}
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <span class="badge">Reference · Repository Structure</span>
+    <h1>SETU<span class="dot">/</span> Repo Structure Guide</h1>
+    <p class="tagline">Premium IoT Smart Switch Board — the single source of truth for how the <code>setu1.0</code> repository is organized and what goes where.</p>
+    <div class="meta">Repository: <code>setu1.0</code> &nbsp;·&nbsp; Version 1.0 &nbsp;·&nbsp; Read this before adding any new file to the repo.</div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+  <nav class="toc">
+    <h4>Contents</h4>
+    <a href="#golden">The Golden Rule</a>
+    <a href="#tree">Directory Tree</a>
+    <a href="#hardware">Hardware</a>
+    <a href="#firmware">Firmware</a>
+    <a href="#manufacturing">Manufacturing</a>
+    <a href="#industrial">Industrial Design</a>
+    <a href="#certification">Certification</a>
+    <a href="#docs">Documentation</a>
+    <a href="#tools">Tools &amp; AI Config</a>
+    <a href="#naming">Naming Conventions</a>
+    <a href="#git">Git Workflow</a>
+  </nav>
+
+  <main>
+
+    <section id="golden">
+      <h2><span class="num">0</span>The Golden Rule</h2>
+      <p class="lead">There are two types of files in this project. Knowing which is which prevents the most common and most dangerous mistakes.</p>
+      <div class="grid2">
+        <div class="card">
+          <span class="pill src">DESIGN FILES</span>
+          <p>Files you create and edit. The <strong>source of truth</strong>.</p>
+          <p style="color:var(--muted);font-size:14px;margin:0">e.g. KiCad <code>.kicad_sch</code>, C source <code>.c</code>, STEP enclosure files.</p>
+        </div>
+        <div class="card">
+          <span class="pill prod">PRODUCTION FILES</span>
+          <p>Files exported <em>from</em> design files for manufacturing. <strong>Never edit directly.</strong></p>
+          <p style="color:var(--muted);font-size:14px;margin:0">e.g. Gerbers, BOM CSV, STL for print, firmware <code>.bin</code>.</p>
+        </div>
+      </div>
+      <div class="note">If a conflict ever exists between a production file and its design source, <strong>the design source always wins.</strong> Regenerate the production file; never patch it by hand.</div>
+    </section>
+
+    <section id="tree">
+      <h2><span class="num">1</span>Full Directory Tree</h2>
+      <div class="legend">
+        <span><span style="color:var(--accent2)">■</span> directory</span>
+        <span><span style="color:#6f7aa0">■</span> description / file note</span>
+      </div>
+      <div class="tree"><span class="root">setu1.0/</span>
+│
+├── <span class="dir">CLAUDE.md</span>                        <span class="cmt">← AI assistant context (read first)</span>
+├── <span class="dir">README.md</span>                        <span class="cmt">← Project overview (public-facing)</span>
+├── <span class="dir">.gitignore</span>                       <span class="cmt">← Ignore EDA caches, build outputs</span>
+│
+├── <span class="dir">.claude/</span>                         <span class="cmt">← Claude Code AI configuration</span>
+│   ├── settings.json                <span class="cmt">← Tool permissions, model settings</span>
+│   └── agents/
+│       ├── hardware-reviewer.md     <span class="cmt">← Sub-agent for PCB/schematic review</span>
+│       └── firmware-reviewer.md     <span class="cmt">← Sub-agent for firmware code review</span>
+│
+├── <span class="dir">hardware/</span>                        <span class="cmt">← PCB DESIGN FILES (source of truth)</span>
+│   ├── design/
+│   │   ├── schematics/              <span class="cmt">← KiCad .kicad_sch / Altium .SchDoc</span>
+│   │   ├── pcb-layout/              <span class="cmt">← KiCad .kicad_pcb / Altium .PcbDoc</span>
+│   │   ├── symbols/                 <span class="cmt">← Custom schematic symbols (.kicad_sym)</span>
+│   │   ├── footprints/              <span class="cmt">← Custom PCB footprints (.kicad_mod)</span>
+│   │   └── 3d-models/               <span class="cmt">← Component 3D models (.step, .wrl)</span>
+│   ├── bom/                         <span class="cmt">← SETU_BOM_v1.0.xlsx (master) + .csv (for CM)</span>
+│   └── datasheets/                  <span class="cmt">← PDFs for all ICs and key components</span>
+│
+├── <span class="dir">firmware/</span>                        <span class="cmt">← EMBEDDED SOFTWARE (source of truth)</span>
+│   ├── src/
+│   │   ├── main/                    <span class="cmt">← Application entry point, task init</span>
+│   │   ├── drivers/                 <span class="cmt">← Low-level peripheral drivers</span>
+│   │   ├── hal/                     <span class="cmt">← Hardware abstraction layer</span>
+│   │   ├── middleware/              <span class="cmt">← WiFi stack, OTA, MQTT, voice engine</span>
+│   │   └── rtos/                    <span class="cmt">← FreeRTOS task configs, priorities</span>
+│   ├── include/                     <span class="cmt">← Shared header files (.h)</span>
+│   ├── tests/
+│   │   ├── unit/                    <span class="cmt">← Unity/CMock unit tests</span>
+│   │   └── integration/             <span class="cmt">← Hardware-in-loop tests</span>
+│   ├── tools/                       <span class="cmt">← Flash scripts, debug tools</span>
+│   ├── docs/
+│   │   ├── api/                     <span class="cmt">← API reference</span>
+│   │   └── test-plans/              <span class="cmt">← Formal test protocols (TP-001…)</span>
+│   ├── CMakeLists.txt               <span class="cmt">← ESP-IDF build file</span>
+│   └── sdkconfig                    <span class="cmt">← ESP-IDF menuconfig (version controlled)</span>
+│
+├── <span class="dir">manufacturing/</span>                   <span class="cmt">← PRODUCTION OUTPUT FILES</span>
+│   ├── gerbers/
+│   │   └── v1.0/                    <span class="cmt">← Zipped Gerber + drill files per version</span>
+│   ├── assembly/
+│   │   ├── pick-and-place/          <span class="cmt">← SMT P&P centroid file (.csv)</span>
+│   │   ├── assembly-drawing/        <span class="cmt">← Assembly drawing PDF</span>
+│   │   └── solder-paste/            <span class="cmt">← Paste stencil Gerber (F/B.Paste)</span>
+│   ├── test-fixtures/               <span class="cmt">← ICT fixture design, test protocols</span>
+│   └── quality/                     <span class="cmt">← QC checklists, incoming inspection, ITP</span>
+│
+├── <span class="dir">industrial-design/</span>               <span class="cmt">← ENCLOSURE & PACKAGING</span>
+│   ├── cad/
+│   │   ├── enclosure/               <span class="cmt">← Housing body (.STEP, .F3D, .IGES)</span>
+│   │   └── bezel/                   <span class="cmt">← Touch-panel face plate (.STEP, .STL)</span>
+│   ├── renders/                     <span class="cmt">← High-res product renders (.PNG, .JPG)</span>
+│   └── packaging/                   <span class="cmt">← Box dieline, inserts, label artwork</span>
+│
+├── <span class="dir">certification/</span>                   <span class="cmt">← REGULATORY COMPLIANCE DOCUMENTS</span>
+│   ├── BIS/                         <span class="cmt">← IS 1293:2002 (electrical safety, India)</span>
+│   │   ├── pre-test-reports/        <span class="cmt">← In-house + TÜV pre-compliance results</span>
+│   │   ├── design-docs/             <span class="cmt">← Safety manual, isolation drawings</span>
+│   │   └── final-certificate/       <span class="cmt">← Approved BIS license (DO NOT MODIFY)</span>
+│   ├── WPC/                         <span class="cmt">← Wireless Planning Commission (WiFi)</span>
+│   ├── CE/                          <span class="cmt">← CE marking (Europe — Phase 4+)</span>
+│   └── FCC/                         <span class="cmt">← FCC Part 15 (USA — Phase 4+)</span>
+│
+├── <span class="dir">docs/</span>                            <span class="cmt">← ALL PROJECT DOCUMENTATION</span>
+│   ├── SETU_24M_Execution_Roadmap.md   <span class="cmt">← Master roadmap (phases 1–4)</span>
+│   ├── SETU_Project_Structure.md       <span class="cmt">← Structure + gap analysis</span>
+│   ├── SETU_Repo_Structure_Guide.html  <span class="cmt">← This reference (HTML)</span>
+│   ├── hardware-specs/              <span class="cmt">← HW requirements, review notes</span>
+│   ├── firmware-docs/               <span class="cmt">← Architecture, OTA flow, WiFi behavior</span>
+│   ├── production-specs/            <span class="cmt">← Assembly SOP, test/QC procedures</span>
+│   └── business/                    <span class="cmt">← GTM strategy, pitch deck, financials</span>
+│
+└── <span class="dir">tools/</span>
+    ├── scripts/                     <span class="cmt">← Automation: flash, test, BOM generation</span>
+    └── config/                      <span class="cmt">← Tool configs (KiCad DRC, clang-format)</span></div>
+    </section>
+
+    <section id="hardware">
+      <h2><span class="num">2</span>Hardware <span class="pill src" style="font-size:11px;vertical-align:middle">SOURCE</span></h2>
+      <p class="lead">PCB design source files. Board target: 140mm × 100mm, 4-layer, 230VAC input for Indian 3-/4-gang boxes.</p>
+
+      <h3>schematics/ &nbsp;·&nbsp; pcb-layout/</h3>
+      <table>
+        <tr><th>Store here</th><th>Do NOT store here</th></tr>
+        <tr><td>KiCad / Altium schematic &amp; layout source</td><td>Exported PDFs → <code>docs/hardware-specs/</code></td></tr>
+        <tr><td>Custom symbol &amp; footprint libraries</td><td>Generic manufacturer symbols (use KiCad std lib)</td></tr>
+        <tr><td>Revision notes (in title block)</td><td>Gerbers → <code>manufacturing/gerbers/</code></td></tr>
+      </table>
+
+      <div class="card">
+        <h3 style="margin-top:0">PCB layout constraints to embed in the file</h3>
+        <table style="margin:0">
+          <tr><td>Board outline</td><td>140mm × 100mm</td></tr>
+          <tr><td>Stackup</td><td>4-layer (Signal / GND / PWR / Signal)</td></tr>
+          <tr><td>Min trace width</td><td>0.15mm signal · 0.5mm power · 2mm HV</td></tr>
+          <tr><td>HV clearance</td><td>4mm creepage / 2.5mm clearance (HV↔LV)</td></tr>
+          <tr><td>WiFi antenna keepout</td><td>15mm copper-free zone around ESP32-S3 antenna</td></tr>
+        </table>
+      </div>
+
+      <h3>bom/ — keep two formats in sync</h3>
+      <table>
+        <tr><th>File</th><th>Audience</th><th>Type</th></tr>
+        <tr><td><code>SETU_BOM_v{x}.xlsx</code></td><td>Internal — pricing, suppliers, alternates</td><td><span class="pill src">DESIGN</span></td></tr>
+        <tr><td><code>SETU_BOM_v{x}.csv</code></td><td>Contract Manufacturer — stripped down</td><td><span class="pill prod">PRODUCTION</span></td></tr>
+      </table>
+      <p style="font-size:14px;color:var(--muted)">Minimum columns: Ref Des · MPN · Manufacturer · Description · Value · Package · Qty · Supplier · Unit Cost · Approved Alternate. <strong>BOM and schematic must always be committed together.</strong></p>
+    </section>
+
+    <section id="firmware">
+      <h2><span class="num">3</span>Firmware <span class="pill src" style="font-size:11px;vertical-align:middle">SOURCE</span></h2>
+      <p class="lead">ESP-IDF (ESP32-S3) + STM32 HAL (touch MCU). Build with <code>idf.py build</code> from <code>firmware/</code>.</p>
+
+      <h3>Expected source modules</h3>
+      <div class="tree" style="font-size:13px"><span class="dir">firmware/src/</span>
+├── main/      <span class="cmt">app_main.c (entry, task spawning) · app_config.h</span>
+├── drivers/   <span class="cmt">touch_drv · relay_drv · led_drv (.c/.h)</span>
+├── hal/       <span class="cmt">gpio_hal · uart_hal (bridge to touch MCU) · nvs_hal</span>
+├── middleware/<span class="cmt">wifi_mgr · ota_mgr · theme_engine · voice_engine</span>
+└── rtos/      <span class="cmt">task_config.h (priorities, stacks) · event_groups.h</span></div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3 style="margin-top:0">Version policy</h3>
+          <table style="margin:0">
+            <tr><td><code>v1.0.0</code></td><td>Cert-ready build (frozen for BIS/WPC)</td></tr>
+            <tr><td><code>v1.1.x</code></td><td>Bug fixes from alpha feedback</td></tr>
+            <tr><td><code>v2.0.0</code></td><td>Phase 4 (multi-panel, cloud, Alexa)</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">Test plans → <code>firmware/docs/test-plans/</code></h3>
+          <p style="font-size:14px;margin:0">
+            <code>TP-001</code> Touch Calibration<br>
+            <code>TP-002</code> WiFi Stability<br>
+            <code>TP-003</code> OTA Update + rollback<br>
+            <code>TP-004</code> Power Consumption
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="manufacturing">
+      <h2><span class="num">4</span>Manufacturing <span class="pill prod" style="font-size:11px;vertical-align:middle">PRODUCTION</span></h2>
+      <div class="note"><strong>Always version Gerbers.</strong> Never overwrite a previous version — overwriting production files silently is dangerous.</div>
+
+      <h3>gerbers/v1.0/ — package contents</h3>
+      <div class="tree" style="font-size:13px">SETU_F_Cu.gbr · SETU_B_Cu.gbr        <span class="cmt">front / back copper</span>
+SETU_In1_Cu.gbr · SETU_In2_Cu.gbr    <span class="cmt">inner GND / PWR</span>
+SETU_F_Mask.gbr · SETU_B_Mask.gbr    <span class="cmt">solder mask</span>
+SETU_F_Silkscreen.gbr                <span class="cmt">front silkscreen</span>
+SETU_Edge_Cuts.gbr                   <span class="cmt">board outline</span>
+SETU_NPTH.drl · SETU_PTH.drl         <span class="cmt">drill files</span>
+SETU_GBR_v1.0.zip                    <span class="cmt">← full package sent to PCB fab</span></div>
+
+      <h3>assembly/ &amp; quality/</h3>
+      <table>
+        <tr><th>File / Doc</th><th>Purpose</th></tr>
+        <tr><td><code>SETU_ASSY_v1.0.pdf</code></td><td>Component placement, polarity markings</td></tr>
+        <tr><td><code>SETU_CPL_v1.0.csv</code></td><td>SMT centroid file (X, Y, rotation, layer)</td></tr>
+        <tr><td><code>SETU_F_Paste.gbr</code></td><td>Stencil file for paste printer</td></tr>
+        <tr><td><code>QC-001</code> … <code>QC-005</code></td><td>Incoming inspection → SMT → functional → final → RMA</td></tr>
+      </table>
+    </section>
+
+    <section id="industrial">
+      <h2><span class="num">5</span>Industrial Design <span class="pill src" style="font-size:11px;vertical-align:middle">SOURCE</span></h2>
+      <div class="grid2">
+        <div class="card">
+          <h3 style="margin-top:0">CAD formats</h3>
+          <p style="font-size:14px;margin:0">
+            Primary design: <code>.F3D</code> / <code>.SLDPRT</code><br>
+            Neutral exchange: <code>.STEP</code><br>
+            3D-print prototype: <code>.STL</code>
+          </p>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">Enclosure constraints</h3>
+          <p style="font-size:14px;margin:0">
+            Fits Indian 3-gang modular box · wall ≥1.5mm (ABS/PC)<br>
+            Bezel: tempered glass / hard-coated PMMA<br>
+            IP20 · Flame rating UL94-V0 (BIS requirement)
+          </p>
+        </div>
+      </div>
+      <h3>packaging/ — required before Phase 3 launch</h3>
+      <table>
+        <tr><th>File</th><th>Description</th></tr>
+        <tr><td><code>SETU_Box_Dieline_v1.0.ai</code></td><td>Outer box dieline (Illustrator source)</td></tr>
+        <tr><td><code>SETU_Box_Artwork_v1.0.pdf</code></td><td>Print-ready artwork</td></tr>
+        <tr><td><code>SETU_QSG_v1.0.pdf</code></td><td>Quick Start Guide (2-page, in box)</td></tr>
+        <tr><td><code>SETU_Label_Serial_v1.0.ai</code></td><td>Serial / regulatory label artwork</td></tr>
+      </table>
+    </section>
+
+    <section id="certification">
+      <h2><span class="num">6</span>Certification <span class="pill prod" style="font-size:11px;vertical-align:middle">LEGAL — VERSION CAREFULLY</span></h2>
+      <div class="note">Files in <code>BIS/final-certificate/</code> and <code>WPC/</code> are <strong>immutable once approved</strong>. Never edit an approved certificate.</div>
+      <table>
+        <tr><th>Cert</th><th>Scope</th><th>Body / Timeline</th><th>Phase</th></tr>
+        <tr><td><strong>BIS</strong> (IS 1293:2002)</td><td>Electrical safety, India — critical path</td><td>TÜV India / BSA · 4–6 mo</td><td>2–3</td></tr>
+        <tr><td><strong>WPC</strong></td><td>2.4GHz WiFi (ESP32-S3)</td><td>Approved lab · 4–6 wk</td><td>2–3</td></tr>
+        <tr><td>CE (EMC+LVD)</td><td>Europe export</td><td>—</td><td>4+</td></tr>
+        <tr><td>FCC Part 15</td><td>USA export</td><td>—</td><td>4+</td></tr>
+      </table>
+      <p style="font-size:14px;color:var(--muted)"><strong>BIS design-docs to submit:</strong> Safety Manual · HV Isolation schematic · PCB Clearance Report · Component Safety Certs · Risk Assessment FMEA.</p>
+    </section>
+
+    <section id="docs">
+      <h2><span class="num">7</span>Documentation</h2>
+      <table>
+        <tr><th>Path</th><th>Contents</th></tr>
+        <tr><td><code>docs/SETU_24M_Execution_Roadmap.md</code></td><td>Master roadmap, phases 1–4, financials, team plan</td></tr>
+        <tr><td><code>docs/SETU_Project_Structure.md</code></td><td>Structure reference + gap analysis (Markdown source)</td></tr>
+        <tr><td><code>docs/SETU_Repo_Structure_Guide.html</code></td><td>This visual reference</td></tr>
+        <tr><td><code>docs/hardware-specs/</code></td><td>HW requirements, schematic review notes, exported PDFs</td></tr>
+        <tr><td><code>docs/firmware-docs/</code></td><td>Architecture, OTA flow, WiFi behavior</td></tr>
+        <tr><td><code>docs/production-specs/</code></td><td>Assembly SOP, QC procedures</td></tr>
+        <tr><td><code>docs/business/</code></td><td>GTM strategy, pitch deck, financial model</td></tr>
+      </table>
+    </section>
+
+    <section id="tools">
+      <h2><span class="num">8</span>Tools &amp; AI Configuration</h2>
+      <table>
+        <tr><th>Path</th><th>Purpose</th></tr>
+        <tr><td><code>tools/scripts/</code></td><td>Automation: flash, test, BOM generation</td></tr>
+        <tr><td><code>tools/config/</code></td><td>KiCad DRC rules, clang-format</td></tr>
+        <tr><td><code>.claude/settings.json</code></td><td>Tool permissions / model settings for the AI assistant</td></tr>
+        <tr><td><code>.claude/agents/hardware-reviewer.md</code></td><td>Sub-agent: PCB / schematic design-rule checks</td></tr>
+        <tr><td><code>.claude/agents/firmware-reviewer.md</code></td><td>Sub-agent: embedded code quality checks</td></tr>
+      </table>
+    </section>
+
+    <section id="naming">
+      <h2><span class="num">9</span>Naming Conventions</h2>
+      <table>
+        <tr><th>Asset</th><th>Convention</th><th>Example</th></tr>
+        <tr><td>Schematic</td><td><code>SETU_SCH_v{M}.{m}.kicad_sch</code></td><td>SETU_SCH_v1.0.kicad_sch</td></tr>
+        <tr><td>PCB Layout</td><td><code>SETU_PCB_v{M}.{m}.kicad_pcb</code></td><td>SETU_PCB_v1.2.kicad_pcb</td></tr>
+        <tr><td>Gerber package</td><td><code>SETU_GBR_v{M}.{m}.zip</code></td><td>SETU_GBR_v1.0.zip</td></tr>
+        <tr><td>BOM (master)</td><td><code>SETU_BOM_v{M}.{m}.xlsx</code></td><td>SETU_BOM_v1.0.xlsx</td></tr>
+        <tr><td>BOM (for CM)</td><td><code>SETU_BOM_v{M}.{m}.csv</code></td><td>SETU_BOM_v1.0.csv</td></tr>
+        <tr><td>Firmware release</td><td><code>v{M}.{m}.{p}</code> git tag</td><td>v1.0.0</td></tr>
+        <tr><td>Firmware binary</td><td><code>SETU_FW_v{M}.{m}.{p}.bin</code></td><td>SETU_FW_v1.0.0.bin</td></tr>
+        <tr><td>Enclosure CAD</td><td><code>SETU_ENC_{part}_v{M}.{m}.step</code></td><td>SETU_ENC_Housing_v1.0.step</td></tr>
+        <tr><td>Test plan</td><td><code>TP-{NNN}_{Name}.md</code></td><td>TP-001_Touch_Calibration.md</td></tr>
+        <tr><td>QC document</td><td><code>QC-{NNN}_{Name}.md</code></td><td>QC-003_Functional_Test.md</td></tr>
+        <tr><td>Certification doc</td><td><code>{BODY}_{Description}_v{M}.{m}.pdf</code></td><td>BIS_Safety_Manual_v1.0.pdf</td></tr>
+      </table>
+    </section>
+
+    <section id="git">
+      <h2><span class="num">10</span>Git Workflow for Hardware</h2>
+      <ol style="color:#cfd5ea">
+        <li><strong>Never commit Gerbers without a version bump</strong> — they are production files; silent overwrites are dangerous.</li>
+        <li><strong>BOM and schematic commit together</strong> — they must always be in sync.</li>
+        <li><strong>Certification docs are immutable once approved</strong> — never edit approved BIS/WPC files.</li>
+        <li><strong>Design files are the source</strong> — if a Gerber and the KiCad source conflict, the source wins.</li>
+        <li><strong>Tag firmware releases</strong> — every build sent for certification must be a git tag (<code>v1.0.0</code>).</li>
+      </ol>
+      <div class="tree" style="font-size:13px"><span class="cmt"># Example: a hardware revision</span>
+git checkout -b hw/pcb-v1.1-thermal-fix
+<span class="cmt"># ...edit PCB in KiCad, re-export Gerbers to gerbers/v1.1/, update BOM...</span>
+git add hardware/ manufacturing/gerbers/v1.1/
+git commit -m "PCB v1.1: add thermal vias under U3 (ESP32-S3)"
+git checkout main &amp;&amp; git merge hw/pcb-v1.1-thermal-fix</div>
+    </section>
+
+  </main>
+</div>
+</div>
+
+<footer>
+  <div class="wrap">SETU — Premium IoT Smart Switch Board · Repository Structure Guide v1.0 · Proprietary © SETU / Hanulabs.io<br>
+  Companion to <code>docs/SETU_Project_Structure.md</code> and <code>docs/SETU_24M_Execution_Roadmap.md</code>.</div>
+</footer>
+
+</body>
+</html>

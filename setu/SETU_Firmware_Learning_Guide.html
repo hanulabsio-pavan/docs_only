@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SETU — Firmware Learning Guide</title>
+<style>
+  :root{
+    --bg:#0d1117; --surface:#161b22; --surface2:#1c2330; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e; --accent:#39c5cf; --accent2:#58a6ff;
+    --green:#3fb950; --yellow:#e3b341; --red:#f85149; --purple:#bc8cff;
+    --code-bg:#0b0f14; --comment:#6e7781;
+    --maxw:880px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65; font-size:16px;
+  }
+  a{color:var(--accent2); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  code{font-family:'SF Mono',ui-monospace,'Cascadia Code','Courier New',monospace; font-size:.88em;
+       background:#1f2630; color:#9ad1d4; padding:1px 6px; border-radius:5px;}
+  pre{margin:0;}
+  pre code{display:block; background:none; color:#cdd9e5; padding:0; border-radius:0;
+           font-size:.82rem; line-height:1.55; white-space:pre; overflow-x:auto;}
+
+  /* ── Top bar ─────────────────────────────────────────── */
+  header{
+    position:sticky; top:0; z-index:30; background:rgba(13,17,23,.92);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--border);
+  }
+  .bar{display:flex; align-items:center; gap:14px; padding:12px 22px; max-width:1280px; margin:0 auto;}
+  .logo{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:800;
+        background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#04222a;}
+  .brand b{font-size:1rem;} .brand div{font-size:.72rem;color:var(--muted);}
+  .bar .spacer{flex:1;}
+  .btn{background:var(--surface2); border:1px solid var(--border); color:var(--text);
+       font-size:.78rem; padding:7px 12px; border-radius:7px; cursor:pointer;}
+  .btn:hover{border-color:var(--accent);}
+  .home-link{font-size:.8rem;color:var(--muted);}
+  /* progress */
+  .progress-wrap{height:4px;background:var(--surface2);}
+  #progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .3s;}
+
+  /* ── Layout ──────────────────────────────────────────── */
+  .layout{display:grid; grid-template-columns:280px 1fr; max-width:1280px; margin:0 auto;}
+  nav{
+    position:sticky; top:57px; align-self:start; height:calc(100vh - 57px); overflow-y:auto;
+    border-right:1px solid var(--border); padding:18px 12px 60px;
+  }
+  nav .grp{font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);
+           margin:18px 10px 6px;}
+  nav a{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:7px;color:var(--text);
+        font-size:.84rem;}
+  nav a:hover{background:var(--surface);text-decoration:none;}
+  nav a.active{background:var(--surface2);color:var(--accent);font-weight:600;}
+  .navnum{width:22px;height:22px;flex:none;border-radius:6px;background:var(--surface2);
+          display:grid;place-items:center;font-size:.7rem;color:var(--muted);border:1px solid var(--border);}
+  nav a.done .navnum{background:var(--green);color:#04220d;border-color:var(--green);}
+  nav a.done .navnum::after{content:"✓";}
+  nav a.done .navtxt{color:var(--muted);}
+  nav a.done .navnum span{display:none;}
+
+  main{padding:34px 40px 120px; max-width:calc(var(--maxw) + 80px);}
+  .lesson{scroll-margin-top:72px; margin-bottom:60px;}
+  .lesson h2{font-size:1.55rem;margin:.2em 0 .1em;}
+  .kicker{color:var(--accent);font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+  .lesson h3{font-size:1.08rem;margin:1.6em 0 .4em;color:#fff;}
+  .lesson p{color:#c9d3de;}
+  .lesson li{color:#c9d3de;margin:.25em 0;}
+
+  /* hero */
+  .hero{padding:30px 0 10px;border-bottom:1px solid var(--border);margin-bottom:30px;}
+  .hero h1{font-size:2.2rem;margin:.1em 0;}
+  .hero p{color:var(--muted);font-size:1.02rem;}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .pill{font-size:.72rem;padding:4px 10px;border-radius:20px;background:var(--surface2);
+        border:1px solid var(--border);color:var(--muted);}
+
+  /* callouts */
+  .note{border-left:3px solid var(--accent);background:var(--surface);padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:.93rem;}
+  .note.why{border-left-color:var(--purple);}
+  .note.warn{border-left-color:var(--yellow);}
+  .note.key{border-left-color:var(--green);background:#11211a;}
+  .note .lbl{font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:3px;}
+  .note.why .lbl{color:var(--purple);} .note.warn .lbl{color:var(--yellow);}
+  .note.key .lbl{color:var(--green);} .note .lbl.acc{color:var(--accent);}
+
+  .file{font-family:ui-monospace,monospace;font-size:.82rem;color:var(--accent);
+        background:#0e1a1c;border:1px solid #1f3a3d;border-radius:6px;padding:2px 8px;display:inline-block;}
+
+  /* code block w/ caption */
+  .code{margin:16px 0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg);}
+  .code summary{cursor:pointer;list-style:none;padding:9px 14px;background:var(--surface);font-size:.78rem;
+                color:var(--muted);display:flex;align-items:center;gap:8px;}
+  .code summary::-webkit-details-marker{display:none;}
+  .code summary::before{content:"▸";color:var(--accent);transition:transform .2s;}
+  .code[open] summary::before{transform:rotate(90deg);}
+  .code summary .fn{color:var(--accent);font-family:monospace;}
+  .code .body{padding:14px 16px;overflow-x:auto;}
+  .cmt{color:var(--comment);font-style:italic;}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.86rem;}
+  th,td{border:1px solid var(--border);padding:8px 11px;text-align:left;vertical-align:top;}
+  th{background:var(--surface2);color:#fff;}
+  tr:nth-child(even) td{background:rgba(255,255,255,.015);}
+
+  /* self-check */
+  .quiz{border:1px dashed var(--border);border-radius:10px;padding:4px 16px;margin:18px 0;background:var(--surface);}
+  .quiz summary{cursor:pointer;font-weight:600;color:var(--yellow);padding:10px 0;font-size:.9rem;}
+  .quiz[open] summary{border-bottom:1px solid var(--border);margin-bottom:10px;}
+  .quiz p{font-size:.92rem;}
+
+  .mark{display:inline-flex;align-items:center;gap:8px;margin-top:22px;background:var(--surface2);
+        border:1px solid var(--border);color:var(--text);font-size:.82rem;padding:9px 16px;border-radius:8px;cursor:pointer;}
+  .mark:hover{border-color:var(--green);}
+  .mark.done{background:#11281a;border-color:var(--green);color:var(--green);}
+  .mark .box{width:16px;height:16px;border:1.5px solid var(--muted);border-radius:4px;display:grid;place-items:center;font-size:.7rem;}
+  .mark.done .box{background:var(--green);border-color:var(--green);color:#04220d;}
+
+  /* flow diagram (CSS only) */
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:18px 0;font-size:.8rem;}
+  .flow .node{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;}
+  .flow .node.hot{border-color:var(--accent);color:var(--accent);}
+  .flow .arr{color:var(--muted);}
+
+  footer{border-top:1px solid var(--border);padding:26px 40px;color:var(--muted);font-size:.82rem;text-align:center;}
+
+  @media(max-width:880px){
+    .layout{grid-template-columns:1fr;}
+    nav{display:none;}
+    main{padding:24px 18px 90px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="logo">S</div>
+    <div class="brand"><b>SETU Firmware</b><div>Learning Guide · understand before you build</div></div>
+    <div class="spacer"></div>
+    <a class="home-link" href="index.html">← Docs Hub</a>
+    <button class="btn" id="reset-btn">Reset progress</button>
+  </div>
+  <div class="progress-wrap"><div id="progress-bar"></div></div>
+</header>
+
+<div class="layout">
+  <!-- ── Sidebar ─────────────────────────────────────────── -->
+  <nav id="nav">
+    <div class="grp">Foundations</div>
+    <a href="#l1" data-for="1"><span class="navnum"><span>1</span></span><span class="navtxt">What this firmware is</span></a>
+    <a href="#l2" data-for="2"><span class="navnum"><span>2</span></span><span class="navtxt">ESP-IDF &amp; the build</span></a>
+    <a href="#l3" data-for="3"><span class="navnum"><span>3</span></span><span class="navtxt">Layers &amp; the dependency rule</span></a>
+    <a href="#l4" data-for="4"><span class="navnum"><span>4</span></span><span class="navtxt">FreeRTOS in 10 minutes</span></a>
+    <div class="grp">The core idea</div>
+    <a href="#l5" data-for="5"><span class="navnum"><span>5</span></span><span class="navtxt">The event bus</span></a>
+    <a href="#l6" data-for="6"><span class="navnum"><span>6</span></span><span class="navtxt">Boot sequence</span></a>
+    <a href="#l7" data-for="7"><span class="navnum"><span>7</span></span><span class="navtxt">Trace: touch → light</span></a>
+    <div class="grp">The layers in detail</div>
+    <a href="#l8" data-for="8"><span class="navnum"><span>8</span></span><span class="navtxt">HAL — talking to silicon</span></a>
+    <a href="#l9" data-for="9"><span class="navnum"><span>9</span></span><span class="navtxt">Drivers</span></a>
+    <a href="#l10" data-for="10"><span class="navnum"><span>10</span></span><span class="navtxt">Application logic</span></a>
+    <a href="#l11" data-for="11"><span class="navnum"><span>11</span></span><span class="navtxt">Middleware &amp; connectivity</span></a>
+    <a href="#l12" data-for="12"><span class="navnum"><span>12</span></span><span class="navtxt">Persistence (NVS)</span></a>
+    <a href="#l13" data-for="13"><span class="navnum"><span>13</span></span><span class="navtxt">OTA &amp; security</span></a>
+    <div class="grp">Wrap up</div>
+    <a href="#l14" data-for="14"><span class="navnum"><span>14</span></span><span class="navtxt">Tests &amp; where to start</span></a>
+    <a href="#glossary" data-for="0"><span class="navnum">📖</span><span class="navtxt">Glossary</span></a>
+  </nav>
+
+  <!-- ── Content ─────────────────────────────────────────── -->
+  <main>
+    <div class="hero">
+      <h1>SETU Firmware — Learning Guide</h1>
+      <p>A guided tour of every file under <code>firmware/</code>, from first principles.
+         You didn't write this code — this guide makes it <em>yours</em>. Read top to bottom;
+         each lesson builds on the last.</p>
+      <div class="pills">
+        <span class="pill">ESP32-S3</span><span class="pill">ESP-IDF v5.x</span><span class="pill">FreeRTOS / C</span>
+        <span class="pill">~14 lessons</span><span class="pill">progress saved locally</span>
+      </div>
+      <div class="note" style="margin-top:18px">
+        <span class="lbl acc">How to use this</span>
+        Each lesson explains a <b>concept</b> in plain language, then shows <b>where it lives in our code</b>
+        (look for the <span class="file">file.c</span> chips and the collapsible code blocks), ends with a
+        <b>key takeaway</b>, and offers a <b>self-check</b>. Hit <em>“Mark as understood”</em> to track progress in the sidebar.
+        Pair this with the deeper <a href="SETU_Firmware_Architecture.html">Firmware Architecture</a> reference.
+      </div>
+    </div>
+
+    <!-- ════════════ LESSON 1 ════════════ -->
+    <section class="lesson" id="l1" data-lesson="1">
+      <span class="kicker">Lesson 1 · Foundations</span>
+      <h2>What this firmware actually is</h2>
+      <p><b>Firmware</b> is the software that runs <em>inside</em> a device, not on a phone or PC. For SETU it runs on
+      the <b>ESP32-S3</b> microcontroller sitting in the wall switch. Its job: read finger touches, flip the
+      mains relays that turn your lights on/off, glow the LEDs, and talk to WiFi / the app / voice — all while
+      never doing anything unsafe with 230&nbsp;V loads.</p>
+
+      <h3>The two chips it coordinates</h3>
+      <ul>
+        <li><b>ESP32-S3</b> — the brain. Dual-core CPU, WiFi/Bluetooth, runs all our code.</li>
+        <li><b>CAP1296</b> — a dedicated touch-sensing chip. It detects finger presses in hardware and just
+            <em>tells</em> the ESP32 “channel 2 was touched” over a wire. The ESP32 never has to measure capacitance itself.</li>
+      </ul>
+
+      <div class="note why"><span class="lbl">Why this matters</span>
+        A light switch is a <b>safety + utility device first, a gadget second</b>. The #1 design rule you'll see
+        everywhere in this code: <b>local control must always work</b>, even if WiFi, the cloud, and voice are all dead.
+        Network features are an <em>enhancement</em>, never a dependency.</p>
+      </div>
+
+      <h3>The "hard path" — the one sequence that must never be slow or blocked</h3>
+      <div class="flow">
+        <span class="node hot">finger touch</span><span class="arr">→</span>
+        <span class="node">CAP1296 detects</span><span class="arr">→</span>
+        <span class="node">ESP32 reads it</span><span class="arr">→</span>
+        <span class="node hot">relay flips</span><span class="arr">→</span>
+        <span class="node">light on</span>
+      </div>
+      <p>Our target is <b>under 50&nbsp;ms</b> from touch to light. Everything in the architecture exists to protect
+      this path from being delayed by slow things like network calls. Hold that picture in your head — it explains
+      almost every decision in lessons 4–7.</p>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        Firmware = the device's own software. SETU's prime directive is <b>local-first, safe, fast touch→relay</b>;
+        WiFi/cloud/voice are layered on top and can fail without affecting the switch.</div>
+
+      <details class="quiz"><summary>Self-check: If the home WiFi router is unplugged, should the wall switch still toggle lights on touch?</summary>
+        <p><b>Yes — absolutely.</b> Touch → relay is entirely on-device and never waits on the network. This is design
+        goal G2 (“local-first”). The cloud only adds remote control / voice / telemetry on top.</p>
+      </details>
+      <button class="mark" data-mark="1"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 2 ════════════ -->
+    <section class="lesson" id="l2" data-lesson="2">
+      <span class="kicker">Lesson 2 · Foundations</span>
+      <h2>ESP-IDF &amp; how the project is built</h2>
+      <p><b>ESP-IDF</b> (Espressif IoT Development Framework) is the official SDK for ESP32 chips. It bundles:
+      the compiler toolchain, <b>FreeRTOS</b> (a tiny operating system — lesson 4), drivers for the chip's
+      peripherals (WiFi, I2C, GPIO…), and a build system based on <b>CMake</b>.</p>
+
+      <h3>Components — ESP-IDF's unit of code</h3>
+      <p>ESP-IDF organizes code into <b>components</b>. A component is just a folder with a
+      <code>CMakeLists.txt</code> that lists its source files, its public include folders, and which other
+      components it depends on (<code>REQUIRES</code>). The app is built by composing components.</p>
+
+      <details class="code"><summary>Our top-level <span class="fn">firmware/CMakeLists.txt</span></summary>
+        <div class="body"><pre><code><span class="cmt"># Each subfolder of src/ becomes a component (hal, drivers, rtos, middleware, main)</span>
+set(EXTRA_COMPONENT_DIRS "src")
+
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(setu_firmware)</code></pre></div>
+      </details>
+      <p>That one line — <code>EXTRA_COMPONENT_DIRS "src"</code> — tells ESP-IDF “treat every folder inside
+      <code>src/</code> as a component.” So our architectural layers (<code>hal</code>, <code>drivers</code>,
+      <code>rtos</code>, <code>middleware</code>, <code>main</code>) literally <em>are</em> the build components.
+      The <code>main</code> component is special: ESP-IDF calls its <code>app_main()</code> function at startup.</p>
+
+      <h3>Three config files you'll meet</h3>
+      <table>
+        <tr><th>File</th><th>What it controls</th></tr>
+        <tr><td><span class="file">partitions.csv</span></td><td>How the 8&nbsp;MB flash is sliced: two app slots (for OTA), config storage, etc.</td></tr>
+        <tr><td><span class="file">sdkconfig.defaults</span></td><td>Build options: flash size, PSRAM on, watchdog on, CPU at 240&nbsp;MHz, OTA rollback on…</td></tr>
+        <tr><td><span class="file">src/main/Kconfig.projbuild</span></td><td>Our <em>own</em> on/off switches (e.g. <code>SETU_ENABLE_MATTER</code>) that appear in <code>menuconfig</code>.</td></tr>
+      </table>
+
+      <div class="note"><span class="lbl acc">The commands you'll run</span>
+        <code>idf.py set-target esp32s3</code> (once) → <code>idf.py build</code> → <code>idf.py -p COM5 flash monitor</code>.
+        That last one uploads the firmware and opens the serial log.</div>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        ESP-IDF builds <b>components</b>. We map one component per architectural layer via
+        <code>EXTRA_COMPONENT_DIRS=src</code>. <code>main</code> holds <code>app_main()</code>, the entry point.</div>
+
+      <details class="quiz"><summary>Self-check: Where does the program start running?</summary>
+        <p>In <code>app_main()</code>, which lives in <span class="file">src/main/app_main.c</span>. ESP-IDF's
+        bootloader → startup code eventually calls it. We walk through it in Lesson 6.</p>
+      </details>
+      <button class="mark" data-mark="2"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 3 ════════════ -->
+    <section class="lesson" id="l3" data-lesson="3">
+      <span class="kicker">Lesson 3 · Foundations</span>
+      <h2>The layered architecture &amp; the dependency rule</h2>
+      <p>The code is stacked in layers, each only allowed to depend on layers <b>below</b> it. This is the single
+      most important structural idea — it keeps the fast touch→relay path isolated from messy network code.</p>
+
+      <table>
+        <tr><th>Layer</th><th>Folder</th><th>Responsibility</th></tr>
+        <tr><td><b>Application</b></td><td><code>src/main</code></td><td>The "business logic": what a gang does, themes, automation, boot orchestration.</td></tr>
+        <tr><td><b>Middleware</b></td><td><code>src/middleware</code></td><td>Services: WiFi, Matter, MQTT cloud, OTA, voice, config, time, telemetry.</td></tr>
+        <tr><td><b>RTOS</b></td><td><code>src/rtos</code></td><td>The event bus, task/sync definitions, watchdog. The "nervous system".</td></tr>
+        <tr><td><b>Drivers</b></td><td><code>src/drivers</code></td><td>One module per physical thing: touch, relay, LED, mic, button.</td></tr>
+        <tr><td><b>HAL</b></td><td><code>src/hal</code></td><td>Thin wrappers over chip peripherals: I2C, GPIO, PWM, NVS, power. Pin numbers live here.</td></tr>
+      </table>
+
+      <div class="note why"><span class="lbl">Why "downward-only"?</span>
+        If a low-level driver could call up into network code, a slow network call could freeze a relay.
+        By forbidding upward calls, the touch path physically cannot be blocked by WiFi. When a lower layer
+        needs to <em>tell</em> an upper layer something, it doesn't call up — it <b>posts an event</b> (Lesson 5).</p>
+      </div>
+
+      <h3>The shared "contracts" — <code>include/</code></h3>
+      <p>Three header files everyone can include without creating dependencies. They define <em>vocabulary</em>, not behavior:</p>
+      <ul>
+        <li><span class="file">include/setu_config.h</span> — constants: <code>SETU_GANG_COUNT</code> (4), timing budgets, feature flags.</li>
+        <li><span class="file">include/setu_types.h</span> — data types: <code>gang_state_t</code>, <code>theme_t</code>, the device model, error codes.</li>
+        <li><span class="file">include/setu_events.h</span> — the event IDs and the <code>setu_event_t</code> message struct.</li>
+      </ul>
+
+      <div class="flow" style="font-size:.78rem">
+        <span class="node">main</span><span class="arr">→</span>
+        <span class="node">middleware</span><span class="arr">→</span>
+        <span class="node">rtos</span><span class="arr">→</span>
+        <span class="node">drivers</span><span class="arr">→</span>
+        <span class="node">hal</span><span class="arr">→</span>
+        <span class="node">ESP-IDF</span>
+      </div>
+      <p>Dependencies only point right. There are no cycles — that's what lets ESP-IDF link them cleanly.</p>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        Five layers, dependencies point <b>downward only</b>, and cross-layer messages travel via the
+        <b>event bus</b> rather than upward function calls. Shared types live in <code>include/</code>.</div>
+
+      <details class="quiz"><summary>Self-check: The relay driver needs to announce “gang 1 is now ON”. Can it call a function in the cloud module?</summary>
+        <p><b>No.</b> That would be an upward call (drivers → middleware) and break the rule. Instead it
+        <em>posts an event</em> (<code>EVT_STATE_CHANGED</code>); the cloud module, if present, subscribes and reacts.
+        The driver doesn't even know the cloud exists.</p>
+      </details>
+      <button class="mark" data-mark="3"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 4 ════════════ -->
+    <section class="lesson" id="l4" data-lesson="4">
+      <span class="kicker">Lesson 4 · Foundations</span>
+      <h2>FreeRTOS in 10 minutes</h2>
+      <p>A microcontroller has no Windows/Linux. <b>FreeRTOS</b> is a tiny real-time operating system bundled with
+      ESP-IDF that lets many <b>tasks</b> (think: independent mini-programs / threads) run "at the same time" by
+      rapidly switching between them.</p>
+
+      <h3>The five concepts you must know</h3>
+      <table>
+        <tr><th>Concept</th><th>Plain meaning</th><th>In SETU</th></tr>
+        <tr><td><b>Task</b></td><td>An independent loop the OS schedules. Has its own stack.</td><td><code>tsk_touch</code>, <code>tsk_control</code>, <code>tsk_wifi</code>…</td></tr>
+        <tr><td><b>Priority</b></td><td>Higher number = more urgent; preempts lower tasks.</td><td>touch=9, control=8 … telemetry=2</td></tr>
+        <tr><td><b>Core pinning</b></td><td>Which CPU core a task runs on (S3 has 2).</td><td>Control path → core 1; WiFi → core 0</td></tr>
+        <tr><td><b>Queue</b></td><td>A thread-safe mailbox: one task posts, another receives.</td><td>event bus, <code>q_relay_cmd</code></td></tr>
+        <tr><td><b>Semaphore / Mutex</b></td><td>A signal / a lock to share data safely.</td><td>touch ISR signal, I2C lock, device-model lock</td></tr>
+      </table>
+
+      <div class="note why"><span class="lbl">Why priorities + 2 cores matter here</span>
+        We pin the time-critical tasks (touch, control, LED) to <b>core 1</b> at high priority, and put WiFi/Matter/MQTT
+        on <b>core 0</b>. Result: a busy network can <em>never</em> delay a relay. That's the 50&nbsp;ms guarantee, enforced by scheduling.</p>
+      </div>
+
+      <h3>ISR vs task context</h3>
+      <p>An <b>ISR</b> (Interrupt Service Routine) is a function the hardware calls the instant something happens
+      (e.g. the touch chip's ALERT pin drops). ISRs must be <em>tiny and fast</em> — you can't do I2C or logging inside one.
+      The standard trick: the ISR just "gives a semaphore" to wake a normal task, which does the real work. You'll see
+      exactly this in the touch driver (Lesson 9).</p>
+
+      <details class="code"><summary>Our task table — <span class="fn">src/rtos/tasks.h</span> (priorities &amp; stacks in one place)</summary>
+        <div class="body"><pre><code><span class="cmt">/* Core pinning */</span>
+#define TASK_CORE_CONTROL   1   <span class="cmt">/* hard real-time: touch→relay→led */</span>
+#define TASK_CORE_NET       0   <span class="cmt">/* WiFi/BT stacks live here */</span>
+
+<span class="cmt">/* Priorities (higher = more urgent) */</span>
+#define TASK_PRIO_TOUCH       9
+#define TASK_PRIO_CONTROL     8
+#define TASK_PRIO_EVENT_BUS   7
+#define TASK_PRIO_WIFI        5
+#define TASK_PRIO_TELEMETRY   2</code></pre></div>
+      </details>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        Tasks run concurrently; <b>priority + core pinning</b> guarantee the control path beats the network.
+        ISRs stay tiny and hand off to tasks via semaphores.</div>
+
+      <details class="quiz"><summary>Self-check: Why can't the touch ISR just read the CAP1296 over I2C directly?</summary>
+        <p>I2C is comparatively slow and can block; doing it in an ISR would stall the whole system and risk a
+        watchdog reset. Instead the ISR gives a semaphore to wake <code>tsk_touch</code>, which does the I2C read in
+        normal task context.</p>
+      </details>
+      <button class="mark" data-mark="4"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 5 ════════════ -->
+    <section class="lesson" id="l5" data-lesson="5">
+      <span class="kicker">Lesson 5 · The core idea</span>
+      <h2>The event bus — the heart of the design</h2>
+      <p>Here's the key architectural pattern. Four different things can want to control a light: a <b>touch</b>, the
+      <b>app</b> (via cloud), a <b>Matter</b> command from Alexa/Google, and a <b>voice</b> command — plus
+      <b>schedules</b>. If each of those called the relay directly, you'd get chaos and race conditions.</p>
+
+      <p>Instead, all of them <b>publish an event</b> to a central <b>event bus</b>. Exactly one task —
+      <code>tsk_control</code> — subscribes and is the <b>only</b> code allowed to move a relay. This is the
+      <em>publish/subscribe</em> pattern.</p>
+
+      <div class="flow" style="font-size:.78rem">
+        <span class="node">touch</span><span class="arr">+</span>
+        <span class="node">app</span><span class="arr">+</span>
+        <span class="node">Matter</span><span class="arr">+</span>
+        <span class="node">voice</span><span class="arr">→</span>
+        <span class="node hot">event bus</span><span class="arr">→</span>
+        <span class="node hot">tsk_control</span><span class="arr">→</span>
+        <span class="node">relay</span>
+      </div>
+
+      <h3>Every message is the same shape</h3>
+      <details class="code"><summary>The universal event — <span class="fn">include/setu_events.h</span></summary>
+        <div class="body"><pre><code>typedef struct {
+    setu_event_id_t id;     <span class="cmt">// EVT_TOUCH, EVT_CMD_SET, EVT_THEME_SET…</span>
+    uint8_t         gang;    <span class="cmt">// which gang (0..3) or GANG_ALL</span>
+    int32_t         value;   <span class="cmt">// on/off, level, intent code…</span>
+    setu_src_t      source;  <span class="cmt">// SRC_TOUCH, SRC_APP, SRC_VOICE…  ← who asked</span>
+    uint32_t        ts_ms;   <span class="cmt">// timestamp</span>
+} setu_event_t;</code></pre></div>
+      </details>
+
+      <p>The <code>source</code> field is clever: because every event remembers <em>who</em> asked, <code>tsk_control</code>
+      can do <b>arbitration</b> — e.g. a fresh touch beats a stale cloud command — and can attribute telemetry correctly.</p>
+
+      <details class="code"><summary>How publishing works — <span class="fn">src/rtos/event_bus.c</span></summary>
+        <div class="body"><pre><code><span class="cmt">// Anyone, anywhere, posts events with one call:</span>
+event_bus_emit(EVT_TOUCH, channel, TOUCH_PRESS, SRC_TOUCH);
+
+<span class="cmt">// Internally a dispatcher task pulls from a queue and fans out</span>
+<span class="cmt">// to every subscriber whose mask matches the event id.</span>
+static void bus_task(void *arg){
+    setu_event_t e;
+    for(;;){
+        xQueueReceive(s_q, &e, portMAX_DELAY);
+        for(int i=0;i&lt;s_sub_count;i++)
+            if(s_subs[i].mask &amp; (1u &lt;&lt; e.id))
+                s_subs[i].cb(&e, s_subs[i].ctx);
+    }
+}</code></pre></div>
+      </details>
+
+      <div class="note why"><span class="lbl">Why this is worth it</span>
+        <b>Decoupling.</b> The touch driver doesn't know relays, Matter, or the cloud exist — it just shouts
+        “touch on channel 2!” into the bus. You can add a whole new control source (say, a future Zigbee bridge)
+        by publishing the same events, changing <em>zero</em> lines in the control logic.</p>
+      </div>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        All control sources <b>publish events</b>; one consumer (<code>tsk_control</code>) owns the relays. The
+        <code>source</code> field enables arbitration. This is the spine of the whole firmware.</div>
+
+      <details class="quiz"><summary>Self-check: You want to add a physical rocker-button fallback. How much of the control logic changes?</summary>
+        <p><b>None.</b> The button driver just publishes <code>EVT_CMD_SET</code> (or <code>EVT_TOUCH</code>) like any
+        other source. <code>tsk_control</code> handles it identically. That's the payoff of the event bus.</p>
+      </details>
+      <button class="mark" data-mark="5"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 6 ════════════ -->
+    <section class="lesson" id="l6" data-lesson="6">
+      <span class="kicker">Lesson 6 · The core idea</span>
+      <h2>Boot sequence — what happens when power comes on</h2>
+      <p><span class="file">src/main/app_main.c</span> is a careful, ordered checklist. The golden rule:
+      <b>make the device safe and locally usable first; bring up the network last.</b></p>
+
+      <ol>
+        <li><b>Foundations</b> — init NVS (flash storage), create the shared locks/event-groups, start the watchdog, configure power management.</li>
+        <li><b>Safety first</b> — <code>relay_init()</code> drives <b>all relays OFF</b> before anything else. No load may energize unexpectedly after a power blip.</li>
+        <li><b>Restore state</b> — load the saved gang states + theme from NVS; if “restore on boot” is enabled, re-apply them (staggered to limit inrush current).</li>
+        <li><b>Local I/O</b> — init LEDs, touch chip, button, theme engine.</li>
+        <li><b>Start the brain</b> — create the event bus + control/touch/LED tasks. <em>The device is now fully usable by touch.</em></li>
+        <li><b>Confirm health</b> — <code>ota_mark_valid()</code> tells the bootloader “this firmware works, don't roll back” (Lesson 13).</li>
+        <li><b>Network &amp; extras</b> — WiFi, time sync, Matter, cloud, voice, telemetry, automation.</li>
+      </ol>
+
+      <details class="code"><summary>The shape of <span class="fn">app_main()</span> (abridged)</summary>
+        <div class="body"><pre><code>void app_main(void){
+    nvs_hal_init();  setu_sync_init();  watchdog_init();  power_mgmt_init();
+
+    relay_init();                 <span class="cmt">// ← ALL RELAYS OFF (safe state)</span>
+
+    device_model_init();
+    config_store_init();
+    config_store_load(device_model_raw());
+    if (config_store_restore_on_boot())
+        relay_restore(...);       <span class="cmt">// re-apply saved state, staggered</span>
+
+    led_status_init();  touch_cap1296_init();  button_init();
+
+    event_bus_init();
+    start_local_control();        <span class="cmt">// ← device usable by touch from here</span>
+
+    ota_mark_valid();             <span class="cmt">// cancel rollback once healthy</span>
+    start_network();              <span class="cmt">// WiFi/cloud/voice — enhancements</span>
+}</code></pre></div>
+      </details>
+
+      <div class="note warn"><span class="lbl">The safe-state guarantee</span>
+        Relays default OFF out of reset and are explicitly driven OFF first. Restoring last state is a
+        deliberate, configurable step — never an accident. This is non-negotiable for a 230&nbsp;V device.</div>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        Boot order = <b>safe → local control → network</b>. The device toggles lights within ~200&nbsp;ms,
+        long before WiFi connects.</div>
+
+      <details class="quiz"><summary>Self-check: Why is <code>relay_init()</code> called before <code>config_store_load()</code>?</summary>
+        <p>So the relays are in a known-safe OFF state <em>before</em> we even read what they "should" be. We
+        decide to restore only after, and explicitly. Safety precedes convenience.</p>
+      </details>
+      <button class="mark" data-mark="6"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 7 ════════════ -->
+    <section class="lesson" id="l7" data-lesson="7">
+      <span class="kicker">Lesson 7 · The core idea</span>
+      <h2>Putting it together: trace a finger tap to a light</h2>
+      <p>This is the lesson that makes everything click. Follow one touch through every file.</p>
+
+      <table>
+        <tr><th>#</th><th>What happens</th><th>File</th></tr>
+        <tr><td>1</td><td>Finger touches the glass. CAP1296 senses it and pulls its <code>ALERT</code> pin low.</td><td>hardware</td></tr>
+        <tr><td>2</td><td>ESP32 fires a GPIO <b>ISR</b>. It does almost nothing — just <code>xSemaphoreGiveFromISR()</code> to wake the touch task.</td><td><span class="file">drivers/touch_cap1296.c</span></td></tr>
+        <tr><td>3</td><td><code>tsk_touch</code> wakes, reads the CAP1296 status register over I2C, figures out which channel, debounces, and <b>publishes</b> <code>EVT_TOUCH</code>.</td><td><span class="file">touch_cap1296.c</span> + <span class="file">hal/i2c_bus.c</span></td></tr>
+        <tr><td>4</td><td>Event bus dispatcher delivers the event to its subscriber.</td><td><span class="file">rtos/event_bus.c</span></td></tr>
+        <tr><td>5</td><td><code>tsk_control</code> receives it, sees a tap on gang 2, reads current state, decides "toggle to ON".</td><td><span class="file">main/gang_sm.c</span></td></tr>
+        <tr><td>6</td><td>It calls <code>relay_set(2, true)</code> — checking the 300&nbsp;ms debounce so contacts aren't chattered.</td><td><span class="file">drivers/relay.c</span></td></tr>
+        <tr><td>7</td><td>Relay GPIO goes high → BSS138 → relay coil → <b>light on</b>. Then it updates the device model, lights the gang LED, saves to NVS, and emits <code>EVT_STATE_CHANGED</code>.</td><td><span class="file">gang_sm.c</span> + <span class="file">relay.c</span></td></tr>
+        <tr><td>8</td><td>Subscribers to <code>EVT_STATE_CHANGED</code> react: the cloud module publishes new state, Matter reports the attribute — <em>without</em> the control task knowing or waiting on them.</td><td><span class="file">middleware/cloud_mqtt.c</span></td></tr>
+      </table>
+
+      <details class="code"><summary>The decision logic — <span class="fn">src/main/gang_sm.c</span></summary>
+        <div class="body"><pre><code><span class="cmt">// A tap toggles the gang. One function, one responsibility.</span>
+static void handle_touch(const setu_event_t *e){
+    if (e->value == TOUCH_PRESS &amp;&amp; e->gang &lt; SETU_GANG_COUNT){
+        bool now = device_model_get_gang(e->gang).on;
+        gang_sm_apply(e->gang, !now, 0, SRC_TOUCH);   <span class="cmt">// toggle</span>
+    } else if (e->value == TOUCH_HOLD){
+        theme_engine_apply(next_theme, SRC_TOUCH);    <span class="cmt">// long-press cycles themes</span>
+    }
+}
+
+<span class="cmt">// gang_sm_apply() is the single choke-point that touches a relay:</span>
+<span class="cmt">//   debounce → drive relay → update model → LED → persist → emit event</span></code></pre></div>
+      </details>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        Steps 1–7 are the fast, local hard path (core 1). Step 8 (network reporting) is fire-and-forget on core 0.
+        The event bus is what cleanly separates the two.</div>
+
+      <details class="quiz"><summary>Self-check: At step 7, why does <code>tsk_control</code> emit <code>EVT_STATE_CHANGED</code> instead of calling the cloud and Matter directly?</summary>
+        <p>To stay decoupled and fast. Calling network code directly could block the control task (violating the
+        downward-dependency rule and the latency budget). Emitting an event lets reporters react on their own tasks,
+        and lets the control logic stay unaware of which reporters exist.</p>
+      </details>
+      <button class="mark" data-mark="7"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 8 ════════════ -->
+    <section class="lesson" id="l8" data-lesson="8">
+      <span class="kicker">Lesson 8 · The layers in detail</span>
+      <h2>HAL — talking to the silicon</h2>
+      <p>The <b>Hardware Abstraction Layer</b> is the thinnest layer: small wrappers around the ESP32's peripherals
+      so the rest of the code never touches raw registers. Crucially, <b>this is the only place GPIO pin numbers appear.</b></p>
+
+      <table>
+        <tr><th>File</th><th>Wraps</th></tr>
+        <tr><td><span class="file">board.h</span></td><td>The pin map — mirrors the schematic. Relay pins, I2C pins, LED pins, etc. Change the wiring? Change only this file.</td></tr>
+        <tr><td><span class="file">i2c_bus.c</span></td><td>The shared I2C bus to the CAP1296, protected by a <b>mutex</b> so two tasks can't talk over each other.</td></tr>
+        <tr><td><span class="file">gpio_wrap.c</span></td><td>Configure output pins / attach input interrupts.</td></tr>
+        <tr><td><span class="file">pwm.c</span></td><td>LEDC (PWM) channels for LED brightness/animation.</td></tr>
+        <tr><td><span class="file">power_mgmt.c</span></td><td>Light-sleep / frequency scaling to hit the &lt;2&nbsp;W budget.</td></tr>
+        <tr><td><span class="file">nvs_hal.c</span></td><td>Brings up NVS (the flash key-value store) safely.</td></tr>
+      </table>
+
+      <details class="code"><summary>Pins in one place — <span class="fn">src/hal/board.h</span></summary>
+        <div class="body"><pre><code>#define BOARD_I2C_SDA        GPIO_NUM_3
+#define BOARD_I2C_SCL        GPIO_NUM_4
+#define BOARD_CAP1296_ALERT  GPIO_NUM_5   <span class="cmt">// touch interrupt</span>
+#define BOARD_RELAY_GPIO     { GPIO_NUM_7, GPIO_NUM_8, GPIO_NUM_9, GPIO_NUM_10 }
+#define BOARD_LED_GANG_GPIO  { GPIO_NUM_11, GPIO_NUM_12, GPIO_NUM_13, GPIO_NUM_14 }</code></pre></div>
+      </details>
+
+      <div class="note why"><span class="lbl">Why a HAL at all?</span>
+        Two reasons: (1) <b>portability</b> — if a future board moves the relay to a different pin, you edit
+        <code>board.h</code> and nothing else; (2) <b>testability</b> — higher layers can be tested against a fake HAL.</p>
+      </div>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        HAL = thin, boring, essential. Pin numbers and raw peripheral setup live here and <b>nowhere else</b>.</div>
+
+      <details class="quiz"><summary>Self-check: The shared I2C bus has a mutex. What problem does that prevent?</summary>
+        <p>Two tasks issuing I2C transactions simultaneously would corrupt each other's reads/writes. The mutex
+        serializes access so each transaction completes atomically.</p>
+      </details>
+      <button class="mark" data-mark="8"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 9 ════════════ -->
+    <section class="lesson" id="l9" data-lesson="9">
+      <span class="kicker">Lesson 9 · The layers in detail</span>
+      <h2>Drivers — one module per physical thing</h2>
+
+      <h3><span class="file">touch_cap1296.c</span> — the interrupt-driven pattern</h3>
+      <p>This is the textbook ISR→task handoff. The ISR is three lines; the task does the work.</p>
+      <details class="code"><summary>ISR + task</summary>
+        <div class="body"><pre><code><span class="cmt">// 1) The ISR: do the absolute minimum, then wake the task.</span>
+static void IRAM_ATTR alert_isr(void *arg){
+    BaseType_t hp = pdFALSE;
+    xSemaphoreGiveFromISR(s_alert_sem, &hp);   <span class="cmt">// "wake up, touch task!"</span>
+    if (hp) portYIELD_FROM_ISR();
+}
+
+<span class="cmt">// 2) The task: wait for the signal, then read I2C + publish.</span>
+void touch_task(void *arg){
+    for(;;){
+        xSemaphoreTake(s_alert_sem, pdMS_TO_TICKS(50));
+        i2c_bus_read_reg(... SENSOR_STATUS ...);   <span class="cmt">// which channels?</span>
+        <span class="cmt">// debounce, detect press/hold/release, then:</span>
+        event_bus_emit(EVT_TOUCH, ch, TOUCH_PRESS, SRC_TOUCH);
+    }
+}</code></pre></div>
+      </details>
+      <div class="note"><span class="lbl acc">Graceful failure</span>
+        If the I2C read fails, the driver emits <code>EVT_FAULT</code> and tries bus recovery — but it
+        <b>never crashes</b>. Lights already on stay on. Safety over features.</div>
+
+      <h3><span class="file">relay.c</span> — the single-writer rule + debounce</h3>
+      <p>Only <code>tsk_control</code> calls <code>relay_set()</code>. The driver enforces a <b>300&nbsp;ms minimum dwell</b>
+      between toggles of the same gang, protecting the physical relay contacts (rated ~100k operations) from chatter.
+      It also keeps the authoritative on/off state in firmware (the baseline board has no contact-sense wire).</p>
+
+      <h3>The rest</h3>
+      <ul>
+        <li><span class="file">led_status.c</span> — drives gang LEDs + the WiFi indicator (slow blink = provisioning, solid = cloud connected, double-blink = OTA…) and runs a 30&nbsp;Hz animation tick for themes.</li>
+        <li><span class="file">button.c</span> — detects a 10-second hold for factory reset → sets a system flag.</li>
+        <li><span class="file">audio_i2s.c</span> — mic capture for voice; <b>compiled out</b> unless voice is enabled (Phase 2).</li>
+      </ul>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        Drivers translate hardware events into bus events and bus commands into hardware actions. Touch uses
+        ISR→semaphore→task; relay enforces single-writer + debounce; failures degrade gracefully.</div>
+
+      <details class="quiz"><summary>Self-check: Why is only one task allowed to call <code>relay_set()</code>?</summary>
+        <p>If several tasks drove the relays, two commands could race and leave a load in an undefined or rapidly
+        flipping state. Funnelling all changes through <code>tsk_control</code> gives one consistent, debounced,
+        persisted source of truth.</p>
+      </details>
+      <button class="mark" data-mark="9"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 10 ════════════ -->
+    <section class="lesson" id="l10" data-lesson="10">
+      <span class="kicker">Lesson 10 · The layers in detail</span>
+      <h2>Application logic — the brain</h2>
+
+      <h3><span class="file">device_model.c</span> — the single source of truth</h3>
+      <p>One global, mutex-guarded struct holds the entire device state: each gang's on/off + level + name, the active
+      theme, connectivity, firmware info. Everyone <b>reads snapshots</b>; only the control task <b>writes</b>.</p>
+      <details class="code"><summary>The model — <span class="fn">include/setu_types.h</span></summary>
+        <div class="body"><pre><code>typedef struct {
+    gang_state_t gang[SETU_GANG_COUNT];  <span class="cmt">// per-gang: on, level, name, group…</span>
+    theme_t      active_theme;
+    bool         locked;                  <span class="cmt">// child-lock / cleaning mode</span>
+    conn_state_t conn;                    <span class="cmt">// wifi/cloud/matter/time flags</span>
+    fw_info_t    fw;                       <span class="cmt">// version, running OTA slot…</span>
+} device_model_t;</code></pre></div>
+      </details>
+
+      <h3><span class="file">gang_sm.c</span> — the state machine + arbitration</h3>
+      <p>Hosts <code>tsk_control</code>. Subscribes to all control events, runs each gang's tiny state machine
+      (OFF ⇄ ON, plus LOCKED), and performs <b>arbitration</b> — e.g. child-lock ignores touch; a fresh touch wins over
+      a stale cloud command. <code>gang_sm_apply()</code> is the one choke-point: debounce → relay → model → LED →
+      persist → emit event.</p>
+
+      <h3><span class="file">theme_engine.c</span> — data-driven scenes</h3>
+      <p>Themes (Devotional, Party, Movie, Sleep, Morning) are just a <b>table</b> of which gangs are on for each scene.
+      Because it's data, new themes can ship via app/OTA without firmware changes.</p>
+      <details class="code"><summary>The scene table</summary>
+        <div class="body"><pre><code>static const bool SCENE[THEME_COUNT][SETU_GANG_COUNT] = {
+  /* DEVOTIONAL */ { 1, 0, 0, 0 },   <span class="cmt">// warm glow on gang 1</span>
+  /* PARTY      */ { 1, 1, 1, 1 },   <span class="cmt">// all on</span>
+  /* MOVIE      */ { 0, 1, 0, 0 },   <span class="cmt">// ambient only</span>
+  /* SLEEP      */ { 0, 0, 0, 0 },   <span class="cmt">// all off</span>
+};</code></pre></div>
+      </details>
+
+      <h3><span class="file">automation.c</span> — local schedules</h3>
+      <p>A once-a-minute task that evaluates rules (timers, sunset, Morning ramp) and emits events when they fire.
+      Runs on-device so automations work even when the cloud is down.</p>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        The app layer is <b>policy</b>: one source-of-truth model, one state machine that owns relays + arbitrates,
+        data-driven themes, and on-device automation.</div>
+
+      <details class="quiz"><summary>Self-check: Themes are stored as a table rather than as code. What does that buy you?</summary>
+        <p>Flexibility without firmware releases — you can tweak or add scenes by shipping new data (app push / OTA),
+        and the engine that applies them never changes.</p>
+      </details>
+      <button class="mark" data-mark="10"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 11 ════════════ -->
+    <section class="lesson" id="l11" data-lesson="11">
+      <span class="kicker">Lesson 11 · The layers in detail</span>
+      <h2>Middleware — connectivity &amp; services</h2>
+      <p>These modules add the "smart" features. Each one degrades gracefully — none is on the local control path.</p>
+
+      <table>
+        <tr><th>Module</th><th>Job</th></tr>
+        <tr><td><span class="file">wifi_mgr.c</span></td><td>A state machine: provision → connect → (reconnect with exponential backoff). Sets connectivity flags; enables modem-sleep when idle.</td></tr>
+        <tr><td><span class="file">provisioning.c</span></td><td>First-boot / factory-reset onboarding (BLE/SoftAP credentials + Matter commissioning).</td></tr>
+        <tr><td><span class="file">cloud_mqtt.c</span></td><td>MQTT-over-TLS to the SETU cloud. Subscribes to commands, publishes state on every <code>EVT_STATE_CHANGED</code>.</td></tr>
+        <tr><td><span class="file">matter_svc.c</span></td><td>Exposes each gang as a Matter On/Off endpoint so Apple/Google/Alexa can control it. (Off by default — optional component.)</td></tr>
+        <tr><td><span class="file">time_sync.c</span></td><td>SNTP + India timezone, so schedules/sunset work.</td></tr>
+        <tr><td><span class="file">telemetry.c</span></td><td>Heartbeat: uptime, free heap, RSSI, switch counts — for monitoring the pilot fleet. Alarms if heap gets low.</td></tr>
+        <tr><td><span class="file">voice_engine.c</span></td><td>On-device "Hey SETU" wake-word + command classifier (Phase 2; uses PSRAM; off by default).</td></tr>
+        <tr><td><span class="file">ota_mgr.c</span></td><td>Over-the-air updates — covered next lesson.</td></tr>
+      </table>
+
+      <div class="note why"><span class="lbl">The recurring pattern</span>
+        Notice how each module either <b>publishes</b> events (a cloud command becomes <code>EVT_CMD_SET</code>) or
+        <b>subscribes</b> to them (publish state on <code>EVT_STATE_CHANGED</code>). They plug into the same bus as
+        touch and voice — that uniformity is the whole point.</p>
+      </div>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        Middleware = optional, network-side services. They translate between the outside world and the event bus,
+        and they can all fail without touching local control.</div>
+
+      <details class="quiz"><summary>Self-check: A Matter command and a touch arrive within the same second. How do they both reach the relay?</summary>
+        <p>Both become events (<code>EVT_CMD_SET</code> from Matter, <code>EVT_TOUCH</code> from touch) on the same bus.
+        <code>tsk_control</code> processes them in order and arbitrates by source/timestamp. Same path, no special-casing.</p>
+      </details>
+      <button class="mark" data-mark="11"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 12 ════════════ -->
+    <section class="lesson" id="l12" data-lesson="12">
+      <span class="kicker">Lesson 12 · The layers in detail</span>
+      <h2>Persistence — remembering across power cycles (NVS)</h2>
+      <p><b>NVS</b> (Non-Volatile Storage) is ESP-IDF's key-value store in flash — like a tiny, durable dictionary.
+      SETU uses it to remember gang states, the active theme, WiFi credentials, and config.</p>
+
+      <p><span class="file">config_store.c</span> organizes NVS into <b>namespaces</b> (think folders): <code>sys</code>,
+      <code>gang</code>, <code>theme</code>, <code>net</code>, <code>cloud</code>. Each gang's state is saved on every change,
+      so after a power cut the device can restore exactly where it was.</p>
+
+      <h3>Schema versioning — future-proofing</h3>
+      <p>The <code>sys</code> namespace stores a <code>schema</code> version number. On boot, if the stored version is older
+      than the firmware's, a migration routine runs. This lets future OTA updates change the saved data layout
+      <b>without bricking</b> devices already in the field.</p>
+      <details class="code"><summary>Migration check — <span class="fn">src/middleware/config_store.c</span></summary>
+        <div class="body"><pre><code>nvs_get_u16(h, "schema", &ver);
+if (ver != SCHEMA_VERSION) {
+    <span class="cmt">// TODO: run migration steps from `ver` up to SCHEMA_VERSION</span>
+    nvs_set_u16(h, "schema", SCHEMA_VERSION);
+}</code></pre></div>
+      </details>
+
+      <div class="note warn"><span class="lbl">Security note</span>
+        In production, this NVS partition is <b>encrypted</b> (Flash Encryption), so WiFi passwords and device
+        keys can't be read by dumping the flash chip. See Lesson 13.</div>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        NVS = durable key-value flash. Namespaced config + a schema version that enables safe migrations across
+        firmware updates.</div>
+
+      <details class="quiz"><summary>Self-check: Why store a schema version number at all?</summary>
+        <p>So a newer firmware can recognize and upgrade old saved data instead of misreading it. Without it, an OTA
+        that changes the data layout could corrupt settings or crash on boot.</p>
+      </details>
+      <button class="mark" data-mark="12"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 13 ════════════ -->
+    <section class="lesson" id="l13" data-lesson="13">
+      <span class="kicker">Lesson 13 · The layers in detail</span>
+      <h2>OTA updates &amp; security</h2>
+
+      <h3>A/B updates with automatic rollback</h3>
+      <p>The flash has <b>two app slots</b> (<code>ota_0</code>, <code>ota_1</code> — see <code>partitions.csv</code>).
+      An update downloads into the <em>inactive</em> slot, verifies it, then reboots into it. If the new firmware
+      fails to prove itself healthy, the bootloader <b>automatically rolls back</b> to the old slot.</p>
+
+      <div class="flow" style="font-size:.78rem">
+        <span class="node">running on A</span><span class="arr">→</span>
+        <span class="node">download to B</span><span class="arr">→</span>
+        <span class="node">verify + reboot to B</span><span class="arr">→</span>
+        <span class="node hot">B proves healthy?</span>
+        <span class="arr">→ yes:</span><span class="node">commit B</span>
+        <span class="arr">/ no:</span><span class="node">rollback to A</span>
+      </div>
+      <p>That "proves healthy" step is the <code>ota_mark_valid()</code> call you saw in the boot sequence — only after
+      self-tests pass does the new image cancel the pending rollback.</p>
+
+      <details class="code"><summary>Health confirmation — <span class="fn">src/middleware/ota_mgr.c</span></summary>
+        <div class="body"><pre><code>if (state == ESP_OTA_IMG_PENDING_VERIFY) {
+    <span class="cmt">// run self-tests... if good:</span>
+    esp_ota_mark_app_valid_cancel_rollback();   <span class="cmt">// keep the new image</span>
+}
+<span class="cmt">// If we crash/watchdog-reset before reaching here, bootloader reverts.</span></code></pre></div>
+      </details>
+
+      <h3>Security layers (production)</h3>
+      <table>
+        <tr><th>Layer</th><th>Protects against</th></tr>
+        <tr><td><b>Secure Boot v2</b></td><td>Running unsigned/tampered firmware — only SETU-signed images boot.</td></tr>
+        <tr><td><b>Flash Encryption</b></td><td>Reading secrets/firmware by physically dumping the flash.</td></tr>
+        <tr><td><b>Signed OTA + SHA-256</b></td><td>Installing a malicious update.</td></tr>
+        <tr><td><b>TLS 1.2/1.3</b></td><td>Eavesdropping/tampering on MQTT + OTA downloads.</td></tr>
+        <tr><td><b>Per-device X.509 cert</b></td><td>Impersonating a device to the cloud.</td></tr>
+      </table>
+
+      <div class="note key"><span class="lbl">Key takeaway</span>
+        OTA is <b>A/B with auto-rollback</b> — a bad update can never brick a unit. Security is layered: signed boot,
+        encrypted flash, signed+TLS updates, per-device identity.</div>
+
+      <details class="quiz"><summary>Self-check: A new OTA boots but immediately crashes in a loop. What happens to the device?</summary>
+        <p>It never reaches <code>ota_mark_valid()</code>, so the pending-verify flag is never cleared. On the next
+        watchdog reset the bootloader rolls back to the previous good slot. The device self-heals — that's design goal G3.</p>
+      </details>
+      <button class="mark" data-mark="13"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ LESSON 14 ════════════ -->
+    <section class="lesson" id="l14" data-lesson="14">
+      <span class="kicker">Lesson 14 · Wrap up</span>
+      <h2>Tests, the build, and where to start</h2>
+
+      <h3>How it's tested</h3>
+      <ul>
+        <li><b>Unit tests</b> (<span class="file">tests/unit/</span>) — Unity framework, check hardware-independent logic/invariants.</li>
+        <li><b>Integration / HIL</b> (<span class="file">tests/integration/</span>) — pytest drives a real flashed board, checks boot markers, touch→relay latency, OTA, etc.</li>
+        <li><b>Test plan</b> — <span class="file">firmware/docs/test-plans/SETU_FW_Test_Plan.md</span> lists the critical cases (T-01…T-12).</li>
+      </ul>
+
+      <h3>Build it yourself</h3>
+      <details class="code"><summary>Commands</summary>
+        <div class="body"><pre><code>cd firmware
+idf.py set-target esp32s3
+idf.py build
+idf.py -p COM5 flash monitor    <span class="cmt"># Windows COM port; Linux: /dev/ttyUSB0</span></code></pre></div>
+      </details>
+      <div class="note warn"><span class="lbl">Status: not yet compiled</span>
+        This tree is a reviewed <b>skeleton</b>. It was written to build against ESP-IDF v5.x but hasn't been compiled
+        on this machine (no toolchain installed). Modules carry <code>TODO</code> markers where Phase-1 bring-up fills in
+        device-specific logic (CAP1296 register programming, MQTT JSON, Matter endpoints, voice model).</div>
+
+      <h3>Suggested order for Phase 1 bring-up</h3>
+      <ol>
+        <li>Install ESP-IDF v5.x, get <code>idf.py build</code> green on an ESP32-S3 DevKit.</li>
+        <li>Bring up <span class="file">relay.c</span> + <span class="file">led_status.c</span> — blink a gang on a timer. Tangible win.</li>
+        <li>Bring up <span class="file">touch_cap1296.c</span> on a CAP1296 eval board — get <code>EVT_TOUCH</code> printing.</li>
+        <li>Wire touch → control → relay end-to-end (the hard path). Measure the latency.</li>
+        <li>Then WiFi → MQTT → app control. Then Matter, then OTA, then voice.</li>
+      </ol>
+
+      <div class="note key"><span class="lbl">You now understand the whole system</span>
+        Layers + event bus + single-writer control + safe boot + A/B OTA. Every file you opened slots into one of those
+        ideas. Re-read Lesson 7 anytime you lose the thread — the touch→light trace ties it all together.</div>
+
+      <button class="mark" data-mark="14"><span class="box"></span><span>Mark as understood</span></button>
+    </section>
+
+    <!-- ════════════ GLOSSARY ════════════ -->
+    <section class="lesson" id="glossary" data-lesson="0">
+      <span class="kicker">Reference</span>
+      <h2>Glossary</h2>
+      <table>
+        <tr><th>Term</th><th>Meaning</th></tr>
+        <tr><td>ESP-IDF</td><td>Espressif's official SDK for ESP32 chips (compiler + FreeRTOS + drivers + build system).</td></tr>
+        <tr><td>FreeRTOS</td><td>Tiny real-time OS that schedules multiple tasks on the MCU.</td></tr>
+        <tr><td>Component</td><td>ESP-IDF's unit of code: a folder + <code>CMakeLists.txt</code>. Our layers are components.</td></tr>
+        <tr><td>Task</td><td>An independently scheduled loop (like a thread) with its own stack &amp; priority.</td></tr>
+        <tr><td>ISR</td><td>Interrupt Service Routine — runs instantly on a hardware event; must be tiny.</td></tr>
+        <tr><td>Queue</td><td>Thread-safe FIFO mailbox between tasks.</td></tr>
+        <tr><td>Mutex / Semaphore</td><td>A lock to protect shared data / a signal to wake a task.</td></tr>
+        <tr><td>Event bus</td><td>SETU's central publish/subscribe message router (<code>rtos/event_bus.c</code>).</td></tr>
+        <tr><td>Gang</td><td>One switch position / load channel. SETU has 4.</td></tr>
+        <tr><td>HAL</td><td>Hardware Abstraction Layer — thin wrappers over chip peripherals.</td></tr>
+        <tr><td>GPIO</td><td>General-Purpose I/O pin on the chip.</td></tr>
+        <tr><td>I2C</td><td>2-wire serial bus; how the ESP32 talks to the CAP1296.</td></tr>
+        <tr><td>PWM / LEDC</td><td>Pulse-width modulation; ESP32's LED control peripheral (dimming/animation).</td></tr>
+        <tr><td>NVS</td><td>Non-Volatile Storage — key-value store in flash that survives power loss.</td></tr>
+        <tr><td>OTA</td><td>Over-The-Air firmware update.</td></tr>
+        <tr><td>A/B partitions</td><td>Two app slots so an update can roll back if it fails.</td></tr>
+        <tr><td>Matter</td><td>Smart-home interoperability standard (Apple/Google/Alexa).</td></tr>
+        <tr><td>MQTT</td><td>Lightweight publish/subscribe messaging protocol used for the cloud link.</td></tr>
+        <tr><td>PSRAM</td><td>External RAM on the module (8&nbsp;MB) — used for the voice model.</td></tr>
+        <tr><td>Watchdog (WDT)</td><td>A timer that resets the chip if a task hangs.</td></tr>
+        <tr><td>Hard path</td><td>The latency-critical touch→relay sequence that must never be blocked.</td></tr>
+      </table>
+    </section>
+
+    <footer>
+      SETU Firmware Learning Guide · v0.1 · paired with
+      <a href="SETU_Firmware_Architecture.html">Firmware Architecture</a> reference ·
+      <a href="index.html">Docs Hub</a><br>
+      Your progress is saved in this browser only (localStorage).
+    </footer>
+  </main>
+</div>
+
+<script>
+(function(){
+  const KEY = 'setu_fw_learn_progress_v1';
+  const TOTAL = 14;                       // lessons 1..14 (glossary excluded)
+  let done = new Set();
+  try { done = new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch(e){}
+
+  const bar   = document.getElementById('progress-bar');
+  const navAs = Array.from(document.querySelectorAll('nav a[data-for]'));
+  const marks = Array.from(document.querySelectorAll('.mark[data-mark]'));
+
+  function save(){ localStorage.setItem(KEY, JSON.stringify([...done])); }
+  function render(){
+    bar.style.width = (done.size / TOTAL * 100) + '%';
+    navAs.forEach(a => {
+      const id = a.getAttribute('data-for');
+      a.classList.toggle('done', done.has(id));
+    });
+    marks.forEach(m => {
+      const id = m.getAttribute('data-mark');
+      const on = done.has(id);
+      m.classList.toggle('done', on);
+      m.querySelector('.box').textContent = on ? '✓' : '';
+      m.querySelector('span:last-child').textContent = on ? 'Understood' : 'Mark as understood';
+    });
+  }
+  marks.forEach(m => m.addEventListener('click', () => {
+    const id = m.getAttribute('data-mark');
+    if (done.has(id)) done.delete(id); else done.add(id);
+    save(); render();
+  }));
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    if (confirm('Reset your reading progress?')) { done.clear(); save(); render(); }
+  });
+
+  // Active-section highlight in the sidebar
+  const sections = Array.from(document.querySelectorAll('section.lesson'));
+  const byId = id => navAs.find(a => a.getAttribute('href') === '#' + id);
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting){
+        navAs.forEach(a => a.classList.remove('active'));
+        const a = byId(e.target.id); if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  sections.forEach(s => obs.observe(s));
+
+  render();
+})();
+</script>
+</body>
+</html>

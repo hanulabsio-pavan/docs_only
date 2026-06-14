@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project SETU — Master Dashboard & WBS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: { colors: {
+      slate950:'#0f172a', accentc:'#22d3ee', accentg:'#34d399'
+    }}}
+  }
+</script>
+<style>
+  body{background:#0f172a;}
+  .glow{box-shadow:0 0 0 1px rgba(34,211,238,.15), 0 8px 30px -12px rgba(34,211,238,.25);}
+  .barfill{transition:width .5s cubic-bezier(.4,0,.2,1);}
+  input[type=checkbox]{accent-color:#34d399; width:20px; height:20px; cursor:pointer;}
+  .task-done .t-title{ text-decoration:line-through; opacity:.45; }
+  .task-done { opacity:.7; }
+  details>summary{list-style:none;} details>summary::-webkit-details-marker{display:none;}
+  .chev{transition:transform .25s;} details[open] .chev{transform:rotate(90deg);}
+  ::-webkit-scrollbar{height:8px;width:8px} ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:8px}
+</style>
+</head>
+<body class="text-slate-200 min-h-screen">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+
+  <!-- HEADER -->
+  <header class="mb-8">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="text-cyan-400 text-3xl font-black tracking-tight">SETU<span class="text-emerald-400">/</span></div>
+      <span class="text-[11px] uppercase tracking-[.2em] text-slate-400 border border-slate-700 rounded-full px-3 py-1">Master Dashboard &middot; Work Breakdown Structure</span>
+    </div>
+    <h1 class="text-2xl sm:text-3xl font-bold text-white">Premium IoT Smart Switch — Concept → Manufacturing-Ready</h1>
+    <p class="text-slate-400 mt-1 text-sm">Solo engineer &middot; weekends &amp; public holidays only &middot; 12–16 productive hrs / weekend. Progress is saved automatically in your browser.</p>
+  </header>
+
+  <!-- TOP STATS -->
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-slate-800/60 rounded-2xl p-4 glow">
+      <div class="text-[11px] uppercase tracking-wider text-slate-400">Overall Progress</div>
+      <div id="overallPct" class="text-3xl font-black text-emerald-400 mt-1">0%</div>
+      <div class="w-full h-2 bg-slate-700 rounded-full mt-2 overflow-hidden"><div id="overallBar" class="barfill h-full bg-gradient-to-r from-emerald-400 to-cyan-400" style="width:0%"></div></div>
+    </div>
+    <div class="bg-slate-800/60 rounded-2xl p-4">
+      <div class="text-[11px] uppercase tracking-wider text-slate-400">Effort Logged</div>
+      <div class="text-3xl font-black text-white mt-1"><span id="hoursDone">0</span><span class="text-slate-500 text-lg">/<span id="hoursTotal">0</span>h</span></div>
+      <div class="text-xs text-slate-400 mt-2">Self-build engineering hours</div>
+    </div>
+    <div class="bg-slate-800/60 rounded-2xl p-4">
+      <div class="text-[11px] uppercase tracking-wider text-slate-400">Calendar ETA (remaining)</div>
+      <div id="etaRemain" class="text-2xl font-black text-cyan-400 mt-1">—</div>
+      <div class="text-xs text-slate-400 mt-2">At 12–16 hrs / weekend</div>
+    </div>
+    <div class="bg-slate-800/60 rounded-2xl p-4">
+      <div class="text-[11px] uppercase tracking-wider text-slate-400">Tasks</div>
+      <div class="text-3xl font-black text-white mt-1"><span id="tasksDone">0</span><span class="text-slate-500 text-lg">/<span id="tasksTotal">0</span></span></div>
+      <div class="text-xs text-slate-400 mt-2"><span id="outsourceCount">0</span> flagged for outsourcing</div>
+    </div>
+  </section>
+
+  <!-- CONTROLS -->
+  <section class="flex flex-wrap items-center gap-3 mb-6 text-sm">
+    <button id="filterAll" class="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-medium">All Tasks</button>
+    <button id="filterOut" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 font-medium">⚑ Outsource-Ready Only</button>
+    <button id="expandAll" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">Expand All</button>
+    <button id="collapseAll" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">Collapse All</button>
+    <button id="resetBtn" class="px-4 py-2 rounded-lg bg-rose-500/10 text-rose-300 border border-rose-500/30 ml-auto">Reset Progress</button>
+  </section>
+
+  <!-- PHASES -->
+  <div id="phases" class="space-y-4"></div>
+
+  <footer class="text-center text-xs text-slate-500 mt-10 border-t border-slate-800 pt-6">
+    Project SETU — Master WBS &amp; Weekend ETA Engine &middot; legend:
+    <span class="text-emerald-400">■</span> done
+    <span class="ml-3 text-amber-300">⚑</span> ideal to outsource later
+    &middot; Engineering plan, v1.0
+  </footer>
+</div>
+
+<script>
+/* =========================================================================
+   WBS DATA MODEL
+   h = self-build engineering hours.  out = ideal to outsource to a freelancer.
+   Outsourced tasks still carry an hours estimate (your spec/handoff/review effort).
+   ========================================================================= */
+const PHASES = [
+ { id:"p1", name:"Phase 1 — Modern EDA & Skill Upgrade", goal:"Bridge from legacy CADSTAR (2014–2017) to a modern, industry-standard toolchain.",
+   tasks:[
+    {h:6,  t:"Install & configure KiCad 8.0 (eval Altium in parallel)", d:"Set up application, project template, schematic/PCB sheet conventions, global symbol/footprint paths. Decide KiCad-first (free, Git-friendly) vs Altium."},
+    {h:12, t:"Relearn modern EDA workflow via reference rebuild", d:"Complete KiCad 8 schematic→layout→Gerber tutorial, then replicate a known open-source 2-layer board end-to-end to rebuild muscle memory lost since CADSTAR 2017."},
+    {h:8,  t:"Component library strategy", d:"Establish symbol/footprint/3D library structure, KLC-compliant naming, library tables, and a single source-of-truth parts DB with MPN + supplier fields."},
+    {h:6,  t:"Design-rule & net-class templates", d:"Author reusable ERC/DRC rule sets: clearance classes for mixed HV/LV, controlled-impedance net classes, manufacturing constraint presets matched to a real fab capability sheet."},
+    {h:8,  t:"Modern FPGA toolchain refresh", d:"Install vendor flow (Lattice Radiant / AMD Vivado), set up simulation (Verilator/QuestaSim), and put RTL under version control with a lint + testbench skeleton."},
+    {h:6,  t:"FPGA/IP integration dry-run", d:"Validate soft-core / vendor-IP instantiation, constraint files (timing/pin), and a build→bitstream→sim loop on a dev board to de-risk any programmable-logic blocks."},
+    {h:4,  t:"Hardware Git hygiene", d:"Configure .gitignore for EDA caches/backups, pin tool versions, define commit rules (schematic+BOM committed together; versioned Gerbers)."},
+   ]},
+ { id:"p2", name:"Phase 2 — Architectural & Protocol Spec", goal:"Lock the system architecture, power, sensing physics, and connectivity before any capture.",
+   tasks:[
+    {h:6,  t:"System block diagram & MCU partition", d:"Define touch MCU (STM32L0 TSC) + ESP32-S3 split, the inter-MCU bus (UART/SPI framing), reset/boot topology, and clear block boundaries for future outsourcing."},
+    {h:10, t:"Power tree analysis", d:"230VAC→5V→3.3V budget. Quantify quiescent <2W and peak <15W rails, regulator topology/efficiency, sequencing, and headroom; produce a power-budget table per rail."},
+    {h:8,  t:"AC mains isolation & safety architecture", d:"Define isolation barriers, creepage/clearance zones, fusing, MOV/TVS surge protection, and Y-cap strategy to anchor downstream BIS (IS 1293) compliance.", out:true},
+    {h:12, t:"Capacitive touch sensing mechanics", d:"Electrode geometry, overlay stackup (tempered glass / hard-coated PMMA), Cs/Cx budgeting, guard/shield strategy, and EMI mitigation for the high-noise 230V wall-box environment."},
+    {h:8,  t:"Connectivity protocol selection", d:"Decide Wi-Fi-first vs BLE vs Matter roadmap; define provisioning flow, security model, and OTA update architecture with rollback."},
+    {h:8,  t:"Product Requirements Document (PRD)", d:"Themes state machine (Devotional/Party/Movie/Sleep/Morning), on-device voice wake-word scope, fault/failsafe behavior, and acceptance criteria."},
+    {h:6,  t:"Requirements traceability matrix", d:"Map each requirement to verification method and to certification needs (BIS/WPC), creating the backbone for the eventual test plans."},
+   ]},
+ { id:"p3", name:"Phase 3 — Front-End Schematic Capture", goal:"Complete, simulated, review-clean schematic with an optimized, sourceable BOM.",
+   tasks:[
+    {h:8,  t:"MCU subsystem schematic (ESP32-S3)", d:"ESP32-S3-WROOM module, boot/strapping, flash, USB/UART debug, decoupling, and antenna keepout annotation."},
+    {h:8,  t:"Touch MCU subsystem + electrode interface", d:"STM32L0 with TSC sampling caps, series resistors, electrode connector, and shield routing notes carried into layout."},
+    {h:12, t:"AC-DC power supply schematic", d:"Offline converter design (isolated flyback vs cap-drop trade study), rectification, EMI filter, feedback, and protection — the safety-critical heart of the board.", out:true},
+    {h:10, t:"Load switching circuit", d:"Relay/triac drive with zero-cross detection, snubber/RC networks, gate isolation, and inrush handling for resistive + inductive lighting loads."},
+    {h:6,  t:"Power-integrity planning (schematic level)", d:"Assign decoupling networks per IC, define net classes, and pre-plan plane/return strategy before placement."},
+    {h:12, t:"Component selection, sourcing & BOM", d:"Select parts on lifecycle + India availability, define approved alternates, and build the master BOM (xlsx) with the CM-facing CSV export."},
+    {h:10, t:"SPICE simulation of critical nodes", d:"Simulate touch analog front-end, power sequencing, and load-switch transients to validate margins before layout.", out:true},
+    {h:6,  t:"Schematic review & ERC closure", d:"Resolve all ERC, annotate references, peer/AI review against the hardware-reviewer checklist, and freeze the netlist."},
+   ]},
+ { id:"p4", name:"Phase 4 — Back-End PCB Layout", goal:"Manufacturable 4-layer layout with full manufacturing data set.",
+   tasks:[
+    {h:6,  t:"Stackup & impedance definition", d:"Lock 4-layer stackup (Sig/GND/PWR/Sig), set impedance targets, and confirm against a real Indian fab capability/DFM sheet."},
+    {h:10, t:"Floorplan & placement", d:"Partition HV/LV zones, place the SMPS island, enforce the 15mm antenna keepout, and define thermal zones within the 140×100mm outline."},
+    {h:8,  t:"Power distribution & decoupling layout", d:"Place decoupling close to pins, design plane shapes, stitch returns, and minimize loop inductance on switching nodes."},
+    {h:10, t:"Capacitive-touch routing constraints", d:"Hatched ground under electrodes, guard rings, minimized/length-matched touch traces, and isolation from noisy switching and mains."},
+    {h:8,  t:"Signal-integrity routing", d:"Route USB/UART/flash and inter-MCU bus with length/impedance control and clean reference transitions."},
+    {h:8,  t:"HV creepage/clearance enforcement", d:"Apply 4mm creepage / 2.5mm clearance between HV and LV, slot the board where needed, and pass a safety-spacing DRC."},
+    {h:6,  t:"Copper pours, stitching & EMI provisions", d:"Plane stitching vias, shield/guard pours, and provisions for EMI containment around the radio and touch front-end."},
+    {h:8,  t:"Generate manufacturing outputs", d:"Export Gerbers, ODB++, IPC-D-356 netlist, NC drill, pick-and-place centroid, and assembly drawing — the full fab/assembly package."},
+    {h:16, t:"Full multi-layer routing cleanup & DRC closure", d:"Final route optimization, teardrop/acid-trap cleanup, silkscreen tidy, and zero-error DRC — the highest-volume, most outsourceable layout effort.", out:true},
+    {h:4,  t:"3D / mechanical fit check", d:"Verify connector and component heights against the enclosure STEP model; confirm mounting holes and bezel alignment."},
+   ]},
+ { id:"p5", name:"Phase 5 — Firmware & RTL Development", goal:"Robust, modular control + communication firmware, frozen as v1.0.0 for certification.",
+   tasks:[
+    {h:6,  t:"ESP-IDF project scaffold", d:"Build system, sdkconfig, partition table (factory + OTA + NVS), and a clean component/module folder layout."},
+    {h:12, t:"Touch driver & filtering", d:"TSC/CAP driver with baseline tracking, debounce, gesture (long-press/swipe) detection, and a <5% false-trigger target in the wall box."},
+    {h:8,  t:"Inter-MCU comms protocol", d:"UART framing with CRC, command/ack model, and resync/error handling between touch MCU and ESP32-S3."},
+    {h:10, t:"Wi-Fi manager", d:"Connect/reconnect state machine, SoftAP provisioning fallback, and resilience tuning for unreliable Indian home networks."},
+    {h:12, t:"OTA update with rollback", d:"Dual-partition OTA, signature verification, automatic rollback on boot failure, and secure-boot consideration."},
+    {h:10, t:"Theme engine state machine", d:"Implement Devotional/Party/Movie/Sleep/Morning modes, transitions, persistence in NVS, and a clean API surface."},
+    {h:14, t:"On-device voice wake-word", d:"Integrate OpenWakeWord / TFLite-Micro, tune for Indian accents, enforce on-device-only (no cloud audio) for privacy.", out:true},
+    {h:8,  t:"Relay control & safety interlocks", d:"Zero-cross-synchronized switching firmware, debounce, and fail-safe states on fault/brownout."},
+    {h:12, t:"FPGA/RTL glue block (if architected)", d:"Optional deterministic touch-scan or glue logic in programmable logic, with testbench verification — include only if Phase 2 keeps it.", out:true},
+    {h:10, t:"Unit + hardware-in-loop tests", d:"Unity/CMock unit tests for drivers/middleware and HIL integration tests mapped to TP-001…TP-004."},
+   ]},
+ { id:"p6", name:"Phase 6 — Prototyping, Bring-up & Validation", goal:"Prove the design on real hardware in the real Indian wall-box environment.",
+   tasks:[
+    {h:4,  t:"Fab order & assembly procurement", d:"Place PCB fab + stencil + assembly order; track lead times and incoming inspection of bare boards (mostly elapsed-time, low active hours)."},
+    {h:6,  t:"Power-on bring-up", d:"Staged smoke test, current-limited first power, rail-voltage verification, and a documented bring-up checklist."},
+    {h:12, t:"Touch calibration & false-trigger characterization", d:"Characterize sensitivity and <5% false-trigger rate inside an energized 230V Indian electrical box (the #1 technical de-risk)."},
+    {h:8,  t:"Wi-Fi stability & range testing", d:"Reconnection behavior under poor signal, throughput, and 24/7 soak for memory leaks/crashes."},
+    {h:8,  t:"Thermal & power audit", d:"Validate 40–60°C operation, measure quiescent vs peak power against the <2W / <15W budget."},
+    {h:12, t:"EMI/EMC pre-compliance bench test", d:"Conducted/radiated emissions pre-scan to prep formal BIS submission; identify shielding/filter fixes early.", out:true},
+    {h:8,  t:"HV safety pre-test", d:"Dielectric withstand, isolation, and leakage-current checks against IS 1293 expectations.", out:true},
+    {h:6,  t:"Firmware flashing fixture & procedure", d:"Production flashing jig, MAC/serial provisioning, and a repeatable fl-and-verify procedure."},
+    {h:10, t:"Errata log & respin decision", d:"Capture design errata, triage by severity, and decide on a v1.1 board/firmware spin if blockers exist."},
+   ]},
+ { id:"p7", name:"Phase 7 — Startup & Outsourcing Readiness", goal:"Package the design for clean handoff to freelancers, a CM, and certification bodies.",
+   tasks:[
+    {h:8,  t:"Full design documentation package", d:"Assemble schematic PDF, BOM (xlsx+CSV), assembly drawing, fab notes, and revision history into a release-grade handoff bundle."},
+    {h:8,  t:"DFM review with contract manufacturer", d:"Panelization, test points, fiducials, paste-stencil review, and assembly notes finalized with the CM.", out:true},
+    {h:6,  t:"Mechanical enclosure design brief", d:"Write a precise brief (dimensions, materials, IP20, UL94-V0, bezel) so an enclosure freelancer can execute independently."},
+    {h:3,  t:"Industrial / enclosure CAD execution", d:"STEP/F3D housing + bezel design and tooling prep — outsource to an ID freelancer; your effort is direction + review only.", out:true},
+    {h:3,  t:"Production test-fixture (ICT/functional) build", d:"Spec the go/no-go fixture (touch, Wi-Fi, relay, power) and outsource the jig fabrication; you own the protocol.", out:true},
+    {h:10, t:"Certification submission packages", d:"Compile BIS (IS 1293) safety docs + FMEA and the WPC submission; engage TÜV India / approved lab."},
+    {h:8,  t:"Vendor & CM sourcing", d:"Shortlist and quote Pune/Bangalore PCB + assembly partners; negotiate MOQ, lead time, and quality SLAs."},
+    {h:6,  t:"COGS model & pricing", d:"Build the cost model at 100/500-unit volumes, validate the ₹3.5–4K COGS target, and sanity-check the ₹18–25K price point."},
+    {h:6,  t:"Modular outsourcing handoff docs", d:"Per-block README + interface specs so enclosure, layout cleanup, and test can be delegated without context loss."},
+   ]},
+];
+
+/* ---- weekend ETA engine: 12–16 productive hrs / weekend, ~7 calendar days / weekend ---- */
+const HRS_MIN = 12, HRS_MAX = 16, DAYS_PER_WK = 7;
+function etaText(h){
+  const wkLow = Math.max(1, Math.ceil(h / HRS_MAX));   // fewer weekends if working 16h
+  const wkHigh = Math.max(1, Math.ceil(h / HRS_MIN));  // more weekends if working 12h
+  const wk = (wkLow === wkHigh) ? `${wkLow} Weekend${wkLow>1?'s':''}` : `${wkLow}–${wkHigh} Weekends`;
+  const dLow = wkLow * DAYS_PER_WK, dHigh = wkHigh * DAYS_PER_WK;
+  const days = (dLow === dHigh) ? `~${dLow} days` : `~${dLow}–${dHigh} days`;
+  return `${wk} · ${days}`;
+}
+function remainingEta(hours){
+  if(hours<=0) return "Complete 🎉";
+  const wkLow = Math.ceil(hours/HRS_MAX), wkHigh = Math.ceil(hours/HRS_MIN);
+  const months = (n)=> (n*7/30.44);
+  const mLow = months(wkLow), mHigh = months(wkHigh);
+  const wk = (wkLow===wkHigh)?`${wkLow} weekends`:`${wkLow}–${wkHigh} weekends`;
+  const mo = `${mLow.toFixed(1)}–${mHigh.toFixed(1)} mo`;
+  return `${wk} (${mo})`;
+}
+
+/* ---- assign stable ids ---- */
+let _tid = 0;
+PHASES.forEach(p => p.tasks.forEach(t => { t.id = `${p.id}_t${_tid++}`; }));
+
+const STORE_KEY = "setu_dashboard_v1";
+function loadState(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ return {}; } }
+function saveState(s){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(s)); }catch(e){} }
+let state = loadState();
+
+let filterOutsource = false;
+const openState = {}; // remember which phases are expanded across re-renders
+
+/* ---- render ---- */
+const phasesEl = document.getElementById('phases');
+function render(){
+  // capture current open/closed state before wiping the DOM
+  phasesEl.querySelectorAll('details[data-pid]').forEach(d=>{ openState[d.dataset.pid] = d.open; });
+  phasesEl.innerHTML = '';
+  PHASES.forEach((p, idx) => {
+    const visTasks = p.tasks.filter(t => !filterOutsource || t.out);
+    if(filterOutsource && visTasks.length === 0) return;
+
+    const totalH = p.tasks.reduce((a,t)=>a+t.h,0);
+    const doneH = p.tasks.reduce((a,t)=> a + (state[t.id]? t.h:0), 0);
+    const pct = totalH? Math.round(doneH/totalH*100) : 0;
+    const doneCount = p.tasks.filter(t=>state[t.id]).length;
+
+    const wrap = document.createElement('details');
+    wrap.dataset.pid = p.id;
+    wrap.open = (openState[p.id] !== false); // default open
+    wrap.className = "bg-slate-800/40 rounded-2xl border border-slate-700/60 overflow-hidden";
+
+    const summary = document.createElement('summary');
+    summary.className = "cursor-pointer select-none p-5 hover:bg-slate-800/60";
+    summary.innerHTML = `
+      <div class="flex items-start gap-3">
+        <span class="chev text-cyan-400 mt-1">▶</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="text-lg font-bold text-white">${p.name}</h2>
+            <span class="text-xs px-2 py-0.5 rounded-full ${pct===100?'bg-emerald-500/20 text-emerald-300':'bg-slate-700 text-slate-300'}">${doneCount}/${p.tasks.length} · ${etaText(totalH)}</span>
+          </div>
+          <p class="text-sm text-slate-400 mt-0.5">${p.goal}</p>
+          <div class="flex items-center gap-3 mt-2">
+            <div class="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden"><div class="barfill h-full bg-gradient-to-r from-emerald-400 to-cyan-400" style="width:${pct}%"></div></div>
+            <span class="text-sm font-bold ${pct===100?'text-emerald-400':'text-slate-300'} w-12 text-right">${pct}%</span>
+          </div>
+        </div>
+      </div>`;
+    wrap.appendChild(summary);
+
+    const list = document.createElement('div');
+    list.className = "px-5 pb-4 pt-1 space-y-2";
+    visTasks.forEach(t => {
+      const done = !!state[t.id];
+      const row = document.createElement('label');
+      row.className = `task-row flex gap-3 p-3 rounded-xl border border-slate-700/50 bg-slate-900/40 hover:border-cyan-500/40 cursor-pointer ${done?'task-done':''}`;
+      row.innerHTML = `
+        <input type="checkbox" data-id="${t.id}" ${done?'checked':''} class="mt-0.5 shrink-0">
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="t-title font-semibold text-slate-100">${t.t}</span>
+            ${t.out?`<span class="text-[11px] px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30">⚑ Outsource-ready</span>`:''}
+          </div>
+          <p class="text-sm text-slate-400 mt-1 leading-relaxed">${t.d}</p>
+          <div class="flex flex-wrap gap-2 mt-2 text-[11px]">
+            <span class="px-2 py-0.5 rounded bg-slate-700/70 text-slate-300">${t.h} hrs</span>
+            <span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">⏱ ${etaText(t.h)}</span>
+          </div>
+        </div>`;
+      list.appendChild(row);
+    });
+    wrap.appendChild(list);
+    phasesEl.appendChild(wrap);
+  });
+  updateStats();
+  bindCheckboxes();
+}
+
+function bindCheckboxes(){
+  phasesEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', e=>{
+      const id = e.target.dataset.id;
+      if(e.target.checked) state[id]=true; else delete state[id];
+      saveState(state);
+      // toggle row style without full re-render for snappiness
+      const row = e.target.closest('.task-row');
+      row.classList.toggle('task-done', e.target.checked);
+      updatePhaseBars();
+      updateStats();
+    });
+  });
+}
+
+function updatePhaseBars(){ render._skip || render(); }
+
+function updateStats(){
+  let allH=0, doneH=0, allT=0, doneT=0, outC=0;
+  PHASES.forEach(p=>p.tasks.forEach(t=>{
+    allH+=t.h; allT++; if(t.out) outC++;
+    if(state[t.id]){ doneH+=t.h; doneT++; }
+  }));
+  const pct = allH? Math.round(doneH/allH*100):0;
+  document.getElementById('overallPct').textContent = pct+'%';
+  document.getElementById('overallBar').style.width = pct+'%';
+  document.getElementById('hoursDone').textContent = doneH;
+  document.getElementById('hoursTotal').textContent = allH;
+  document.getElementById('tasksDone').textContent = doneT;
+  document.getElementById('tasksTotal').textContent = allT;
+  document.getElementById('outsourceCount').textContent = outC;
+  document.getElementById('etaRemain').textContent = remainingEta(allH - doneH);
+}
+
+/* ---- controls ---- */
+document.getElementById('filterAll').addEventListener('click', ()=>{
+  filterOutsource=false; setFilterUI(); render();
+});
+document.getElementById('filterOut').addEventListener('click', ()=>{
+  filterOutsource=true; setFilterUI(); render();
+});
+function setFilterUI(){
+  const a=document.getElementById('filterAll'), o=document.getElementById('filterOut');
+  const on="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-medium";
+  const off="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 font-medium";
+  a.className = filterOutsource?off:on;
+  o.className = filterOutsource?"px-4 py-2 rounded-lg bg-amber-400/20 text-amber-300 border border-amber-400/40 font-medium":off;
+}
+document.getElementById('expandAll').addEventListener('click', ()=>phasesEl.querySelectorAll('details').forEach(d=>d.open=true));
+document.getElementById('collapseAll').addEventListener('click', ()=>phasesEl.querySelectorAll('details').forEach(d=>d.open=false));
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Reset all progress? This clears every checkbox.')){ state={}; saveState(state); render(); }
+});
+
+render();
+</script>
+</body>
+</html>
