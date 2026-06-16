@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 · Lesson 5 — System Address Map &amp; Address Hashing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 · LESSON 05</div>
+  <h1>System Address Map &amp; Address Hashing</h1>
+  <a href="#why">Address to route</a>
+  <a href="#hier">SAM hierarchy</a>
+  <a href="#rnsam">RN SAM</a>
+  <a href="#hash">Hashing &amp; interleave</a>
+  <a href="#mcsam">HN-F / MC SAM</a>
+  <a href="#bringup">Bring-up order</a>
+  <a href="#walk">Worked example</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Phase B · Coherency core · Lesson 5 of 10</div>
+<h2 class="title">System Address Map &amp; Address Hashing</h2>
+<p class="lede">How a physical address becomes a route — and how interleaving spreads load across home nodes and memory.</p>
+
+<div class="obj"><h4>By the end of this lesson you can</h4>
+<ul>
+  <li>Explain the SAM hierarchy: RN SAM vs HN-F/MC SAM and what each maps to.</li>
+  <li>Describe address hashing/interleaving across HN-F and why it balances load.</li>
+  <li>Explain regions, the default node, and why programming order matters at bring-up.</li>
+  <li>Trace an address from RN &#8594; HN &#8594; SN.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>Address &#8594; route</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Message know the <b>address</b> but not <b>which crossroad</b>. SAM = lookup table: "this address lives at node #40." Requester's table says which home. Home's table says which memory. Bad table &#8594; message lost or all crammed onto one poor home node.</p></div>
+  <p>Routing on the mesh is by <b>node ID</b> (Lesson 1), but software and caches speak in <b>addresses</b>. The System Address Map is the translator. It also decides <i>balance</i>: spread addresses well and every home node shares the load; spread them badly and one HN-F becomes a hot spot.</p>
+</section>
+
+<section id="hier">
+  <h3><span class="n">2</span>The SAM hierarchy</h3>
+  <p>There are two translation steps, each owned by a different node:</p>
+  <table>
+    <tr><th>SAM</th><th>Lives in</th><th>Maps</th></tr>
+    <tr><td><code>RN SAM</code></td><td>every RN</td><td>physical address &#8594; <b>home-node</b> target ID (HN-F/HN-I/HN-D/HN-P &#8230; or a CCG for remote memory).</td></tr>
+    <tr><td><code>HN-F SAM / MC SAM</code></td><td>every HN-F</td><td>physical address &#8594; <b>memory-controller (SN)</b> target ID, once the home decides it must hit DRAM.</td></tr>
+  </table>
+  <div class="ascii-wrap"><div class="bar">Two hops of translation</div>
+<pre class="ascii">  addr  &#8594; <span class="rnf">RN SAM</span>  &#8594; HN target ID  &#8594; route to <span class="hnf">HN-F</span>
+                                              <span class="box">|</span> miss
+  addr  &#8594; <span class="hnf">HN-F/MC SAM</span> &#8594; SN target ID &#8594; route to <span class="snf">SN-F</span>
+</pre></div>
+</section>
+
+<section id="rnsam">
+  <h3><span class="n">3</span>The RN SAM in a bit more depth</h3>
+  <p>Each requester's RN SAM holds the memory map: which address regions exist and which target each maps to. Targets can be HN-F (coherent), HN-I/HN-P (I/O), HN-D, or a CCG (remote/multichip). It can even generate a memory-controller target directly for certain prefetch hints. The RN SAM is what turns "I want address A" into "send this to node N."</p>
+</section>
+
+<section id="hash">
+  <h3><span class="n">4</span>Address hashing &amp; interleaving across home nodes</h3>
+  <p>The crucial part: for a coherent region, the RN SAM doesn't map a whole region to one HN-F — it <b>hashes the address to spread lines across many HN-F slices</b>. The interleave granularity (often a cache-line or small block) means consecutive lines land on different home nodes:</p>
+  <div class="ascii-wrap"><div class="bar">Interleave: consecutive lines &#8594; different HN-F</div>
+<pre class="ascii">  line @ A+0   &#8594; hash &#8594; <span class="hnf">HN-F 0</span>
+  line @ A+64  &#8594; hash &#8594; <span class="hnf">HN-F 1</span>
+  line @ A+128 &#8594; hash &#8594; <span class="hnf">HN-F 2</span>
+  line @ A+192 &#8594; hash &#8594; <span class="hnf">HN-F 3</span>      <span class="cmt">load spread, not piled on one home</span>
+</pre></div>
+  <p>This is why a single hot buffer doesn't melt one home node — its lines fan out across slices. <b>Tuning the hash/interleave to avoid hot spots is a core CMN-700 system-design skill</b>, and a great thing to mention unprompted.</p>
+</section>
+
+<section id="mcsam">
+  <h3><span class="n">5</span>The HN-F / MC SAM</h3>
+  <p>Once a home node misses and must go to memory, its MC SAM maps the address to the right <b>SN-F</b> (memory controller) target ID. With many controllers (up to 40), and mixed memory types (HBM3 + DDR5), this second map decides which physical memory serves the line — and can itself interleave across channels for bandwidth.</p>
+</section>
+
+<section id="bringup">
+  <h3><span class="n">6</span>Bring-up order (the gotcha)</h3>
+  <p>Before the SAM is programmed, RN SAMs <b>default-route everything to the HN-D</b>. The HN-D does <i>not</i> manage coherency, so any real traffic sent there during configuration would be mishandled — writes might not reach DRAM, reads might return stale data. Hence the rule:</p>
+  <div class="card" style="border-left:3px solid var(--warn)">
+    <h6><span class="dot" style="background:var(--warn)"></span>Quiesce during SAM programming</h6>
+    <p>While programming the SAM, all requesters except the configuring one should be prevented from issuing requests, until the <code>use_default_node</code> behaviour is cleared. Otherwise default-routed traffic to the HN-D causes incoherent/incorrect results.</p>
+  </div>
+  <p>This is exactly the kind of bring-up detail that separates "read about it" from "understands it."</p>
+</section>
+
+<section id="walk">
+  <h3><span class="n">7</span>Worked example — address to memory</h3>
+  <ul class="tight">
+    <li>Core wants physical address <code>A</code>. Its <b>RN SAM</b> hashes <code>A</code> &#8594; <b>HN-F 2</b>; the REQ routes to that node.</li>
+    <li>HN-F 2 checks SLC + snoop filter for <code>A</code>: <b>miss</b>, no sharers.</li>
+    <li>HN-F 2's <b>MC SAM</b> maps <code>A</code> &#8594; <b>SN-F 5</b> (a DDR5 controller); a read goes out.</li>
+    <li>Data returns on DAT (optionally DMT toward the core), HN-F 2 fills its SLC and updates the SF, core installs the line.</li>
+  </ul>
+  <p>Two SAM lookups, two routes, one coherent result — that's the address path end-to-end.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">8</span>Self-check</h3>
+  <div class="quiz" data-correct="1" data-fb="The RN SAM maps a physical address to a home-node target ID.">
+    <div class="q">1. The RN SAM maps a physical address to…</div>
+    <button class="opt">a memory controller directly, always.</button>
+    <button class="opt">a home-node target ID.</button>
+    <button class="opt">a cache way.</button>
+    <button class="opt">an XP coordinate only.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="Hashing spreads consecutive lines across many HN-F slices, balancing load.">
+    <div class="q">2. Why hash addresses across home nodes instead of mapping a region to one?</div>
+    <button class="opt">To make addresses shorter.</button>
+    <button class="opt">To disable snooping.</button>
+    <button class="opt">To spread load across HN-F slices and avoid a hot home node.</button>
+    <button class="opt">Because CHI forbids contiguous mapping.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="The HN-F/MC SAM maps the address to the SN-F memory-controller target.">
+    <div class="q">3. After a home-node miss, which SAM picks the memory controller?</div>
+    <button class="opt">The HN-F / MC SAM.</button>
+    <button class="opt">The RN SAM.</button>
+    <button class="opt">The snoop filter.</button>
+    <button class="opt">The DTC.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="Before SAM programming, RN SAMs default-route to the HN-D, which doesn't keep coherency \u2014 so traffic must be quiesced.">
+    <div class="q">4. Why quiesce other requesters during SAM programming?</div>
+    <button class="opt">To save power.</button>
+    <button class="opt">To speed up the boot ROM.</button>
+    <button class="opt">Because the mesh is offline.</button>
+    <button class="opt">Because default routing sends traffic to the HN-D, which doesn't manage coherency &#8594; wrong results.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">9</span>Interview Q&amp;A</h3>
+  <details><summary>How does a request find the right home node?</summary><div class="ans">The requester's RN SAM translates the physical address into a home-node target ID (usually via an address hash that interleaves across HN-F slices). The mesh then routes by that node ID. If the home misses, its MC SAM maps the address to the SN-F memory controller.</div></details>
+  <details><summary>How do you avoid a hot home node?</summary><div class="ans">Tune the address hash / interleave granularity so consecutive lines fan out across many HN-F slices. Contiguous mapping would pile a hot buffer onto one home; fine-grained interleaving spreads the load.</div></details>
+  <details><summary>What are the two SAM levels?</summary><div class="ans">RN SAM (address &#8594; home-node target ID, in every RN) and HN-F/MC SAM (address &#8594; SN memory-controller target, in every HN-F). Two translation hops: RN&#8594;HN, then HN&#8594;SN.</div></details>
+  <details><summary>What's the bring-up gotcha with the SAM?</summary><div class="ans">Until the SAM is programmed, RN SAMs default-route to the HN-D, which doesn't manage coherency. So during programming you must quiesce all other requesters (until use_default_node is cleared); otherwise default-routed traffic to the HN-D yields incoherent/incorrect results.</div></details>
+  <details><summary>Can an RN SAM target memory directly?</summary><div class="ans">Yes — for certain prefetch hints the RN SAM can generate a memory-controller target ID so the requester can issue a prefetch toward the SN, in addition to the normal home-node targets (including a CCG for remote/multichip memory).</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">10</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>RN SAM: address &#8594; home target ID (in every RN). HN-F/MC SAM: address &#8594; SN target (in every HN-F).</li>
+    <li>Coherent regions are <b>hashed/interleaved</b> across HN-F slices to balance load.</li>
+    <li>MC SAM can also interleave across memory channels/controllers.</li>
+    <li>Pre-config default route is the HN-D &#8594; quiesce traffic during SAM programming.</li>
+    <li>Good SAM/hash tuning = no hot home node = balanced mesh.</li>
+  </ul>
+  <div class="chips"><span class="chip">RN SAM</span><span class="chip">HN-F / MC SAM</span><span class="chip">target node ID</span><span class="chip">address hashing</span><span class="chip">interleave granularity</span><span class="chip">use_default_node</span><span class="chip">quiesce</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson04_home_node.html">◄ L4 · Home node internals</a>
+  <a href="cmn700_course_map.html">Course map ►</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L6): coherency flows in depth and the CHI-E optimisations — DMT, DCT, atomics, cache stashing.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

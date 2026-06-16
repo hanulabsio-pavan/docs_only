@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 · Lesson 1 — The Mesh Fabric &amp; Crosspoints</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"🪨"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a} .ascii .req{color:var(--req);font-weight:600}
+
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+
+/* self-check quiz */
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 · LESSON 01</div>
+  <h1>The Mesh Fabric &amp; Crosspoints</h1>
+  <a href="#why">Why start here</a>
+  <a href="#xp">The crosspoint (XP)</a>
+  <a href="#ports">Mesh vs device ports</a>
+  <a href="#coords">Coordinates &amp; node IDs</a>
+  <a href="#links">Links, flits &amp; channels</a>
+  <a href="#width">Width &amp; double mesh</a>
+  <a href="#routing">Routing</a>
+  <a href="#walk">Worked example</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap &amp; terms</a>
+</nav>
+
+<main>
+<div class="kick">Phase A · Fabric foundations · Lesson 1 of 10</div>
+<h2 class="title">The Mesh Fabric &amp; Crosspoints</h2>
+<p class="lede">Before any cache or coherency logic, CMN-700 is a grid of routers moving packets. Get this transport layer solid and every later lesson clicks into place.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Draw a crosspoint (XP/MXP) and label its mesh ports and device ports.</li>
+    <li>Explain the (X,Y) coordinate system and how a node ID is composed.</li>
+    <li>Describe credited, per-channel links and the double-mesh-channel option.</li>
+    <li>Route a flit deterministically from one XP to another and explain why it can't deadlock.</li>
+  </ul>
+</div>
+
+<!-- WHY -->
+<section id="why">
+  <h3><span class="n">1</span>Why start with the fabric</h3>
+  <div class="caveman">
+    <span class="tag">caveman mode</span>
+    <p>Before worry about <i>what</i> message say, learn <i>how</i> message travel. Build roads first. Roads = mesh. Crossroads = routers. Once roads clear in head, all the clever cache talk just becomes "who sends what down which road."</p>
+  </div>
+  <p>You already know CHI as a <i>protocol</i> — the rules for requests, responses, snoops and data. CMN-700 is the <i>machine</i> that carries those messages. That machine is a <b>2-D mesh</b>: a rectangular grid of router blocks called <b>crosspoints</b>. Everything else in this course — home nodes, SLC, SAM, QoS — is logic bolted onto this grid. So we anchor here first.</p>
+  <p>A full CMN-700 mesh can be as large as <b>12×12 = 144 crosspoints</b>, but most designs are far smaller (a 2×4 edge SoC, a 6×6 mid-range part). The grid is configured at build time; what stays constant is <i>how</i> a crosspoint works.</p>
+</section>
+
+<!-- XP -->
+<section id="xp">
+  <h3><span class="n">2</span>The crosspoint (XP / MXP)</h3>
+  <p>The crosspoint — written <b>XP</b> or <b>MXP</b> (Mesh Cross Point) — is the atom of the fabric. Think of it as a small router with two jobs: <b>forward traffic</b> to neighbouring crosspoints, and <b>inject/eject traffic</b> for the components plugged into it. Internally it switches each of the four CHI channels independently.</p>
+  <div class="ascii-wrap">
+    <div class="bar">Anatomy of one crosspoint (XP)</div>
+<pre class="ascii">                    <span class="cmt">North mesh port</span>
+                         <span class="box">▲</span>
+                         <span class="box">│</span>  <span class="cmt">to XP above</span>
+                 <span class="box">┌───────┴───────┐</span>
+   <span class="cmt">West</span>          <span class="box">│</span>      <span class="rtr">XP</span>       <span class="box">│</span>          <span class="cmt">East</span>
+   <span class="box">◄────────────┤</span>  per-channel  <span class="box">├────────────►</span>
+   <span class="cmt">to XP left</span>    <span class="box">│</span>   switching   <span class="box">│</span>    <span class="cmt">to XP right</span>
+                 <span class="box">└───┬───────┬───┘</span>
+                     <span class="box">│</span>       <span class="box">▼</span>  <span class="cmt">South mesh port (to XP below)</span>
+            <span class="box">┌────────┴──┐ ┌──┴────────┐</span>
+            <span class="box">│</span> device P0 <span class="box">│ │</span> device P1 <span class="box">│</span>   <span class="cmt">+ P2 (and P3 on edge XPs)</span>
+            <span class="box">└─────┬─────┘ └─────┬─────┘</span>
+                  <span class="box">│</span>             <span class="box">│</span>
+               <span class="rnf">[RN-F]</span>        <span class="hnf">[HN-F]</span>   <span class="cmt">whatever attaches here</span>
+</pre>
+  </div>
+  <p>The four <b>mesh ports</b> (N/S/E/W) connect to the adjacent crosspoints — edge and corner XPs simply have fewer neighbours. The <b>device ports</b> are where actual components attach. The internal switch arbitrates, per channel, between flits arriving from any port and chooses the next hop.</p>
+</section>
+
+<!-- PORTS -->
+<section id="ports">
+  <h3><span class="n">3</span>Mesh ports vs device ports</h3>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-rtr"></span>Mesh ports (×4)</h6><p>North, South, East, West. They link XP→XP and form the grid. Carry through-traffic that's just passing by, plus traffic entering/leaving the local devices.</p></div>
+    <div class="card"><h6><span class="dot b-rnf"></span>Device ports</h6><p>Where components plug in: a CHI agent (CPU cluster), an HN-F/SLC slice, an SN-F memory interface, or an AMBA bridge. This is the on/off ramp to the fabric.</p></div>
+  </div>
+  <p>A key CMN-700 upgrade over CMN-600: device-port density. CMN-600 allowed <b>2 devices per XP</b>; CMN-700 supports <b>3 per XP, 4 on an edge XP</b> (and up to 5 in a single-XP topology). When you still need more components than ports, the <b>CAL (Component Aggregation Layer)</b> lets several devices share one device port — we cover it more in Lesson 2.</p>
+  <p class="note">Why this matters: more devices per XP means a given amount of compute/memory/IO fits in a <i>smaller</i> mesh, which lowers hop count and latency. Port density is a real area-vs-latency lever.</p>
+</section>
+
+<!-- COORDS -->
+<section id="coords">
+  <h3><span class="n">4</span>Coordinates &amp; node IDs</h3>
+  <div class="caveman">
+    <span class="tag">caveman mode</span>
+    <p>Every crossroad has an address on the grid: how far <b>right</b> (X) and how far <b>up</b> (Y). Bottom-left corner = (0,0). To name a <i>specific driveway</i> at that crossroad, add which port and which device. That full name = node ID. Routing = "get this flit to that node ID."</p>
+  </div>
+  <p>Each XP has an <b>(X,Y)</b> coordinate. <code>(0,0)</code> is the bottom-left; the top-right of a full grid is <code>(11,11)</code>. The X and Y values are also called <b>XID</b> and <b>YID</b>.</p>
+  <p>A <b>node ID</b> uniquely names an endpoint on the mesh. Conceptually it's built from sub-fields:</p>
+  <div class="ascii-wrap">
+    <div class="bar">Node ID composition (conceptual)</div>
+<pre class="ascii">   node ID  =  <span class="rtr">[ X ]</span> <span class="hnf">[ Y ]</span> <span class="req">[ port ]</span> <span class="snf">[ device ]</span>
+               <span class="cmt">which XP ───┘    └── which on-ramp at that XP</span>
+
+   e.g.  XP (2,1), device port 0, sub-device 1
+         ────────────────────────────────────► one specific RN-F
+</pre>
+  </div>
+  <p>The number of bits given to each field <b>scales with the configured mesh size</b> (a bigger grid needs more X/Y bits). You don't need exact widths for an interview — what matters is the idea: <b>routing is by node ID, and the node ID encodes the destination's grid position plus which port/device.</b> The XP examines the X/Y of the target and forwards toward it.</p>
+  <p class="note">This is also why the PMU lets you target a specific node by its <code>nodeid</code> (Lesson 9): the ID is a real coordinate-based handle, not an opaque number.</p>
+</section>
+
+<!-- LINKS -->
+<section id="links">
+  <h3><span class="n">5</span>Links, flits &amp; the four channels</h3>
+  <p>The wires between crosspoints are <b>credited links</b>: a sender only transmits when it holds a credit proving the receiver has buffer space, so flits are never dropped — congestion turns into <b>backpressure</b>, not loss. The unit of transfer on a link is a <b>flit</b> (flow-control unit); a CHI message is carried as one or more flits.</p>
+  <p>Critically, the four CHI channel classes each ride their <b>own independent network</b> across the mesh:</p>
+  <table>
+    <tr><th>Channel</th><th>Carries</th></tr>
+    <tr><td><span class="chip" style="color:var(--req)">REQ</span></td><td>Requests from a requester toward a home node (reads, writes, atomics, prefetch).</td></tr>
+    <tr><td><span class="chip" style="color:var(--rsp)">RSP</span></td><td>Control/coherence responses &amp; completions — no data payload.</td></tr>
+    <tr><td><span class="chip" style="color:var(--dat)">DAT</span></td><td>The cache-line data payload. The widest, highest-bandwidth channel.</td></tr>
+    <tr><td><span class="chip" style="color:var(--snp)">SNP</span></td><td>Snoops sent from a home node down to caching requesters.</td></tr>
+  </table>
+  <p>Keeping them separate is <b>how the fabric avoids protocol deadlock</b>: a stalled data flit can never block a response or snoop that's needed to make forward progress. This maps directly onto CHI's channel independence — CMN-700 just gives each channel real wires and buffers.</p>
+</section>
+
+<!-- WIDTH -->
+<section id="width">
+  <h3><span class="n">6</span>Channel width &amp; the double mesh channel</h3>
+  <p>The <b>DAT</b> channel is the bandwidth backbone. Baseline is a <b>pair of 256-bit data paths</b> — one for each direction (transmit / receive). CMN-700 offers an optional <b>double mesh channel</b>: a second 256-bit pair, giving effectively <b>512-bit</b> data lanes per direction. AMBA AXI and CXS interfaces widen to 512-bit to match.</p>
+  <div class="card" style="border-left:3px solid var(--dat)">
+    <h6><span class="dot b-dat"></span>Back-of-envelope bandwidth</h6>
+    <p>Peak <b>cross-sectional bandwidth</b> ≈ (links crossing the mesh midline) × (width) × (frequency). For a full 12×12 mesh at ~2 GHz with the double-width data channel, Arm quotes roughly <b>3.07 TB/s</b>. The takeaway for interviews: bandwidth scales with mesh width <i>and</i> channel width — the double mesh channel is the knob for data-hungry designs.</p>
+  </div>
+</section>
+
+<!-- ROUTING -->
+<section id="routing">
+  <h3><span class="n">7</span>Routing across the grid</h3>
+  <div class="caveman">
+    <span class="tag">caveman mode</span>
+    <p>Simple rule so no two flits ever wait on each other in a circle: always travel one direction first (say, sideways) until lined up, <i>then</i> the other direction (up/down). Same rule everywhere = no traffic-jam loops = no deadlock.</p>
+  </div>
+  <p>CMN-700 uses <b>deterministic dimension-ordered routing</b>: a flit travels along one axis first, then the other, following the target node ID's X/Y. Because every flit obeys the same turn rule, the fabric is provably free of routing deadlock — there's no cycle of buffers all waiting on each other.</p>
+  <p>Two consequences worth stating in an interview:</p>
+  <ul class="tight">
+    <li><b>Predictable latency:</b> hop count ≈ |ΔX| + |ΔY| between source and destination XPs. This is why <i>placement</i> (where you put CPUs vs HN-F vs memory) affects performance — a topic in Lesson 7.</li>
+    <li><b>Ordering:</b> deterministic paths keep same-source/same-dest traffic in order on a channel; adaptive hot-spot re-routing (Lesson 7) is the controlled exception.</li>
+  </ul>
+</section>
+
+<!-- WALK -->
+<section id="walk">
+  <h3><span class="n">8</span>Worked example — route a flit from (0,0) to (3,2)</h3>
+  <p>A REQ flit leaves an RN-F at XP <code>(0,0)</code> heading for an HN-F at XP <code>(3,2)</code>. Dimension-ordered routing (X-first here) sends it east to X=3, then north to Y=2 — 5 hops:</p>
+  <div class="ascii-wrap">
+    <div class="bar">X-first, then Y · 5 hops · (0,0) → (3,2)</div>
+<pre class="ascii">  Y=2  (0,2)─────(1,2)─────(2,2)─────<span class="hnf">(3,2)</span>   <span class="cmt">◄ destination HN-F</span>
+                                       <span class="req">▲</span>
+                                       <span class="req">│</span> step 5: north
+  Y=1  (0,1)─────(1,1)─────(2,1)─────(3,1)
+                                       <span class="req">▲</span>
+                                       <span class="req">│</span> step 4: north
+  Y=0  <span class="rnf">(0,0)</span><span class="req">═══►</span>(1,0)<span class="req">═══►</span>(2,0)<span class="req">═══►</span>(3,0)
+       <span class="cmt">source</span>   1       2       3   then turn
+        RN-F   east    east    east    north ↑
+
+  hops = |ΔX| + |ΔY| = |3-0| + |2-0| = 5
+</pre>
+  </div>
+  <p>The response and any data take their own channels back. Notice nothing here is about <i>coherency</i> yet — it's pure transport. That's the whole point of Lesson 1: once the road network is clear, Lessons 2–10 are about <i>who</i> sits at each XP and <i>what</i> they say.</p>
+</section>
+
+<!-- CHECK -->
+<section id="check">
+  <h3><span class="n">9</span>Self-check</h3>
+  <p>Tap an answer — you'll get instant feedback.</p>
+
+  <div class="quiz" data-correct="2">
+    <div class="q">1. How many <b>mesh ports</b> does a crosspoint have, and what do they connect to?</div>
+    <button class="opt">Two — they connect to the attached devices.</button>
+    <button class="opt">Four — one per CHI channel.</button>
+    <button class="opt">Four — N/S/E/W, connecting to neighbouring crosspoints.</button>
+    <button class="opt">One — a shared bus to all neighbours.</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-correct="1">
+    <div class="q">2. Why does CMN-700 give each of REQ/RSP/SNP/DAT its <b>own</b> network?</div>
+    <button class="opt">To increase the clock frequency.</button>
+    <button class="opt">So one channel stalling can't block another — avoiding protocol deadlock.</button>
+    <button class="opt">Because CHI requires exactly four physical wires.</button>
+    <button class="opt">To reduce the number of node IDs needed.</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-correct="3">
+    <div class="q">3. A flit goes from XP (1,1) to XP (4,3). Minimum hop count?</div>
+    <button class="opt">2</button>
+    <button class="opt">7</button>
+    <button class="opt">12</button>
+    <button class="opt">5 ( |4-1| + |3-1| )</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-correct="0">
+    <div class="q">4. What does the <b>double mesh channel</b> option primarily change?</div>
+    <button class="opt">It doubles the DAT data-path width (256→512-bit) for more bandwidth.</button>
+    <button class="opt">It doubles the number of crosspoints in the mesh.</button>
+    <button class="opt">It adds a second snoop filter to every HN-F.</button>
+    <button class="opt">It enables multichip coherency.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<!-- INTERVIEW -->
+<section id="interview">
+  <h3><span class="n">10</span>Interview Q&amp;A</h3>
+
+  <details><summary>Sketch the CMN-700 mesh and walk a packet from a CPU to memory.</summary>
+    <div class="ans">Draw a grid of XPs (routers) with N/S/E/W mesh links. Attach an RN-F (CPU) at one XP, an HN-F at another, an SN-F (memory controller) at a third. The CPU's RN issues a REQ flit; routing is dimension-ordered (X then Y) by the target node ID toward the owning HN-F; if the HN-F misses, it forwards to the SN-F via its MC SAM; data returns on the DAT channel. Emphasise: four independent channels, credited links, hop count = |ΔX|+|ΔY|.</div>
+  </details>
+
+  <details><summary>What is a crosspoint and what ports does it have?</summary>
+    <div class="ans">The XP/MXP is the mesh router. It has four <b>mesh ports</b> (N/S/E/W) linking neighbouring XPs, plus <b>device ports</b> (up to 3, or 4 on an edge XP) where components attach. It switches each CHI channel independently and arbitrates between through-traffic and local inject/eject.</div>
+  </details>
+
+  <details><summary>How is a node addressed on the mesh?</summary>
+    <div class="ans">By <b>node ID</b>, which encodes the XP's (X,Y) coordinate plus which port and device. Routing forwards toward the target's X then Y. Field widths scale with mesh size. (0,0) is bottom-left; a full grid tops out at (11,11).</div>
+  </details>
+
+  <details><summary>Why is the routing deadlock-free?</summary>
+    <div class="ans">Deterministic dimension-ordered routing imposes the same turn discipline everywhere (one axis fully, then the other), so no cyclic dependency among link/buffer resources can form. Combined with separate per-channel networks and credited flow control, the fabric can't deadlock at the routing level.</div>
+  </details>
+
+  <details><summary>How does mesh size relate to bandwidth and latency?</summary>
+    <div class="ans">Latency tracks hop count (|ΔX|+|ΔY|), so larger meshes mean longer average paths — placement matters. Cross-sectional bandwidth scales with the number of links crossing the midline times channel width times frequency; the double mesh channel widens DAT to 512-bit. A full 12×12 at ~2 GHz reaches ~3 TB/s.</div>
+  </details>
+</section>
+
+<!-- RECAP -->
+<section id="recap">
+  <h3><span class="n">11</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>CMN-700 is a 2-D mesh of <b>crosspoints (XP/MXP)</b>, up to 12×12 = 144.</li>
+    <li>Each XP has <b>4 mesh ports</b> (N/S/E/W) and <b>device ports</b> (3, or 4 on edges; CAL aggregates more).</li>
+    <li>Endpoints are named by <b>node ID</b> = (X,Y) + port + device; <b>(0,0)</b> is bottom-left.</li>
+    <li>Four CHI channels (<b>REQ/RSP/SNP/DAT</b>) ride <b>independent credited networks</b> → no deadlock.</li>
+    <li><b>DAT</b> is 256-bit per direction, optionally <b>512-bit</b> via the double mesh channel.</li>
+    <li>Routing is <b>deterministic dimension-ordered</b>; hop count = |ΔX| + |ΔY|.</li>
+  </ul>
+  <div class="chips">
+    <span class="chip">XP / MXP</span><span class="chip">mesh port</span><span class="chip">device port</span><span class="chip">XID / YID</span>
+    <span class="chip">node ID</span><span class="chip">flit</span><span class="chip">credited link</span><span class="chip">backpressure</span>
+    <span class="chip">REQ/RSP/SNP/DAT</span><span class="chip">double mesh channel</span><span class="chip">dimension-order routing</span><span class="chip">CAL</span>
+  </div>
+
+  <div class="navfoot">
+    <a href="cmn700_course_map.html">◄ Course map</a>
+    <a>Lesson 2 — Node Taxonomy ►</a>
+  </div>
+  <p class="note" style="margin-top:18px">Next up (L2): we populate this grid — every RN, HN and SN variant, what attaches to which device port, and the bridges that glue it together.</p>
+</section>
+
+</main>
+</div>
+
+<script>
+/* active nav */
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* quiz */
+const fbCorrect=[
+ "Correct. Four mesh ports (N/S/E/W) wire the grid together; device ports are separate.",
+ "Correct. Independent channel networks mean a stalled DAT flit can't block an RSP or SNP needed for progress.",
+ "Correct. Dimension-ordered routing gives hop count = |ΔX| + |ΔY|.",
+ "Correct. The double mesh channel adds a second 256-bit data pair → 512-bit per direction."
+];
+document.querySelectorAll('.quiz').forEach((q,qi)=>{
+  const correct=+q.dataset.correct;
+  const opts=[...q.querySelectorAll('.opt')];
+  const fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct');
+    if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent = (i===correct? fbCorrect[qi] : "Not quite — the highlighted option is right. "+fbCorrect[qi]);
+  }));
+});
+</script>
+</body>
+</html>

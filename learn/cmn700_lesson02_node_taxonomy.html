@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 · Lesson 2 — Node Taxonomy Deep Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 · LESSON 02</div>
+  <h1>Node Taxonomy Deep Dive</h1>
+  <a href="#why">Why taxonomy</a>
+  <a href="#families">The three families</a>
+  <a href="#rn">Request nodes</a>
+  <a href="#hn">Home nodes</a>
+  <a href="#sn">Subordinate nodes</a>
+  <a href="#glue">Glue &amp; bridges</a>
+  <a href="#tile">Onto the mesh</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Phase A · Fabric foundations · Lesson 2 of 10</div>
+<h2 class="title">Node Taxonomy Deep Dive</h2>
+<p class="lede">Populate the grid: every RN, HN and SN variant, what attaches where, and the bridges that glue it together.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Distinguish RN-F / RN-I / RN-D by coherence behaviour and use case.</li>
+    <li>Explain each home node (HN-F/HN-S, HN-I, HN-D, HN-P) and why an HN-D is mandatory.</li>
+    <li>Place SN-F vs SBSX correctly, and describe the CAL / ADB / CDB / CFG glue.</li>
+    <li>Lay out a realistic tile and say what hangs off each device port.</li>
+  </ul>
+</div>
+
+<section id="why">
+  <h3><span class="n">1</span>Why the cast matters</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Roads built (Lesson 1). Now meet the villagers. Three jobs only: <span style="color:var(--rnf)">ask for data</span>, <span style="color:var(--hnf)">own the truth + keep cache</span>, <span style="color:var(--snf)">be the memory at the end</span>. Everyone else is a doorman or translator. Learn the names — every later lesson uses them.</p></div>
+  <p>CMN-700 is CHI-native, so its components map cleanly onto CHI's three agent roles: <b>Request Node (RN)</b>, <b>Home Node (HN)</b>, <b>Subordinate Node (SN)</b>. The trick for an interview is knowing the <i>variants</i> within each family and why they exist.</p>
+</section>
+
+<section id="families">
+  <h3><span class="n">2</span>The three families at a glance</h3>
+  <table>
+    <tr><th>Family</th><th>Role</th><th>CHI mapping</th></tr>
+    <tr><td><span class="chip" style="color:var(--rnf)">RN — Request</span></td><td>Starts transactions; may or may not cache.</td><td>Requester (RN-F/RN-I)</td></tr>
+    <tr><td><span class="chip" style="color:var(--hnf)">HN — Home</span></td><td>Owns an address range, the Point of Coherency; may hold SLC + snoop filter.</td><td>Home node</td></tr>
+    <tr><td><span class="chip" style="color:var(--snf)">SN — Subordinate</span></td><td>The endpoint that fulfils — memory or an AMBA slave.</td><td>Subordinate/slave</td></tr>
+  </table>
+  <p>A request flows <span style="color:var(--rnf)">RN</span> → <span style="color:var(--hnf)">HN</span> → (if needed) <span style="color:var(--snf)">SN</span> and back. Hold that direction in your head; the variants below just specialise each role.</p>
+</section>
+
+<section id="rn">
+  <h3><span class="n">3</span>Request nodes (RN)</h3>
+  <table>
+    <tr><th>Node</th><th>Coherent cache?</th><th>What it is</th></tr>
+    <tr><td><code>RN-F</code></td><td>Yes (fully)</td><td>A CPU cluster (via a DSU) or other fully-coherent master. It holds coherent caches, so it issues requests <i>and</i> answers snoops. The "snoop me" node.</td></tr>
+    <tr><td><code>RN-I</code></td><td>No</td><td>I/O-coherent bridge for AMBA masters (ACE5-Lite). A proxy with no coherent cache of its own — used for I/O/accelerators reaching into coherent memory.</td></tr>
+    <tr><td><code>RN-D</code></td><td>No</td><td>An RN-I that <b>also handles DVM</b> (distributed virtual-memory / TLB-maintenance messaging).</td></tr>
+  </table>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>RN-F = has own fridge (cache), must share. RN-I = no fridge, just a courier for outside devices. RN-D = same courier, but also carries the "everyone clear your memory-map notes" letters (DVM).</p></div>
+</section>
+
+<section id="hn">
+  <h3><span class="n">4</span>Home nodes (HN)</h3>
+  <p>The home node is the brain of coherency: it owns an address range, serialises requests to it, and decides who to snoop. Variants differ by <i>what</i> they front and what extra duties they carry.</p>
+  <table>
+    <tr><th>Node</th><th>What it does</th></tr>
+    <tr><td><code>HN-F</code> <span class="note">(a.k.a. HN-S / HNS in CMN-700 naming)</span></td><td><b>Fully coherent home node.</b> Holds an <b>SLC slice + snoop filter</b>; is the Point of Coherency/Serialization for its addresses. This is the one we open up in Lesson 4.</td></tr>
+    <tr><td><code>HN-I</code></td><td>I/O home node — a proxy for AMBA slave subsystems; converts CHI to ACE5-Lite. No caching, generates no snoops.</td></tr>
+    <tr><td><code>HN-D</code></td><td>HN-I <b>plus</b> the DVM node, the DTC (trace controller) and the <b>configuration (CFG)</b> node. <span class="flag">Every CMN-700 must contain one HN-D</span> — it's the config/boot anchor and default route target.</td></tr>
+    <tr><td><code>HN-P</code></td><td>I/O home node with <b>PCIe optimisation</b> — adds a dedicated tracker for PCIe peer-to-peer traffic; connects PCIe subordinates.</td></tr>
+  </table>
+  <p class="note">Interview-ready one-liner: "HN-F is the coherent home with cache + snoop filter; HN-I/HN-P front non-coherent or PCIe I/O; HN-D is the mandatory one that also carries config, DVM and trace control."</p>
+</section>
+
+<section id="sn">
+  <h3><span class="n">5</span>Subordinate nodes (SN)</h3>
+  <table>
+    <tr><th>Node</th><th>What it is</th></tr>
+    <tr><td><code>SN-F</code></td><td>Fully-coherent subordinate = the <b>memory-controller interface</b> (DMC for DDR5 / HBM). Where reads and writes finally land. CMN-700 supports up to 40 of these (80 dual-channel).</td></tr>
+    <tr><td><code>SBSX</code></td><td>A CHI &#8594; ACE5-Lite bridge that <b>behaves like an SN-F</b>, used to attach ACE5-Lite slaves such as the CoreLink DMC-400 controller.</td></tr>
+  </table>
+  <p>You can mix memory types on one mesh — e.g. HBM3 SN-Fs near compute for bandwidth and DDR5 SN-Fs on the edge for capacity.</p>
+</section>
+
+<section id="glue">
+  <h3><span class="n">6</span>Glue &amp; bridges (name-drops that score points)</h3>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-rtr"></span>CAL — Component Aggregation Layer</h6><p>Lets <b>multiple devices share one XP device port</b> — the way you fit more components than ports onto a modest mesh.</p></div>
+    <div class="card"><h6><span class="dot b-rtr"></span>CFG — Configuration node</h6><p>Co-located with the HN-D; owns the config/control/monitor register space. Software discovers the mesh through it.</p></div>
+    <div class="card"><h6><span class="dot b-hnf"></span>ADB — AMBA Domain Bridge</h6><p>Crosses clock and power/voltage domains between two AMBA (AXI/ACE5-Lite) interfaces.</p></div>
+    <div class="card"><h6><span class="dot b-hnf"></span>CDB — CHI Domain Bridge</h6><p>Same idea for two CHI interfaces in different clock/power domains.</p></div>
+  </div>
+  <p class="note">(The CCG multichip gateway is also "glue", but it earns its own lesson — L8.)</p>
+</section>
+
+<section id="tile">
+  <h3><span class="n">7</span>Putting it on the mesh</h3>
+  <p>In large server parts the mesh is built by <b>replicating a tile</b>: one XP carrying two CPU clusters and an HN-F slice, repeated across the die, with memory and I/O coming out of the edges. Here's a slice of that pattern:</p>
+  <div class="ascii-wrap"><div class="bar">A replicated compute tile + edge memory/IO</div>
+<pre class="ascii">   edge: memory + IO                 compute interior
+   <span class="snf">[SN-F]</span>        <span class="snf">[SN-F]</span>        <span class="hnf">[HN-F]</span>        <span class="hnf">[HN-D]</span>  <span class="cmt">&#8592; mandatory</span>
+      <span class="box">|</span>            <span class="box">|</span>            <span class="box">|</span>            <span class="box">|</span>
+   <span class="rtr">(0,1)</span><span class="box">━━━━</span><span class="rtr">(1,1)</span><span class="box">━━━━</span><span class="rtr">(2,1)</span><span class="box">━━━━</span><span class="rtr">(3,1)</span>
+      <span class="box">┃</span>            <span class="box">┃</span>            <span class="box">┃</span>            <span class="box">┃</span>
+   <span class="rtr">(0,0)</span><span class="box">━━━━</span><span class="rtr">(1,0)</span><span class="box">━━━━</span><span class="rtr">(2,0)</span><span class="box">━━━━</span><span class="rtr">(3,0)</span>
+      <span class="box">|</span>            <span class="box">|</span>            <span class="box">|</span>            <span class="box">|</span>
+   <span class="rnf">[RN-F]</span>        <span class="rnf">[RN-F]</span>        <span class="rnf">[RN-I]</span>        <span class="rnf">[RN-D]</span>
+   <span class="cmt">CPU x2</span>       <span class="cmt">CPU x2</span>       <span class="cmt">PCIe/IO</span>      <span class="cmt">IO + DVM</span>
+</pre></div>
+  <p>Notice the HN-D sits in the interior with the other home nodes, the SN-F memory controllers hug the edge near the PHYs, and I/O enters via RN-I / RN-D. The exact placement is a performance lever (Lesson 7), but the <i>roles</i> are what you must name instantly.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">8</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="RN-F is fully coherent with caches; RN-I is an I/O-coherent proxy with no coherent cache.">
+    <div class="q">1. The difference between RN-F and RN-I is that…</div>
+    <button class="opt">RN-I is faster than RN-F.</button>
+    <button class="opt">RN-F connects only to memory; RN-I only to CPUs.</button>
+    <button class="opt">RN-F holds coherent caches; RN-I is an I/O-coherent proxy with no coherent cache.</button>
+    <button class="opt">There is no functional difference.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="The HN-D also carries the config (CFG) node, the DVM node and the DTC, and every mesh needs exactly one.">
+    <div class="q">2. Which home node is mandatory in every CMN-700 and why?</div>
+    <button class="opt">HN-F, because it holds the SLC.</button>
+    <button class="opt">HN-D, because it carries config, DVM and trace control and is the default route target.</button>
+    <button class="opt">HN-P, because PCIe is always present.</button>
+    <button class="opt">HN-I, because all I/O needs it.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="SN-F is the memory-controller interface; SBSX bridges CHI to ACE5-Lite slaves but behaves like an SN-F.">
+    <div class="q">3. An SN-F is best described as…</div>
+    <button class="opt">the memory-controller interface where reads/writes land.</button>
+    <button class="opt">a CPU cluster.</button>
+    <button class="opt">the snoop filter.</button>
+    <button class="opt">a PCIe root port.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="The CAL lets multiple devices share a single XP device port.">
+    <div class="q">4. You have more components than device ports on an XP. What helps?</div>
+    <button class="opt">The DTC.</button>
+    <button class="opt">A second HN-D.</button>
+    <button class="opt">The CDB.</button>
+    <button class="opt">The CAL (Component Aggregation Layer).</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">9</span>Interview Q&amp;A</h3>
+  <details><summary>Name the node families and what each does.</summary><div class="ans">Request nodes (RN) start transactions; Home nodes (HN) own address ranges and coherency; Subordinate nodes (SN) are the endpoints (memory/AMBA slaves). Requests flow RN &#8594; HN &#8594; SN and back.</div></details>
+  <details><summary>RN-F vs RN-I vs RN-D?</summary><div class="ans">RN-F: fully coherent, has caches (CPUs). RN-I: I/O-coherent bridge for AMBA masters, no coherent cache (a proxy for I/O/accelerators). RN-D: an RN-I that also handles DVM (TLB-maintenance) messages.</div></details>
+  <details><summary>What's inside an HN-D and why must there be one?</summary><div class="ans">HN-D = HN-I plus the DVM node, the DTC (trace controller) and the configuration (CFG) node. It's the boot/config anchor and the default route target before the SAM is programmed, so every mesh needs exactly one.</div></details>
+  <details><summary>HN-F vs HN-I?</summary><div class="ans">HN-F is fully coherent: it holds an SLC slice and snoop filter and is the Point of Coherency. HN-I is an I/O home node — a proxy that converts CHI to ACE5-Lite for non-coherent slaves, with no caching and no snoops generated.</div></details>
+  <details><summary>What is the CAL and when do you need it?</summary><div class="ans">The Component Aggregation Layer lets several devices share one XP device port — useful when you have more components than ports and want to keep the mesh small (which lowers hop count/latency).</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">10</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>Three families: <b>RN</b> (request), <b>HN</b> (home), <b>SN</b> (subordinate).</li>
+    <li>RN-F coherent w/ caches · RN-I I/O proxy · RN-D = RN-I + DVM.</li>
+    <li>HN-F (SLC+SF) · HN-I (CHI&#8594;ACE-Lite) · <b>HN-D mandatory</b> (CFG+DVM+DTC) · HN-P (PCIe).</li>
+    <li>SN-F = memory controller · SBSX bridges to ACE5-Lite slaves.</li>
+    <li>Glue: CAL (port sharing), ADB/CDB (domain crossing), CFG (config/discovery).</li>
+  </ul>
+  <div class="chips"><span class="chip">RN-F/I/D</span><span class="chip">HN-F / HN-S</span><span class="chip">HN-I</span><span class="chip">HN-D</span><span class="chip">HN-P</span><span class="chip">SN-F</span><span class="chip">SBSX</span><span class="chip">CAL</span><span class="chip">ADB / CDB</span><span class="chip">CFG</span><span class="chip">DSU</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson01_mesh_fabric.html">◄ L1 · Mesh fabric</a>
+  <a href="cmn700_lesson03_chi_on_mesh.html">L3 · CHI on the mesh ►</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L3): we set these nodes talking — the four channels as networks and full transaction walks across the mesh.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

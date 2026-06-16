@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 — 10-Lesson Course Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a;
+  /* phase accents */
+  --pA:#39d4e6; --pB:#f5b942; --pC:#ff9b42; --pD:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+main{max-width:1000px; margin:0 auto; padding:42px 28px 120px}
+
+header.hero{margin-bottom:14px}
+header.hero .kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+header.hero h2{font-size:36px; margin:6px 0 8px; line-height:1.12; letter-spacing:-.5px}
+header.hero p{color:var(--ink-dim); max-width:760px; font-size:16px}
+
+.howto{background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--router);
+  border-radius:var(--radius); padding:16px 18px; margin:22px 0}
+.howto h4{margin:0 0 6px; font-size:15px; font-family:var(--mono)}
+.howto p{margin:6px 0; color:var(--ink-dim); font-size:14px}
+
+/* progress arc */
+.arc{display:grid; grid-template-columns:repeat(10,1fr); gap:6px; margin:26px 0 8px}
+.arc .step{height:8px; border-radius:6px; background:var(--line); position:relative}
+.arc .step.a{background:var(--pA)} .arc .step.b{background:var(--pB)}
+.arc .step.c{background:var(--pC)} .arc .step.d{background:var(--pD)}
+.arc .step span{position:absolute; top:12px; left:0; font-family:var(--mono); font-size:10px; color:var(--ink-faint)}
+.phaselabels{display:flex; gap:18px; flex-wrap:wrap; margin:18px 0 30px; font-size:12.5px; color:var(--ink-dim); font-family:var(--mono)}
+.phaselabels b{font-weight:600}
+.pl{display:inline-flex; align-items:center; gap:7px}
+.pl .d{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+/* lesson cards */
+.lesson{background:var(--panel); border:1px solid var(--line); border-radius:14px; margin:13px 0; overflow:hidden;
+  border-left:4px solid var(--line)}
+.lesson.a{border-left-color:var(--pA)} .lesson.b{border-left-color:var(--pB)}
+.lesson.c{border-left-color:var(--pC)} .lesson.d{border-left-color:var(--pD)}
+.lesson summary{cursor:pointer; list-style:none; padding:17px 20px; display:flex; align-items:center; gap:16px}
+.lesson summary::-webkit-details-marker{display:none}
+.lnum{font-family:var(--mono); font-size:22px; font-weight:700; color:var(--ink-faint); min-width:48px}
+.lesson.a .lnum{color:var(--pA)} .lesson.b .lnum{color:var(--pB)}
+.lesson.c .lnum{color:var(--pC)} .lesson.d .lnum{color:var(--pD)}
+.ltitle{flex:1}
+.ltitle h3{margin:0; font-size:18px; letter-spacing:-.2px}
+.ltitle .goal{font-size:13.5px; color:var(--ink-dim); margin-top:2px}
+.lmeta{font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-align:right; white-space:nowrap}
+.chev{font-family:var(--mono); color:var(--ink-faint); transition:.2s}
+.lesson[open] .chev{transform:rotate(90deg)}
+
+.lbody{padding:4px 22px 22px 84px; border-top:1px solid var(--line-soft)}
+.lbody h5{font-family:var(--mono); font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--ink-faint); margin:18px 0 7px}
+.lbody ul{margin:6px 0; padding-left:18px} .lbody li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+.lbody p{margin:6px 0; font-size:14px; color:var(--ink-dim)}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0}
+.chip{font-family:var(--mono); font-size:11.5px; padding:3px 9px; border-radius:16px;
+  border:1px solid var(--line); background:var(--panel2); color:var(--ink-dim)}
+.angle{background:var(--bg2); border:1px solid var(--line-soft); border-radius:8px; padding:11px 14px; margin:8px 0;
+  font-size:13.5px; color:var(--ink)}
+.angle b{color:var(--router); font-family:var(--mono); font-size:11px; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:3px}
+.builds{font-size:12.5px; color:var(--ink-faint); font-style:italic; margin-top:10px}
+.ready{display:inline-block; font-family:var(--mono); font-size:10.5px; letter-spacing:1px; text-transform:uppercase;
+  padding:2px 8px; border-radius:12px; margin-left:8px; vertical-align:middle}
+.ready.done{background:rgba(82,210,115,.15); color:var(--snf); border:1px solid rgba(82,210,115,.4)}
+.ready.next{background:rgba(57,212,230,.13); color:var(--rnf); border:1px solid rgba(57,212,230,.4)}
+.ready.queue{background:var(--panel2); color:var(--ink-faint); border:1px solid var(--line)}
+
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:30px 0}
+.note{font-size:12.5px; color:var(--ink-faint); font-style:italic}
+.outcome{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin:24px 0}
+.outcome h4{margin:0 0 10px; font-size:16px}
+.outcome ul{margin:0; padding-left:18px} .outcome li{margin:5px 0; color:var(--ink-dim); font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<header class="hero">
+  <div class="kick">Arm Neoverse CMN-700 · structured course</div>
+  <h2>A 10-lesson path to CMN-700 fluency</h2>
+  <p>From the mesh wires up to a system you could whiteboard in an interview. Each lesson is a standalone interactive doc in the same style as your overview — caveman grounding, color-coded nodes, ASCII micro-architecture, a self-check, and an interview Q&amp;A. They're ordered to build on each other and on the CHI/NoC knowledge you already have.</p>
+</header>
+
+<div class="howto">
+  <h4>How to use this course</h4>
+  <p>① Lessons are sequential — each assumes the ones before it. ② Every lesson opens with concrete <b>learning objectives</b> and ends with a <b>self-check</b> + <b>interview questions</b>. ③ The four phases move from <i>transport → coherency → performance/scale → integration</i>. ④ Expand any card below to see exactly what that lesson covers.</p>
+</div>
+
+<div class="arc">
+  <div class="step a"><span>L1</span></div>
+  <div class="step a"><span>L2</span></div>
+  <div class="step a"><span>L3</span></div>
+  <div class="step b"><span>L4</span></div>
+  <div class="step b"><span>L5</span></div>
+  <div class="step b"><span>L6</span></div>
+  <div class="step c"><span>L7</span></div>
+  <div class="step c"><span>L8</span></div>
+  <div class="step d"><span>L9</span></div>
+  <div class="step d"><span>L10</span></div>
+</div>
+<div class="phaselabels">
+  <span class="pl"><span class="d" style="background:var(--pA)"></span><b>Phase A · Fabric foundations</b> (L1–L3)</span>
+  <span class="pl"><span class="d" style="background:var(--pB)"></span><b>Phase B · Coherency core</b> (L4–L6)</span>
+  <span class="pl"><span class="d" style="background:var(--pC)"></span><b>Phase C · Performance &amp; scale</b> (L7–L8)</span>
+  <span class="pl"><span class="d" style="background:var(--pD)"></span><b>Phase D · Integration &amp; ops</b> (L9–L10)</span>
+</div>
+
+<!-- ===================== LESSON 1 ===================== -->
+<details class="lesson a" open>
+  <summary>
+    <div class="lnum">01</div>
+    <div class="ltitle"><h3>The Mesh Fabric &amp; Crosspoints <span class="ready next">built · ready</span></h3>
+      <div class="goal">The transport layer everything else rides on: XP routers, ports, coordinates, links, routing.</div></div>
+    <div class="lmeta">PHASE A<br>~45 min</div>
+    <div class="chev">▸</div>
+  </summary>
+  <div class="lbody">
+    <h5>Goal</h5>
+    <p>Understand the physical substrate of CMN-700 — how a 2-D mesh of crosspoints moves CHI flits between components — before any coherency logic is layered on.</p>
+    <h5>You'll be able to</h5>
+    <ul>
+      <li>Draw an XP (MXP) and label its mesh ports and device ports.</li>
+      <li>Explain the (X,Y) coordinate system and how node IDs are composed.</li>
+      <li>Describe credited, per-channel links and the double-mesh-channel option.</li>
+      <li>Trace how a flit is routed deterministically from one XP to another.</li>
+    </ul>
+    <h5>Topics</h5>
+    <ul>
+      <li>Mesh as transport layer; rectangular grid up to 12×12 = 144 XPs.</li>
+      <li>Crosspoint anatomy: 4 mesh ports (N/S/E/W) + device ports; internal per-channel switching.</li>
+      <li>Coordinates (XID/YID), node-ID composition (XP coords + port + device).</li>
+      <li>Links &amp; flits; the four channels as independent networks; channel width &amp; double mesh channel; bandwidth math.</li>
+      <li>Deterministic dimension-ordered routing &amp; why it's deadlock-free.</li>
+      <li>Device attachment limits (3 per XP, 4 on edge) and the CAL.</li>
+    </ul>
+    <h5>Key terms</h5>
+    <div class="chips"><span class="chip">XP / MXP</span><span class="chip">mesh port</span><span class="chip">device port</span><span class="chip">XID / YID</span><span class="chip">node ID</span><span class="chip">flit</span><span class="chip">credited link</span><span class="chip">double mesh channel</span><span class="chip">dimension-order routing</span><span class="chip">CAL</span></div>
+    <div class="angle"><b>Interview angle</b>"Sketch the CMN-700 mesh and walk a packet from a CPU to a memory controller." This lesson is what lets you draw it confidently.</div>
+    <div class="builds">Builds on: your NoC fundamentals. Prereq for: everything.</div>
+  </div>
+</details>
+
+<!-- ===================== LESSON 2 ===================== -->
+<details class="lesson a">
+  <summary>
+    <div class="lnum">02</div>
+    <div class="ltitle"><h3>Node Taxonomy Deep Dive <span class="ready queue">planned</span></h3>
+      <div class="goal">The full cast: every RN, HN, SN variant and the bridges — what attaches where and why.</div></div>
+    <div class="lmeta">PHASE A<br>~50 min</div>
+    <div class="chev">▸</div>
+  </summary>
+  <div class="lbody">
+    <h5>Goal</h5>
+    <p>Know every node type cold and be able to place each correctly on the mesh — this vocabulary underpins every later discussion.</p>
+    <h5>You'll be able to</h5>
+    <ul>
+      <li>Distinguish RN-F / RN-I / RN-D by coherence behaviour and use case.</li>
+      <li>Explain each home node (HN-F/HN-S, HN-I, HN-D, HN-P) and why HN-D is mandatory.</li>
+      <li>Place SN-F vs SBSX, and describe CAL / ADB / CDB / CFG glue.</li>
+    </ul>
+    <h5>Topics</h5>
+    <ul>
+      <li>Request nodes: RN-F (coherent caches), RN-I (I/O proxy), RN-D (+DVM).</li>
+      <li>Home nodes: HN-F/HN-S internals at a glance, HN-I (CHI→ACE-Lite), HN-D (DTC+DVM+CFG anchor), HN-P (PCIe P2P tracker).</li>
+      <li>Subordinate nodes: SN-F (memory controller), SBSX (CHI→ACE5-Lite bridge).</li>
+      <li>Glue: CAL aggregation, ADB/CDB domain bridges, CFG node, clock/power-domain crossing.</li>
+      <li>Device-to-XP mapping rules and typical tile layouts.</li>
+    </ul>
+    <h5>Key terms</h5>
+    <div class="chips"><span class="chip">RN-F/I/D</span><span class="chip">HN-F / HN-S</span><span class="chip">HN-I/D/P</span><span class="chip">SN-F</span><span class="chip">SBSX</span><span class="chip">CAL</span><span class="chip">ADB / CDB</span><span class="chip">CFG node</span></div>
+    <div class="angle"><b>Interview angle</b>"What's the difference between RN-F, RN-I and RN-D?" and "What lives inside an HN-D?" — fast, factual wins.</div>
+    <div class="builds">Builds on: L1 (where nodes attach). Prereq for: L3–L6.</div>
+  </div>
+</details>
+
+<!-- ===================== LESSON 3 ===================== -->
+<details class="lesson a">
+  <summary>
+    <div class="lnum">03</div>
+    <div class="ltitle"><h3>CHI-on-Mesh: Channels, Flits &amp; a Transaction Walk <span class="ready queue">planned</span></h3>
+      <div class="goal">How your CHI protocol knowledge maps onto the four physical mesh networks.</div></div>
+    <div class="lmeta">PHASE A<br>~55 min</div>
+    <div class="chev">▸</div>
+  </summary>
+  <div class="lbody">
+    <h5>Goal</h5>
+    <p>Connect the CHI protocol you already know to its physical realisation across the mesh, and walk complete transactions end-to-end.</p>
+    <h5>You'll be able to</h5>
+    <ul>
+      <li>Map REQ/RSP/SNP/DAT to independent flit networks and explain deadlock avoidance.</li>
+      <li>Walk a read miss, a write-back, and a snoop across the mesh hop-by-hop.</li>
+      <li>Explain credited flow control and flit framing on the links.</li>
+    </ul>
+    <h5>Topics</h5>
+    <ul>
+      <li>Four channels as separate networks; virtual/physical channel separation.</li>
+      <li>Flit structure on the mesh; packetisation of CHI messages.</li>
+      <li>Credited flow control; backpressure; ordering guarantees per channel.</li>
+      <li>End-to-end walks: ReadShared miss, WriteBack, SnoopShared.</li>
+      <li>Where latency comes from: hops, serialization, queueing.</li>
+    </ul>
+    <h5>Key terms</h5>
+    <div class="chips"><span class="chip">REQ/RSP/SNP/DAT</span><span class="chip">flit</span><span class="chip">credit/backpressure</span><span class="chip">virtual channel</span><span class="chip">transaction walk</span><span class="chip">ordering</span></div>
+    <div class="angle"><b>Interview angle</b>"Walk me through a read miss from a core" and "Why four separate channels?" — the most common deep-dive prompts.</div>
+    <div class="builds">Builds on: L1+L2. Prereq for: L4, L6.</div>
+  </div>
+</details>
+
+<!-- ===================== LESSON 4 ===================== -->
+<details class="lesson b">
+  <summary>
+    <div class="lnum">04</div>
+    <div class="ltitle"><h3>Home Node Internals — SLC + Snoop Filter <span class="ready queue">planned</span></h3>
+      <div class="goal">The coherency heart: distributed last-level cache and the directory that drives snoops.</div></div>
+    <div class="lmeta">PHASE B<br>~60 min</div>
+    <div class="chev">▸</div>
+  </summary>
+  <div class="lbody">
+    <h5>Goal</h5>
+    <p>Open up the HN-F: how the SLC slice and snoop filter work together as the Point of Coherency, and the design trade-offs that decide performance.</p>
+    <h5>You'll be able to</h5>
+    <ul>
+      <li>Describe SLC slice organisation, allocation (exclusive) policy, and MTE tag storage.</li>
+      <li>Explain the snoop filter as a directory, SF sizing (~1.5×), and back-invalidation.</li>
+      <li>Explain request serialization / ordering at the home node (POC/POS).</li>
+    </ul>
+    <h5>Topics</h5>
+    <ul>
+      <li>SLC slice: set/way structure, allocation/eviction, exclusive policy, MTE data+tag.</li>
+      <li>Snoop filter: directory entries, presence tracking, targeted vs broadcast snoops.</li>
+      <li>SF sizing rule and the cost of undersizing (spurious back-invalidations).</li>
+      <li>Point of Coherency / Serialization; per-line ordering and hazard handling.</li>
+      <li>Why distribution scales bandwidth; address hashing preview.</li>
+    </ul>
+    <h5>Key terms</h5>
+    <div class="chips"><span class="chip">SLC slice</span><span class="chip">snoop filter</span><span class="chip">directory</span><span class="chip">POC / POS</span><span class="chip">back-invalidation</span><span class="chip">exclusive allocation</span><span class="chip">MTE</span></div>
+    <div class="angle"><b>Interview angle</b>"What's inside an HN-F?", "How is the snoop filter sized and what breaks if it's too small?" — strong differentiators.</div>
+    <div class="builds">Builds on: L2+L3. Prereq for: L5, L6.</div>
+  </div>
+</details>
+
+<!-- ===================== LESSON 5 ===================== -->
+<details class="lesson b">
+  <summary>
+    <div class="lnum">05</div>
+    <div class="ltitle"><h3>System Address Map &amp; Address Hashing <span class="ready queue">planned</span></h3>
+      <div class="goal">How a physical address becomes a route — and how hashing balances the mesh.</div></div>
+    <div class="lmeta">PHASE B<br>~50 min</div>
+    <div class="chev">▸</div>
+  </summary>
+  <div class="lbody">
+    <h5>Goal</h5>
+    <p>Understand the SAM hierarchy that turns addresses into target node IDs, and how interleaving spreads load across home nodes and memory controllers.</p>
+    <h5>You'll be able to</h5>
+    <ul>
+      <li>Explain RN SAM vs HN-F/MC SAM and what each maps to.</li>
+      <li>Describe address hashing/interleaving across HN-F slices and its granularity.</li>
+      <li>Explain region setup, the default node, and why programming order matters.</li>
+    </ul>
+    <h5>Topics</h5>
+    <ul>
+      <li>RN SAM: address → home node target ID (and direct-to-MC for prefetch).</li>
+      <li>HN-F SAM / MC SAM: address → SN target ID.</li>
+      <li>Hashing function and interleave granularity; balancing hot addresses.</li>
+      <li>Memory regions, target ID tables, default/use_default_node behaviour.</li>
+      <li>Bring-up ordering: why traffic must be quiesced during SAM programming.</li>
+    </ul>
+    <h5>Key terms</h5>
+    <div class="chips"><span class="chip">RN SAM</span><span class="chip">HN-F SAM / MC SAM</span><span class="chip">target node ID</span><span class="chip">address hashing</span><span class="chip">interleaving</span><span class="chip">use_default_node</span></div>
+    <div class="angle"><b>Interview angle</b>"How does a request find the right home node?" and "How do you avoid a hot home node?" — shows systems thinking.</div>
+    <div class="builds">Builds on: L4. Prereq for: L6, L8.</div>
+  </div>
+</details>
+
+<!-- ===================== LESSON 6 ===================== -->
+<details class="lesson b">
+  <summary>
+    <div class="lnum">06</div>
+    <div class="ltitle"><h3>Coherency Flows &amp; CHI-E Optimizations <span class="ready queue">planned</span></h3>
+      <div class="goal">Cache states, snoop flows, and the latency-cutting features: DMT, DCT, atomics, stashing.</div></div>
+    <div class="lmeta">PHASE B<br>~60 min</div>
+    <div class="chev">▸</div>
+  </summary>
+  <div class="lbody">
+    <h5>Goal</h5>
+    <p>Master the coherency transaction flows on CMN-700 and the CHI-E optimisations that the mesh exposes to cut hops and latency.</p>
+    <h5>You'll be able to</h5>
+    <ul>
+      <li>Trace coherent read/write/upgrade flows and the snoop responses involved.</li>
+      <li>Explain DMT, DCT, cache stashing, and near-memory atomics — and when each helps.</li>
+      <li>Reason about hazards, ordering, and forward-progress on contended lines.</li>
+    </ul>
+    <h5>Topics</h5>
+    <ul>
+      <li>Cache states &amp; transitions as seen by the home node + snoop filter.</li>
+      <li>Direct Memory Transfer (DMT) and Direct Cache Transfer (DCT) hop-savings.</li>
+      <li>Atomics, cache stashing, prefetch hints.</li>
+      <li>Hazards, retries, and ordering on hot lines.</li>
+      <li>Worked sequences with mesh hop accounting.</li>
+    </ul>
+    <h5>Key terms</h5>
+    <div class="chips"><span class="chip">DMT</span><span class="chip">DCT</span><span class="chip">cache stashing</span><span class="chip">atomics</span><span class="chip">snoop response</span><span class="chip">hazard / retry</span></div>
+    <div class="angle"><b>Interview angle</b>"What does CMN-700 add over plain CHI?" and "How does cache-to-cache transfer work here?"</div>
+    <div class="builds">Builds on: L3+L4+L5. Prereq for: L7.</div>
+  </div>
+</details>
+
+<!-- ===================== LESSON 7 ===================== -->
+<details class="lesson c">
+  <summary>
+    <div class="lnum">07</div>
+    <div class="ltitle"><h3>QoS, Congestion Control &amp; Perf Tuning <span class="ready queue">planned</span></h3>
+      <div class="goal">Keeping the fabric fast and fair: QoS classes, CBusy, hot-spot re-routing, placement.</div></div>
+    <div class="lmeta">PHASE C<br>~55 min</div>
+    <div class="chev">▸</div>
+  </summary>
+  <div class="lbody">
+    <h5>Goal</h5>
+    <p>Understand how CMN-700 manages contention and how topology/placement choices affect latency and bandwidth.</p>
+    <h5>You'll be able to</h5>
+    <ul>
+      <li>Explain CHI QoS priority classes and arbitration on the mesh.</li>
+      <li>Describe CBusy (Completer Busy) closed-loop throttling and its uplift.</li>
+      <li>Explain hot-spot re-routing and reason about node placement effects.</li>
+    </ul>
+    <h5>Topics</h5>
+    <ul>
+      <li>QoS priority classes; arbitration and fairness.</li>
+      <li>CBusy / MemBusy: congestion signalling → prefetcher &amp; outstanding-txn throttling.</li>
+      <li>Hot-spot re-routing; adaptive vs deterministic paths and the ordering caveat.</li>
+      <li>Bandwidth/latency trade-offs; double mesh channel; cross-sectional BW.</li>
+      <li>Placement &amp; topology: tile replication, where to put HN-F/SN-F/CPUs.</li>
+    </ul>
+    <h5>Key terms</h5>
+    <div class="chips"><span class="chip">QoS class</span><span class="chip">CBusy / MemBusy</span><span class="chip">hot-spot re-routing</span><span class="chip">cross-sectional BW</span><span class="chip">placement</span></div>
+    <div class="angle"><b>Interview angle</b>"How does the fabric handle congestion?" and "How would node placement change performance?"</div>
+    <div class="builds">Builds on: L6. Prereq for: L8, L9.</div>
+  </div>
+</details>
+
+<!-- ===================== LESSON 8 ===================== -->
+<details class="lesson c">
+  <summary>
+    <div class="lnum">08</div>
+    <div class="ltitle"><h3>Multichip — CML, CCG/CXG, CXL &amp; CCIX <span class="ready queue">planned</span></h3>
+      <div class="goal">Scaling coherency beyond one die: gateways, CXS, and the Super Home Node.</div></div>
+    <div class="lmeta">PHASE C<br>~60 min</div>
+    <div class="chev">▸</div>
+  </summary>
+  <div class="lbody">
+    <h5>Goal</h5>
+    <p>Understand how CMN-700 extends a single coherent mesh across dies and sockets, and the two coherency models it supports.</p>
+    <h5>You'll be able to</h5>
+    <ul>
+      <li>Explain CML and CML_SMP, and the CCG gateway internals (CCRA/CCHA/CCLA).</li>
+      <li>Contrast CCIX (near-memory) vs CXL (host-based) coherency and when to use each.</li>
+      <li>Explain CXS-B fast path and the Super Home Node concept.</li>
+    </ul>
+    <h5>Topics</h5>
+    <ul>
+      <li>CML modes; multi-die/multi-socket SMP topologies; chiplet patterns.</li>
+      <li>CCG internals: CCRA (request), CCHA (home), CCLA (link, ±RN-I); CXG/CXRA/CXHA/CXLA.</li>
+      <li>CHI↔CXS-B bridging; transaction-layer-bypass fast path for latency.</li>
+      <li>CCIX vs CXL coherency models; remote SAM and target IDs.</li>
+      <li>Super Home Node as central coherency point for shared remote memory.</li>
+    </ul>
+    <h5>Key terms</h5>
+    <div class="chips"><span class="chip">CML / CML_SMP</span><span class="chip">CCG</span><span class="chip">CCRA/CCHA/CCLA</span><span class="chip">CXG</span><span class="chip">CXS-B</span><span class="chip">Super Home Node</span><span class="chip">CXL vs CCIX</span></div>
+    <div class="angle"><b>Interview angle</b>"How does CMN-700 scale across chips?" and "CXL vs CCIX — when would you use each?"</div>
+    <div class="builds">Builds on: L5+L6. Prereq for: L10.</div>
+  </div>
+</details>
+
+<!-- ===================== LESSON 9 ===================== -->
+<details class="lesson d">
+  <summary>
+    <div class="lnum">09</div>
+    <div class="ltitle"><h3>Observability — PMU, DTC/DTM, Debug &amp; Trace <span class="ready queue">planned</span></h3>
+      <div class="goal">Measuring and debugging the mesh: distributed counters, watchpoints, trace.</div></div>
+    <div class="lmeta">PHASE D<br>~50 min</div>
+    <div class="chev">▸</div>
+  </summary>
+  <div class="lbody">
+    <h5>Goal</h5>
+    <p>Learn how CMN-700 is instrumented so you can localise bandwidth/latency problems and reason about real measurements.</p>
+    <h5>You'll be able to</h5>
+    <ul>
+      <li>Describe the distributed PMU: DTM per XP, DTC global counters in HN-D.</li>
+      <li>Explain watchpoints (flit match/mask, channel/device select) and ATB trace.</li>
+      <li>Use the mental model behind the Linux <code>arm_cmn</code> PMU and top-down analysis.</li>
+    </ul>
+    <h5>Topics</h5>
+    <ul>
+      <li>DTM: up to 4 local events/XP; watchpoint match &amp; mask; upload/download.</li>
+      <li>DTC: up to 8 global counters; overflow interrupts; timestamped ATB trace.</li>
+      <li>Event types; per-node vs aggregate; nodeid targeting; cross-trigger.</li>
+      <li>Linux arm_cmn PMU; multi-mesh (arm_cmn_0..n); top-down bandwidth analysis.</li>
+      <li>A debugging playbook: from symptom → hot node → root cause.</li>
+    </ul>
+    <h5>Key terms</h5>
+    <div class="chips"><span class="chip">DTM</span><span class="chip">DTC</span><span class="chip">watchpoint</span><span class="chip">ATB trace</span><span class="chip">PMU event</span><span class="chip">arm_cmn</span></div>
+    <div class="angle"><b>Interview angle</b>"How would you debug a bandwidth problem on the mesh?" — the systems/validation favourite.</div>
+    <div class="builds">Builds on: L7. Prereq for: L10 capstone.</div>
+  </div>
+</details>
+
+<!-- ===================== LESSON 10 ===================== -->
+<details class="lesson d">
+  <summary>
+    <div class="lnum">10</div>
+    <div class="ltitle"><h3>System Integration + Capstone <span class="ready queue">planned</span></h3>
+      <div class="goal">MPAM, RAS, power, interrupts, bring-up — then a full mock interview.</div></div>
+    <div class="lmeta">PHASE D<br>~65 min</div>
+    <div class="chev">▸</div>
+  </summary>
+  <div class="lbody">
+    <h5>Goal</h5>
+    <p>Tie together the surrounding system features, then synthesise the whole course in a capstone whiteboard exercise + mock interview.</p>
+    <h5>You'll be able to</h5>
+    <ul>
+      <li>Explain MPAM partitioning/monitoring across home nodes and memory.</li>
+      <li>Describe RAS (ECC, error records), power (P/Q channel, domains), interrupt routing.</li>
+      <li>Outline the boot/discovery/bring-up sequence and the role of Socrates.</li>
+      <li>Whiteboard a complete CMN-700 SoC and defend the choices.</li>
+    </ul>
+    <h5>Topics</h5>
+    <ul>
+      <li>MPAM: PARTID, SLC capacity + bandwidth partitioning, monitoring.</li>
+      <li>RAS: ECC/parity on SLC &amp; SF, error records, containment &amp; reporting.</li>
+      <li>Power: Q-channel/P-channel handshakes, clock/power domains, draining.</li>
+      <li>Interrupts (GIC/ITS) routing across the mesh; configuration discovery.</li>
+      <li>Bring-up sequence; Socrates configuration recap.</li>
+      <li><b>Capstone:</b> design + whiteboard a CMN-700 SoC; full mock interview set.</li>
+    </ul>
+    <h5>Key terms</h5>
+    <div class="chips"><span class="chip">MPAM / PARTID</span><span class="chip">RAS / ECC</span><span class="chip">P-channel / Q-channel</span><span class="chip">GIC / ITS</span><span class="chip">discovery</span><span class="chip">Socrates</span></div>
+    <div class="angle"><b>Interview angle</b>The synthesis questions: "Design a server SoC interconnect" / "Walk me through bring-up" — plus rapid-fire review of L1–L9.</div>
+    <div class="builds">Builds on: all prior lessons.</div>
+  </div>
+</details>
+
+<div class="outcome">
+  <h4>By the end you can…</h4>
+  <ul>
+    <li>Whiteboard the CMN-700 mesh and route a transaction across it from memory to core.</li>
+    <li>Explain the coherency engine — home nodes, SLC, snoop filter, SAM — and its trade-offs.</li>
+    <li>Reason about performance: congestion control, placement, and bandwidth scaling.</li>
+    <li>Discuss scale-out (chiplets, CXL/CCIX) and observability (PMU/trace) like a practitioner.</li>
+    <li>Field the full spread of CMN-700 interview questions with answers grounded in CHI.</li>
+  </ul>
+</div>
+
+<hr class="soft">
+<p class="note">Lesson 1 is built and ready. Lessons 2–10 are specified above and built on request — one at a time keeps each at full depth (ASCII micro-arch, worked flows, self-check, interview Q&amp;A). Plan is flexible: reorder, merge, or deepen any lesson before we proceed.</p>
+</main>
+</body>
+</html>

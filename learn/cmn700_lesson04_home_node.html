@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 · Lesson 4 — Home Node Internals — SLC + Snoop Filter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 · LESSON 04</div>
+  <h1>Home Node Internals — SLC + Snoop Filter</h1>
+  <a href="#why">Open the HN-F</a>
+  <a href="#slc">The SLC slice</a>
+  <a href="#sf">The snoop filter</a>
+  <a href="#sizing">SF sizing &amp; back-inval</a>
+  <a href="#poc">Point of Coherency</a>
+  <a href="#dist">Why distribute</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Phase B · Coherency core · Lesson 4 of 10</div>
+<h2 class="title">Home Node Internals — SLC + Snoop Filter</h2>
+<p class="lede">The coherency heart: a distributed last-level cache and the directory that drives targeted snoops.</p>
+
+<div class="obj"><h4>By the end of this lesson you can</h4>
+<ul>
+  <li>Describe the SLC slice: organisation, exclusive allocation, MTE tag storage.</li>
+  <li>Explain the snoop filter as a directory and why snoops become targeted.</li>
+  <li>State the SF sizing rule (~1.5&#215;) and explain back-invalidation.</li>
+  <li>Explain the home node as Point of Coherency / Serialization.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>Opening up the HN-F</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Home node carry two notebooks. Notebook A = <b>SLC</b>: shared big cache slice, keep hot data on-chip so brains don't wait for far memory. Notebook B = <b>snoop filter</b>: list of "who has a copy", so home only pokes the caches that actually hold the line. This lesson = read both notebooks.</p></div>
+  <p>The HN-F (called HN-S in newer naming) is where coherency lives. It does three things: caches data (SLC slice), tracks who else caches it (snoop filter), and orders all requests to its addresses (Point of Coherency). Get these and most "hard" CMN questions become easy.</p>
+</section>
+
+<section id="slc">
+  <h3><span class="n">2</span>The System Level Cache slice</h3>
+  <p>The SLC is the system's <b>last-level cache</b>, physically chopped into <b>slices — one per HN-F</b> — and spread across the mesh. Addresses are hashed across slices (Lesson 5) so capacity and traffic spread evenly. Up to <b>512 MiB</b> total, roughly <b>4 MiB per slice</b>.</p>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-hnf"></span>Exclusive allocation (data)</h6><p>Data lines are typically allocated <b>exclusively</b> with respect to the cores' private caches — avoids wasting SLC capacity duplicating what a core already holds.</p></div>
+    <div class="card"><h6><span class="dot b-hnf"></span>MTE: data + tag</h6><p>With Memory Tagging Extension enabled, the slice stores the line's <b>data and its memory tags</b> together.</p></div>
+  </div>
+  <p class="note">Why a shared LLC at all? On-chip hits avoid a DRAM round trip — the SLC exists to cut average read latency and to absorb I/O-heavy throughput (networking/storage), not just to be "more cache".</p>
+</section>
+
+<section id="sf">
+  <h3><span class="n">3</span>The snoop filter (a directory)</h3>
+  <p>The snoop filter (SF) is a <b>directory</b> co-located in each HN-F. For lines cached by RN-Fs, it records <b>which requesters hold a copy</b> (and roughly in what state). When a request needs to invalidate or fetch a line, the home consults the SF and sends <b>targeted snoops</b> to just those holders — instead of broadcasting to every cache.</p>
+  <div class="ascii-wrap"><div class="bar">Directory &#8594; targeted snoop (not broadcast)</div>
+<pre class="ascii">  request for line X arrives at <span class="hnf">HN-F</span>
+            <span class="box">|</span>
+            <span class="box">▼</span>
+   snoop filter lookup(X)  &#8594;  holders = { <span class="rnf">RN-F #2</span> }
+            <span class="box">|</span>
+            <span class="box">▼</span>
+   send <span class="snp">SNP</span> to <span class="rnf">RN-F #2</span> only     <span class="cmt">(RN-F #0,#1,#3 untouched)</span>
+</pre></div>
+  <p>This is the difference between a snoop-filtered mesh and a broadcast bus: snoop traffic scales with <i>actual sharing</i>, not with core count.</p>
+</section>
+
+<section id="sizing">
+  <h3><span class="n">4</span>SF sizing and back-invalidation</h3>
+  <p>The SF must have enough entries to track every line the cores might hold. A common rule of thumb: the SF should be roughly <b>1.5&#215; the aggregate private (exclusive) cache</b> of the cores it covers. Undersize it and the SF runs out of entries — to make room it must <b>evict a directory entry, which forces a back-invalidation</b> of a line that's <i>still live</i> in a core's cache:</p>
+  <div class="ascii-wrap"><div class="bar">Undersized SF &#8594; spurious back-invalidations</div>
+<pre class="ascii">  SF full, must track a new line
+        <span class="box">|</span>
+        <span class="box">▼</span>  evict an existing SF entry (line Y)
+   <span class="snp">SNP invalidate</span> &#8594; <span class="rnf">RN-F</span> that still uses Y    <span class="flag">&#9888; line was hot!</span>
+        <span class="box">|</span>
+        <span class="box">▼</span>  RN-F loses Y, will miss on it again &#8594; wasted traffic + latency
+</pre></div>
+  <p>So SF capacity is a real area-vs-performance trade: too small and you pay in spurious misses; too big and you burn area/power. This is a favourite interview probe because it shows you understand the directory, not just that one exists.</p>
+</section>
+
+<section id="poc">
+  <h3><span class="n">5</span>Point of Coherency &amp; Serialization</h3>
+  <p>For its address range, the HN-F is the <b>Point of Coherency (PoC)</b> and the <b>Point of Serialization (PoS)</b>: every outstanding request to a given line passes through it, so it can <b>order</b> them, resolve <b>hazards</b> (two requesters racing on the same line), and guarantee a single consistent view. Your CHI ordering knowledge maps directly here — the home node is where "who wins" is decided.</p>
+  <ul class="tight">
+    <li>Multiple outstanding ops to one line are <b>serialized</b> at the home.</li>
+    <li>Hazards (e.g. a snoop in flight while a new request arrives) are detected and held/retried at the home.</li>
+    <li>Ordering rules required by CHI are enforced from this single point.</li>
+  </ul>
+</section>
+
+<section id="dist">
+  <h3><span class="n">6</span>Why distribute home nodes at all?</h3>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-hnf"></span>Bandwidth scales</h6><p>N home nodes = N independent coherency engines and N SLC slices working in parallel. Aggregate bandwidth grows with slice count.</p></div>
+    <div class="card"><h6><span class="dot b-hnf"></span>No central bottleneck</h6><p>A request travels to the <i>one</i> home that owns its address, not through a shared crossbar. Address hashing (L5) keeps the load balanced.</p></div>
+  </div>
+  <p>The cost is that "home" for an address might be several hops away — which is why placement and interleaving (Lessons 5 &amp; 7) matter.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">7</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="The snoop filter is a directory of which RN-Fs hold which lines, enabling targeted snoops.">
+    <div class="q">1. The snoop filter's job is to…</div>
+    <button class="opt">store the actual cache-line data.</button>
+    <button class="opt">translate addresses to node IDs.</button>
+    <button class="opt">track which requesters hold which lines, so snoops can be targeted.</button>
+    <button class="opt">arbitrate the mesh links.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="Too-small SF must evict directory entries, forcing back-invalidations of still-live lines.">
+    <div class="q">2. What happens if the snoop filter is undersized?</div>
+    <button class="opt">Nothing — it just caches less data.</button>
+    <button class="opt">It evicts directory entries, forcing back-invalidations of lines still in use &#8594; spurious misses.</button>
+    <button class="opt">The mesh deadlocks.</button>
+    <button class="opt">DMT is disabled.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="The owning HN-F is the Point of Coherency/Serialization for its address range.">
+    <div class="q">3. Who serialises competing requests to the same cache line?</div>
+    <button class="opt">The owning HN-F (Point of Coherency/Serialization).</button>
+    <button class="opt">The requesting RN-F.</button>
+    <button class="opt">The SN-F memory controller.</button>
+    <button class="opt">The XP router.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="Distribution gives parallel coherency engines + SLC slices, so aggregate bandwidth scales with slice count.">
+    <div class="q">4. Why distribute the SLC + home nodes across the mesh?</div>
+    <button class="opt">To save power only.</button>
+    <button class="opt">Because CHI requires exactly one home per core.</button>
+    <button class="opt">To make addresses shorter.</button>
+    <button class="opt">So bandwidth scales with slice count and there's no central bottleneck.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">8</span>Interview Q&amp;A</h3>
+  <details><summary>What's inside an HN-F?</summary><div class="ans">An SLC slice (last-level cache, ~4 MiB) and a snoop filter (directory of which RN-Fs hold which lines). It is the Point of Coherency/Serialization for its address range — ordering requests, issuing targeted snoops, and resolving hazards.</div></details>
+  <details><summary>How is the snoop filter sized and what breaks if it's too small?</summary><div class="ans">Rule of thumb ~1.5&#215; the aggregate private cache of the cores it covers. Undersized, it evicts directory entries, which forces back-invalidations of lines still live in core caches — causing spurious misses and lost performance. It's an area-vs-performance trade.</div></details>
+  <details><summary>Why exclusive SLC allocation for data?</summary><div class="ans">To avoid wasting shared cache capacity duplicating lines the cores already hold privately — exclusive allocation maximises effective on-chip cache for data lines.</div></details>
+  <details><summary>What is the Point of Coherency here?</summary><div class="ans">The owning HN-F. All requests to a line funnel through it, so it can order them, enforce CHI ordering rules, and resolve hazards — a single source of truth per address.</div></details>
+  <details><summary>Why distribute home nodes rather than have one?</summary><div class="ans">Parallelism: each HN-F is an independent coherency engine + cache slice, so aggregate bandwidth scales with the number of slices and there's no central crossbar. Address hashing spreads load across them.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">9</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>HN-F = SLC slice + snoop filter + Point of Coherency/Serialization.</li>
+    <li>SLC: distributed slices (~4 MiB), exclusive data allocation, MTE stores data+tag.</li>
+    <li>Snoop filter = directory &#8594; targeted snoops, not broadcast.</li>
+    <li>SF sizing ~1.5&#215; private cache; undersizing &#8594; back-invalidations.</li>
+    <li>Distribution &#8594; bandwidth scales, no central bottleneck.</li>
+  </ul>
+  <div class="chips"><span class="chip">SLC slice</span><span class="chip">snoop filter / directory</span><span class="chip">exclusive allocation</span><span class="chip">MTE</span><span class="chip">back-invalidation</span><span class="chip">PoC / PoS</span><span class="chip">hazard</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson03_chi_on_mesh.html">◄ L3 · CHI on the mesh</a>
+  <a href="cmn700_lesson05_sam_hashing.html">L5 · SAM &amp; hashing ►</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L5): how an address becomes a route — the SAM hierarchy and the hashing that balances the mesh.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

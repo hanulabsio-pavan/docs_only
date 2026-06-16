@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARM CMN-700 — High-Level TRM Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+
+  /* Hanuma's node color scheme */
+  --rnf:#39d4e6;     /* cyan  — RN-F */
+  --hnf:#f5b942;     /* amber — HN-F */
+  --snf:#52d273;     /* green — SN-F */
+  --router:#b48cff;  /* purple — routers / XP */
+
+  /* CHI channel colors */
+  --req:#4d9fff;     /* blue   — REQ */
+  --rsp:#b48cff;     /* purple — RSP */
+  --dat:#52d273;     /* green  — DAT */
+  --snp:#ff9b42;     /* orange — SNP */
+
+  --warn:#ff7a7a;
+  --radius:10px;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%),
+    var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6;
+  font-size:15.5px;
+}
+a{color:var(--rnf); text-decoration:none}
+
+/* layout */
+.shell{display:grid; grid-template-columns:268px 1fr; min-height:100vh}
+nav.side{
+  position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg));
+  border-right:1px solid var(--line); padding:22px 16px;
+}
+nav.side h1{
+  font-family:var(--mono); font-size:15px; letter-spacing:.5px; margin:0 0 2px;
+  color:var(--ink);
+}
+nav.side .sub{font-size:11.5px; color:var(--ink-faint); font-family:var(--mono); margin-bottom:18px}
+nav.side a{
+  display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s;
+}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+nav.side .grp{font-size:10.5px; text-transform:uppercase; letter-spacing:1.2px;
+  color:var(--ink-faint); margin:16px 10px 4px; font-family:var(--mono)}
+
+main{padding:38px 52px 120px; max-width:980px}
+header.hero{margin-bottom:30px}
+header.hero .kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+header.hero h2{font-size:34px; margin:6px 0 8px; line-height:1.15; letter-spacing:-.5px}
+header.hero p{color:var(--ink-dim); max-width:680px; font-size:16px}
+
+section{margin:46px 0; scroll-margin-top:20px}
+section>h3{
+  font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px;
+}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+section h4{font-size:21px; margin:14px 0 10px; letter-spacing:-.3px}
+section h5{font-size:16px; margin:20px 0 6px; color:var(--ink)}
+p{margin:10px 0}
+
+/* caveman box */
+.caveman{
+  background:linear-gradient(180deg,#1a160d,#15120a);
+  border:1px solid #3a2f15; border-left:3px solid var(--hnf);
+  border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0;
+}
+.caveman::before{content:"🪨"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+
+/* generic cards / grid */
+.grid{display:grid; gap:14px; margin:16px 0}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14.5px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px; height:10px; border-radius:3px; display:inline-block; flex:none}
+
+/* node-type chips */
+.chip{display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:12px;
+  padding:3px 9px; border-radius:20px; border:1px solid var(--line); background:var(--panel2);
+  margin:2px 3px 2px 0; white-space:nowrap}
+.chip .dot{width:8px;height:8px}
+.c-rnf{color:var(--rnf)} .c-hnf{color:var(--hnf)} .c-snf{color:var(--snf)} .c-rtr{color:var(--router)}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+
+/* tables */
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+
+/* ascii art */
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45;
+  padding:16px; margin:0; color:#bcd; tab-size:4}
+.ascii .box{color:#3f5468}
+.ascii .rnf{color:var(--rnf); font-weight:600}
+.ascii .hnf{color:var(--hnf); font-weight:600}
+.ascii .snf{color:var(--snf); font-weight:600}
+.ascii .rtr{color:var(--router); font-weight:600}
+.ascii .cmt{color:#5a6b7a; font-style:italic}
+.ascii .hex{color:#e07b5a}
+
+/* interactive mesh */
+.mesh-panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin:16px 0}
+.mesh-svg{width:100%; height:auto; display:block}
+.xp-node{cursor:pointer; transition:.15s}
+.xp-node:hover .xp-rect{stroke:#fff; stroke-width:2}
+.mesh-info{margin-top:12px; font-family:var(--mono); font-size:13px; color:var(--ink-dim);
+  min-height:40px; background:var(--bg2); border:1px solid var(--line-soft); border-radius:8px; padding:10px 14px}
+.mesh-info b{color:var(--ink)}
+
+/* channel legend interactive */
+.legend{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0}
+.legend button{font-family:var(--mono); font-size:12px; padding:7px 13px; border-radius:8px;
+  border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer; transition:.15s;
+  display:flex; align-items:center; gap:7px}
+.legend button:hover{background:var(--panel2)}
+.legend-desc{margin-top:10px; padding:12px 14px; background:var(--bg2); border-radius:8px;
+  border:1px solid var(--line-soft); font-size:13.5px; color:var(--ink-dim); min-height:20px}
+
+/* collapsibles (interview Q&A) */
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+details .ans code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+
+.note{font-size:12.5px; color:var(--ink-faint); font-style:italic; margin-top:6px}
+.kbd{font-family:var(--mono); font-size:12px; background:var(--panel2); padding:1px 6px; border-radius:5px; border:1px solid var(--line); color:var(--rnf)}
+.flag{color:var(--warn)}
+ul.tight{margin:8px 0; padding-left:20px} ul.tight li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+
+@media(max-width:880px){
+  .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="side">
+  <h1>CMN-700</h1>
+  <div class="sub">// high-level TRM map</div>
+  <div class="grp">Foundations</div>
+  <a href="#intro">What is CMN-700?</a>
+  <a href="#context">Where it fits</a>
+  <a href="#scale">Scale &amp; key numbers</a>
+  <div class="grp">The Fabric</div>
+  <a href="#mesh">Mesh &amp; crosspoints</a>
+  <a href="#channels">CHI channels</a>
+  <a href="#nodes">Node taxonomy</a>
+  <div class="grp">Coherency Engine</div>
+  <a href="#slc">SLC &amp; snoop filter</a>
+  <a href="#sam">System Address Map</a>
+  <a href="#chi">CHI-E features</a>
+  <a href="#dvm">DVM</a>
+  <div class="grp">Scale-Out &amp; QoS</div>
+  <a href="#cml">Multichip (CML/CCG)</a>
+  <a href="#cxl">CXL &amp; CCIX</a>
+  <a href="#qos">QoS &amp; congestion</a>
+  <a href="#mpam">MPAM</a>
+  <div class="grp">Infra &amp; Ops</div>
+  <a href="#pmu">PMU / debug / trace</a>
+  <a href="#power">Power management</a>
+  <a href="#ras">RAS</a>
+  <a href="#prog">Programming &amp; config</a>
+  <div class="grp">Interview</div>
+  <a href="#prep">Likely questions</a>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="kick">Arm Neoverse · Coherent Mesh Network</div>
+  <h2>ARM CMN-700 — the big picture</h2>
+  <p>You already know CHI and how a NoC carries it. CMN-700 is the <b>actual silicon mesh</b> that implements that protocol at scale: the routers, the home nodes, the caches, and the glue that ties cores, memory, and accelerators into one coherent system. This map keeps everything high-level so you can hold the whole thing in your head before the deep dive.</p>
+</header>
+
+<!-- ============ INTRO ============ -->
+<section id="intro">
+  <h3><span class="n">01</span>What is CMN-700?</h3>
+  <div class="caveman">
+    <span class="tag">caveman mode</span>
+    <p>Many brains (CPU). Many memory. Many helper-chip (accelerator). All must share same data, not fight. CMN-700 = the road grid in the city. Cars = CHI messages. Crossroads = routers. CMN-700 build the roads, put traffic cops, keep everyone's data fresh. Bigger city than old CMN-600. Same CHI language you already know.</p>
+  </div>
+  <p>CMN-700 is Arm's <b>3rd-generation coherent interconnect IP</b> — the successor to CMN-600. It is a configurable, scalable <b>2-D mesh</b> that connects Armv9/Armv8 CPU clusters, accelerators, I/O and memory into a single cache-coherent system. The on-chip transport language is <b>native AMBA 5 CHI</b> (CHI Issue E / "CHI-E"), so everything you learned about REQ/RSP/SNP/DAT, snoops, and cache states applies directly — CMN-700 is the micro-architecture that <i>realises</i> CHI in hardware.</p>
+  <div class="grid g3">
+    <div class="card"><h6><span class="dot b-rtr"></span>Distributed</h6><p>No central crossbar. Caches, home nodes and snoop filters are spread across the mesh tiles.</p></div>
+    <div class="card"><h6><span class="dot b-rnf"></span>Configurable</h6><p>Mesh size, node placement, cache size, channel width — all chosen at build time via Arm's <b>Socrates</b> tool.</p></div>
+    <div class="card"><h6><span class="dot b-snf"></span>Scalable</h6><p>From a 2×4 edge SoC to a 12×12 server backplane spanning multiple dies and sockets.</p></div>
+  </div>
+</section>
+
+<!-- ============ CONTEXT ============ -->
+<section id="context">
+  <h3><span class="n">02</span>Where it fits</h3>
+  <p>CMN-700 is the coherent backplane in Arm's <b>Neoverse</b> infrastructure platform — targeting networking, storage, server, HPC, automotive and industrial SoCs. It is built to pair with Neoverse N2 / V1-class cores and to ride next-gen interfaces: <b>DDR5, HBM3, PCIe Gen5, CXL, CCIX</b>.</p>
+  <table>
+    <tr><th></th><th>CMN-600 (gen 2)</th><th>CMN-700 (gen 3)</th></tr>
+    <tr><td>Max mesh</td><td>8×8 = 64 XPs</td><td><code>12×12 = 144 XPs</code></td></tr>
+    <tr><td>Cores / die</td><td>~64</td><td><code>up to 256</code> (512/system)</td></tr>
+    <tr><td>System Level Cache</td><td>up to 256 MiB</td><td><code>up to 512 MiB</code></td></tr>
+    <tr><td>Memory controllers (SN-F)</td><td>16</td><td><code>40</code> (80 dual-channel)</td></tr>
+    <tr><td>Devices per XP</td><td>2</td><td>3 (4 on edge, up to 5 single-XP)</td></tr>
+    <tr><td>Multichip</td><td>CCIX</td><td>CCIX <b>+ CXL</b>, CXS-B fast path</td></tr>
+  </table>
+  <p class="note">Mental model: CMN-600 = laptop/edge-class meshes (Graviton2, Altra used it). CMN-700 = the "go bigger" rev for dense servers, chiplets and memory-pooling.</p>
+</section>
+
+<!-- ============ SCALE ============ -->
+<section id="scale">
+  <h3><span class="n">03</span>Scale &amp; key numbers</h3>
+  <p>These are the headline figures interviewers love to probe. They are <i>maximums</i> — real designs pick a point on the curve.</p>
+  <div class="grid g3">
+    <div class="card"><h6>144</h6><p>crosspoints (XPs) in a full 12×12 grid</p></div>
+    <div class="card"><h6>256 / 512</h6><p>cores per die / per system</p></div>
+    <div class="card"><h6>128</h6><p>max RN-F request nodes <i>and</i> 128 HN-F home nodes</p></div>
+    <div class="card"><h6>512 MiB</h6><p>max distributed SLC (≈4 MiB per HN-F slice)</p></div>
+    <div class="card"><h6>~3.07 TB/s</h6><p>peak cross-sectional BW (12×12, ~2 GHz, double-width DAT)</p></div>
+    <div class="card"><h6>256 / 512-bit</h6><p>DAT channel width — optional <b>double mesh channel</b> doubles it</p></div>
+  </div>
+</section>
+
+<!-- ============ MESH ============ -->
+<section id="mesh">
+  <h3><span class="n">04</span>The mesh &amp; crosspoints (XP / MXP)</h3>
+  <div class="caveman">
+    <span class="tag">caveman mode</span>
+    <p>Grid of crossroads. Each crossroad = <span class="c-rtr">XP</span> (router). Talk to 4 neighbor crossroads: north, south, east, west. Each crossroad also has driveways (<b>device ports</b>) where a CPU, a cache, or a memory plug in. Message hops crossroad-to-crossroad until it reach the right driveway.</p>
+  </div>
+  <p>The mesh is a rectangular grid of <b>crosspoints</b> — the router building block, written <b>XP</b> or <b>MXP</b> (Mesh Cross Point). Each XP has:</p>
+  <ul class="tight">
+    <li><b>4 mesh ports</b> (N/S/E/W) linking to neighbouring XPs — credited, non-blocking links.</li>
+    <li><b>Device ports</b> where components attach: a CHI agent (cores), an SLC/HN-F slice, a memory interface (SN-F), or an AMBA bridge. CMN-700 supports up to 3 devices per XP (4 on an edge XP).</li>
+  </ul>
+  <p>Every XP has an <b>(X,Y) coordinate</b>: <code>(0,0)</code> is bottom-left, <code>(11,11)</code> top-right on a full grid. These coordinates (XID/YID) form the basis of the node IDs used for routing.</p>
+
+  <div class="ascii-wrap">
+    <div class="bar">4×2 mesh slice — XPs + attached devices</div>
+<pre class="ascii"><span class="cmt">          device ports hang off each XP (router)</span>
+
+  <span class="rnf">[RN-F]</span>        <span class="hnf">[HN-F]</span>        <span class="hnf">[HN-F]</span>        <span class="rnf">[RN-D]</span>
+     |             |             |             |
+  <span class="rtr">(0,1)</span><span class="box">━━━━━━━</span><span class="rtr">(1,1)</span><span class="box">━━━━━━━</span><span class="rtr">(2,1)</span><span class="box">━━━━━━━</span><span class="rtr">(3,1)</span>
+     <span class="box">┃</span>             <span class="box">┃</span>             <span class="box">┃</span>             <span class="box">┃</span>
+     <span class="box">┃</span>  <span class="cmt">mesh link</span>  <span class="box">┃</span>             <span class="box">┃</span>             <span class="box">┃</span>
+  <span class="rtr">(0,0)</span><span class="box">━━━━━━━</span><span class="rtr">(1,0)</span><span class="box">━━━━━━━</span><span class="rtr">(2,0)</span><span class="box">━━━━━━━</span><span class="rtr">(3,0)</span>
+     |             |             |             |
+  <span class="rnf">[RN-F]</span>        <span class="hnf">[HN-F]</span>        <span class="snf">[SN-F]</span>        <span class="snf">[SN-F]</span>
+  <span class="cmt">cores</span>         <span class="cmt">SLC+SF</span>        <span class="cmt">DDR/HBM</span>       <span class="cmt">DDR/HBM</span>
+</pre>
+  </div>
+  <p>Below is a <b>clickable</b> illustrative mesh — tap any router to see what it carries. (Colours follow the legend: <span class="chip c-rtr"><span class="dot b-rtr"></span>XP router</span> <span class="chip c-rnf"><span class="dot b-rnf"></span>RN-F</span> <span class="chip c-hnf"><span class="dot b-hnf"></span>HN-F</span> <span class="chip c-snf"><span class="dot b-snf"></span>SN-F</span>.)</p>
+  <div class="mesh-panel">
+    <svg class="mesh-svg" viewBox="0 0 560 360" id="meshSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="mesh-info" id="meshInfo">Tap a crosspoint to inspect its attached devices…</div>
+  </div>
+</section>
+
+<!-- ============ CHANNELS ============ -->
+<section id="channels">
+  <h3><span class="n">05</span>The four CHI channels on the mesh</h3>
+  <p>CMN-700 physically carries the four CHI channel classes you already know. Each is an independent flit network across the mesh, which is how the fabric stays <b>deadlock-free</b> and non-blocking. Tap to recall each one:</p>
+  <div class="legend" id="chanLegend">
+    <button data-c="req"><span class="dot b-req"></span>REQ</button>
+    <button data-c="rsp"><span class="dot b-rsp"></span>RSP</button>
+    <button data-c="dat"><span class="dot b-dat"></span>DAT</button>
+    <button data-c="snp"><span class="dot b-snp"></span>SNP</button>
+  </div>
+  <div class="legend-desc" id="chanDesc">Tap a channel above…</div>
+  <p style="margin-top:16px">The <b>DAT</b> channel is the bandwidth workhorse: a pair of 256-bit links (one each direction). The optional <b>double mesh channel</b> adds a second pair for 512-bit data lanes — this is what drives the ~3 TB/s cross-sectional figure.</p>
+</section>
+
+<!-- ============ NODES ============ -->
+<section id="nodes">
+  <h3><span class="n">06</span>Node taxonomy — the cast of characters</h3>
+  <div class="caveman">
+    <span class="tag">caveman mode</span>
+    <p>Three kinds of villager. <span class="c-rnf">Requester</span> = asks for data (CPU, I/O). <span class="c-hnf">Home</span> = owns the truth for an address, keeps the cache, sends snoops. <span class="c-snf">Subordinate</span> = the memory at the end. Everyone else is a bridge or a doorman.</p>
+  </div>
+
+  <h5><span class="chip c-rnf"><span class="dot b-rnf"></span>Request Nodes (RN)</span> — they start transactions</h5>
+  <table>
+    <tr><th>Node</th><th>Role</th></tr>
+    <tr><td><code>RN-F</code></td><td><b>Fully coherent</b> requester. CPU clusters (via DSU) with hardware-coherent caches. The classic "I have a cache, snoop me" node.</td></tr>
+    <tr><td><code>RN-I</code></td><td><b>I/O-coherent</b> requester. A bridge for AMBA masters (ACE5-Lite); has no coherent cache — acts as a proxy, can be snooped-into but holds nothing.</td></tr>
+    <tr><td><code>RN-D</code></td><td>An RN-I that <b>also handles DVM</b> (distributed virtual-memory / TLB-maintenance messages).</td></tr>
+  </table>
+
+  <h5><span class="chip c-hnf"><span class="dot b-hnf"></span>Home Nodes (HN)</span> — the point of coherency &amp; serialization</h5>
+  <table>
+    <tr><th>Node</th><th>Role</th></tr>
+    <tr><td><code>HN-F</code></td><td><b>Fully coherent home node.</b> Holds an <b>SLC slice + snoop filter</b>; serialises all requests to its address range, issues snoops, is the Point of Coherency. (In CMN-700 register/PMU naming you'll also see this called <code>HN-S</code> / HNS.)</td></tr>
+    <tr><td><code>HN-I</code></td><td>I/O home node — proxy for AMBA slave subsystems; converts CHI → ACE5-Lite. No caching, generates no snoops.</td></tr>
+    <tr><td><code>HN-D</code></td><td>HN-I <b>plus</b> the DVM node, the DTC (trace controller) and the <b>configuration (CFG) node</b>. <span class="flag">Every CMN-700 must contain one HN-D</span> — it's the boot/config anchor.</td></tr>
+    <tr><td><code>HN-P</code></td><td>I/O home node with <b>PCIe optimisation</b> — adds a dedicated tracker for PCIe peer-to-peer traffic. Connects PCIe subordinates.</td></tr>
+  </table>
+
+  <h5><span class="chip c-snf"><span class="dot b-snf"></span>Subordinate Nodes (SN)</span> — the memory endpoints</h5>
+  <table>
+    <tr><th>Node</th><th>Role</th></tr>
+    <tr><td><code>SN-F</code></td><td>Fully coherent subordinate = the <b>memory controller interface</b> (DMC for DDR5/HBM). Where reads/writes finally land.</td></tr>
+    <tr><td><code>SBSX</code></td><td>A CHI → ACE5-Lite bridge that behaves like an SN-F, used to attach ACE5-Lite slaves (e.g. CoreLink DMC-400).</td></tr>
+  </table>
+
+  <h5>Glue &amp; bridges (worth a name-drop)</h5>
+  <div class="grid g2">
+    <div class="card"><h6>CAL — Component Aggregation Layer</h6><p>Lets <b>multiple devices share one XP device port</b> — key to fitting many components on a modest mesh.</p></div>
+    <div class="card"><h6>ADB / CDB — domain bridges</h6><p><b>AMBA</b> Domain Bridge / <b>CHI</b> Domain Bridge cross clock &amp; power/voltage domains between two interfaces.</p></div>
+    <div class="card"><h6>CFG — configuration node</h6><p>Co-located with HN-D; owns CMN-700 config, control and monitoring register space.</p></div>
+    <div class="card"><h6>CCG — CML gateway</h6><p>The multichip gateway (see §11). Bridges on-chip CHI to chip-to-chip CXS.</p></div>
+  </div>
+</section>
+
+<!-- ============ SLC ============ -->
+<section id="slc">
+  <h3><span class="n">07</span>System Level Cache &amp; snoop filter (inside HN-F)</h3>
+  <div class="caveman">
+    <span class="tag">caveman mode</span>
+    <p>Home node carry two notebooks. Notebook 1 = <b>SLC</b>: a shared last-level cache slice, so data stay on-chip and brain not wait for far-away memory. Notebook 2 = <b>snoop filter</b>: a list of "who has copy of this line", so home node only poke the caches that actually hold it — not shout at everyone.</p>
+  </div>
+  <p>The <b>SLC is the system's last-level cache</b>, physically chopped into slices — one per HN-F — and spread across the mesh. Addresses are <b>hashed/interleaved</b> across HN-F slices so traffic and capacity spread evenly. Allocation policy is typically <b>exclusive</b> for data lines (avoids wasteful duplication with the cores' private caches); with MTE enabled, slices store data <i>and</i> tags.</p>
+  <p>The <b>snoop filter (SF)</b> co-located in each HN-F tracks which RN-Fs hold which lines, so the home node sends <b>targeted snoops</b> instead of broadcasting. A practical sizing rule interviewers like: the SF needs to be roughly <b>1.5× the aggregate exclusive (private) cache</b> of the cores it covers — undersize it and you get SF-induced back-invalidations that hurt performance.</p>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-hnf"></span>Why distribute it?</h6><p>Bandwidth scales with slice count, and a request only travels to the <i>one</i> home node owning that address — no global bottleneck.</p></div>
+    <div class="card"><h6><span class="dot b-hnf"></span>Point of Coherency</h6><p>The owning HN-F serialises all outstanding requests to a line, orders them, and is the single source of truth — your CHI ordering knowledge maps straight here.</p></div>
+  </div>
+</section>
+
+<!-- ============ SAM ============ -->
+<section id="sam">
+  <h3><span class="n">08</span>System Address Map (SAM) — how a message finds its target</h3>
+  <div class="caveman">
+    <span class="tag">caveman mode</span>
+    <p>Message know the <b>address</b> but not <b>which crossroad</b>. SAM = the lookup table: "this address lives at node #40". Requester's SAM say which home node. Home node's SAM say which memory. Without SAM, message lost.</p>
+  </div>
+  <p>Every RN and HN contains a <b>SAM</b> that turns a physical address into a destination <b>target node ID</b>. Routing on the mesh is by node ID, so the SAM is the address→ID translator that makes coherency work:</p>
+  <table>
+    <tr><th>SAM</th><th>Maps</th></tr>
+    <tr><td><code>RN SAM</code></td><td>Physical address → <b>home node</b> target ID (HN-F, HN-I, HN-D, HN-P, … or a CCG for remote). Can also target a memory controller directly for prefetch hints.</td></tr>
+    <tr><td><code>HN-F SAM / MC SAM</code></td><td>Address → <b>memory-controller (SN)</b> target ID, once the home node decides it must go to DRAM.</td></tr>
+  </table>
+  <p>The HN-F selection step uses an <b>address hash</b> to interleave across home nodes. Getting the SAM and hashing right is central to balancing the mesh — and is exactly the kind of thing a CMN-700 role cares about.</p>
+</section>
+
+<!-- ============ CHI ============ -->
+<section id="chi">
+  <h3><span class="n">09</span>CHI-E features CMN-700 leans on</h3>
+  <p>Because the mesh is native CHI Issue E, it exposes the CHI-E performance features in hardware. You know CHI — here's where to point at the silicon:</p>
+  <div class="grid g2">
+    <div class="card"><h6>Direct Memory Transfer (DMT)</h6><p>Home node lets the SN return data straight to the requester, cutting a hop vs. routing data back through the HN.</p></div>
+    <div class="card"><h6>Direct Cache Transfer (DCT)</h6><p>A snooped RN-F forwards the line directly to the requesting RN-F — cache-to-cache, bypassing memory.</p></div>
+    <div class="card"><h6>Atomics</h6><p>Near-memory / near-home atomic ops (add, swap, compare) instead of read-modify-write round trips.</p></div>
+    <div class="card"><h6>Cache stashing</h6><p>An agent can push data into a target cache (e.g. NIC stashing into a core's SLC region) to pre-warm it.</p></div>
+  </div>
+  <p class="note">If asked "what does CMN-700 add over plain CHI?" — the answer is the <i>physical realisation</i>: distributed home nodes/SLC, the SAM/hashing, QoS &amp; congestion control, multichip gateways, and the PMU. CHI is the contract; CMN-700 is the implementation.</p>
+</section>
+
+<!-- ============ DVM ============ -->
+<section id="dvm">
+  <h3><span class="n">10</span>DVM — Distributed Virtual Memory</h3>
+  <p><b>DVM operations</b> are the broadcast maintenance messages — TLB invalidations, instruction-cache invalidations, sync — that keep virtual-memory state consistent across cores. In CMN-700 they're funnelled through a <b>DVM node (DN)</b> that lives in the HN-D, and the requesters that issue/receive them are the <b>RN-D</b> variants. High-level: this is how an <code>TLBI</code> on one core reaches every other core's MMU.</p>
+</section>
+
+<!-- ============ CML ============ -->
+<section id="cml">
+  <h3><span class="n">11</span>Multichip — CML, CCG &amp; the Super Home Node</h3>
+  <div class="caveman">
+    <span class="tag">caveman mode</span>
+    <p>One die not big enough. Glue many dies/sockets together, still act like one coherent machine. <b>CML</b> = the coherent bridge between chips. <b>CCG</b> = the gateway box that translates on-chip CHI into chip-to-chip language (CXS) and back.</p>
+  </div>
+  <p><b>CML (Coherent Multichip Link)</b> extends coherency beyond a single die — for chiplets, multi-die packages and multi-socket SMP. The gateway is the <b>CCG</b> (CML / CXL-CCIX gateway), which bridges on-chip <b>CHI ↔ CXS Issue B</b> (the chip-to-chip transport carrying CCIX 2.0 or CXL).</p>
+  <p>Inside a CCG you'll find three agents — a clean parallel to the on-chip request/home/link split:</p>
+  <table>
+    <tr><th>Agent</th><th>Role</th></tr>
+    <tr><td><code>CCRA</code></td><td>CCIX/CXL <b>Request Agent</b> — proxies remote requesters into the local mesh.</td></tr>
+    <tr><td><code>CCHA</code></td><td>CCIX/CXL <b>Home Agent</b> — represents remote home/coherency on this die.</td></tr>
+    <tr><td><code>CCLA</code></td><td>CXS <b>Link Agent</b> — the link-layer that drives the physical chip-to-chip interface (optionally with an embedded RN-I for PCIe-to-remote-memory).</td></tr>
+  </table>
+  <p>The older <b>CXG</b> gateway (agents <code>CXRA</code>/<code>CXHA</code>/<code>CXLA</code>) supports CHI + CXS Issue A (CCIX 1.1). The newer <b>CXS-B fast path</b> bypasses the transaction layer straight to the link layer to cut remote-access latency.</p>
+  <div class="card" style="border-left:3px solid var(--router)">
+    <h6><span class="dot b-rtr"></span>Super Home Node</h6>
+    <p>A CMN-700 concept for multi-die systems: a home node (or a whole mesh acting as one) that is the <b>central coherency point</b> for memory shared across dies. It can hold SLC + local home for remote memory, enabling chiplet topologies (a central I/O die + compute dies, AMD-style).</p>
+  </div>
+</section>
+
+<!-- ============ CXL ============ -->
+<section id="cxl">
+  <h3><span class="n">12</span>CXL &amp; CCIX — and why both</h3>
+  <p>CMN-700 supports <b>both</b> because they solve coherency from opposite ends:</p>
+  <div class="grid g2">
+    <div class="card"><h6>CCIX</h6><p>Coherency resolved <b>near the memory</b> — the home node, cache and snoop filter live nearest the shared memory. Better for distributed cache &amp; snooping across symmetric peers / multi-socket SMP.</p></div>
+    <div class="card"><h6>CXL</h6><p><b>Host-based</b> coherency — the host owns shared memory and maintains snoop state. Simpler to build coherent accelerators and memory-pooling/expansion devices against.</p></div>
+  </div>
+  <p>CMN-700 grew CCIX device ports from 4 (CMN-600) to <b>32</b>, and added CXL gateways — a clear bet on accelerator- and memory-disaggregation-heavy systems.</p>
+</section>
+
+<!-- ============ QOS ============ -->
+<section id="qos">
+  <h3><span class="n">13</span>QoS &amp; congestion control</h3>
+  <div class="caveman">
+    <span class="tag">caveman mode</span>
+    <p>Roads get jammed. Two tricks: (1) tell greedy CPU "slow down, stop prefetching so hard" when memory busy. (2) when one road jammed, send some cars a different way for a while.</p>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-snp"></span>CBusy (Completer Busy)</h6><p>Memory/home congestion is signalled back to the core, which throttles prefetcher aggressiveness and outstanding transactions. Arm reported up to <b>~15% uplift</b> on a Neoverse V1 design. (Early name: "MemBusy".)</p></div>
+    <div class="card"><h6><span class="dot b-snp"></span>Hot-spot re-routing</h6><p>When an XP/route is congested, traffic is temporarily steered through alternative XPs to relieve the jam.</p></div>
+  </div>
+  <p>On top of these, CMN-700 carries <b>CHI QoS priority classes</b> per transaction, so latency-critical flows can be prioritised over bulk traffic across the fabric.</p>
+</section>
+
+<!-- ============ MPAM ============ -->
+<section id="mpam">
+  <h3><span class="n">14</span>MPAM — partitioning &amp; monitoring</h3>
+  <p><b>MPAM (Memory System Resource Partitioning and Monitoring)</b>, an Armv8.4 feature, lets software tag traffic with a partition ID and then <b>partition SLC capacity and memory bandwidth</b> per VM/process. CMN-700 implements MPAM in the home nodes (note the <code>HNS_MPAM_S</code> / <code>HNS_MPAM_NS</code> node variants) and extends it to the memory controllers — so a hypervisor can stop one noisy VM from hogging shared cache/bandwidth.</p>
+</section>
+
+<!-- ============ PMU ============ -->
+<section id="pmu">
+  <h3><span class="n">15</span>PMU, debug &amp; trace (DTC / DTM)</h3>
+  <div class="caveman">
+    <span class="tag">caveman mode</span>
+    <p>Want to know what the roads are doing. Put a little counter at every crossroad (<b>DTM</b>). One boss counter (<b>DTC</b>) adds them up and writes a logbook (trace). Now you can see traffic, find jams, measure bandwidth.</p>
+  </div>
+  <p>CMN-700 has a <b>distributed PMU</b> — central to any performance/validation role:</p>
+  <table>
+    <tr><th>Block</th><th>Where</th><th>What it does</th></tr>
+    <tr><td><code>DTM</code> — Debug &amp; Trace Monitor</td><td>one at <b>every XP</b></td><td>Counts up to 4 local event signals; supports <b>watchpoints</b> that match/mask specific flits (val + mask, channel/device select) for upload &amp; download.</td></tr>
+    <tr><td><code>DTC</code> — Debug &amp; Trace Controller</td><td>in <b>HN-D / HN-T</b></td><td>Global PMU control; aggregates DTM overflows into up to <b>8 global counters</b>; raises overflow interrupts; emits timestamped <b>trace via ATB</b>.</td></tr>
+  </table>
+  <p class="note">Linux exposes this as <span class="kbd">arm_cmn_0</span> (one PMU per mesh; <span class="kbd">arm_cmn_1..n</span> for additional linked meshes). Events can be aggregated over a node type or targeted to a specific node by <code>nodeid</code>.</p>
+</section>
+
+<!-- ============ POWER ============ -->
+<section id="power">
+  <h3><span class="n">16</span>Power management</h3>
+  <p>CMN-700 is partitioned into multiple <b>clock and power/voltage domains</b>, crossed by the <b>ADB/CDB</b> bridges. Power handshakes use the standard Arm low-power channels: <b>Q-channel</b> (clock/quiescence) and <b>P-channel</b> (power-state) so blocks (XPs, SLC slices, gateways) can be clock-gated or powered down when idle, with hardware ensuring the fabric drains and stays coherent across the transition.</p>
+</section>
+
+<!-- ============ RAS ============ -->
+<section id="ras">
+  <h3><span class="n">17</span>RAS — reliability, availability, serviceability</h3>
+  <p>As an infrastructure/server interconnect, CMN-700 implements Arm <b>RAS</b>: ECC/parity protection on SLC data and tags, snoop-filter and internal RAM protection, and error-record registers so corrected/uncorrected errors can be logged and reported to software. High-level talking point: a server-class mesh must <b>detect, contain and report</b> data corruption, not just move data fast.</p>
+</section>
+
+<!-- ============ PROG ============ -->
+<section id="prog">
+  <h3><span class="n">18</span>Programming model &amp; configuration</h3>
+  <ul class="tight">
+    <li><b>Build-time:</b> the mesh is configured with Arm's <b>Socrates</b> tool — grid size, node placement, SLC size, channel width, gateways. The result is a specific topology baked into RTL.</li>
+    <li><b>Boot-time:</b> software programs the <b>SAM</b> (address→target maps) and home-node hashing before coherent traffic flows. Until then, RN SAMs default-route to the HN-D, which does <i>not</i> keep coherency — so config order matters.</li>
+    <li><b>Register space:</b> each node exposes a register region; the <b>CFG node</b> (with HN-D) anchors discovery — software walks the mesh to enumerate node types, IDs and coordinates.</li>
+  </ul>
+</section>
+
+<!-- ============ INTERVIEW ============ -->
+<section id="prep">
+  <h3><span class="n">19</span>Likely interview questions</h3>
+  <p>Tap each to reveal a high-level answer framed around what you already know from CHI/NoC. Aim to <i>connect</i> CMN-700 structures to CHI concepts — that's what shows depth.</p>
+
+  <details><summary>What is CMN-700 and how does it relate to CHI?</summary>
+    <div class="ans">CMN-700 is Arm's 3rd-gen coherent mesh interconnect IP. CHI (Issue E) is the <i>protocol</i>; CMN-700 is the <i>micro-architecture</i> that implements it — a 2-D mesh of crosspoints (routers) connecting RN/HN/SN nodes, with distributed SLC + snoop filters in the home nodes. The four CHI channels (REQ/RSP/SNP/DAT) run as independent flit networks across the mesh.</div>
+  </details>
+
+  <details><summary>Walk me through what happens on a read miss from a core.</summary>
+    <div class="ans">Core's <code>RN-F</code> issues a CHI <span style="color:var(--req)">REQ</span>. Its <b>RN SAM</b> hashes the address to the owning <code>HN-F</code> and routes by node ID across the mesh. The HN-F (Point of Coherency) checks its SLC slice and snoop filter; on a miss it consults its <b>MC SAM</b> and sends the request to the right <code>SN-F</code> memory controller. Data returns (optionally via <b>DMT</b> directly to the requester), the HN-F updates SF/SLC state, and the line is filled in the right CHI cache state.</div>
+  </details>
+
+  <details><summary>What's inside an HN-F, and why distribute it?</summary>
+    <div class="ans">An <b>SLC slice</b> (last-level cache) plus a <b>snoop filter</b>. It's the Point of Coherency/Serialization for its address range. Distributing one HN-F per tile means bandwidth scales with slice count and each request travels to exactly one home node — no central crossbar bottleneck. Addresses are hashed across HN-Fs to balance load.</div>
+  </details>
+
+  <details><summary>How is the snoop filter sized, and what happens if it's too small?</summary>
+    <div class="ans">Rule of thumb: the SF should be ~1.5× the aggregate private (exclusive) cache of the cores it covers. Undersized → SF capacity evictions force <b>back-invalidations</b> of lines still live in core caches, causing spurious misses and performance loss. It's a real area-vs-performance trade in mesh sizing.</div>
+  </details>
+
+  <details><summary>What's the difference between RN-F, RN-I and RN-D?</summary>
+    <div class="ans"><code>RN-F</code> = fully coherent, has hardware-coherent caches (CPUs). <code>RN-I</code> = I/O-coherent bridge for AMBA masters, no coherent cache (a proxy). <code>RN-D</code> = an RN-I that also handles <b>DVM</b> (TLB-maintenance) messages.</div>
+  </details>
+
+  <details><summary>How does CMN-700 scale across multiple chips?</summary>
+    <div class="ans">Via <b>CML</b> using <b>CCG</b> gateways that bridge on-chip CHI to chip-to-chip <b>CXS-B</b> (CCIX 2.0 / CXL). Inside the CCG: <code>CCRA</code> (request agent), <code>CCHA</code> (home agent), <code>CCLA</code> (link agent). For shared remote memory, a <b>Super Home Node</b> acts as the central coherency point. This enables chiplets and multi-socket SMP that still look coherent.</div>
+  </details>
+
+  <details><summary>CCIX vs CXL — when would you use each?</summary>
+    <div class="ans"><b>CCIX</b>: coherency resolved near the memory (home/SF live by the shared memory) — good for symmetric peers and distributed cache. <b>CXL</b>: host-based coherency (host owns shared memory and snoop state) — simpler for accelerators and memory pooling/expansion. CMN-700 supports both.</div>
+  </details>
+
+  <details><summary>How would you debug a bandwidth/latency problem on the mesh?</summary>
+    <div class="ans">Use the distributed PMU: per-XP <b>DTM</b> counters and watchpoints (match specific flits by channel/device) feed up to 8 global <b>DTC</b> counters in the HN-D, with timestamped ATB trace. In Linux it's the <span class="kbd">arm_cmn</span> PMU. You'd localise hot XPs/home nodes, check SAM hashing balance, look at CBusy throttling and whether hot-spot re-routing is firing.</div>
+  </details>
+
+  <details><summary>What is CBusy and why does it matter?</summary>
+    <div class="ans">Completer Busy: when memory/home queues get congested, that pressure is signalled back to cores, which throttle prefetcher aggressiveness and outstanding transactions — preventing collapse under load and improving effective throughput (Arm cited ~15% on a V1 design). It's closed-loop congestion control on the fabric.</div>
+  </details>
+
+  <details><summary>What does MPAM do here?</summary>
+    <div class="ans">Lets software partition shared SLC capacity and memory bandwidth by partition ID, implemented in the home nodes and extended to memory controllers — so one VM can't starve others of shared cache/BW. Important for multi-tenant server SoCs.</div>
+  </details>
+
+  <details><summary>Why are there four separate channels on the mesh?</summary>
+    <div class="ans">REQ, RSP, SNP and DAT are independent virtual/physical networks so different message classes can't block each other — this is how the fabric avoids protocol deadlock and stays non-blocking, mirroring CHI's channel separation.</div>
+  </details>
+</section>
+
+<hr class="soft">
+<p class="note">High-level study map for ARM Neoverse CMN-700. Figures reflect published maximums (12×12 mesh, 256 cores/die, 512 MiB SLC, ~3 TB/s). For exact register fields, opcode tables and timing, go to the official Arm CMN-700 TRM (developer.arm.com, doc 102308). Use this to build the mental model first, then drill into the TRM section-by-section.</p>
+
+</main>
+</div>
+
+<script>
+/* ---------- active nav on scroll ---------- */
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    if(e.isIntersecting){
+      links.forEach(l=>l.classList.remove('active'));
+      const i=secs.indexOf(e.target);
+      if(i>-1)links[i].classList.add('active');
+    }
+  });
+},{rootMargin:'-15% 0px -75% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* ---------- channel legend ---------- */
+const chanData={
+  req:{c:'--req',t:'REQ — Request',d:'Carries reads, writes, atomics, prefetch and other requests from a requester (RN) toward the owning home node (HN). This is where a transaction begins.'},
+  rsp:{c:'--rsp',t:'RSP — Response',d:'Control/coherence responses: completions, snoop responses, credit/acknowledgement messages. No data payload — it coordinates the protocol handshake.'},
+  dat:{c:'--dat',t:'DAT — Data',d:'The actual cache-line data payload (reads, writebacks, snoop data, copybacks). Widest channel: 256-bit pair, optionally doubled to 512-bit — the bandwidth backbone.'},
+  snp:{c:'--snp',t:'SNP — Snoop',d:'Snoop requests sent from a home node (HN) down to the relevant caching requesters (RN-F), driven by the snoop filter so only caches that may hold the line are poked.'}
+};
+const desc=document.getElementById('chanDesc');
+document.getElementById('chanLegend').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  const d=chanData[b.dataset.c];
+  desc.innerHTML='<b style="color:var('+d.c+')">'+d.t+'.</b> '+d.d;
+});
+
+/* ---------- interactive mesh (4x3 illustrative) ---------- */
+(function(){
+  const svg=document.getElementById('meshSvg');
+  const info=document.getElementById('meshInfo');
+  const cols=4, rows=3, pad=55, gx=150, gy=120;
+  const col={rnf:'#39d4e6',hnf:'#f5b942',snf:'#52d273',rtr:'#b48cff'};
+  // layout[y][x] = device on that XP
+  const layout={
+    '0,0':{k:'rnf',n:'RN-F',d:'CPU cluster (DSU) — fully coherent requester with private caches.'},
+    '1,0':{k:'hnf',n:'HN-F',d:'Home node: SLC slice + snoop filter. Point of Coherency for its address range.'},
+    '2,0':{k:'snf',n:'SN-F',d:'Memory controller (DDR5/HBM) endpoint.'},
+    '3,0':{k:'rnf',n:'RN-D',d:'I/O-coherent requester with DVM support.'},
+    '0,1':{k:'hnf',n:'HN-D',d:'Home node + DTC + DVM node + config (CFG). Mandatory anchor node.'},
+    '1,1':{k:'hnf',n:'HN-F',d:'Home node: SLC slice + snoop filter.'},
+    '2,1':{k:'hnf',n:'HN-F',d:'Home node: SLC slice + snoop filter.'},
+    '3,1':{k:'snf',n:'SN-F',d:'Memory controller endpoint.'},
+    '0,2':{k:'rnf',n:'RN-F',d:'CPU cluster — fully coherent requester.'},
+    '1,2':{k:'rnf',n:'RN-F',d:'CPU cluster — fully coherent requester.'},
+    '2,2':{k:'snf',n:'SN-F',d:'Memory controller endpoint.'},
+    '3,2':{k:'rnf',n:'RN-I',d:'I/O-coherent bridge (e.g. PCIe via ACE-Lite). No coherent cache.'}
+  };
+  const X=x=>pad+x*gx, Y=y=>pad+(rows-1-y)*gy;
+  let s='';
+  // links
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+    if(x<cols-1)s+=`<line x1="${X(x)}" y1="${Y(y)}" x2="${X(x+1)}" y2="${Y(y)}" stroke="#2c3a49" stroke-width="3"/>`;
+    if(y<rows-1)s+=`<line x1="${X(x)}" y1="${Y(y)}" x2="${X(x)}" y2="${Y(y+1)}" stroke="#2c3a49" stroke-width="3"/>`;
+  }
+  // nodes
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+    const dev=layout[x+','+y]; const c=col[dev.k];
+    s+=`<g class="xp-node" data-key="${x},${y}">
+      <rect class="xp-rect" x="${X(x)-19}" y="${Y(y)-15}" width="38" height="30" rx="6" fill="#0d141c" stroke="${col.rtr}" stroke-width="1.5"/>
+      <text x="${X(x)}" y="${Y(y)+4}" fill="${col.rtr}" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle">${x},${y}</text>
+      <rect x="${X(x)-22}" y="${Y(y)+18}" width="44" height="17" rx="4" fill="${c}" opacity="0.16"/>
+      <text x="${X(x)}" y="${Y(y)+30}" fill="${c}" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600" text-anchor="middle">${dev.n}</text>
+    </g>`;
+  }
+  svg.innerHTML=s;
+  svg.querySelectorAll('.xp-node').forEach(g=>{
+    g.addEventListener('click',()=>{
+      const dev=layout[g.dataset.key]; const c=col[dev.k];
+      info.innerHTML=`<b style="color:${c}">XP (${g.dataset.key}) → ${dev.n}</b> &nbsp;·&nbsp; ${dev.d}`;
+    });
+  });
+})();
+</script>
+</body>
+</html>

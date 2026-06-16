@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 · Lesson 3 — CHI on the Mesh — Channels, Flits &amp; Transaction Walks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 · LESSON 03</div>
+  <h1>CHI on the Mesh — Channels, Flits &amp; Transaction Walks</h1>
+  <a href="#why">Protocol to wires</a>
+  <a href="#chan">The four networks</a>
+  <a href="#flit">Flits &amp; flow control</a>
+  <a href="#read">Walk: read miss</a>
+  <a href="#wb">Walk: write-back</a>
+  <a href="#snoop">Walk: snoop &amp; DCT</a>
+  <a href="#latency">Where latency lives</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Phase A · Fabric foundations · Lesson 3 of 10</div>
+<h2 class="title">CHI on the Mesh — Channels, Flits &amp; Transaction Walks</h2>
+<p class="lede">Connect the CHI protocol you know to its physical realisation, and walk complete transactions hop by hop.</p>
+
+<div class="obj"><h4>By the end of this lesson you can</h4>
+<ul>
+  <li>Map REQ/RSP/SNP/DAT to independent networks and state which way each flows.</li>
+  <li>Explain flits and credited flow control / backpressure.</li>
+  <li>Walk a read miss, a write-back and a snoop across the mesh, hop by hop.</li>
+  <li>Say where mesh latency actually comes from.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>From protocol to wires</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>CHI = the words. Mesh = the postal system. This lesson: watch a letter actually travel — who sends it, which mailbag (channel) it rides, who answers, and how the data comes back. No new protocol, just the journey.</p></div>
+  <p>You know CHI's message classes. Here we make them physical: each class is a separate network across the XPs, and a transaction is a choreography of flits hopping between RN, HN and SN. Being able to <i>walk</i> a transaction out loud is the single most common deep-dive in interviews.</p>
+</section>
+
+<section id="chan">
+  <h3><span class="n">2</span>The four channels as independent networks</h3>
+  <table>
+    <tr><th>Channel</th><th>Typical direction</th><th>Carries</th></tr>
+    <tr><td><span class="chip" style="color:var(--req)">REQ</span></td><td>RN &#8594; HN</td><td>Reads, writes, atomics, prefetch, CMOs.</td></tr>
+    <tr><td><span class="chip" style="color:var(--rsp)">RSP</span></td><td>any &#8596; any</td><td>Completions, snoop responses, credits/acks. No data.</td></tr>
+    <tr><td><span class="chip" style="color:var(--snp)">SNP</span></td><td>HN &#8594; RN-F</td><td>Snoops to caching requesters.</td></tr>
+    <tr><td><span class="chip" style="color:var(--dat)">DAT</span></td><td>any &#8596; any</td><td>The cache-line data payload (read data, write data, copybacks, snoop data).</td></tr>
+  </table>
+  <p>They share the same XPs but have <b>separate buffers and arbitration</b>. That independence is the deadlock-avoidance guarantee: a backed-up DAT flit can never block the RSP/SNP traffic needed to free it up.</p>
+</section>
+
+<section id="flit">
+  <h3><span class="n">3</span>Flits &amp; credited flow control</h3>
+  <p>A <b>flit</b> (flow-control unit) is the quantum moved across a link each cycle. A CHI message becomes one or more flits. Links are <b>credited</b>: a sender transmits only while it holds credits for the downstream buffer, so nothing is ever dropped — overload becomes <b>backpressure</b> that propagates upstream. This is why a congested home node slows requesters rather than losing data, and it's the mechanism CBusy (Lesson 7) rides on.</p>
+</section>
+
+<section id="read">
+  <h3><span class="n">4</span>Transaction walk — a coherent read miss</h3>
+  <p>An <code>RN-F</code> reads a line it doesn't have; the owning <code>HN-F</code> misses in its SLC, so memory is fetched:</p>
+  <div class="ascii-wrap"><div class="bar">ReadShared, SLC miss, no other sharer</div>
+<pre class="ascii">  <span class="rnf">RN-F</span>                 <span class="hnf">HN-F</span>                 <span class="snf">SN-F</span>
+   <span class="box">|</span>   <span class="req">1. REQ ReadShared</span>  <span class="box">|</span>                    <span class="box">|</span>
+   <span class="box">|</span> <span class="req">───────────────&#9658;</span> <span class="box">|</span>  check SLC + SF     <span class="box">|</span>
+   <span class="box">|</span>                    <span class="box">|</span>  <span class="cmt">miss, no sharers</span>  <span class="box">|</span>
+   <span class="box">|</span>                    <span class="box">|</span>  <span class="req">2. REQ Read</span>       <span class="box">|</span>
+   <span class="box">|</span>                    <span class="box">|</span> <span class="req">───────────────&#9658;</span> <span class="box">|</span> fetch line
+   <span class="box">|</span>                    <span class="box">|</span>  <span class="dat">3. DAT data</span>       <span class="box">|</span>
+   <span class="box">|</span>   <span class="dat">4. DAT data</span>       <span class="box">|</span> <span class="dat">&#9668;───────────────</span> <span class="box">|</span>
+   <span class="box">|</span> <span class="dat">&#9668;───────────────</span>   <span class="box">|</span> fill SLC, set SF    <span class="box">|</span>
+   <span class="box">|</span> install line (Shared)<span class="box">|</span>                   <span class="box">|</span>
+</pre></div>
+  <p>With <b>Direct Memory Transfer (DMT)</b>, step 3/4 can be optimised so the SN returns data toward the requester directly, saving a hop through the HN. Each arrow is also several mesh hops (|&#916;X|+|&#916;Y|) — that's the transport from Lesson 1 underneath the protocol.</p>
+</section>
+
+<section id="wb">
+  <h3><span class="n">5</span>Transaction walk — a write-back</h3>
+  <p>A dirty line evicted from an <code>RN-F</code> is written back to its home:</p>
+  <ul class="tight">
+    <li><b>REQ</b>: RN-F sends a WriteBack/CopyBack request to the owning HN-F.</li>
+    <li><b>RSP</b>: HN-F returns a data-buffer credit (e.g. CompDBIDResp) telling the RN-F where to send data.</li>
+    <li><b>DAT</b>: RN-F streams the dirty line on the data channel; HN-F updates its SLC/snoop-filter state (and may later write through to the SN-F).</li>
+  </ul>
+  <p>Key idea: control (RSP) and data (DAT) are decoupled — the home node hands out a data-buffer ID first, then the data follows on its own network.</p>
+</section>
+
+<section id="snoop">
+  <h3><span class="n">6</span>Transaction walk — a snoop with cache-to-cache transfer</h3>
+  <p>Now another <code>RN-F</code> already holds the line. The home node consults its <b>snoop filter</b> and snoops only that one sharer — and with <b>Direct Cache Transfer (DCT)</b> the data goes cache-to-cache:</p>
+  <div class="ascii-wrap"><div class="bar">Read with a sharer &#8594; targeted snoop + DCT</div>
+<pre class="ascii">  <span class="rnf">RN-F (req)</span>        <span class="hnf">HN-F</span>          <span class="rnf">RN-F (owner)</span>
+     <span class="box">|</span> <span class="req">1.REQ Read</span>  <span class="box">|</span>                <span class="box">|</span>
+     <span class="box">|</span> <span class="req">─────────&#9658;</span><span class="box">|</span> SF: owner is &#8594; <span class="box">|</span>
+     <span class="box">|</span>            <span class="box">|</span> <span class="snp">2.SNP (fwd)</span>    <span class="box">|</span>
+     <span class="box">|</span>            <span class="box">|</span> <span class="snp">───────────&#9658;</span> <span class="box">|</span>
+     <span class="box">|</span>  <span class="dat">3.DAT (cache-to-cache, DCT)</span>   <span class="box">|</span>
+     <span class="box">|</span> <span class="dat">&#9668;──────────────────────────</span> <span class="box">|</span>
+     <span class="box">|</span> <span class="rsp">4.RSP SnpResp to HN</span> <span class="box">|</span>          <span class="box">|</span>
+     <span class="box">|</span>            <span class="box">|</span> <span class="rsp">&#9668;──────────</span>    <span class="box">|</span> update SF
+</pre></div>
+  <p>The win: no memory access at all, and the snoop went to <i>one</i> cache, not a broadcast — that's the snoop filter doing its job (detailed in Lesson 4).</p>
+</section>
+
+<section id="latency">
+  <h3><span class="n">7</span>Where latency actually comes from</h3>
+  <div class="grid g3">
+    <div class="card"><h6>Hops</h6><p>Each XP-to-XP step costs cycles; total &#8776; |&#916;X|+|&#916;Y|. Placement &amp; mesh size set this.</p></div>
+    <div class="card"><h6>Serialization</h6><p>The home node orders contending requests to a line — a hot line queues.</p></div>
+    <div class="card"><h6>Queueing / credits</h6><p>Backpressure when buffers fill; busy SN/HN throttles upstream.</p></div>
+  </div>
+  <p>So "make it faster" usually means: fewer hops (placement), less contention (hashing/interleaving, L5), and congestion control (CBusy/re-routing, L7). The transaction walks above are the skeleton those optimisations hang on.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">8</span>Self-check</h3>
+  <div class="quiz" data-correct="1" data-fb="Snoops flow from the home node down to caching requesters on the SNP channel.">
+    <div class="q">1. On which channel, and in which direction, do snoops travel?</div>
+    <button class="opt">REQ, from HN to SN.</button>
+    <button class="opt">SNP, from HN to RN-F.</button>
+    <button class="opt">DAT, from RN to RN.</button>
+    <button class="opt">RSP, from SN to HN.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="Credited links never drop flits; overload becomes backpressure that propagates upstream.">
+    <div class="q">2. What happens on a credited link when the receiver's buffer is full?</div>
+    <button class="opt">Flits are dropped and retried later.</button>
+    <button class="opt">The clock frequency drops.</button>
+    <button class="opt">The sender stops sending (backpressure) until credits return — nothing is dropped.</button>
+    <button class="opt">The flit is rerouted to memory.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="DCT sends the line cache-to-cache directly from the owning RN-F to the requester, skipping memory.">
+    <div class="q">3. Direct Cache Transfer (DCT) means…</div>
+    <button class="opt">an owning cache forwards the line straight to the requester, skipping memory.</button>
+    <button class="opt">the SN writes directly to the SLC.</button>
+    <button class="opt">snoops are broadcast to all caches.</button>
+    <button class="opt">data bypasses the DAT channel.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">9</span>Interview Q&amp;A</h3>
+  <details><summary>Walk me through a read miss from a core.</summary><div class="ans">RN-F issues a REQ (e.g. ReadShared) routed to the owning HN-F. The HN-F checks its SLC and snoop filter; on a clean miss it issues a read to the SN-F via its MC SAM. Data returns on DAT (optionally via DMT straight to the requester), the HN-F updates SLC + snoop-filter state, and the RN-F installs the line in the right state. Each arrow is several mesh hops.</div></details>
+  <details><summary>Why four separate channels?</summary><div class="ans">So message classes can't block each other: a stalled DAT flit can never hold up the RSP/SNP traffic needed to make forward progress. Independent buffers + credited flow control = no protocol deadlock.</div></details>
+  <details><summary>How is data flow decoupled from control on a write-back?</summary><div class="ans">The requester sends a write request on REQ; the home replies on RSP with a data-buffer ID/credit; only then does the data stream on DAT. Control and data ride different networks, so the home can pace incoming data.</div></details>
+  <details><summary>What does the snoop filter save you on a shared read?</summary><div class="ans">It tells the home exactly which caches hold the line, so it sends a targeted snoop to one owner instead of broadcasting — and with DCT the owner forwards data cache-to-cache, avoiding a memory access entirely.</div></details>
+  <details><summary>Where does mesh latency come from?</summary><div class="ans">Hop count (|&#916;X|+|&#916;Y|), serialization at the home node for contended lines, and queueing/backpressure when buffers fill. Mitigations: placement, address interleaving, and congestion control.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">10</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>REQ (RN&#8594;HN), SNP (HN&#8594;RN-F), RSP &amp; DAT (any&#8596;any) — four independent networks.</li>
+    <li>Flits ride <b>credited</b> links; overload = backpressure, never loss.</li>
+    <li>Read miss: REQ&#8594;HN, HN&#8594;SN, DAT back (DMT can shortcut).</li>
+    <li>Write-back: REQ, then RSP grants a data-buffer ID, then DAT.</li>
+    <li>Shared read w/ owner: targeted SNP + DCT = cache-to-cache, no memory.</li>
+  </ul>
+  <div class="chips"><span class="chip">REQ/RSP/SNP/DAT</span><span class="chip">flit</span><span class="chip">credit / backpressure</span><span class="chip">DMT</span><span class="chip">DCT</span><span class="chip">CompDBIDResp</span><span class="chip">transaction walk</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson02_node_taxonomy.html">◄ L2 · Node taxonomy</a>
+  <a href="cmn700_lesson04_home_node.html">L4 · Home node internals ►</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L4): open the HN-F — the SLC slice, the snoop filter, sizing, and the Point of Coherency.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>
