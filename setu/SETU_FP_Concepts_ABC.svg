@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1080" height="560" fill="#ffffff"/>
+  <text x="540" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="#1E2761">SETU Front-Panel Concepts A · B · C</text>
+  <text x="540" y="60" text-anchor="middle" font-size="12" fill="#6B7490">Scale 2 px = 1 mm · see Concept Comparison document for full trade study</text>
+
+  <!-- ================= Concept A ================= -->
+  <g transform="translate(40,110)">
+    <rect x="0" y="0" width="340" height="244" rx="16" fill="#F4F6FB" stroke="#1E2761" stroke-width="2"/>
+    <g stroke="#1E2761" fill="none" stroke-width="1.2">
+      <circle cx="68" cy="112" r="26"/><circle cx="136" cy="112" r="26"/>
+      <circle cx="204" cy="112" r="26"/><circle cx="272" cy="112" r="26"/>
+    </g>
+    <g fill="#C9A227">
+      <circle cx="68" cy="70" r="2.5"/><circle cx="136" cy="70" r="2.5"/>
+      <circle cx="204" cy="70" r="2.5"/><circle cx="272" cy="70" r="2.5"/>
+    </g>
+    <circle cx="170" cy="196" r="18" fill="none" stroke="#C9A227" stroke-width="1.4"/>
+    <text x="36" y="222" font-size="8" letter-spacing="3" fill="#9AA6C8" font-weight="bold">SETU</text>
+    <text x="170" y="286" text-anchor="middle" font-size="16" font-weight="bold" fill="#1E2761">A — Shant Glass</text>
+    <text x="170" y="306" text-anchor="middle" font-size="12" fill="#2A3350">Architectural minimal · monolithic glass</text>
+    <text x="170" y="324" text-anchor="middle" font-size="12" fill="#2A3350">etched rings, no visible hardware</text>
+    <text x="170" y="348" text-anchor="middle" font-size="12" font-weight="bold" fill="#C9A227">RECOMMENDED (as A+ with scene zone)</text>
+    <text x="170" y="370" text-anchor="middle" font-size="11" fill="#6B7490">Zero PCB change · cost: medium</text>
+  </g>
+
+  <!-- ================= Concept B ================= -->
+  <g transform="translate(370,110)">
+    <rect x="0" y="0" width="340" height="244" rx="16" fill="#E9EBF2" stroke="#1E2761" stroke-width="2"/>
+    <rect x="10" y="10" width="320" height="224" rx="10" fill="#F4F6FB" stroke="#9AA6C8" stroke-width="1.5"/>
+    <!-- physical keys -->
+    <g>
+      <g id="keyB">
+        <rect x="42" y="76" width="52" height="72" rx="8" fill="#FFFFFF" stroke="#5a6480" stroke-width="1.4"/>
+        <rect x="42" y="140" width="52" height="8" rx="4" fill="#D8DEEC"/>
+      </g>
+      <use href="#keyB" x="68"/><use href="#keyB" x="136"/><use href="#keyB" x="204"/>
+    </g>
+    <g fill="#C9A227">
+      <circle cx="68" cy="64" r="2.5"/><circle cx="136" cy="64" r="2.5"/>
+      <circle cx="204" cy="64" r="2.5"/><circle cx="272" cy="64" r="2.5"/>
+    </g>
+    <rect x="146" y="176" width="48" height="30" rx="6" fill="#FFFFFF" stroke="#C9A227" stroke-width="1.4"/>
+    <text x="170" y="286" text-anchor="middle" font-size="16" font-weight="bold" fill="#1E2761">B — Vajra</text>
+    <text x="170" y="306" text-anchor="middle" font-size="12" fill="#2A3350">Tactile premium · micro-travel keys,</text>
+    <text x="170" y="324" text-anchor="middle" font-size="12" fill="#2A3350">metal-look frame (antenna window polymer)</text>
+    <text x="170" y="348" text-anchor="middle" font-size="12" font-weight="bold" fill="#B0483B">Requires new PCB + tooling — future line</text>
+    <text x="170" y="370" text-anchor="middle" font-size="11" fill="#6B7490">Hardware today has no key inputs · cost: high</text>
+  </g>
+
+  <!-- ================= Concept C ================= -->
+  <g transform="translate(700,110)">
+    <rect x="0" y="0" width="340" height="244" rx="16" fill="#F4F6FB" stroke="#1E2761" stroke-width="2"/>
+    <g stroke="#1E2761" fill="none" stroke-width="1.2">
+      <circle cx="68" cy="96" r="26"/><circle cx="136" cy="96" r="26"/>
+      <circle cx="204" cy="96" r="26"/><circle cx="272" cy="96" r="26"/>
+    </g>
+    <g fill="#C9A227">
+      <circle cx="68" cy="56" r="2.5"/><circle cx="136" cy="56" r="2.5"/>
+      <circle cx="204" cy="56" r="2.5"/><circle cx="272" cy="56" r="2.5"/>
+    </g>
+    <!-- bottom strip: scene + slider -->
+    <rect x="40" y="176" width="260" height="40" rx="10" fill="none" stroke="#9AA6C8" stroke-width="1.2" stroke-dasharray="5 4"/>
+    <circle cx="70" cy="196" r="15" fill="none" stroke="#C9A227" stroke-width="1.4"/>
+    <g stroke="#5a6480" stroke-width="1.5">
+      <line x1="110" y1="196" x2="280" y2="196"/>
+      <circle cx="200" cy="196" r="7" fill="#FFFFFF"/>
+    </g>
+    <text x="170" y="286" text-anchor="middle" font-size="16" font-weight="bold" fill="#1E2761">C — Sutra</text>
+    <text x="170" y="306" text-anchor="middle" font-size="12" fill="#2A3350">Hybrid surface · touch zones +</text>
+    <text x="170" y="324" text-anchor="middle" font-size="12" fill="#2A3350">scene / slider strip for future dimming</text>
+    <text x="170" y="348" text-anchor="middle" font-size="12" font-weight="bold" fill="#B0483B">Slider starved: only 2 spare CAP1296 channels</text>
+    <text x="170" y="370" text-anchor="middle" font-size="11" fill="#6B7490">Fits future dimmer variant · cost: medium</text>
+  </g>
+
+  <text x="540" y="530" text-anchor="middle" font-size="13" fill="#2A3350">Production direction: <tspan font-weight="bold" fill="#1E2761">Concept A + scene zone from C</tspan> — the only direction fully supported by BOM v0.1 hardware today.</text>
+</svg>

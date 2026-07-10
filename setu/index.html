@@ -169,6 +169,7 @@
   .pill[data-cat="architecture"].active{ background: rgba(188,140,255,.12);border-color: var(--purple); color: var(--purple);}
   .pill[data-cat="hardware"].active   { background: rgba(63,185,80,.12);   border-color: var(--green);  color: var(--green);  }
   .pill[data-cat="firmware"].active   { background: rgba(57,211,83,.12);   border-color: var(--cyan);   color: var(--cyan);   }
+  .pill[data-cat="design"].active       { background:rgba(255,123,114,.12);border-color: var(--pink);   color: var(--pink);   }
   .pill[data-cat="manufacturing"].active{ background:rgba(227,179,65,.12); border-color: var(--yellow); color: var(--yellow); }
   .pill[data-cat="certification"].active{ background:rgba(248,81,73,.12);  border-color: var(--red);    color: var(--red);    }
 
@@ -214,6 +215,7 @@
   .card[data-cat="architecture"]  { --accent: var(--purple); }
   .card[data-cat="hardware"]      { --accent: var(--green);  }
   .card[data-cat="firmware"]      { --accent: var(--cyan);   }
+  .card[data-cat="design"]        { --accent: var(--pink);   }
   .card[data-cat="manufacturing"] { --accent: var(--yellow); }
   .card[data-cat="certification"] { --accent: var(--red);    }
   .card:hover { border-color: var(--accent); box-shadow: 0 8px 24px rgba(0,0,0,.4), 0 0 0 1px var(--accent) inset; }
@@ -392,6 +394,7 @@
   <button class="pill" data-cat="architecture">Architecture</button>
   <button class="pill" data-cat="hardware">Hardware</button>
   <button class="pill" data-cat="firmware">Firmware</button>
+  <button class="pill" data-cat="design">Design</button>
   <button class="pill" data-cat="manufacturing">Manufacturing</button>
   <button class="pill" data-cat="certification">Certification</button>
 </div>
@@ -609,6 +612,103 @@
       <span class="cat-tag">Firmware</span>
     </div>
   </div>
+
+  <!-- ── Design · Front Panel ────────────────────────────── -->
+  <a class="card" data-cat="design" href="SETU_FP_ControlZone_Layout_4G.svg" target="_blank">
+    <div class="card-top">
+      <div class="card-icon">📐</div>
+      <div class="card-badges">
+        <span class="badge badge-type-svg">SVG</span>
+        <span class="badge badge-status-draft">Draft</span>
+      </div>
+    </div>
+    <div class="card-title">Drawing — Control-Zone Layout (4G)</div>
+    <div class="card-desc">Dimensioned straight-on front view: Ø26 zones on 34 mm pitch, scene zone, LED apertures, status hairline, reserved CS6 position.</div>
+    <div class="card-footer">
+      <span class="cat-tag">Design · Drawing</span>
+      <span class="open-arrow">→</span>
+    </div>
+  </a>
+
+  <a class="card" data-cat="design" href="SETU_FP_Concepts_ABC.svg" target="_blank">
+    <div class="card-top">
+      <div class="card-icon">🖼️</div>
+      <div class="card-badges">
+        <span class="badge badge-type-svg">SVG</span>
+        <span class="badge badge-status-draft">Draft</span>
+      </div>
+    </div>
+    <div class="card-title">Drawing — Concepts A · B · C</div>
+    <div class="card-desc">Side-by-side front views of the three design directions with feasibility callouts and the recommended production direction.</div>
+    <div class="card-footer">
+      <span class="cat-tag">Design · Drawing</span>
+      <span class="open-arrow">→</span>
+    </div>
+  </a>
+
+  <a class="card" data-cat="design" href="SETU_FP_Family_Lineup.svg" target="_blank">
+    <div class="card-top">
+      <div class="card-icon">👪</div>
+      <div class="card-badges">
+        <span class="badge badge-type-svg">SVG</span>
+        <span class="badge badge-status-draft">Draft</span>
+      </div>
+    </div>
+    <div class="card-title">Drawing — Product Family Lineup</div>
+    <div class="card-desc">4G, 2G, and scene remote to scale, showing the shared design language. 2G/SR marked as planned roadmap options.</div>
+    <div class="card-footer">
+      <span class="cat-tag">Design · Drawing</span>
+      <span class="open-arrow">→</span>
+    </div>
+  </a>
+
+  <a class="card" data-cat="design" href="SETU_FP_Exploded_Stack.svg" target="_blank">
+    <div class="card-top">
+      <div class="card-icon">🥞</div>
+      <div class="card-badges">
+        <span class="badge badge-type-svg">SVG</span>
+        <span class="badge badge-status-draft">Draft</span>
+      </div>
+    </div>
+    <div class="card-title">Drawing — Exploded Construction Stack</div>
+    <div class="card-desc">7-layer stack from glass fascia to chassis; replaceable fascia module, ≤3.4 mm dielectric budget, keep-outs, and attachment scheme.</div>
+    <div class="card-footer">
+      <span class="cat-tag">Design · Drawing</span>
+      <span class="open-arrow">→</span>
+    </div>
+  </a>
+
+  <a class="card" data-cat="design" href="SETU_FP_LED_States.svg" target="_blank">
+    <div class="card-top">
+      <div class="card-icon">💡</div>
+      <div class="card-badges">
+        <span class="badge badge-type-svg">SVG</span>
+        <span class="badge badge-status-draft">Draft</span>
+      </div>
+    </div>
+    <div class="card-title">Drawing — LED Behavior States</div>
+    <div class="card-desc">Eight state examples (idle, load-on, touch, theme, provisioning, OTA, fault, night) mapped to the led_status.h firmware modes.</div>
+    <div class="card-footer">
+      <span class="cat-tag">Design · Drawing</span>
+      <span class="open-arrow">→</span>
+    </div>
+  </a>
+
+  <a class="card" data-cat="design" href="SETU_FP_Wall_Night_View.svg" target="_blank">
+    <div class="card-top">
+      <div class="card-icon">🌙</div>
+      <div class="card-badges">
+        <span class="badge badge-type-svg">SVG</span>
+        <span class="badge badge-status-draft">Draft</span>
+      </div>
+    </div>
+    <div class="card-title">Drawing — Installed Wall View, Day & Night</div>
+    <div class="card-desc">Elevation of the panel installed at 1.25 m in a premium room — daytime architectural read and night-time locator-glow behavior.</div>
+    <div class="card-footer">
+      <span class="cat-tag">Design · Drawing</span>
+      <span class="open-arrow">→</span>
+    </div>
+  </a>
 
   <!-- ── Manufacturing (placeholders) ──────────────────── -->
   <div class="card placeholder" data-cat="manufacturing">

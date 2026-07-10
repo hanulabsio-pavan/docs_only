@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 510" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1080" height="510" fill="#ffffff"/>
+  <text x="540" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="#1E2761">SETU Product Family Lineup — shared design language</text>
+  <text x="540" y="60" text-anchor="middle" font-size="12" fill="#6B7490">Scale 2 px = 1 mm · common: R8-ratio corners, etched rings, warm-white light, shadow-gap mount, one wordmark position</text>
+
+  <!-- baseline -->
+  <line x1="60" y1="368" x2="1020" y2="368" stroke="#D8DEEC" stroke-width="1.5"/>
+
+  <!-- SETU-4G 170x122 -> 340x244 -->
+  <g transform="translate(90,124)">
+    <rect x="0" y="0" width="340" height="244" rx="16" fill="#F4F6FB" stroke="#1E2761" stroke-width="2"/>
+    <g stroke="#1E2761" fill="none" stroke-width="1.2">
+      <circle cx="68" cy="112" r="26"/><circle cx="136" cy="112" r="26"/>
+      <circle cx="204" cy="112" r="26"/><circle cx="272" cy="112" r="26"/>
+    </g>
+    <g fill="#C9A227">
+      <circle cx="68" cy="70" r="2.5"/><circle cx="136" cy="70" r="2.5"/>
+      <circle cx="204" cy="70" r="2.5"/><circle cx="272" cy="70" r="2.5"/>
+    </g>
+    <circle cx="170" cy="200" r="18" fill="none" stroke="#C9A227" stroke-width="1.4"/>
+    <text x="34" y="226" font-size="8" letter-spacing="3" fill="#9AA6C8" font-weight="bold">SETU</text>
+    <text x="170" y="282" text-anchor="middle" font-size="16" font-weight="bold" fill="#1E2761">SETU-4G · 170 × 122</text>
+    <text x="170" y="302" text-anchor="middle" font-size="12" fill="#2A3350">4 gangs + scene · main rooms</text>
+    <rect x="118" y="314" width="104" height="22" rx="11" fill="#1E2761"/>
+    <text x="170" y="329" text-anchor="middle" font-size="11" font-weight="bold" fill="#FFFFFF">IN BOM · LAUNCH</text>
+  </g>
+
+  <!-- SETU-2G 110x122 -> 220x244 -->
+  <g transform="translate(500,124)">
+    <rect x="0" y="0" width="220" height="244" rx="16" fill="#F4F6FB" stroke="#1E2761" stroke-width="2"/>
+    <g stroke="#1E2761" fill="none" stroke-width="1.2">
+      <circle cx="76" cy="112" r="26"/><circle cx="144" cy="112" r="26"/>
+    </g>
+    <g fill="#C9A227"><circle cx="76" cy="70" r="2.5"/><circle cx="144" cy="70" r="2.5"/></g>
+    <circle cx="110" cy="200" r="18" fill="none" stroke="#C9A227" stroke-width="1.4"/>
+    <text x="26" y="226" font-size="8" letter-spacing="3" fill="#9AA6C8" font-weight="bold">SETU</text>
+    <text x="110" y="282" text-anchor="middle" font-size="16" font-weight="bold" fill="#1E2761">SETU-2G · 110 × 122</text>
+    <text x="110" y="302" text-anchor="middle" font-size="12" fill="#2A3350">2 gangs + scene · bedrooms, passages</text>
+    <rect x="70" y="314" width="80" height="22" rx="11" fill="none" stroke="#C9A227" stroke-width="1.4"/>
+    <text x="110" y="329" text-anchor="middle" font-size="11" font-weight="bold" fill="#C9A227">PLANNED</text>
+  </g>
+
+  <!-- SETU-SR 80x80 -> 160x160 -->
+  <g transform="translate(800,208)">
+    <rect x="0" y="0" width="160" height="160" rx="16" fill="#F4F6FB" stroke="#1E2761" stroke-width="2"/>
+    <circle cx="80" cy="74" r="30" fill="none" stroke="#C9A227" stroke-width="1.6"/>
+    <path d="M80,58 L84,70 L96,74 L84,78 L80,90 L76,78 L64,74 L76,70 Z" fill="none" stroke="#C9A227" stroke-width="1.6"/>
+    <circle cx="80" cy="126" r="2.5" fill="#C9A227"/>
+    <text x="80" y="198" text-anchor="middle" font-size="16" font-weight="bold" fill="#1E2761">SETU-SR · ~80 × 80</text>
+    <text x="80" y="218" text-anchor="middle" font-size="12" fill="#2A3350">battery scene remote · bedside</text>
+    <rect x="40" y="230" width="80" height="22" rx="11" fill="none" stroke="#C9A227" stroke-width="1.4"/>
+    <text x="80" y="245" text-anchor="middle" font-size="11" font-weight="bold" fill="#C9A227">PLANNED</text>
+  </g>
+
+  <text x="540" y="496" text-anchor="middle" font-size="12" fill="#6B7490">2G and SR are Phase-4 roadmap options ("decide based on Phase-3 customer demand") — shown to prove the language scales, not as committed SKUs.</text>
+</svg>
