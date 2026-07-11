@@ -213,6 +213,21 @@ body[data-zone="dawn"] #stars{opacity:.35}
 .fam-card li:last-child{border-bottom:none}
 .pl-badge{font-family:var(--mono);font-size:9.5px;letter-spacing:2px;color:var(--gold);border:1px solid rgba(232,184,75,.4);border-radius:14px;padding:2px 10px;vertical-align:middle;margin-left:8px}
 
+/* ══════════ design gallery ══════════ */
+.gal{display:flex;gap:22px;margin-top:40px;overflow-x:auto;padding-bottom:18px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.gal::-webkit-scrollbar{height:8px}
+.gal::-webkit-scrollbar-track{background:rgba(244,241,232,.06);border-radius:4px}
+.gal::-webkit-scrollbar-thumb{background:rgba(232,184,75,.45);border-radius:4px}
+.gal-card{flex:0 0 auto;width:min(460px,80vw);scroll-snap-align:start;color:inherit}
+.gal-card .shot{border-radius:16px;transition:transform .3s;display:block}
+.gal-card:hover .shot{transform:translateY(-6px)}
+.gal-card svg{width:100%;height:auto;display:block}
+.gal-card .gc-cap{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:10px}
+.gal-card h3{font-family:var(--serif);font-size:18px}
+.gal-card .caption{white-space:nowrap}
+.gal-card .caption.planned{color:var(--gold)}
+.gal-hint{font-family:var(--mono);font-size:10.5px;letter-spacing:2px;color:var(--mut2);text-transform:uppercase;margin-top:6px}
+
 /* ══════════ finale ══════════ */
 #finale{text-align:center;flex-direction:column;justify-content:center}
 #finale .display{font-size:clamp(34px,6.2vw,84px)}
@@ -260,6 +275,7 @@ body[data-zone="dawn"] #stars{opacity:.35}
   <a href="#ch-morning" data-ch="ch-morning" aria-label="Morning"></a>
   <a href="#ch-devotional" data-ch="ch-devotional" aria-label="Devotional"></a>
   <a href="#ch-panel" data-ch="ch-panel" aria-label="The panel"></a>
+  <a href="#ch-designs" data-ch="ch-designs" aria-label="Panel lineup"></a>
   <a href="#ch-craft" data-ch="ch-craft" aria-label="Craft"></a>
   <a href="#ch-underglass" data-ch="ch-underglass" aria-label="Under the glass"></a>
   <a href="#ch-reliability" data-ch="ch-reliability" aria-label="Reliability"></a>
@@ -330,7 +346,7 @@ body[data-zone="dawn"] #stars{opacity:.35}
 </section>
 
 <!-- ══ SLIDE 04 · 09:00 · THE PANEL ══ -->
-<section class="chapter" id="ch-panel" data-zone="day" data-time="540" aria-labelledby="h-panel">
+<section class="chapter" id="ch-panel" data-zone="day" data-time="540" aria-labelledby="h-panel" style="flex-direction:column;justify-content:center;gap:22px">
   <div class="fact" style="top:11%;right:5%" data-speed="0.1"><b>ETCHED RINGS</b>Micro-etched touch zones you can find by fingertip — even in the dark.</div>
   <div class="inner split">
     <div>
@@ -369,13 +385,82 @@ body[data-zone="dawn"] #stars{opacity:.35}
       <p class="caption" style="text-align:center;margin-top:16px">SETU-4G · Interactive illustration · Launch product</p>
     </div>
   </div>
+  <!-- in-home scene: panel installed and softly highlighted, theme applied, someone crossing the room -->
+  <div class="inner rev d3">
+    <svg viewBox="0 0 1000 240" style="width:100%;height:auto;display:block;border-radius:16px" role="img"
+      aria-label="A styled living room at dusk with the Devotional theme applied: sofa, plant, floor lamp glowing warm, a person walking toward the softly highlighted SETU panel on the wall">
+      <defs>
+        <linearGradient id="rm-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#221A2E"/><stop offset="1" stop-color="#151020"/></linearGradient>
+        <linearGradient id="rm-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#100B18"/><stop offset="1" stop-color="#080610"/></linearGradient>
+        <linearGradient id="rm-win" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A2547"/><stop offset=".6" stop-color="#8A4133"/><stop offset="1" stop-color="#C97B3D"/></linearGradient>
+        <radialGradient id="rm-glow"><stop offset="0" stop-color="#FFE9B8" stop-opacity=".5"/><stop offset="1" stop-color="#FFE9B8" stop-opacity="0"/></radialGradient>
+        <radialGradient id="rm-halo"><stop offset="0" stop-color="#E8B84B" stop-opacity=".38"/><stop offset="1" stop-color="#E8B84B" stop-opacity="0"/></radialGradient>
+        <linearGradient id="rm-fw" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2EFE6"/><stop offset="1" stop-color="#D6D0C0"/></linearGradient>
+      </defs>
+      <rect x="0" y="0" width="1000" height="172" fill="url(#rm-wall)"/>
+      <rect x="0" y="172" width="1000" height="68" fill="url(#rm-floor)"/>
+      <rect x="46" y="24" width="124" height="122" rx="5" fill="#0B0812"/>
+      <rect x="52" y="30" width="112" height="110" rx="3" fill="url(#rm-win)"/>
+      <line x1="108" y1="30" x2="108" y2="140" stroke="#0B0812" stroke-width="5"/>
+      <line x1="52" y1="86" x2="164" y2="86" stroke="#0B0812" stroke-width="5"/>
+      <ellipse cx="112" cy="185" rx="95" ry="12" fill="#C97B3D" opacity=".08"/>
+      <rect x="248" y="34" width="48" height="60" rx="3" fill="#221830" stroke="#3A2F45" stroke-width="2"/>
+      <circle cx="272" cy="60" r="14" fill="#7A4A2B" opacity=".55"/>
+      <rect x="308" y="48" width="36" height="46" rx="3" fill="#221830" stroke="#3A2F45" stroke-width="2"/>
+      <path d="M312,84 q10,-18 14,-6 q6,-16 14,-2" stroke="#8A5327" stroke-width="2.5" fill="none" opacity=".7"/>
+      <ellipse cx="440" cy="208" rx="215" ry="17" fill="#1A1322"/>
+      <ellipse cx="440" cy="208" rx="160" ry="12" fill="none" stroke="#2A2036" stroke-width="2"/>
+      <rect x="346" y="118" width="22" height="54" rx="10" fill="#332747"/>
+      <rect x="552" y="118" width="22" height="54" rx="10" fill="#332747"/>
+      <rect x="360" y="106" width="200" height="40" rx="11" fill="#2C2138"/>
+      <rect x="372" y="112" width="84" height="26" rx="9" fill="#3E2F4E"/>
+      <rect x="464" y="112" width="84" height="26" rx="9" fill="#3E2F4E"/>
+      <rect x="352" y="140" width="216" height="30" rx="10" fill="#362945"/>
+      <line x1="358" y1="141" x2="562" y2="141" stroke="#E8B84B" stroke-width="1" opacity=".14"/>
+      <rect x="366" y="170" width="8" height="10" fill="#1A1322"/><rect x="546" y="170" width="8" height="10" fill="#1A1322"/>
+      <path d="M206,150 q-3,-26 -14,-38 M206,150 q0,-30 8,-44 M206,150 q6,-22 20,-30" stroke="#2E4633" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M196,152 h22 l-4,22 h-14 z" fill="#241B30"/>
+      <ellipse cx="648" cy="168" rx="36" ry="9" fill="#241B30"/>
+      <line x1="628" y1="172" x2="626" y2="192" stroke="#1A1322" stroke-width="4"/>
+      <line x1="668" y1="172" x2="670" y2="192" stroke="#1A1322" stroke-width="4"/>
+      <rect x="636" y="160" width="16" height="4" rx="1.5" fill="#8A5327"/>
+      <ellipse cx="782" cy="118" rx="52" ry="62" fill="url(#rm-glow)" opacity=".45"/>
+      <path d="M768,56 h28 l6,24 h-40 z" fill="#241B30"/>
+      <line x1="782" y1="80" x2="782" y2="176" stroke="#1A1322" stroke-width="4"/>
+      <ellipse cx="782" cy="178" rx="18" ry="4.5" fill="#1A1322"/>
+      <ellipse cx="782" cy="200" rx="62" ry="10" fill="#FFE9B8" opacity=".07"/>
+      <g stroke="#0E0A16" fill="#0E0A16" stroke-linecap="round">
+        <circle cx="690" cy="84" r="10.5" stroke="none"/>
+        <path d="M690,94 q-4,14 -2,30" stroke-width="13" fill="none"/>
+        <path d="M688,104 L672,124 L668,138" stroke-width="6" fill="none"/>
+        <path d="M690,102 L706,120" stroke-width="6" fill="none"/>
+        <path d="M689,124 L672,156 L664,184" stroke-width="7.5" fill="none"/>
+        <path d="M689,124 L702,158 L712,182" stroke-width="7.5" fill="none"/>
+        <path d="M664,184 l-10,2" stroke-width="6" fill="none"/>
+        <path d="M712,182 l10,2" stroke-width="6" fill="none"/>
+      </g>
+      <circle cx="898" cy="94" r="66" fill="url(#rm-halo)"/>
+      <rect x="852" y="61" width="94" height="68" rx="10" fill="#060409"/>
+      <rect x="856" y="65" width="86" height="60" rx="8" fill="url(#rm-fw)"/>
+      <g stroke="#8A8474" stroke-width="1" fill="none" opacity=".9">
+        <circle cx="874" cy="92" r="6.5"/><circle cx="891" cy="92" r="6.5"/><circle cx="908" cy="92" r="6.5"/><circle cx="925" cy="92" r="6.5"/>
+      </g>
+      <circle cx="874" cy="77" r="5" fill="url(#rm-glow)"/><circle cx="874" cy="77" r="1.6" fill="#FFE9B8"/>
+      <circle cx="891" cy="77" r="1.4" fill="#B3AC97"/>
+      <circle cx="908" cy="77" r="5" fill="url(#rm-glow)"/><circle cx="908" cy="77" r="1.6" fill="#FFE9B8"/>
+      <circle cx="925" cy="77" r="1.4" fill="#B3AC97"/>
+      <circle cx="899" cy="112" r="6" fill="none" stroke="#C9A227" stroke-width="1.2"/>
+      <ellipse cx="899" cy="196" rx="70" ry="11" fill="#E8B84B" opacity=".08"/>
+    </svg>
+    <p class="caption" style="text-align:center;margin-top:12px">At home · Devotional theme on · the panel glows softly as you approach</p>
+  </div>
 </section>
 
 <!-- ══ SLIDE 05 · 12:00 · CRAFT ══ -->
 <section class="chapter" id="ch-craft" data-zone="noon" data-time="720" aria-labelledby="h-craft">
   <div class="fact" style="bottom:14%;left:5%" data-speed="0.14"><b>10,000,000</b>Rated mechanical operations on each industrial-grade relay.</div>
   <div class="inner">
-    <p class="kick rev">04 · 12:00 · What you never see</p>
+    <p class="kick rev">05 · 12:00 · What you never see</p>
     <h2 class="display rev d1" id="h-craft" style="font-size:clamp(36px,5.6vw,72px)"><span class="out">Engineered like</span><br>critical electronics<i>.</i></h2>
     <div class="stat-grid">
       <div class="stat rev d1"><div class="v">&lt;50<span style="font-size:.45em">ms</span></div><div class="l">From your fingertip to the light — faster than a blink. It feels like a switch, because it is one</div></div>
@@ -391,13 +476,13 @@ body[data-zone="dawn"] #stars{opacity:.35}
 <section class="chapter" id="ch-underglass" data-zone="noon" data-time="810" aria-labelledby="h-ug">
   <div class="fact" style="top:13%;right:6%" data-speed="0.12"><b>ARM'S LENGTH</b>Engineered isolation barriers separate 230V mains from the glass you touch.</div>
   <div class="inner">
-    <p class="kick rev">05 · 13:30 · Under the glass, in plain words</p>
+    <p class="kick rev">06 · 13:30 · Under the glass, in plain words</p>
     <h2 class="display rev d1" id="h-ug" style="font-size:clamp(36px,5.6vw,72px)">Technology you<br><span class="out">never have to think about</span><i>.</i></h2>
     <div class="rows rev d2">
-      <div class="row"><span class="idx">05.1</span><h3>The wall always wins</h3><p>If a phone command and a hand at the wall ever disagree, <b>the person in the room wins</b>. A touch is never overridden by a late instruction from outside.</p></div>
-      <div class="row"><span class="idx">05.2</span><h3>It quietly heals itself</h3><p>A built-in watchdog monitors the panel continuously. If anything ever misbehaves, it recovers in moments — <b>your lights stay exactly as they were</b>.</p></div>
-      <div class="row"><span class="idx">05.3</span><h3>Mains kept at arm's length</h3><p>The 230V side lives behind engineered isolation barriers, physically separated from everything you touch. <b>Designed to IS 1293</b>, India's electrical safety standard.</p></div>
-      <div class="row"><span class="idx">05.4</span><h3>Even if touch fails, light doesn't</h3><p>The touch surface and the switching circuits are independent. In the unlikely event touch ever faults, <b>whatever is on stays on</b> — and other controls keep working.</p></div>
+      <div class="row"><span class="idx">06.1</span><h3>The wall always wins</h3><p>If a phone command and a hand at the wall ever disagree, <b>the person in the room wins</b>. A touch is never overridden by a late instruction from outside.</p></div>
+      <div class="row"><span class="idx">06.2</span><h3>It quietly heals itself</h3><p>A built-in watchdog monitors the panel continuously. If anything ever misbehaves, it recovers in moments — <b>your lights stay exactly as they were</b>.</p></div>
+      <div class="row"><span class="idx">06.3</span><h3>Mains kept at arm's length</h3><p>The 230V side lives behind engineered isolation barriers, physically separated from everything you touch. <b>Designed to IS 1293</b>, India's electrical safety standard.</p></div>
+      <div class="row"><span class="idx">06.4</span><h3>Even if touch fails, light doesn't</h3><p>The touch surface and the switching circuits are independent. In the unlikely event touch ever faults, <b>whatever is on stays on</b> — and other controls keep working.</p></div>
     </div>
   </div>
 </section>
@@ -406,13 +491,13 @@ body[data-zone="dawn"] #stars{opacity:.35}
 <section class="chapter" id="ch-reliability" data-zone="day" data-time="900" aria-labelledby="h-rel">
   <div class="fact" style="top:12%;right:6%" data-speed="0.12"><b>15:04</b>The broadband just died. Nobody in the house noticed.</div>
   <div class="inner">
-    <p class="kick rev">06 · 15:00 · The internet goes down</p>
+    <p class="kick rev">07 · 15:00 · The internet goes down</p>
     <h2 class="display rev d1" id="h-rel" style="font-size:clamp(36px,5.6vw,72px)">Your home<br><span class="out">doesn't care</span><i>.</i></h2>
     <div class="rows rev d2">
-      <div class="row"><span class="idx">06.1</span><h3>Fully offline by design</h3><p>Touch, themes and voice execute <b>inside the panel</b> — no cloud round-trip, ever, for daily control. Broadband down means nothing changes at the wall.</p></div>
-      <div class="row"><span class="idx">06.2</span><h3>Power cut? It remembers.</h3><p>When electricity returns, Setu restores <b>exactly what was on before</b> — switched back gently, one load at a time, so there's no surge and no 3 a.m. all-on surprise.</p></div>
-      <div class="row"><span class="idx">06.3</span><h3>Updates that can't brick it</h3><p>New features install in the background in a <b>separate memory bank</b>. If an update ever fails, the panel boots straight back into the version that worked.</p></div>
-      <div class="row"><span class="idx">06.4</span><h3>Built for Indian WiFi</h3><p>Congested networks, frequent drops — the panel <b>reconnects on its own</b> and never makes your lights wait for the router.</p></div>
+      <div class="row"><span class="idx">07.1</span><h3>Fully offline by design</h3><p>Touch, themes and voice execute <b>inside the panel</b> — no cloud round-trip, ever, for daily control. Broadband down means nothing changes at the wall.</p></div>
+      <div class="row"><span class="idx">07.2</span><h3>Power cut? It remembers.</h3><p>When electricity returns, Setu restores <b>exactly what was on before</b> — switched back gently, one load at a time, so there's no surge and no 3 a.m. all-on surprise.</p></div>
+      <div class="row"><span class="idx">07.3</span><h3>Updates that can't brick it</h3><p>New features install in the background in a <b>separate memory bank</b>. If an update ever fails, the panel boots straight back into the version that worked.</p></div>
+      <div class="row"><span class="idx">07.4</span><h3>Built for Indian WiFi</h3><p>Congested networks, frequent drops — the panel <b>reconnects on its own</b> and never makes your lights wait for the router.</p></div>
     </div>
   </div>
 </section>
@@ -421,13 +506,13 @@ body[data-zone="dawn"] #stars{opacity:.35}
 <section class="chapter" id="ch-evenings" data-zone="dusk" data-time="1050" aria-labelledby="h-eve">
   <div class="fact" style="bottom:16%;left:5%" data-speed="0.14"><b>IST · LOCAL</b>Schedules run inside the panel on Indian time — not on a server abroad.</div>
   <div class="inner">
-    <p class="kick rev">07 · 17:30 · Dusk settles in</p>
+    <p class="kick rev">08 · 17:30 · Dusk settles in</p>
     <h2 class="display rev d1" id="h-eve" style="font-size:clamp(36px,5.6vw,72px)">It knows<br>your <i>evenings.</i></h2>
     <div class="rows rev d2">
-      <div class="row"><span class="idx">07.1</span><h3>Schedules that know sunset</h3><p>Set the balcony light to come on at dusk — <b>the panel tracks sunset itself</b>, locally, on Indian time. The schedule fires even if broadband is down that evening.</p></div>
-      <div class="row"><span class="idx">07.2</span><h3>Every switch knows its name</h3><p>“Balcony”, “Fan”, “Tube light” — <b>name each switch during setup</b>, so voice and app always speak your language, not circuit numbers.</p></div>
-      <div class="row"><span class="idx">07.3</span><h3>Kid-proof. Clean-proof.</h3><p><b>Child-lock</b> makes any switch ignore curious fingers. <b>Cleaning mode</b> lets you wipe the glass without a light show. And rapid-fire tapping never stresses the relays — the panel paces itself.</p></div>
-      <div class="row"><span class="idx">07.4</span><h3>Set up in minutes</h3><p>First-time setup happens <b>over Bluetooth from your phone</b> — no hub to buy, no rewiring, no cloud account required to switch a light.</p></div>
+      <div class="row"><span class="idx">08.1</span><h3>Schedules that know sunset</h3><p>Set the balcony light to come on at dusk — <b>the panel tracks sunset itself</b>, locally, on Indian time. The schedule fires even if broadband is down that evening.</p></div>
+      <div class="row"><span class="idx">08.2</span><h3>Every switch knows its name</h3><p>“Balcony”, “Fan”, “Tube light” — <b>name each switch during setup</b>, so voice and app always speak your language, not circuit numbers.</p></div>
+      <div class="row"><span class="idx">08.3</span><h3>Kid-proof. Clean-proof.</h3><p><b>Child-lock</b> makes any switch ignore curious fingers. <b>Cleaning mode</b> lets you wipe the glass without a light show. And rapid-fire tapping never stresses the relays — the panel paces itself.</p></div>
+      <div class="row"><span class="idx">08.4</span><h3>Set up in minutes</h3><p>First-time setup happens <b>over Bluetooth from your phone</b> — no hub to buy, no rewiring, no cloud account required to switch a light.</p></div>
     </div>
   </div>
 </section>
@@ -436,7 +521,7 @@ body[data-zone="dawn"] #stars{opacity:.35}
 <section class="chapter theme-ch" id="ch-party" data-zone="party" data-time="1200" aria-labelledby="h-party">
   <div class="fact" style="top:18%;right:7%" data-speed="0.18"><b>ONE PHRASE</b>“Party mode” — recognised on-device, executed instantly.</div>
   <div class="inner">
-    <p class="kick rev">08 · 20:00 · Friends at the door</p>
+    <p class="kick rev">09 · 20:00 · Friends at the door</p>
     <h2 class="display rev d1" id="h-party"><span class="out">PARTY</span> MODE<i>.</i></h2>
     <p class="body-l rev d2">The room comes alive for celebration — every light, one word.
       Guests never see an app, a hub, or a router blinking for attention. Just a home that responds.</p>
@@ -451,7 +536,7 @@ body[data-zone="dawn"] #stars{opacity:.35}
 <section class="chapter theme-ch" id="ch-movie" data-zone="movie" data-time="1290" aria-labelledby="h-movie">
   <div class="fact" style="bottom:20%;left:6%" data-speed="0.15"><b>RELAY CLICK</b>A real, audible confirmation — the most honest feedback there is.</div>
   <div class="inner" style="text-align:center">
-    <p class="kick rev" style="justify-content:center">09 · 21:30 · Lights down</p>
+    <p class="kick rev" style="justify-content:center">10 · 21:30 · Lights down</p>
     <h2 class="display rev d1" id="h-movie">MOVIE <i>time.</i></h2>
     <p class="body-l rev d2" style="margin-left:auto;margin-right:auto">The lights settle into a true cinema mood.
       One gang stays low behind the sofa. Nothing glows on the wall except a single warm point.</p>
@@ -465,7 +550,7 @@ body[data-zone="dawn"] #stars{opacity:.35}
 <!-- ══ SLIDE 11 · 23:00 · SLEEP / PRIVACY ══ -->
 <section class="chapter theme-ch" id="ch-sleep" data-zone="night" data-time="1380" aria-labelledby="h-sleep">
   <div class="inner">
-    <p class="kick rev">10 · 23:00 · The house goes quiet</p>
+    <p class="kick rev">11 · 23:00 · The house goes quiet</p>
     <h2 class="display rev d1" id="h-sleep"><span class="out">SLEEP</span><i>.</i></h2>
     <p class="body-l rev d2">Everything softens and fades. The locator glow drops to almost nothing — bedroom-safe by design.</p>
     <p class="quote rev d3">And here is the part you never saw:<br>in the whole day you just scrolled through,
@@ -477,7 +562,7 @@ body[data-zone="dawn"] #stars{opacity:.35}
 <!-- ══ SLIDE 12 · SPECS INDEX ══ -->
 <section class="chapter" id="specs" data-zone="night" data-time="1420" aria-labelledby="h-specs">
   <div class="inner">
-    <p class="kick rev">11 · Index · For the ones who read datasheets at midnight</p>
+    <p class="kick rev">12 · Index · For the ones who read datasheets at midnight</p>
     <h2 class="display rev d1" id="h-specs" style="font-size:clamp(32px,4.8vw,60px)">Specifications<i>.</i></h2>
     <div class="spec-index rev d2">
       <div class="srow"><span class="si">01</span><span class="sk">Input supply</span><span class="sv">230V AC · Indian household mains</span></div>
@@ -504,7 +589,7 @@ body[data-zone="dawn"] #stars{opacity:.35}
 <!-- ══ SLIDE 13 · FAMILY ══ -->
 <section class="chapter" id="family" data-zone="night" data-time="1432" aria-labelledby="h-fam">
   <div class="inner">
-    <p class="kick rev">12 · The family</p>
+    <p class="kick rev">13 · The family</p>
     <h2 class="display rev d1" id="h-fam" style="font-size:clamp(32px,5vw,64px)">One panel at launch.<br>A family designed to <i>grow.</i></h2>
     <div class="fam">
       <div class="fam-card hero-card rev d1">
@@ -539,7 +624,147 @@ body[data-zone="dawn"] #stars{opacity:.35}
   </div>
 </section>
 
-<!-- ══ SLIDE 14 · FINALE ══ -->
+<!-- ══ SLIDE 14 · PANEL LINEUP (product renders) ══ -->
+<section class="chapter" id="ch-designs" data-zone="day" data-time="570" aria-labelledby="h-des">
+  <div class="inner">
+    <p class="kick rev">04 · 09:30 · The lineup</p>
+    <h2 class="display rev d1" id="h-des" style="font-size:clamp(32px,5vw,64px)">Meet the panels<i>.</i></h2>
+    <p class="body-l rev d2" style="margin-top:14px">Every finish shares the same design language: one sheet of glass,
+      etched rings, a single gold scene zone, and light only where it means something.</p>
+    <div class="gal rev d2" aria-label="Panel model gallery">
+
+      <!-- SETU-4G · Pearl White -->
+      <div class="gal-card">
+        <svg class="shot" viewBox="0 0 380 300" role="img" aria-label="SETU-4G panel in Pearl White finish">
+          <defs>
+            <linearGradient id="f-pw" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2EFE6"/><stop offset=".55" stop-color="#E4DFD2"/><stop offset="1" stop-color="#CFC9B9"/></linearGradient>
+            <linearGradient id="sh-pw" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="#FFF" stop-opacity=".55"/><stop offset=".45" stop-color="#FFF" stop-opacity=".08"/><stop offset=".46" stop-color="#FFF" stop-opacity="0"/></linearGradient>
+            <radialGradient id="led-pw"><stop offset="0" stop-color="#FFF3D6"/><stop offset=".4" stop-color="#FFE9B8"/><stop offset="1" stop-color="#FFE9B8" stop-opacity="0"/></radialGradient>
+            <radialGradient id="fl-pw" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+            <clipPath id="cl-pw"><rect x="40" y="34" width="300" height="214" rx="20"/></clipPath>
+          </defs>
+          <ellipse cx="190" cy="272" rx="165" ry="15" fill="url(#fl-pw)"/>
+          <rect x="35" y="29" width="310" height="224" rx="23" fill="#05060D"/>
+          <rect x="40" y="34" width="300" height="214" rx="20" fill="url(#f-pw)"/>
+          <g clip-path="url(#cl-pw)"><path d="M40,34 h200 l-90,214 h-110 z" fill="url(#sh-pw)"/></g>
+          <g stroke="#8A8474" stroke-width="1.4" fill="none"><circle cx="100" cy="130" r="26"/><circle cx="160" cy="130" r="26"/><circle cx="220" cy="130" r="26"/><circle cx="280" cy="130" r="26"/></g>
+          <g stroke="#8A8474" stroke-width="1.6" fill="none" opacity=".8">
+            <circle cx="100" cy="130" r="8"/><path d="M100,116 v-4 M100,144 v4 M86,130 h-4 M114,130 h4"/>
+            <circle cx="160" cy="130" r="8"/><path d="M160,116 v-4 M160,144 v4 M146,130 h-4 M174,130 h4"/>
+            <circle cx="220" cy="130" r="8"/><path d="M220,116 v-4 M220,144 v4 M206,130 h-4 M234,130 h4"/>
+            <circle cx="280" cy="130" r="8"/><path d="M280,116 v-4 M280,144 v4 M266,130 h-4 M294,130 h4"/>
+          </g>
+          <circle cx="100" cy="88" r="9" fill="url(#led-pw)"/><circle cx="100" cy="88" r="2.4" fill="#FFF3D6"/>
+          <circle cx="160" cy="88" r="9" fill="url(#led-pw)"/><circle cx="160" cy="88" r="2.4" fill="#FFF3D6"/>
+          <circle cx="220" cy="88" r="2" fill="#B3AC97"/><circle cx="280" cy="88" r="2" fill="#B3AC97"/>
+          <circle cx="190" cy="205" r="16" fill="none" stroke="#C9A227" stroke-width="1.6"/>
+          <path d="M190,195 l2.6,7.4 7.4,2.6 -7.4,2.6 -2.6,7.4 -2.6,-7.4 -7.4,-2.6 7.4,-2.6 z" fill="none" stroke="#C9A227" stroke-width="1.4"/>
+          <text x="60" y="238" font-family="Consolas,monospace" font-size="8" letter-spacing="4" fill="#8A8474">SETU</text>
+        </svg>
+        <div class="gc-cap"><h3>SETU-4G · Pearl White</h3><span class="caption">Core finish · Launch</span></div>
+      </div>
+
+      <!-- SETU-4G · Graphite -->
+      <div class="gal-card">
+        <svg class="shot" viewBox="0 0 380 300" role="img" aria-label="SETU-4G panel in Graphite finish">
+          <defs>
+            <linearGradient id="f-gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#454D5E"/><stop offset=".55" stop-color="#2E3542"/><stop offset="1" stop-color="#1C212B"/></linearGradient>
+            <clipPath id="cl-gr"><rect x="40" y="34" width="300" height="214" rx="20"/></clipPath>
+          </defs>
+          <ellipse cx="190" cy="272" rx="165" ry="15" fill="url(#fl-pw)"/>
+          <rect x="35" y="29" width="310" height="224" rx="23" fill="#05060D"/>
+          <rect x="40" y="34" width="300" height="214" rx="20" fill="url(#f-gr)"/>
+          <g clip-path="url(#cl-gr)"><path d="M40,34 h200 l-90,214 h-110 z" fill="url(#sh-pw)" opacity=".5"/></g>
+          <g stroke="#9AA2B5" stroke-width="1.4" fill="none" opacity=".7"><circle cx="100" cy="130" r="26"/><circle cx="160" cy="130" r="26"/><circle cx="220" cy="130" r="26"/><circle cx="280" cy="130" r="26"/></g>
+          <g stroke="#B9C0D0" stroke-width="1.6" fill="none" opacity=".85">
+            <circle cx="100" cy="130" r="8"/><path d="M100,116 v-4 M100,144 v4 M86,130 h-4 M114,130 h4"/>
+            <circle cx="160" cy="130" r="8"/><path d="M160,116 v-4 M160,144 v4 M146,130 h-4 M174,130 h4"/>
+            <circle cx="220" cy="130" r="8"/><path d="M220,116 v-4 M220,144 v4 M206,130 h-4 M234,130 h4"/>
+            <circle cx="280" cy="130" r="8"/><path d="M280,116 v-4 M280,144 v4 M266,130 h-4 M294,130 h4"/>
+          </g>
+          <circle cx="100" cy="88" r="9" fill="url(#led-pw)"/><circle cx="100" cy="88" r="2.4" fill="#FFF3D6"/>
+          <circle cx="160" cy="88" r="2" fill="#5B6273"/>
+          <circle cx="220" cy="88" r="9" fill="url(#led-pw)"/><circle cx="220" cy="88" r="2.4" fill="#FFF3D6"/>
+          <circle cx="280" cy="88" r="2" fill="#5B6273"/>
+          <circle cx="190" cy="205" r="16" fill="none" stroke="#E8B84B" stroke-width="1.6"/>
+          <path d="M190,195 l2.6,7.4 7.4,2.6 -7.4,2.6 -2.6,7.4 -2.6,-7.4 -7.4,-2.6 7.4,-2.6 z" fill="none" stroke="#E8B84B" stroke-width="1.4"/>
+          <text x="60" y="238" font-family="Consolas,monospace" font-size="8" letter-spacing="4" fill="#9AA2B5">SETU</text>
+        </svg>
+        <div class="gc-cap"><h3>SETU-4G · Graphite</h3><span class="caption">Core finish · Launch</span></div>
+      </div>
+
+      <!-- SETU-4G · Deep Black -->
+      <div class="gal-card">
+        <svg class="shot" viewBox="0 0 380 300" role="img" aria-label="SETU-4G panel in Deep Black premium finish">
+          <defs>
+            <linearGradient id="f-bk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#23242C"/><stop offset=".55" stop-color="#121318"/><stop offset="1" stop-color="#060709"/></linearGradient>
+            <clipPath id="cl-bk"><rect x="40" y="34" width="300" height="214" rx="20"/></clipPath>
+          </defs>
+          <ellipse cx="190" cy="272" rx="165" ry="15" fill="url(#fl-pw)"/>
+          <rect x="35" y="29" width="310" height="224" rx="23" fill="#000"/>
+          <rect x="40" y="34" width="300" height="214" rx="20" fill="url(#f-bk)"/>
+          <g clip-path="url(#cl-bk)"><path d="M40,34 h200 l-90,214 h-110 z" fill="url(#sh-pw)" opacity=".4"/></g>
+          <g stroke="#6B7080" stroke-width="1.4" fill="none" opacity=".6"><circle cx="100" cy="130" r="26"/><circle cx="160" cy="130" r="26"/><circle cx="220" cy="130" r="26"/><circle cx="280" cy="130" r="26"/></g>
+          <g stroke="#8A8F9E" stroke-width="1.6" fill="none" opacity=".8">
+            <circle cx="100" cy="130" r="8"/><path d="M100,116 v-4 M100,144 v4 M86,130 h-4 M114,130 h4"/>
+            <circle cx="160" cy="130" r="8"/><path d="M160,116 v-4 M160,144 v4 M146,130 h-4 M174,130 h4"/>
+            <circle cx="220" cy="130" r="8"/><path d="M220,116 v-4 M220,144 v4 M206,130 h-4 M234,130 h4"/>
+            <circle cx="280" cy="130" r="8"/><path d="M280,116 v-4 M280,144 v4 M266,130 h-4 M294,130 h4"/>
+          </g>
+          <circle cx="100" cy="88" r="2" fill="#3E434F"/><circle cx="160" cy="88" r="2" fill="#3E434F"/>
+          <circle cx="220" cy="88" r="2" fill="#3E434F"/>
+          <circle cx="280" cy="88" r="9" fill="url(#led-pw)"/><circle cx="280" cy="88" r="2.4" fill="#FFF3D6"/>
+          <circle cx="190" cy="205" r="16" fill="none" stroke="#E8B84B" stroke-width="1.6"/>
+          <path d="M190,195 l2.6,7.4 7.4,2.6 -7.4,2.6 -2.6,7.4 -2.6,-7.4 -7.4,-2.6 7.4,-2.6 z" fill="none" stroke="#E8B84B" stroke-width="1.4"/>
+          <text x="60" y="238" font-family="Consolas,monospace" font-size="8" letter-spacing="4" fill="#6B7080">SETU</text>
+        </svg>
+        <div class="gc-cap"><h3>SETU-4G · Deep Black</h3><span class="caption">Premium finish</span></div>
+      </div>
+
+      <!-- SETU-2G Compact · Graphite -->
+      <div class="gal-card" style="width:min(330px,64vw)">
+        <svg class="shot" viewBox="0 0 270 300" role="img" aria-label="Planned SETU-2G compact panel in Graphite">
+          <defs><clipPath id="cl-2g"><rect x="40" y="34" width="190" height="214" rx="20"/></clipPath></defs>
+          <ellipse cx="135" cy="272" rx="115" ry="15" fill="url(#fl-pw)"/>
+          <rect x="35" y="29" width="200" height="224" rx="23" fill="#05060D"/>
+          <rect x="40" y="34" width="190" height="214" rx="20" fill="url(#f-gr)"/>
+          <g clip-path="url(#cl-2g)"><path d="M40,34 h130 l-60,214 h-70 z" fill="url(#sh-pw)" opacity=".5"/></g>
+          <g stroke="#9AA2B5" stroke-width="1.4" fill="none" opacity=".7"><circle cx="100" cy="130" r="26"/><circle cx="170" cy="130" r="26"/></g>
+          <g stroke="#B9C0D0" stroke-width="1.6" fill="none" opacity=".85">
+            <circle cx="100" cy="130" r="8"/><path d="M100,116 v-4 M100,144 v4 M86,130 h-4 M114,130 h4"/>
+            <circle cx="170" cy="130" r="8"/><path d="M170,116 v-4 M170,144 v4 M156,130 h-4 M184,130 h4"/>
+          </g>
+          <circle cx="100" cy="88" r="9" fill="url(#led-pw)"/><circle cx="100" cy="88" r="2.4" fill="#FFF3D6"/>
+          <circle cx="170" cy="88" r="2" fill="#5B6273"/>
+          <circle cx="135" cy="205" r="16" fill="none" stroke="#E8B84B" stroke-width="1.6"/>
+          <path d="M135,195 l2.6,7.4 7.4,2.6 -7.4,2.6 -2.6,7.4 -2.6,-7.4 -7.4,-2.6 7.4,-2.6 z" fill="none" stroke="#E8B84B" stroke-width="1.4"/>
+          <text x="56" y="238" font-family="Consolas,monospace" font-size="8" letter-spacing="4" fill="#9AA2B5">SETU</text>
+        </svg>
+        <div class="gc-cap"><h3>SETU-2G Compact</h3><span class="caption planned">PLANNED</span></div>
+      </div>
+
+      <!-- Scene Remote -->
+      <div class="gal-card" style="width:min(300px,58vw)">
+        <svg class="shot" viewBox="0 0 240 300" role="img" aria-label="Planned SETU scene remote, a small square puck">
+          <defs><clipPath id="cl-sr"><rect x="50" y="70" width="140" height="140" rx="26"/></clipPath></defs>
+          <ellipse cx="120" cy="240" rx="90" ry="13" fill="url(#fl-pw)"/>
+          <rect x="45" y="65" width="150" height="150" rx="29" fill="#05060D"/>
+          <rect x="50" y="70" width="140" height="140" rx="26" fill="url(#f-bk)"/>
+          <g clip-path="url(#cl-sr)"><path d="M50,70 h95 l-45,140 h-50 z" fill="url(#sh-pw)" opacity=".4"/></g>
+          <circle cx="120" cy="132" r="26" fill="none" stroke="#E8B84B" stroke-width="1.8"/>
+          <path d="M120,116 l4,11.5 11.5,4.5 -11.5,4.5 -4,11.5 -4,-11.5 -11.5,-4.5 11.5,-4.5 z" fill="none" stroke="#E8B84B" stroke-width="1.6"/>
+          <circle cx="120" cy="184" r="2.2" fill="#E8B84B"/>
+          <text x="97" y="203" font-family="Consolas,monospace" font-size="7" letter-spacing="4" fill="#6B7080">SETU</text>
+        </svg>
+        <div class="gc-cap"><h3>Scene Remote</h3><span class="caption planned">PLANNED</span></div>
+      </div>
+
+    </div>
+    <p class="gal-hint rev d3">Drag sideways to browse the lineup · concept renders, pre-production</p>
+  </div>
+</section>
+
+<!-- ══ SLIDE 15 · FINALE ══ -->
 <section class="chapter" id="finale" data-zone="predawn" data-time="1439" aria-label="Closing">
   <div class="inner">
     <p class="kick rev" style="justify-content:center">23:59 · Tomorrow it does it all again</p>
@@ -558,6 +783,12 @@ body[data-zone="dawn"] #stars{opacity:.35}
 (function(){
 "use strict";
 var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ── slide order: the lineup slide is authored near its gallery styles but
+   presents as slide 5 — move it before the craft slide prior to any layout logic ── */
+var desSec = document.getElementById("ch-designs");
+var craftSec = document.getElementById("ch-craft");
+if (desSec && craftSec) craftSec.parentNode.insertBefore(desSec, craftSec);
 
 /* ── chapters: zone + time anchors ── */
 var chapters = Array.prototype.slice.call(document.querySelectorAll(".chapter"));
