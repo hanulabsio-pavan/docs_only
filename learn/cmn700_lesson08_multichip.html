@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 . Lesson 8 - Multichip - CML, CCG, CXL and CCIX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 &middot; LESSON 08</div>
+  <h1>Multichip — CML, CCG, CXL &amp; CCIX</h1>
+  <a href="#why">Beyond one die</a>
+  <a href="#cml">CML</a>
+  <a href="#ccg">CCG internals</a>
+  <a href="#cxs">CXS &amp; fast path</a>
+  <a href="#models">CCIX vs CXL</a>
+  <a href="#shn">Super Home Node</a>
+  <a href="#topo">Topologies</a>
+  <a href="#limits">Limits</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Phase C &middot; Performance &amp; scale &middot; Lesson 8 of 10</div>
+<h2 class="title">Multichip — CML, CCG, CXL &amp; CCIX</h2>
+<p class="lede">Extending one coherency domain across dice and sockets: gateways, CXS transport, and two coherency models.</p>
+
+<div class="obj"><h4>By the end of this lesson you can</h4>
+<ul>
+  <li>Explain CML and the CCG gateway internals (CCRA / CCHA / CCLA).</li>
+  <li>Contrast CCIX and CXL coherency models and say when each fits.</li>
+  <li>Explain the CXS-B fast path and the Super Home Node concept.</li>
+  <li>Discuss realistic multi-die topologies and their limitations.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>Why go beyond one die</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>One die not big enough, or too expensive to make big. So: many smaller dice, glue them so they act like one coherent machine. Glue = <b>CML</b>. Doorman at each end = <b>CCG</b>. Road between = <b>CXS</b>.</p></div>
+  <p>Reticle limits, yield economics and memory-capacity demands all push past a single die. <b>CML (Coherent Multichip Link)</b> is how CMN-700 extends one coherency domain across dice and sockets, so software still sees a single coherent memory system.</p>
+</section>
+
+<section id="cml">
+  <h3><span class="n">2</span>CML: the coherent multichip link</h3>
+  <p>CML extends the mesh's coherency beyond the die for chiplets, multi-die packages and multi-socket SMP. Conceptually, one mesh's gateway presents remote agents to the local mesh as if they were local nodes, and vice versa &mdash; so the local home nodes, snoop filters and SAM keep working with only the target IDs changing.</p>
+  <div class="ascii-wrap"><div class="bar">Two meshes, one coherency domain</div>
+<pre class="ascii">   <span class="cmt">--------- die A ---------</span>            <span class="cmt">--------- die B ---------</span>
+   <span class="rnf">RN-F</span> <span class="hnf">HN-F</span> <span class="snf">SN-F</span>  ...              ...  <span class="snf">SN-F</span> <span class="hnf">HN-F</span> <span class="rnf">RN-F</span>
+     <span class="box">|</span>    <span class="box">|</span>    <span class="box">|</span>                          <span class="box">|</span>    <span class="box">|</span>    <span class="box">|</span>
+   <span class="rtr">XP</span>---<span class="rtr">XP</span>---<span class="rtr">XP</span>---<span class="rtr">[CCG]</span><span class="req">===CXS===</span><span class="rtr">[CCG]</span>---<span class="rtr">XP</span>---<span class="rtr">XP</span>---<span class="rtr">XP</span>
+                     <span class="cmt">gateway   chip-to-chip   gateway</span>
+   <span class="cmt">local CHI</span>                                     <span class="cmt">local CHI</span>
+</pre></div>
+</section>
+
+<section id="ccg">
+  <h3><span class="n">3</span>Inside the CCG gateway</h3>
+  <p>The <b>CCG</b> (CML / CXL-CCIX gateway) bridges on-chip CHI to the chip-to-chip transport. Its internal agents mirror the on-chip request / home / link split &mdash; which is a satisfying way to remember them:</p>
+  <table>
+    <tr><th>Agent</th><th>Role</th><th>On-chip analogue</th></tr>
+    <tr><td><code>CCRA</code></td><td>Request agent &mdash; proxies <b>remote requesters</b> into the local mesh.</td><td>like an RN</td></tr>
+    <tr><td><code>CCHA</code></td><td>Home agent &mdash; represents <b>remote home / coherency</b> on this die.</td><td>like an HN</td></tr>
+    <tr><td><code>CCLA</code></td><td>Link agent &mdash; drives the physical chip-to-chip interface (optionally with an embedded RN-I for PCIe-to-remote-memory).</td><td>link layer</td></tr>
+  </table>
+  <p>The earlier <b>CXG</b> gateway is the same idea one generation back, with agents <code>CXRA</code> / <code>CXHA</code> / <code>CXLA</code>, supporting CHI plus CXS Issue A (CCIX 1.1).</p>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Gateway wear two hats. To local mesh it pretend to be a requester (CCRA) when remote die asks for something. It pretend to be a home (CCHA) when local core asks for remote memory. CCLA just drive the wires.</p></div>
+</section>
+
+<section id="cxs">
+  <h3><span class="n">4</span>CXS and the fast path</h3>
+  <p>The chip-to-chip transport is <b>CXS</b>. CMN-700 supports <b>CXS Issue B</b>, which can carry <b>CCIX 2.0 or CXL</b>. Because every remote access pays gateway plus link latency, CMN-700 adds a <b>CXS-B fast path</b> that <b>bypasses the transaction layer straight to the link layer</b>, trimming latency on remote accesses.</p>
+  <p>Remember the asymmetry: on-chip DAT is 256-bit (or effectively 512-bit with the double mesh channel), while the chip-to-chip link is comparatively narrow. That asymmetry, not the protocol, is usually what limits cross-die traffic.</p>
+</section>
+
+<section id="models">
+  <h3><span class="n">5</span>CCIX versus CXL &mdash; two coherency models</h3>
+  <p>CMN-700 supports both because they resolve coherency from opposite ends:</p>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-hnf"></span>CCIX &mdash; near-memory</h6><p>Coherency is resolved near the memory: home node, cache and snoop filter sit closest to the shared memory. Suits symmetric peers, distributed caching, and multi-socket SMP where both sides are full participants.</p></div>
+    <div class="card"><h6><span class="dot b-rnf"></span>CXL &mdash; host-based</h6><p>The host owns shared memory and maintains snoop state. Simpler for building coherent accelerators and for memory expansion / pooling devices, because the device does less coherency work.</p></div>
+  </div>
+  <p>CMN-700 also grew CCIX device ports substantially over CMN-600 (from 4 to <b>32</b>) and added CXL gateways &mdash; a clear bet on accelerator-heavy and memory-disaggregated systems.</p>
+</section>
+
+<section id="shn">
+  <h3><span class="n">6</span>The Super Home Node</h3>
+  <p>In multi-die systems, some memory is shared across dice and needs a single ordering point. The <b>Super Home Node</b> is a home node &mdash; or a whole mesh acting as one &mdash; that serves as the <b>central coherency point for memory shared between dice</b>. It can hold SLC and act as local home for remote memory, which is what makes a central I/O die plus several compute dice work as one coherent system.</p>
+  <p class="note">Mapping to your own experience is fair game in an interview: any architecture with a per-chip coherency director plus a chip-to-chip coherent link is solving the same problem with different names.</p>
+</section>
+
+<section id="topo">
+  <h3><span class="n">7</span>Realistic topologies</h3>
+  <table>
+    <tr><th>Topology</th><th>Shape</th><th>Why</th></tr>
+    <tr><td>Single die</td><td>one mesh</td><td>Simplest, lowest latency. Limited by reticle and yield.</td></tr>
+    <tr><td>Chiplet: IO die + compute dice</td><td>hub and spoke</td><td>Compute dice on a good process, IO/memory on a cheaper one. Super Home Node in the hub.</td></tr>
+    <tr><td>Multi-socket SMP</td><td>peer to peer</td><td>Scale cores and memory capacity; CCIX-style symmetric coherency.</td></tr>
+    <tr><td>Host + accelerator / memory device</td><td>asymmetric</td><td>CXL-style host-based coherency; memory pooling and expansion.</td></tr>
+  </table>
+</section>
+
+<section id="limits">
+  <h3><span class="n">8</span>What limits multichip scaling</h3>
+  <ul class="tight">
+    <li><b>Remote latency.</b> Gateway translation plus link traversal makes remote memory materially slower than local &mdash; so NUMA-aware software placement matters.</li>
+    <li><b>Link bandwidth asymmetry.</b> CXS is narrower than the on-chip data channel, so heavy cross-die sharing saturates the link before the mesh.</li>
+    <li><b>Coherency tracking cost.</b> Tracking remote sharers grows the directory and snoop problem; the fast path helps latency but not tracking cost.</li>
+    <li><b>Gateway overhead.</b> CCG plus SerDes costs area and power at every edge.</li>
+    <li><b>Practical die counts.</b> Real designs cluster in the small numbers of dice rather than arbitrarily many, because each hop compounds the effects above. Check the TRM for the exact configuration limits of a given release.</li>
+  </ul>
+  <p>The design rule that follows: keep working sets local, and treat cross-die coherent traffic as a scarce resource.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">9</span>Self-check</h3>
+  <div class="quiz" data-correct="1" data-fb="CCRA proxies remote requesters, CCHA represents remote home/coherency, CCLA drives the physical link.">
+    <div class="q">1. Which set names the CCG's internal agents?</div>
+    <button class="opt">RN-F / HN-F / SN-F</button>
+    <button class="opt">CCRA / CCHA / CCLA</button>
+    <button class="opt">DTM / DTC / CFG</button>
+    <button class="opt">ADB / CDB / CAL</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="CXL is host-based: the host owns shared memory and snoop state, which simplifies the device side.">
+    <div class="q">2. In CXL, coherency is primarily&hellip;</div>
+    <button class="opt">host-based &mdash; the host owns shared memory and snoop state.</button>
+    <button class="opt">resolved near the memory by the device.</button>
+    <button class="opt">disabled entirely.</button>
+    <button class="opt">handled by the XP routers.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="The fast path bypasses the transaction layer straight to the link layer to cut remote-access latency.">
+    <div class="q">3. The CXS-B fast path exists to&hellip;</div>
+    <button class="opt">widen the chip-to-chip link.</button>
+    <button class="opt">add a second snoop filter.</button>
+    <button class="opt">bypass the transaction layer to reduce remote-access latency.</button>
+    <button class="opt">convert CHI into AXI.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="The Super Home Node is the central coherency point for memory shared across dice.">
+    <div class="q">4. What is a Super Home Node?</div>
+    <button class="opt">A home node with a larger snoop filter only.</button>
+    <button class="opt">The mandatory HN-D.</button>
+    <button class="opt">A PCIe-optimised home node.</button>
+    <button class="opt">A home node (or mesh) acting as central coherency point for memory shared across dice.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">10</span>Interview Q&amp;A</h3>
+  <details><summary>How does CMN-700 scale across chips?</summary><div class="ans">Through CML, using CCG gateways that bridge on-chip CHI to chip-to-chip CXS Issue B (carrying CCIX 2.0 or CXL). Inside the CCG: CCRA proxies remote requesters into the local mesh, CCHA represents remote home and coherency locally, and CCLA drives the physical link. For memory shared across dice, a Super Home Node acts as the central coherency point. The result is one coherency domain spanning multiple dice or sockets.</div></details>
+  <details><summary>CCIX versus CXL &mdash; when would you use each?</summary><div class="ans">CCIX resolves coherency near the memory, with home node, cache and snoop filter closest to the shared memory &mdash; a good fit for symmetric peers and multi-socket SMP. CXL is host-based: the host owns shared memory and snoop state, which makes coherent accelerators and memory pooling or expansion devices simpler to build. CMN-700 supports both, and grew CCIX device ports from 4 to 32 versus CMN-600.</div></details>
+  <details><summary>What limits multichip scaling in practice?</summary><div class="ans">Remote access latency from gateway plus link traversal; bandwidth asymmetry, since CXS is narrower than the on-chip data channel; the growing cost of tracking remote sharers; and gateway plus SerDes area and power at each edge. The design response is to keep working sets local and treat cross-die coherent traffic as scarce. The fast path reduces latency but does not remove the tracking cost.</div></details>
+  <details><summary>How does the local mesh see a remote requester?</summary><div class="ans">Through the gateway's CCRA, which proxies remote requesters so they appear as local participants. Conversely a local core reaching remote memory is served via the CCHA, which represents the remote home locally. This is what lets the existing SAM, home nodes and snoop filters keep working with only target IDs changing.</div></details>
+  <details><summary>Why does a chiplet design need a Super Home Node?</summary><div class="ans">Memory shared across dice still needs a single point of coherency and ordering. A Super Home Node provides that central point &mdash; it can hold SLC and act as local home for remote memory &mdash; which is what makes a central IO die plus multiple compute dice behave as one coherent system rather than several islands.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">11</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li><b>CML</b> extends one coherency domain across dice / sockets.</li>
+    <li><b>CCG</b> = gateway; agents <b>CCRA</b> (request), <b>CCHA</b> (home), <b>CCLA</b> (link). Older <b>CXG</b> = CXRA/CXHA/CXLA.</li>
+    <li>Transport is <b>CXS Issue B</b> carrying CCIX 2.0 or CXL; <b>fast path</b> bypasses the transaction layer.</li>
+    <li><b>CCIX</b> = near-memory coherency; <b>CXL</b> = host-based. CCIX ports grew 4 &#8594; 32.</li>
+    <li><b>Super Home Node</b> = central coherency point for cross-die shared memory.</li>
+    <li>Limits: remote latency, link narrowness, remote-sharer tracking, gateway cost.</li>
+  </ul>
+  <div class="chips"><span class="chip">CML</span><span class="chip">CCG</span><span class="chip">CCRA / CCHA / CCLA</span><span class="chip">CXG</span><span class="chip">CXS-B</span><span class="chip">fast path</span><span class="chip">CCIX</span><span class="chip">CXL</span><span class="chip">Super Home Node</span><span class="chip">chiplet</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson07_qos_congestion.html">◄ L7 &middot; QoS &amp; congestion</a>
+  <a href="cmn700_lesson09_pmu_trace.html">L9 &middot; PMU &amp; trace ►</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L9): measuring and debugging the mesh — distributed counters, watchpoints and trace.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

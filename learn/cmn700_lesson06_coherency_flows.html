@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 . Lesson 6 - Coherency Flows and CHI-E Optimizations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 &middot; LESSON 06</div>
+  <h1>Coherency Flows &amp; CHI-E Optimizations</h1>
+  <a href="#why">Flows in depth</a>
+  <a href="#states">States at the home</a>
+  <a href="#dmt">DMT</a>
+  <a href="#dct">DCT</a>
+  <a href="#atomics">Atomics</a>
+  <a href="#stash">Cache stashing</a>
+  <a href="#hazard">Hazards &amp; retries</a>
+  <a href="#budget">Hop budget</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Phase B &middot; Coherency core &middot; Lesson 6 of 10</div>
+<h2 class="title">Coherency Flows &amp; CHI-E Optimizations</h2>
+<p class="lede">Cache states, snoop flows, and the latency-cutting features: DMT, DCT, atomics and cache stashing.</p>
+
+<div class="obj"><h4>By the end of this lesson you can</h4>
+<ul>
+  <li>Trace coherent read, write and upgrade flows and the snoop responses involved.</li>
+  <li>Explain DMT, DCT, atomics and cache stashing &mdash; and when each actually helps.</li>
+  <li>Reason about hazards, retries and forward progress on a contended line.</li>
+  <li>Account for hops saved by each optimisation.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>From walks to flows</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Lesson 3 = watch letter travel. This lesson = the clever shortcuts. Why send data all the way back through home node when memory can throw it straight at the asker? Why go to memory at all when neighbour cache already hold line? Each trick save hops. Hops = time.</p></div>
+  <p>Lesson 3 gave you the baseline choreography. Now we look at the CHI Issue E optimisations that CMN-700 implements in hardware, all of which exist for one reason: <b>remove hops and round trips from the critical path</b>. In an interview, naming these and saying <i>which hop each one removes</i> is what separates recall from understanding.</p>
+</section>
+
+<section id="states">
+  <h3><span class="n">2</span>What the home node tracks</h3>
+  <p>For each line in its range, the owning HN-F holds two related pieces of state:</p>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-hnf"></span>SLC state</h6><p>Is the line present in this slice, and is it clean or dirty? Drives whether memory must be touched at all.</p></div>
+    <div class="card"><h6><span class="dot b-hnf"></span>Snoop-filter state</h6><p>Which RN-Fs hold a copy, and broadly in what state (shared vs unique/owned). Drives who gets snooped and whether a snoop can supply data.</p></div>
+  </div>
+  <p>Every flow below is really the home node reading those two pieces of state and choosing the cheapest legal way to satisfy the request. The possibilities:</p>
+  <table>
+    <tr><th>Home-node finding</th><th>Cheapest path</th></tr>
+    <tr><td>Hit in SLC, no other sharer conflict</td><td>Serve from the slice &mdash; no memory, no snoop.</td></tr>
+    <tr><td>Miss in SLC, another RN-F holds it</td><td>Snoop that RN-F; with <b>DCT</b> it forwards data cache-to-cache.</td></tr>
+    <tr><td>Miss in SLC, nobody holds it</td><td>Fetch from SN-F; with <b>DMT</b> memory returns data straight to the requester.</td></tr>
+    <tr><td>Write / upgrade with sharers</td><td>Invalidate sharers via snoops, then grant unique ownership.</td></tr>
+  </table>
+</section>
+
+<section id="dmt">
+  <h3><span class="n">3</span>Direct Memory Transfer (DMT)</h3>
+  <p>Baseline miss path: the home node reads memory, memory returns data <i>to the home node</i>, and the home node forwards it to the requester. That's a wasted store-and-forward through the HN.</p>
+  <p><b>DMT</b> lets the home node instruct the SN-F to return data <b>directly toward the requester</b>. The home node still owns coherency &mdash; it stays in the control loop via responses &mdash; but the data payload skips the extra hop.</p>
+  <div class="ascii-wrap"><div class="bar">Without DMT vs with DMT</div>
+<pre class="ascii"><span class="cmt">-- baseline: data store-and-forwards through the home node --</span>
+  <span class="rnf">RN-F</span> <span class="req">--REQ-&gt;</span> <span class="hnf">HN-F</span> <span class="req">--REQ-&gt;</span> <span class="snf">SN-F</span>
+  <span class="rnf">RN-F</span> <span class="dat">&lt;-DAT--</span> <span class="hnf">HN-F</span> <span class="dat">&lt;-DAT--</span> <span class="snf">SN-F</span>      <span class="cmt">2 data legs</span>
+
+<span class="cmt">-- with DMT: memory answers the requester directly --</span>
+  <span class="rnf">RN-F</span> <span class="req">--REQ-&gt;</span> <span class="hnf">HN-F</span> <span class="req">--REQ-&gt;</span> <span class="snf">SN-F</span>
+  <span class="rnf">RN-F</span> <span class="dat">&lt;------------- DAT ---------</span> <span class="snf">SN-F</span>   <span class="cmt">1 data leg</span>
+</pre></div>
+  <p class="note">Biggest win when the home node is far from both requester and memory &mdash; exactly the case in a large mesh.</p>
+</section>
+
+<section id="dct">
+  <h3><span class="n">4</span>Direct Cache Transfer (DCT)</h3>
+  <p>If a peer cache already holds the line, going to DRAM is pure waste. <b>DCT</b> has the snooped RN-F <b>forward the line straight to the requesting RN-F</b>, cache-to-cache, while the snoop response goes to the home node so it can update the snoop filter.</p>
+  <div class="ascii-wrap"><div class="bar">DCT: data cache-to-cache, response to home</div>
+<pre class="ascii">  <span class="rnf">RN-F (asks)</span>      <span class="hnf">HN-F</span>         <span class="rnf">RN-F (owns)</span>
+      <span class="req">--REQ--&gt;</span>          <span class="box">|</span>               <span class="box">|</span>
+      <span class="box">|</span>            SF: owner known    <span class="box">|</span>
+      <span class="box">|</span>              <span class="snp">--SNP (fwd)--&gt;</span>       <span class="box">|</span>
+      <span class="dat">&lt;=========== DAT (cache-to-cache) ====</span>
+      <span class="box">|</span>              <span class="rsp">&lt;--SnpResp----</span>       <span class="box">|</span>
+      <span class="cmt">no DRAM access at all; SF updated from SnpResp</span>
+</pre></div>
+  <p>DCT is the reason producer&ndash;consumer sharing between two cores is fast on a mesh: the line moves core-to-core at mesh latency, never at DRAM latency.</p>
+</section>
+
+<section id="atomics">
+  <h3><span class="n">5</span>Atomics</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Old way to add 1 to shared counter: grab line exclusive, bring it home, add, write back. Line bounce between cores like hot potato. New way: send "add 1" <i>to the counter</i>. Work happen where data live. No bouncing.</p></div>
+  <p>CHI-E atomics let an operation (add, swap, compare-and-swap, logical ops) be executed <b>near the point of coherency or near memory</b> instead of requiring the requester to take the line into its own cache first.</p>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-dat"></span>Why it matters</h6><p>A read-modify-write on a contended variable no longer ping-pongs the line between caches. One message out, one response back.</p></div>
+    <div class="card"><h6><span class="dot b-dat"></span>Where it shines</h6><p>Highly contended counters, locks, reference counts, queue head/tail pointers &mdash; the classic many-core scaling killers.</p></div>
+  </div>
+</section>
+
+<section id="stash">
+  <h3><span class="n">6</span>Cache stashing</h3>
+  <p><b>Stashing</b> inverts the usual direction: instead of a consumer pulling data, a producer <b>pushes</b> data into a target cache so it's already warm when the consumer looks. A NIC receiving a packet can stash it toward the core (or the SLC region) that will process it, converting what would have been a cold miss into a hit.</p>
+  <p>Pair this with prefetch hints (which the RN SAM can even target straight at a memory controller, Lesson 5) and you have two complementary ways to hide latency: pull early, or have someone push for you.</p>
+</section>
+
+<section id="hazard">
+  <h3><span class="n">7</span>Hazards, retries and forward progress</h3>
+  <p>All of this happens under contention, so the home node needs rules for when two operations collide on one line:</p>
+  <ul class="tight">
+    <li><b>Hazard detection.</b> A new request arriving while a snoop or fill for the same line is outstanding is a hazard. The home node detects it rather than letting the two interleave.</li>
+    <li><b>Hold or retry.</b> The home either holds the request in a tracker until the in-flight operation completes, or sends a retry so the requester re-issues later.</li>
+    <li><b>Tracker capacity.</b> The home node has a finite number of outstanding-transaction slots. When they fill, that becomes backpressure &mdash; and it is one of the signals congestion control reacts to (Lesson 7).</li>
+    <li><b>Forward progress.</b> Because the home is the single point of serialization, it can guarantee that a contended line makes progress rather than livelocking.</li>
+  </ul>
+  <p class="note">Good interview instinct: whenever you describe an optimisation, mention what it does under contention. Optimisations that only work on quiet lines are not interesting in a 256-core system.</p>
+</section>
+
+<section id="budget">
+  <h3><span class="n">8</span>Hop budget &mdash; what each trick buys</h3>
+  <table>
+    <tr><th>Scenario</th><th>Path</th><th>Saving</th></tr>
+    <tr><td>SLC hit</td><td>RN &#8594; HN &#8594; RN</td><td>No DRAM access.</td></tr>
+    <tr><td>Miss + DMT</td><td>RN &#8594; HN &#8594; SN, data SN &#8594; RN</td><td>One data leg removed.</td></tr>
+    <tr><td>Peer holds it + DCT</td><td>RN &#8594; HN &#8594; peer, data peer &#8594; RN</td><td>DRAM avoided entirely.</td></tr>
+    <tr><td>Atomic near memory/home</td><td>one op out, one resp back</td><td>No line migration, no RMW ping-pong.</td></tr>
+    <tr><td>Stashed line</td><td>data already local</td><td>Cold miss converted to a hit.</td></tr>
+  </table>
+</section>
+
+<section id="check">
+  <h3><span class="n">9</span>Self-check</h3>
+  <div class="quiz" data-correct="1" data-fb="DMT lets the SN return data directly toward the requester, removing the store-and-forward leg through the home node.">
+    <div class="q">1. Direct Memory Transfer removes which hop?</div>
+    <button class="opt">The request hop from RN to HN.</button>
+    <button class="opt">The data leg from memory back through the home node.</button>
+    <button class="opt">The snoop to peer caches.</button>
+    <button class="opt">The SAM lookup.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="With DCT the owning cache supplies the line directly, so no DRAM access is needed at all.">
+    <div class="q">2. On a read where a peer cache already owns the line, DCT means&hellip;</div>
+    <button class="opt">memory is read twice for safety.</button>
+    <button class="opt">the snoop is broadcast to every cache.</button>
+    <button class="opt">the owning cache forwards the line directly to the requester, avoiding DRAM.</button>
+    <button class="opt">the line is invalidated everywhere first.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Near-memory/near-home atomics avoid migrating the line into the requester's cache for a read-modify-write.">
+    <div class="q">3. Why do CHI-E atomics help a heavily contended counter?</div>
+    <button class="opt">The operation executes near the data, so the line stops ping-ponging between caches.</button>
+    <button class="opt">They disable coherency for that address.</button>
+    <button class="opt">They widen the DAT channel.</button>
+    <button class="opt">They bypass the home node's ordering.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="The home node detects the hazard and either holds the request in a tracker or retries it, preserving ordering.">
+    <div class="q">4. A second request arrives for a line with a snoop already in flight. What happens?</div>
+    <button class="opt">Both proceed in parallel.</button>
+    <button class="opt">The line is dropped from the SLC.</button>
+    <button class="opt">The requester is deadlocked until reset.</button>
+    <button class="opt">The home node detects the hazard and holds or retries the request.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">10</span>Interview Q&amp;A</h3>
+  <details><summary>What does CMN-700 add over plain CHI?</summary><div class="ans">CHI is the protocol contract; CMN-700 is the implementation. It adds the physical realisation &mdash; distributed home nodes with SLC and snoop filters, the SAM and address hashing, per-channel mesh networks, QoS and congestion control, multichip gateways, and the distributed PMU &mdash; plus hardware support for the CHI-E optimisations (DMT, DCT, atomics, stashing).</div></details>
+  <details><summary>Explain DMT and DCT and the difference between them.</summary><div class="ans">Both remove a data hop. DMT: on an SLC miss, the memory controller returns data directly toward the requester instead of store-and-forwarding through the home node. DCT: when a peer cache holds the line, that cache forwards it directly to the requester, avoiding DRAM entirely. DMT optimises the memory path; DCT optimises the cache-to-cache path. In both cases the home node stays in the control loop to maintain coherency state.</div></details>
+  <details><summary>How do near-memory atomics improve scalability?</summary><div class="ans">A classic read-modify-write requires the requester to obtain the line uniquely, so a contended counter migrates between caches on every increment. Executing the atomic near the point of coherency or near memory means one request out and one response back, with no line migration &mdash; removing the ping-pong that limits many-core scaling on locks and counters.</div></details>
+  <details><summary>What is cache stashing used for?</summary><div class="ans">Pushing data into a target cache before it is requested, so the consumer hits instead of missing. Typical use: a NIC or accelerator stashes an inbound packet toward the core or cache region that will process it, hiding memory latency for streaming workloads.</div></details>
+  <details><summary>How does the home node keep a contended line making progress?</summary><div class="ans">It is the single point of serialization, so it detects hazards (a new request colliding with an in-flight snoop or fill) and either holds the request in an outstanding-transaction tracker or issues a retry. Because ordering decisions all happen at one place, it can guarantee forward progress rather than livelock. When trackers fill, that appears upstream as backpressure.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">11</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>Home node picks the cheapest legal path using SLC state + snoop-filter state.</li>
+    <li><b>DMT</b>: memory returns data straight to the requester &mdash; removes a data leg.</li>
+    <li><b>DCT</b>: owning cache forwards cache-to-cache &mdash; removes DRAM entirely.</li>
+    <li><b>Atomics</b> near memory/home stop line ping-pong on contended variables.</li>
+    <li><b>Stashing</b> pushes data into a cache before it is asked for.</li>
+    <li>Hazards are detected and held/retried at the home; trackers filling becomes backpressure.</li>
+  </ul>
+  <div class="chips"><span class="chip">DMT</span><span class="chip">DCT</span><span class="chip">atomics</span><span class="chip">cache stashing</span><span class="chip">prefetch hint</span><span class="chip">hazard</span><span class="chip">retry</span><span class="chip">tracker</span><span class="chip">forward progress</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson05_sam_hashing.html">◄ L5 &middot; SAM &amp; hashing</a>
+  <a href="cmn700_lesson07_qos_congestion.html">L7 &middot; QoS &amp; congestion ►</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L7): keeping the fabric fast and fair — QoS classes, CBusy throttling, hot-spot re-routing and placement.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

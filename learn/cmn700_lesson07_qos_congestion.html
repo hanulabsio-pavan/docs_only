@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 . Lesson 7 - QoS, Congestion Control and Performance Tuning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 &middot; LESSON 07</div>
+  <h1>QoS, Congestion Control &amp; Performance Tuning</h1>
+  <a href="#why">Contention</a>
+  <a href="#qos">QoS classes</a>
+  <a href="#cbusy">CBusy</a>
+  <a href="#reroute">Hot-spot re-routing</a>
+  <a href="#width">Bandwidth levers</a>
+  <a href="#place">Placement</a>
+  <a href="#playbook">Tuning playbook</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Phase C &middot; Performance &amp; scale &middot; Lesson 7 of 10</div>
+<h2 class="title">QoS, Congestion Control &amp; Performance Tuning</h2>
+<p class="lede">Keeping the fabric fast and fair under load: priority classes, closed-loop throttling, re-routing and placement.</p>
+
+<div class="obj"><h4>By the end of this lesson you can</h4>
+<ul>
+  <li>Explain CHI QoS priority classes and how arbitration uses them.</li>
+  <li>Describe CBusy closed-loop throttling and why it raises throughput.</li>
+  <li>Explain hot-spot re-routing and its ordering caveat.</li>
+  <li>Reason about how node placement and channel width change latency and bandwidth.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>The problem: contention</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Roads jam. Two fixes. One: tell greedy CPU "memory busy, stop prefetching so hard" &mdash; fewer cars enter road. Two: when one crossroad jammed, send some cars around it. Also: important ambulance cars go first (QoS).</p></div>
+  <p>A 100+ core mesh under load is a queueing system, and an unmanaged queueing system collapses: everyone issues more requests, queues grow, latency explodes, useful throughput <i>falls</i>. CMN-700 has three answers &mdash; prioritise (QoS), reduce injection (CBusy), and spread the load (re-routing and placement).</p>
+</section>
+
+<section id="qos">
+  <h3><span class="n">2</span>QoS priority classes</h3>
+  <p>Every CHI transaction carries a <b>QoS priority value</b>. Arbitration points in the fabric &mdash; XP switching, home-node tracker allocation, memory-controller scheduling &mdash; use it to favour higher-priority traffic.</p>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-req"></span>Latency-critical flows</h6><p>Real-time or interactive traffic gets a high class so it isn't stuck behind bulk transfers.</p></div>
+    <div class="card"><h6><span class="dot b-dat"></span>Bulk / best-effort flows</h6><p>Large DMA copies and streaming get a lower class &mdash; they care about aggregate bandwidth, not per-request latency.</p></div>
+  </div>
+  <p>QoS alone does not create bandwidth; it decides <i>who waits</i>. That is why it pairs with the mechanisms below, which actually reduce or redistribute load.</p>
+</section>
+
+<section id="cbusy">
+  <h3><span class="n">3</span>CBusy &mdash; Completer Busy</h3>
+  <p><b>CBusy</b> (early material called it MemBusy) is closed-loop congestion feedback. When a completer &mdash; a memory controller or home node &mdash; is getting congested, that busy level is <b>signalled back to the requester</b>, and the core responds by <b>throttling</b>: reducing prefetcher aggressiveness and the number of outstanding transactions it keeps in flight.</p>
+  <div class="ascii-wrap"><div class="bar">Closed loop: congestion feeds back, injection drops</div>
+<pre class="ascii">   <span class="rnf">core / RN-F</span>                          <span class="hnf">HN-F</span> / <span class="snf">SN-F</span>
+        <span class="box">|</span>  requests + speculative prefetch      <span class="box">|</span>
+        <span class="box">|</span> <span class="req">--------------------------------&gt;</span>     <span class="box">|</span> queues filling
+        <span class="box">|</span>                                       <span class="box">|</span>
+        <span class="box">|</span> <span class="snp">&lt;----------- CBusy level ----------</span>     <span class="box">|</span>
+        <span class="box">▼</span>                                       <span class="box">|</span>
+   throttle prefetch + fewer outstanding txns
+        <span class="box">|</span>                                       <span class="box">|</span>
+        <span class="box">▼</span>  less speculative junk in the queues  <span class="box">▼</span>
+   <span class="cmt">queues drain -&gt; real demand requests get served faster</span>
+</pre></div>
+  <p>Counter-intuitive but important: <b>issuing fewer requests can make the system faster</b>, because speculative prefetches were displacing demand traffic. Arm reported an uplift of roughly <b>15%</b> from this mechanism on a Neoverse V1-class design.</p>
+  <p class="note">This is a strong interview answer because it shows you understand that fabric performance is about controlling offered load, not just widening pipes.</p>
+</section>
+
+<section id="reroute">
+  <h3><span class="n">4</span>Hot-spot re-routing</h3>
+  <p>Baseline routing is deterministic and dimension-ordered (Lesson 1). CMN-700 can detect a congested crosspoint or path and <b>temporarily steer traffic through alternative XPs</b> to relieve the jam.</p>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-rtr"></span>Benefit</h6><p>A single hot XP &mdash; often near a heavily used memory controller or gateway &mdash; stops throttling the whole region.</p></div>
+    <div class="card"><h6><span class="dot b-rtr"></span>Caveat</h6><p>Alternative paths mean packets can arrive out of the deterministic order, so re-routing is applied carefully and only where ordering rules permit.</p></div>
+  </div>
+  <p>Mentioning that caveat unprompted is a good signal: adaptive routing always trades ordering guarantees for load balance.</p>
+</section>
+
+<section id="width">
+  <h3><span class="n">5</span>Bandwidth levers</h3>
+  <table>
+    <tr><th>Lever</th><th>Effect</th></tr>
+    <tr><td><b>Double mesh channel</b></td><td>Second 256-bit data pair &#8594; effectively 512-bit DAT per direction. The main knob for data-hungry designs.</td></tr>
+    <tr><td><b>Mesh dimensions</b></td><td>More links crossing the midline &#8594; higher cross-sectional bandwidth, but longer average paths.</td></tr>
+    <tr><td><b>Frequency</b></td><td>Linear in bandwidth; constrained by physical design.</td></tr>
+    <tr><td><b>More HN-F slices</b></td><td>More parallel coherency engines and SLC capacity; more places for hashing to spread load.</td></tr>
+    <tr><td><b>More SN-F</b></td><td>More memory channels; MC SAM interleaving spreads demand across them.</td></tr>
+  </table>
+  <p>A full 12&times;12 mesh at roughly 2 GHz with the double-width data channel reaches about <b>3.07 TB/s</b> cross-sectional bandwidth &mdash; a useful anchor number.</p>
+</section>
+
+<section id="place">
+  <h3><span class="n">6</span>Placement: the free latency win</h3>
+  <p>Since latency tracks hop count, <i>where</i> you put things is a first-order design decision:</p>
+  <ul class="tight">
+    <li><b>Memory controllers on the edges</b>, near their PHYs &mdash; physically necessary, and it keeps the interior free for compute.</li>
+    <li><b>Home nodes spread through the interior</b>, so the average distance from any core to its home node is small and no region is starved of coherency throughput.</li>
+    <li><b>Gateways (CCG) at the edge</b>, near the chip-to-chip PHYs.</li>
+    <li><b>Latency-sensitive accelerators close to the memory or cores they pair with</b>, rather than diagonally opposite them.</li>
+  </ul>
+  <div class="ascii-wrap"><div class="bar">Typical placement intuition</div>
+<pre class="ascii">   <span class="snf">SN-F</span>  <span class="snf">SN-F</span>  <span class="snf">SN-F</span>  <span class="snf">SN-F</span>      <span class="cmt">memory hugs the edge (PHYs)</span>
+    <span class="box">|</span>     <span class="box">|</span>     <span class="box">|</span>     <span class="box">|</span>
+   <span class="rtr">XP</span>----<span class="rtr">XP</span>----<span class="rtr">XP</span>----<span class="rtr">XP</span>
+    <span class="box">|</span>     <span class="box">|</span>     <span class="box">|</span>     <span class="box">|</span>
+   <span class="hnf">HN-F</span>  <span class="rnf">RN-F</span>  <span class="hnf">HN-F</span>  <span class="rnf">RN-F</span>     <span class="cmt">homes interleaved with compute,</span>
+    <span class="box">|</span>     <span class="box">|</span>     <span class="box">|</span>     <span class="box">|</span>            <span class="cmt">so no core is far from a home</span>
+   <span class="rtr">XP</span>----<span class="rtr">XP</span>----<span class="rtr">XP</span>----<span class="rtr">XP</span>
+    <span class="box">|</span>     <span class="box">|</span>     <span class="box">|</span>     <span class="box">|</span>
+   <span class="rnf">RN-F</span>  <span class="hnf">HN-F</span>  <span class="rnf">RN-F</span>  <span class="rnf">RN-I</span>     <span class="cmt">IO / gateways toward the edge</span>
+</pre></div>
+</section>
+
+<section id="playbook">
+  <h3><span class="n">7</span>A tuning playbook</h3>
+  <table>
+    <tr><th>Symptom</th><th>Likely cause</th><th>Lever</th></tr>
+    <tr><td>One HN-F far busier than peers</td><td>Poor address hashing / coarse interleave</td><td>Retune hash &amp; interleave granularity (L5).</td></tr>
+    <tr><td>One XP hot, neighbours idle</td><td>Traffic funnelling through a choke point</td><td>Placement change; hot-spot re-routing.</td></tr>
+    <tr><td>Latency rises sharply with load</td><td>Queue build-up from speculative traffic</td><td>CBusy throttling; prefetcher tuning.</td></tr>
+    <tr><td>Bandwidth plateaus below expectation</td><td>Data channel or memory channels saturated</td><td>Double mesh channel; more SN-F / interleaving.</td></tr>
+    <tr><td>Critical flow suffers under bulk load</td><td>No prioritisation</td><td>Assign QoS classes.</td></tr>
+    <tr><td>Unexplained extra misses</td><td>Snoop filter too small</td><td>Resize SF (L4).</td></tr>
+  </table>
+  <p class="note">This table is worth memorising &mdash; it converts "do you know the features" into "can you use them", which is what senior interviews probe.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">8</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="CBusy feeds completer congestion back so the core throttles prefetch and outstanding transactions.">
+    <div class="q">1. CBusy works by&hellip;</div>
+    <button class="opt">widening the DAT channel under load.</button>
+    <button class="opt">dropping low-priority packets.</button>
+    <button class="opt">signalling completer congestion back so requesters throttle prefetch and outstanding transactions.</button>
+    <button class="opt">rerouting traffic around hot crosspoints.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Fewer speculative requests leaves queue capacity for demand traffic, so useful throughput rises.">
+    <div class="q">2. Why can issuing fewer requests increase performance?</div>
+    <button class="opt">Speculative prefetches stop displacing demand traffic in the queues.</button>
+    <button class="opt">The mesh clock increases.</button>
+    <button class="opt">Coherency is skipped.</button>
+    <button class="opt">Cache lines get larger.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="Alternative paths can disturb the deterministic arrival order, so re-routing must respect ordering rules.">
+    <div class="q">3. The main caveat of hot-spot re-routing is&hellip;</div>
+    <button class="opt">it needs a second mesh.</button>
+    <button class="opt">alternative paths can perturb deterministic ordering.</button>
+    <button class="opt">it disables the snoop filter.</button>
+    <button class="opt">it only works on the SNP channel.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="An imbalanced hash piles a hot region onto one home node; retuning interleave spreads it.">
+    <div class="q">4. One HN-F is far busier than its peers. First thing to suspect?</div>
+    <button class="opt">The DTC is misconfigured.</button>
+    <button class="opt">The double mesh channel is disabled.</button>
+    <button class="opt">RAS errors.</button>
+    <button class="opt">Address hashing / interleave granularity is unbalanced.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">9</span>Interview Q&amp;A</h3>
+  <details><summary>How does the fabric handle congestion?</summary><div class="ans">Three complementary mechanisms. QoS priority classes decide who waits at arbitration points. CBusy is closed-loop feedback: completer congestion is signalled back so cores throttle prefetching and outstanding transactions, which drains queues and raises useful throughput (Arm cited around 15% on a V1-class design). Hot-spot re-routing temporarily steers traffic around a congested crosspoint, subject to ordering constraints.</div></details>
+  <details><summary>How would node placement change performance?</summary><div class="ans">Latency tracks hop count, so placement sets the average distance between cores, home nodes and memory. Memory controllers sit at the edges near their PHYs; home nodes are spread through the interior so no core is far from its home; gateways go near the chip-to-chip PHYs. Bad placement creates choke points where traffic funnels through a few crosspoints.</div></details>
+  <details><summary>What are the levers for more bandwidth?</summary><div class="ans">Enable the double mesh channel (256 to effectively 512-bit DAT), grow mesh dimensions for more midline links, raise frequency, add HN-F slices for more parallel coherency engines and SLC capacity, and add SN-F memory channels with good MC SAM interleaving. A full 12x12 at about 2 GHz with double-width data reaches roughly 3 TB/s cross-sectional.</div></details>
+  <details><summary>QoS versus congestion control &mdash; what is the difference?</summary><div class="ans">QoS is allocation under scarcity: it decides which traffic wins at arbitration, but it does not reduce total load. Congestion control (CBusy) reduces the offered load, and re-routing redistributes it. You generally need all three: prioritise, reduce, and spread.</div></details>
+  <details><summary>Latency degrades badly at high load. How do you investigate?</summary><div class="ans">Use the PMU to find whether one home node or crosspoint is disproportionately hot. If a single HN-F is hot, suspect address hashing or interleave granularity. If a single XP is hot, suspect placement or a funnelling path. If everything is uniformly saturated, look at offered load and whether prefetch throttling is engaging, and at whether the data channel or memory channels are the true limit.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">10</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li><b>QoS classes</b> prioritise at arbitration but create no bandwidth.</li>
+    <li><b>CBusy</b> feeds completer congestion back &#8594; core throttles prefetch and outstanding transactions (~15% uplift reported).</li>
+    <li><b>Hot-spot re-routing</b> spreads load around congested XPs, with an ordering caveat.</li>
+    <li>Bandwidth levers: double mesh channel, mesh size, frequency, more HN-F / SN-F.</li>
+    <li>Placement is a first-order latency decision: memory at edges, homes spread through the interior.</li>
+  </ul>
+  <div class="chips"><span class="chip">QoS class</span><span class="chip">CBusy / MemBusy</span><span class="chip">prefetch throttling</span><span class="chip">hot-spot re-routing</span><span class="chip">cross-sectional BW</span><span class="chip">double mesh channel</span><span class="chip">placement</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson06_coherency_flows.html">◄ L6 &middot; Coherency flows</a>
+  <a href="cmn700_lesson08_multichip.html">L8 &middot; Multichip ►</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L8): scaling coherency beyond one die — CML, the CCG gateway internals, CXS-B, CXL versus CCIX.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

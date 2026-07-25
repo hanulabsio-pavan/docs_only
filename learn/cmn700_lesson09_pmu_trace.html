@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 . Lesson 9 - Observability - PMU, DTC/DTM, Debug and Trace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 &middot; LESSON 09</div>
+  <h1>Observability — PMU, DTC/DTM, Debug &amp; Trace</h1>
+  <a href="#why">Why observability</a>
+  <a href="#arch">PMU architecture</a>
+  <a href="#dtm">DTM per XP</a>
+  <a href="#dtc">DTC in HN-D</a>
+  <a href="#wp">Watchpoints</a>
+  <a href="#linux">Linux arm_cmn</a>
+  <a href="#playbook">Debug playbook</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Phase D &middot; Integration &amp; ops &middot; Lesson 9 of 10</div>
+<h2 class="title">Observability — PMU, DTC/DTM, Debug &amp; Trace</h2>
+<p class="lede">How the mesh is instrumented, and the method for turning a vague performance complaint into a root cause.</p>
+
+<div class="obj"><h4>By the end of this lesson you can</h4>
+<ul>
+  <li>Describe the distributed PMU: DTM at every XP, DTC in the HN-D.</li>
+  <li>Explain watchpoints with flit match/mask and channel/device selection.</li>
+  <li>Use the mental model behind the Linux <code>arm_cmn</code> PMU.</li>
+  <li>Run a structured playbook from symptom to hot node to root cause.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>You cannot tune what you cannot see</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Put little counter at every crossroad (<b>DTM</b>). One boss counter (<b>DTC</b>) add them up, write logbook with timestamps. Now you see which road jammed, which home node overworked. Without this, tuning is guessing.</p></div>
+  <p>Lessons 5 and 7 kept saying "retune the hash" and "find the hot crosspoint". This lesson is how you actually find them. For performance and validation roles this is often the <i>most</i> important lesson in the course, because it is the part you use daily.</p>
+</section>
+
+<section id="arch">
+  <h3><span class="n">2</span>A two-level distributed PMU</h3>
+  <p>CMN-700 does not have one central performance counter block. It has a small monitor at <b>every crosspoint</b> plus one <b>global controller</b>, which is the only way to observe a mesh this large without a bottleneck.</p>
+  <div class="ascii-wrap"><div class="bar">DTMs everywhere, one DTC to aggregate</div>
+<pre class="ascii">   <span class="rtr">XP</span>+<span class="hnf">DTM</span>   <span class="rtr">XP</span>+<span class="hnf">DTM</span>   <span class="rtr">XP</span>+<span class="hnf">DTM</span>   <span class="rtr">XP</span>+<span class="hnf">DTM</span>
+      <span class="box">|</span>         <span class="box">|</span>         <span class="box">|</span>         <span class="box">|</span>
+      <span class="box">+---------+----+----+---------+</span>
+                     <span class="box">|</span>  overflow / events
+                     <span class="box">▼</span>
+                <span class="hnf">DTC</span> (in <span class="hnf">HN-D</span>)
+                 <span class="box">|</span>  up to 8 global counters
+                 <span class="box">|</span>  overflow interrupts
+                 <span class="box">▼</span>
+             timestamped trace out via <span class="dat">ATB</span>
+</pre></div>
+</section>
+
+<section id="dtm">
+  <h3><span class="n">3</span>DTM &mdash; Debug and Trace Monitor</h3>
+  <p>One DTM sits at <b>every XP</b>. Each can count up to <b>4 local event signals</b> and can also match traffic with watchpoints. Because it is local, it sees exactly what passes through that crosspoint and its device ports &mdash; which is precisely the granularity you need to localise a hot spot.</p>
+  <ul class="tight">
+    <li>Up to 4 local event counters per XP.</li>
+    <li>Watchpoint match/mask on flits, for both upload and download directions.</li>
+    <li>Can be aggregated by node type, or targeted to a specific node.</li>
+  </ul>
+</section>
+
+<section id="dtc">
+  <h3><span class="n">4</span>DTC &mdash; Debug and Trace Controller</h3>
+  <p>The DTC lives in the <b>HN-D</b> (the mandatory node from Lesson 2 &mdash; this is one of its jobs). It provides global PMU control and aggregation:</p>
+  <table>
+    <tr><th>Function</th><th>Detail</th></tr>
+    <tr><td>Global counters</td><td>Aggregates DTM events and overflows into up to <b>8 global counters</b>.</td></tr>
+    <tr><td>Interrupts</td><td>Raises overflow interrupts so software can sample without polling.</td></tr>
+    <tr><td>Trace output</td><td>Emits <b>timestamped trace</b> off-chip or to a buffer via <b>ATB</b> (Arm Trace Bus).</td></tr>
+    <tr><td>Control</td><td>Global enable/disable, so all DTMs start and stop coherently for a valid measurement window.</td></tr>
+  </table>
+  <p class="note">That last point matters more than it sounds: counters started at different times produce numbers that cannot be compared. Global control is what makes the measurement trustworthy.</p>
+</section>
+
+<section id="wp">
+  <h3><span class="n">5</span>Watchpoints: match and mask</h3>
+  <p>Raw mesh traffic is far too much to record. A <b>watchpoint</b> filters it: you specify a <b>value and a mask</b> over flit fields, plus which <b>channel</b> and which <b>device / direction</b> to observe, and only matching flits are counted or traced.</p>
+  <div class="ascii-wrap"><div class="bar">Watchpoint = value + mask + channel + direction</div>
+<pre class="ascii">   flit fields  ......  <span class="cmt">(source, target, opcode, addr, QoS ...)</span>
+        <span class="box">|</span>
+        <span class="box">▼</span>
+   compare against  <span class="req">value</span>  under  <span class="snp">mask</span>     <span class="cmt">mask = "don't care" bits</span>
+        <span class="box">|</span>
+        <span class="box">+--</span> channel select   (<span class="req">REQ</span>/<span class="rsp">RSP</span>/<span class="snp">SNP</span>/<span class="dat">DAT</span>)
+        <span class="box">+--</span> device / direction (upload / download)
+        <span class="box">▼</span>
+   match -&gt; count it and/or emit trace
+</pre></div>
+  <p>This is how you answer questions like "how many snoops target this specific RN-F?" or "which requester is generating traffic to this address region?" without drowning in data.</p>
+</section>
+
+<section id="linux">
+  <h3><span class="n">6</span>The software view: Linux <code>arm_cmn</code></h3>
+  <p>Linux exposes this hardware as a normal perf PMU named <span class="kbd">arm_cmn_0</span>, with one PMU instance per mesh (<span class="kbd">arm_cmn_1</span> and upward for additional linked meshes). Events can be aggregated across all nodes of a type, or targeted to one node by its <code>nodeid</code> &mdash; which is exactly the coordinate-based node ID from Lesson 1.</p>
+  <p>The practical loop is: measure aggregate first to see <i>whether</i> there is an imbalance, then target specific nodes to see <i>where</i> it is.</p>
+</section>
+
+<section id="playbook">
+  <h3><span class="n">7</span>Debug playbook: symptom to root cause</h3>
+  <table>
+    <tr><th>Step</th><th>What you do</th><th>What it tells you</th></tr>
+    <tr><td>1. Characterise</td><td>Measure aggregate bandwidth and latency versus offered load.</td><td>Is this saturation, or an imbalance at low load?</td></tr>
+    <tr><td>2. Find the hot node</td><td>Per-HN-F and per-XP event counts.</td><td>One home node or crosspoint far above peers, or uniform load.</td></tr>
+    <tr><td>3. Classify</td><td>Hot HN-F &#8594; hashing/interleave. Hot XP &#8594; placement/funnelling. Uniform &#8594; genuine capacity limit.</td><td>Which lever from Lesson 7 applies.</td></tr>
+    <tr><td>4. Check the caches</td><td>SLC hit rate, snoop-filter back-invalidations.</td><td>Whether the SF is undersized (Lesson 4).</td></tr>
+    <tr><td>5. Check throttling</td><td>Whether CBusy throttling is engaging, and prefetch behaviour.</td><td>Whether speculative traffic is displacing demand traffic.</td></tr>
+    <tr><td>6. Zoom in</td><td>Watchpoints on the suspect channel / node / address range.</td><td>Exactly which flows cause it.</td></tr>
+    <tr><td>7. Change one thing</td><td>Re-measure with the same global window.</td><td>Whether the fix is real.</td></tr>
+  </table>
+  <p>Being able to recite a sequence like this is often worth more in an interview than any single feature fact, because it demonstrates method rather than memory.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">8</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="A DTM sits at every crosspoint; the DTC lives in the HN-D and aggregates globally.">
+    <div class="q">1. Where do the DTM and DTC live?</div>
+    <button class="opt">Both in every HN-F.</button>
+    <button class="opt">DTM in the HN-D, DTC at every XP.</button>
+    <button class="opt">DTM at every XP, DTC in the HN-D.</button>
+    <button class="opt">Both in the memory controller.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Watchpoints match flits using a value plus mask, filtered by channel and device/direction.">
+    <div class="q">2. A watchpoint filters traffic using&hellip;</div>
+    <button class="opt">a value and mask over flit fields, plus channel and device/direction selection.</button>
+    <button class="opt">the SLC hit rate only.</button>
+    <button class="opt">a fixed list of addresses in the DTC.</button>
+    <button class="opt">the QoS class exclusively.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="Global control ensures all DTMs count over the same window, so numbers are comparable.">
+    <div class="q">3. Why does the DTC provide global enable/disable?</div>
+    <button class="opt">To reduce power in the XPs.</button>
+    <button class="opt">So all DTMs count over the same window, making measurements comparable.</button>
+    <button class="opt">To reroute congested traffic.</button>
+    <button class="opt">To program the SAM.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="One home node far hotter than its peers points at address hashing or interleave granularity.">
+    <div class="q">4. Counters show one HN-F at triple the traffic of its peers. Most likely cause?</div>
+    <button class="opt">The DTC is saturated.</button>
+    <button class="opt">The trace buffer overflowed.</button>
+    <button class="opt">The double mesh channel is disabled.</button>
+    <button class="opt">Address hashing / interleave granularity is unbalanced.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">9</span>Interview Q&amp;A</h3>
+  <details><summary>How would you debug a bandwidth problem on the mesh?</summary><div class="ans">Use the distributed PMU. Per-XP DTMs count up to four local events each and support watchpoints that match flits by value and mask with channel and device selection; the DTC in the HN-D aggregates into up to eight global counters, raises overflow interrupts, and emits timestamped trace over ATB. In Linux this is the arm_cmn PMU. Method: characterise bandwidth versus load, find whether one home node or crosspoint is disproportionately hot, classify it as a hashing problem, a placement problem, or genuine saturation, check SLC hit rate and snoop-filter back-invalidations, check whether CBusy throttling is engaging, then zoom in with watchpoints and change one variable at a time.</div></details>
+  <details><summary>Why is the PMU distributed rather than central?</summary><div class="ans">A mesh can have up to 144 crosspoints, and funnelling all event traffic to one central block would be both a bandwidth bottleneck and a source of measurement distortion. Local DTMs observe exactly what passes through their crosspoint, which is also the granularity you need to localise a hot spot; the DTC only needs to aggregate and control.</div></details>
+  <details><summary>What is the DTC's role beyond counting?</summary><div class="ans">Global control and output. It aggregates DTM events and overflows into up to eight global counters, raises overflow interrupts so software can sample without polling, emits timestamped trace via ATB, and provides coherent global enable and disable so every DTM measures over the same window. Without that last function the counters would not be comparable.</div></details>
+  <details><summary>How do you observe just one node?</summary><div class="ans">Events can be aggregated across all nodes of a type or targeted at a specific node using its nodeid, which is the coordinate-based node ID that encodes the crosspoint position plus port and device. In practice you measure aggregate first to detect imbalance, then target individual nodes to locate it.</div></details>
+  <details><summary>Why do watchpoints matter?</summary><div class="ans">Raw mesh traffic is far too voluminous to record. Watchpoints reduce it to the flows you care about by matching flit fields against a value under a mask, restricted to a channel and a device or direction. That is what makes questions like "how many snoops target this requester" or "which agent drives traffic to this address region" answerable.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">10</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li><b>DTM</b> at every XP: up to 4 local events, watchpoints, upload/download.</li>
+    <li><b>DTC</b> in the HN-D: up to 8 global counters, overflow interrupts, timestamped <b>ATB</b> trace, global enable.</li>
+    <li><b>Watchpoint</b> = value + mask over flit fields, plus channel and device/direction.</li>
+    <li>Linux exposes it as <span class="kbd">arm_cmn_0</span> (one per mesh); target nodes via <code>nodeid</code>.</li>
+    <li>Playbook: characterise &#8594; find hot node &#8594; classify &#8594; check caches &#8594; check throttling &#8594; zoom in &#8594; change one thing.</li>
+  </ul>
+  <div class="chips"><span class="chip">DTM</span><span class="chip">DTC</span><span class="chip">watchpoint</span><span class="chip">match / mask</span><span class="chip">ATB trace</span><span class="chip">global counter</span><span class="chip">arm_cmn</span><span class="chip">nodeid</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson08_multichip.html">◄ L8 &middot; Multichip</a>
+  <a href="cmn700_lesson10_integration_capstone.html">L10 &middot; Integration &amp; capstone ►</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L10): MPAM, RAS, power, bring-up — then the capstone whiteboard and a full mock interview.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>
