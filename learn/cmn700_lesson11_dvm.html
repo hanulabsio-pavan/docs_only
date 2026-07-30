@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 . Lesson 11 - DVM Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 &middot; LESSON 11</div>
+  <h1>DVM &mdash; Distributed Virtual Memory &amp; TLB Maintenance</h1>
+  <a href="#why">Why DVM is different</a>
+  <a href="#what">What DVM covers</a>
+  <a href="#players">DN, RN-D, receivers</a>
+  <a href="#twopart">Two-part messaging</a>
+  <a href="#flow">Walk: a TLBI</a>
+  <a href="#sync">Sync &amp; completion</a>
+  <a href="#scale">The scaling problem</a>
+  <a href="#contrast">Contrast with address traffic</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Gap remediation &middot; Lesson 11 &mdash; added after gap analysis</div>
+<h2 class="title">DVM &mdash; Distributed Virtual Memory &amp; TLB Maintenance</h2>
+<p class="lede">The one coherency mechanism that is not address-based &mdash; and therefore the one that scales differently. Commonly probed, and previously the course's largest gap.</p>
+
+<div class="obj"><h4>By the end of this lesson you can</h4>
+<ul>
+  <li>Explain what DVM operations are and which maintenance classes they cover.</li>
+  <li>Name the players: the DVM node (DN) in the HN-D, RN-D requesters, and which agents receive DVM.</li>
+  <li>Walk a TLB invalidate end to end, including the two-part message structure and the sync.</li>
+  <li>Explain why DVM scales differently from address-based traffic &mdash; the point interviewers probe.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>Why DVM does not fit the rest of the course</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>All other traffic so far: "here is an <b>address</b>, hash it, find the one home node that owns it." DVM different. DVM say "everyone who caches translation info, throw it away." No single owner. Must reach <i>many</i> agents. So it not hashed &mdash; it go to one special node that broadcasts. Different shape, different scaling problem.</p></div>
+  <p>Every mechanism in Lessons 3 to 8 is <b>address-based</b>: the SAM hashes an address to exactly one home node, and that home node is the single point of ordering. DVM breaks that model. A TLB invalidate is not a request about one cache line that one home owns &mdash; it is a maintenance operation that must reach <b>every agent holding translation state</b>.</p>
+  <p>That structural difference is exactly why DVM is a good interview question: it tests whether you understand the coherency model or have merely memorised the address path.</p>
+</section>
+
+<section id="what">
+  <h3><span class="n">2</span>What DVM operations cover</h3>
+  <p><b>DVM</b> stands for <b>Distributed Virtual Memory</b>. DVM operations are the messages that keep virtual-memory and instruction-fetch state consistent across a system where many agents cache translations and instructions independently.</p>
+  <table>
+    <tr><th>Class</th><th>Purpose</th></tr>
+    <tr><td><b>TLB invalidate</b> (TLBI)</td><td>The important one. Software changed a page table entry, so every cached translation of that mapping must be discarded. Can be scoped &mdash; by address, by ASID (address space), by VMID (virtual machine), or all.</td></tr>
+    <tr><td><b>Instruction cache invalidate</b></td><td>Self-modifying or newly loaded code means stale instructions must be dropped.</td></tr>
+    <tr><td><b>Branch predictor invalidate</b></td><td>Discard predictor state associated with changed code.</td></tr>
+    <tr><td><b>Sync</b></td><td>Not a maintenance action itself &mdash; a barrier. It completes only once prior DVM operations have completed everywhere, so software knows the maintenance has actually taken effect.</td></tr>
+  </table>
+  <p>The architectural driver: an Arm core executes a <code>TLBI</code> instruction, and the architecture requires that after the corresponding barrier, no agent in the system is still using the stale translation. The interconnect is what makes that guarantee real.</p>
+</section>
+
+<section id="players">
+  <h3><span class="n">3</span>The players in CMN-700</h3>
+  <table>
+    <tr><th>Player</th><th>Role</th></tr>
+    <tr><td><b>DVM node (DN)</b></td><td>Lives in the <b>HN-D</b>. This is the ordering and distribution point for DVM: it receives DVM requests and issues the corresponding DVM snoops to the agents that must act on them. It plays for DVM the role an HN-F plays for an address.</td></tr>
+    <tr><td><b>RN-D</b></td><td>The request-node variant that <b>supports DVM</b>. Recall from Lesson 2: RN-D is an RN-I that additionally handles DVM. An I/O agent with its own translation cache needs this.</td></tr>
+    <tr><td><b>RN-F (via DSU)</b></td><td>CPU clusters hold TLBs and instruction caches, so they are DVM <b>receivers</b> &mdash; they act on DVM snoops and respond when done.</td></tr>
+  </table>
+  <div class="card" style="border-left:3px solid var(--hnf)">
+    <h6><span class="dot b-hnf"></span>This is the third job of the HN-D</h6>
+    <p>Lesson 2 said the HN-D carries the CFG node, the DTC and the DVM node. Lesson 9 covered the DTC; Lesson 10 covered configuration. The DN is the remaining piece &mdash; and it is another reason the HN-D is mandatory in every mesh.</p>
+  </div>
+  <p class="note">Agents that hold no translation or instruction state do not need to participate. Whether a given configuration has one DN or supports more than one for scaling is a configuration detail &mdash; confirm against the TRM for your target release before asserting a number.</p>
+</section>
+
+<section id="twopart">
+  <h3><span class="n">4</span>Two-part messaging &mdash; the detail worth knowing</h3>
+  <p>A DVM operation carries more information than an ordinary request: not just an address, but context such as ASID, VMID, exception level and operation scope. That payload does not fit the space available in a single snoop message.</p>
+  <p>CHI therefore splits a non-sync DVM operation into <b>two parts</b>, sent as two messages that the receiver reassembles before acting.</p>
+  <div class="ascii-wrap"><div class="bar">A DVM operation arrives as two parts, then is acted on</div>
+<pre class="ascii">   <span class="hnf">DN</span> (in HN-D)                     receiver (<span class="rnf">RN-F</span> / <span class="rnf">RN-D</span>)
+      <span class="box">|</span>   <span class="snp">DVM snoop, part 1</span>              <span class="box">|</span>
+      <span class="box">|</span> <span class="snp">------------------------------&gt;</span>  <span class="box">|</span>  hold, incomplete
+      <span class="box">|</span>   <span class="snp">DVM snoop, part 2</span>              <span class="box">|</span>
+      <span class="box">|</span> <span class="snp">------------------------------&gt;</span>  <span class="box">|</span>  reassemble -&gt; act
+      <span class="box">|</span>                                   <span class="box">|</span>  invalidate TLB entries
+      <span class="box">|</span>   <span class="rsp">response (done)</span>                <span class="box">|</span>
+      <span class="box">|</span> <span class="rsp">&lt;------------------------------</span>  <span class="box">|</span>
+   <span class="cmt">sync operations are the exception - they are single-part</span>
+</pre></div>
+  <p>Why care? Because it explains a real hardware consequence: a receiver must buffer part one while waiting for part two, and the two parts must not be interleaved with another DVM operation's parts. That is a concrete ordering requirement, and being able to state it signals you have gone past the summary level.</p>
+</section>
+
+<section id="flow">
+  <h3><span class="n">5</span>Walk: a TLB invalidate across the system</h3>
+  <p>Software on one core updates a page table entry and must ensure nobody uses the stale translation.</p>
+  <div class="ascii-wrap"><div class="bar">TLBI: core -&gt; DN -&gt; all translation-holding agents -&gt; back</div>
+<pre class="ascii">  <span class="rnf">RN-F (initiator)</span>        <span class="hnf">DN (HN-D)</span>        <span class="rnf">RN-F #2</span>  <span class="rnf">RN-F #3</span>  <span class="rnf">RN-D</span>
+        <span class="box">|</span>                        <span class="box">|</span>                 <span class="box">|</span>        <span class="box">|</span>        <span class="box">|</span>
+   1. <span class="req">DVM request (TLBI)</span>        <span class="box">|</span>                 <span class="box">|</span>        <span class="box">|</span>        <span class="box">|</span>
+        <span class="req">--------------------&gt;</span>       <span class="box">|</span>                 <span class="box">|</span>        <span class="box">|</span>        <span class="box">|</span>
+        <span class="box">|</span>            2. DN orders it                  <span class="box">|</span>        <span class="box">|</span>
+        <span class="box">|</span>                        <span class="box">|</span> <span class="snp">3. DVM snoops (x2 parts each)</span>
+        <span class="box">|</span>                        <span class="snp">------------------&gt;</span>       <span class="box">|</span>        <span class="box">|</span>
+        <span class="box">|</span>                        <span class="snp">---------------------------&gt;</span>       <span class="box">|</span>
+        <span class="box">|</span>                        <span class="snp">------------------------------------&gt;</span>
+        <span class="box">|</span>                        <span class="box">|</span>   each invalidates matching entries
+        <span class="box">|</span>                        <span class="box">|</span> <span class="rsp">4. responses collected</span>
+        <span class="box">|</span>                        <span class="rsp">&lt;--------------------------------------</span>
+   5. <span class="rsp">completion to initiator</span>  <span class="box">|</span>
+        <span class="rsp">&lt;--------------------</span>       <span class="box">|</span>
+  <span class="cmt">6. a later DVM sync completes only after all of the above have completed</span>
+</pre></div>
+  <p>Note what is <i>not</i> happening: no SAM hash, no HN-F, no snoop filter narrowing the recipient list by address. The DN must reach every agent that could hold the translation, because there is no directory of "who cached which translation" the way there is for cache lines.</p>
+</section>
+
+<section id="sync">
+  <h3><span class="n">6</span>Sync and completion &mdash; what the barrier waits for</h3>
+  <p>Maintenance is only useful if software can know it has taken effect. That is the sync operation's job.</p>
+  <ul class="tight">
+    <li>An individual DVM operation completes back to its initiator once the system has accepted responsibility for it.</li>
+    <li>A <b>DVM sync</b> completes only once <b>prior DVM operations have completed across all participating agents</b>. It is the point at which the stale translation is guaranteed to be unused system-wide.</li>
+    <li>This is why a TLBI in software is followed by a barrier: the barrier is what turns "I sent the invalidate" into "the invalidate has landed everywhere."</li>
+  </ul>
+  <p class="note">Interview-ready framing: the DVM operation does the work, the sync provides the guarantee. Conflating the two is the common mistake.</p>
+</section>
+
+<section id="scale">
+  <h3><span class="n">7</span>The scaling problem</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Cache-line snoop: filter say "only cache #2 has it" &#8594; one message. TLBI: no filter exist &#8594; must tell everybody. 128 cores = many messages, and sync wait for slowest one. So DVM cost grow with core count in way normal traffic does not.</p></div>
+  <p>Here is the crux, and the thing to say unprompted:</p>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-snp"></span>Address traffic scales well</h6><p>The snoop filter narrows recipients to actual sharers, so snoop traffic tracks <i>real sharing</i>, not core count. Address hashing spreads load across many home nodes working in parallel.</p></div>
+    <div class="card"><h6><span class="dot b-snp"></span>DVM scales poorly</h6><p>There is no directory of cached translations, so distribution is broadcast-natured. Cost grows with the number of participating agents, and a sync is bounded by the <b>slowest</b> responder.</p></div>
+  </div>
+  <p>Consequences a system architect should be able to name:</p>
+  <ul class="tight">
+    <li>The DN is a <b>serialization point</b> for DVM, so a DVM-heavy workload can queue behind itself in a way address traffic does not.</li>
+    <li>A sync is a <b>convoy</b>: it waits on every participant, so one slow or busy agent sets the latency.</li>
+    <li>Software mitigations matter &mdash; using the narrowest possible TLBI scope (by ASID or VMID rather than invalidating everything), and batching maintenance so one sync covers several operations rather than syncing after each.</li>
+    <li>This is why heavy page-table churn &mdash; certain virtualisation and JIT patterns &mdash; can look like an interconnect problem when it is really a DVM-rate problem.</li>
+  </ul>
+</section>
+
+<section id="contrast">
+  <h3><span class="n">8</span>Side by side with address-based traffic</h3>
+  <table>
+    <tr><th></th><th>Address-based (read/write/snoop)</th><th>DVM (maintenance)</th></tr>
+    <tr><td>Routed by</td><td>SAM hash of the physical address</td><td>Sent to the DVM node in the HN-D</td></tr>
+    <tr><td>Ordering point</td><td>The owning HN-F</td><td>The DN</td></tr>
+    <tr><td>Recipients</td><td>Narrowed by the snoop filter to actual sharers</td><td>All agents holding translation / instruction state</td></tr>
+    <tr><td>Parallelism</td><td>High &mdash; many home nodes in parallel</td><td>Low &mdash; a single distribution point</td></tr>
+    <tr><td>Message shape</td><td>One request message</td><td>Two-part messages (sync excepted)</td></tr>
+    <tr><td>Scaling with cores</td><td>Tracks real sharing</td><td>Tracks participant count; sync bounded by slowest</td></tr>
+  </table>
+  <p>If you can produce this contrast on a whiteboard, you have demonstrated the thing the question is actually testing.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">9</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="The DVM node lives in the HN-D, which is why every mesh needs one.">
+    <div class="q">1. Where does the DVM node (DN) live?</div>
+    <button class="opt">In every HN-F.</button>
+    <button class="opt">In the memory controller.</button>
+    <button class="opt">In the HN-D.</button>
+    <button class="opt">In every XP alongside the DTM.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="DVM context (ASID, VMID, scope) exceeds one message, so non-sync operations are sent as two parts and reassembled.">
+    <div class="q">2. Why are non-sync DVM operations sent as two parts?</div>
+    <button class="opt">To duplicate them for reliability.</button>
+    <button class="opt">The operation's context exceeds what one message can carry, so it is split and reassembled.</button>
+    <button class="opt">One part goes to caches, one to memory.</button>
+    <button class="opt">To let them be routed on two different channels.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="There is no directory of cached translations, so distribution is broadcast-natured and a sync waits on the slowest responder.">
+    <div class="q">3. Why does DVM scale worse than address-based coherency traffic?</div>
+    <button class="opt">No directory of cached translations exists, so it must reach all participants, and sync waits on the slowest.</button>
+    <button class="opt">DVM messages are larger than data flits.</button>
+    <button class="opt">DVM uses the DAT channel, which is congested.</button>
+    <button class="opt">DVM cannot use credited links.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="The sync is the barrier: it completes only once prior DVM operations have completed everywhere.">
+    <div class="q">4. What does a DVM sync guarantee?</div>
+    <button class="opt">That the page table has been written to DRAM.</button>
+    <button class="opt">That the SLC has been flushed.</button>
+    <button class="opt">That the snoop filter has been resized.</button>
+    <button class="opt">That prior DVM operations have completed across all participating agents.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="RN-D is the RN-I variant that supports DVM \u2014 needed by I/O agents with their own translation caches.">
+    <div class="q">5. Which request-node variant supports DVM?</div>
+    <button class="opt">RN-F only.</button>
+    <button class="opt">RN-D.</button>
+    <button class="opt">SN-F.</button>
+    <button class="opt">HN-P.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">10</span>Interview Q&amp;A</h3>
+  <details><summary>How does a TLB invalidate on one core reach every other MMU in the system?</summary><div class="ans">The initiating agent issues a DVM request, which goes to the DVM node in the HN-D rather than being hashed to an address-owning home node. The DN orders it and issues DVM snoops to every agent that holds translation state &mdash; CPU clusters via their RN-F, and I/O agents with translation caches via RN-D. Each non-sync operation arrives as two messages that the receiver reassembles before acting, then responds. A subsequent DVM sync completes only once all of those have completed, which is what makes the guarantee architecturally visible to software.</div></details>
+  <details><summary>What is the difference between a DVM operation and a DVM sync?</summary><div class="ans">The operation does the maintenance &mdash; invalidate these translations, or this instruction-cache state. The sync is a barrier that provides the guarantee: it completes only after prior DVM operations have completed across all participating agents. The operation is the work; the sync is the proof. Software issues the TLBI and then relies on the barrier, because until the sync completes another agent may still be using a stale translation.</div></details>
+  <details><summary>Why does DVM not use the SAM and snoop filter like everything else?</summary><div class="ans">Because it is not about an address that one home node owns. There is no directory recording which agents have cached which translations, the way the snoop filter records which caches hold which lines. So there is nothing to narrow the recipient list with &mdash; distribution has to reach every agent that could hold the state. That is why DVM goes to a single distribution and ordering point, the DN, rather than being hashed across many home nodes.</div></details>
+  <details><summary>What is the scaling concern with DVM at high core counts, and what can be done?</summary><div class="ans">Two problems. First, the DN is a single serialization point for DVM, so DVM-heavy workloads queue behind themselves rather than spreading across parallel home nodes the way address traffic does. Second, a sync is a convoy &mdash; it is bounded by the slowest responder, so one busy agent sets the latency for everyone. Mitigations are mostly about reducing DVM rate and scope: use the narrowest TLBI scope available (by ASID or VMID rather than invalidating all), and batch maintenance so one sync covers multiple operations. Workloads with heavy page-table churn, such as some virtualisation and JIT patterns, can present as an interconnect problem when the real issue is DVM rate.</div></details>
+  <details><summary>Which agents participate in DVM, and which do not?</summary><div class="ans">Agents that cache translations or instructions participate: CPU clusters through their RN-F, and I/O or accelerator agents with their own translation caches through RN-D, which is the RN-I variant that adds DVM support. Agents with no translation or instruction state have nothing to invalidate and do not need to take part. The DN sits in the HN-D, which is one of the reasons that node is mandatory in every mesh.</div></details>
+  <details><summary>What ordering constraint does two-part messaging impose?</summary><div class="ans">A receiver must buffer the first part while it waits for the second, and the two parts of one operation must not be interleaved with the parts of another. So there is a real hardware requirement to keep DVM message pairs associated and in order at the receiver, which is a constraint ordinary single-message requests do not have. Sync operations are the exception, being single-part.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">11</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li><b>DVM</b> = Distributed Virtual Memory: TLB invalidate, instruction-cache invalidate, branch-predictor invalidate, and sync.</li>
+    <li>Ordered and distributed by the <b>DN in the HN-D</b> &mdash; not hashed to an HN-F by address.</li>
+    <li><b>RN-D</b> is the DVM-capable request node; RN-F clusters are receivers.</li>
+    <li>Non-sync operations are <b>two-part</b> messages, reassembled at the receiver; sync is single-part.</li>
+    <li>The <b>sync</b> is the barrier that guarantees prior operations completed everywhere.</li>
+    <li>Scales poorly: no directory to narrow recipients, single distribution point, sync bounded by the slowest responder.</li>
+  </ul>
+  <div class="chips"><span class="chip">DVM</span><span class="chip">DN</span><span class="chip">TLBI</span><span class="chip">ASID / VMID</span><span class="chip">two-part message</span><span class="chip">DVM sync</span><span class="chip">RN-D</span><span class="chip">broadcast-natured</span><span class="chip">convoy effect</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson10_integration_capstone.html">◄ L10 &middot; Integration &amp; capstone</a>
+  <a href="cmn700_appendix_b_chi_cache_states.html">Appendix B &middot; CHI cache states ►</a>
+</div>
+<p class="note" style="margin-top:18px">Related: Appendix B covers the CHI cache states that underpin every coherency answer; Appendix A translates all of this into POWER terms.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 . Appendix C - MTE and SMMU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 &middot; APPENDIX C</div>
+  <h1>MTE &amp; the SMMU &mdash; Two Loose Ends</h1>
+  <a href="#why">Two loose ends</a>
+  <a href="#mte">MTE on the mesh</a>
+  <a href="#mtecost">MTE cost</a>
+  <a href="#smmu">The SMMU</a>
+  <a href="#smmupath">Where it sits</a>
+  <a href="#smmudvm">SMMU and DVM</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Gap remediation &middot; Appendix C &mdash; completeness sweep</div>
+<h2 class="title">MTE &amp; the SMMU &mdash; Two Loose Ends</h2>
+<p class="lede">Why caching memory tags is a real performance decision, and where address translation sits relative to the mesh — which finally explains why RN-D exists.</p>
+
+<div class="obj"><h4>Purpose of this appendix</h4>
+<ul>
+  <li>Close the two remaining low-priority gaps from the audit: MTE cost, and the SMMU's position.</li>
+  <li>Explain why caching memory tags in the SLC is a significant performance decision.</li>
+  <li>Place address translation correctly relative to the mesh &mdash; and connect it back to DVM.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>Two loose ends</h3>
+  <p>Both topics were flagged as low severity in the gap analysis, and both are genuinely peripheral to the mesh itself. But each has one insight worth having, and in both cases the insight connects to material you already know.</p>
+  <ul class="tight">
+    <li><b>MTE</b> &mdash; Lesson 4 mentioned that an SLC slice stores data and tags. The interesting question is <i>why that matters</i>.</li>
+    <li><b>SMMU</b> &mdash; separate IP, not part of CMN-700, but it sits in the request path <i>before</i> the mesh, and it is a DVM participant. Leaving it out leaves a hole in any end-to-end system story.</li>
+  </ul>
+</section>
+
+<section id="mte">
+  <h3><span class="n">2</span>MTE on the mesh</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>MTE = colour-code memory. Pointer carry a colour. Memory granule carry a colour. Access with wrong colour &#8594; fault. Catches use-after-free and buffer overrun. But: colours live in memory too. So every access might need <i>two</i> trips &mdash; one for data, one for colour. That would be terrible. Fix: cache the colours next to the data.</p></div>
+  <p><b>Memory Tagging Extension (MTE)</b> associates a small tag with each granule of memory and a matching tag with pointers. On access, hardware checks that the pointer's tag matches the memory's tag; a mismatch faults. It is a hardware aid against memory-safety bugs &mdash; use-after-free and out-of-bounds access in particular.</p>
+  <p>The relevance to an interconnect is straightforward once stated: <b>tags are themselves stored in memory.</b> A naive implementation would therefore turn every tagged memory access into two accesses &mdash; one for the data, one for its tag. That would be a severe bandwidth and latency penalty on the exact path you have spent this whole course optimising.</p>
+</section>
+
+<section id="mtecost">
+  <h3><span class="n">3</span>Why caching tags matters, and what it costs</h3>
+  <p>Hence the design point noted in Lesson 4: with MTE enabled, an SLC slice stores <b>data and its tags together</b>. A hit therefore returns both, and the second memory access disappears.</p>
+  <div class="ascii-wrap"><div class="bar">Tag storage co-located with data avoids a second trip</div>
+<pre class="ascii"><span class="cmt">-- if tags were not cached with data --</span>
+   access -&gt; fetch data   from memory
+          -&gt; fetch tag    from memory     <span class="cmt">two round trips per access</span>
+
+<span class="cmt">-- SLC slice holds data + tags --</span>
+   access -&gt; <span class="snf">SLC hit</span> returns data and tag together
+                                          <span class="cmt">one lookup, check happens locally</span>
+</pre></div>
+  <p>The costs to be honest about:</p>
+  <ul class="tight">
+    <li><b>Capacity overhead.</b> Tag storage occupies area that could have held data. Effective cache capacity for data is slightly reduced.</li>
+    <li><b>Tags must travel.</b> Tag information accompanies data through the fabric and to memory, so it is part of the payload rather than free metadata.</li>
+    <li><b>Coherency applies to tags too.</b> A tag is state associated with a line, so it has to remain consistent with the data it protects &mdash; it cannot be treated as an independent side table that might drift.</li>
+  </ul>
+  <p class="note">The one-line answer if asked: MTE's fabric cost is that tags are memory-resident, so the system caches them alongside data to avoid doubling access count &mdash; paying a modest capacity overhead to avoid a large latency and bandwidth penalty.</p>
+</section>
+
+<section id="smmu">
+  <h3><span class="n">4</span>The SMMU &mdash; what it is</h3>
+  <p>The <b>SMMU</b> (System Memory Management Unit, an IOMMU in general terminology) provides address translation and protection <b>for devices</b>, the way an MMU does for a CPU. It is separate IP &mdash; Arm's MMU-600 and MMU-700 families &mdash; not part of CMN-700.</p>
+  <p>What it buys a system:</p>
+  <ul class="tight">
+    <li><b>Devices can use virtual addresses</b>, so a driver can hand a device a buffer without physically contiguous memory or pinned physical addresses.</li>
+    <li><b>Isolation.</b> A device can only reach memory its translation tables permit &mdash; essential for passing a device through to a VM, and for containing a misbehaving or compromised device.</li>
+    <li><b>Sharing address spaces</b> between a process and an accelerator, so both can traverse the same pointer-based data structures.</li>
+  </ul>
+</section>
+
+<section id="smmupath">
+  <h3><span class="n">5</span>Where it sits relative to the mesh</h3>
+  <p>This is the point that closes the gap. Translation happens <b>before</b> the interconnect sees the request:</p>
+  <div class="ascii-wrap"><div class="bar">Translation precedes the mesh; the mesh sees physical addresses</div>
+<pre class="ascii">   <span class="rnf">device</span> issues a <span class="cmt">virtual</span> address
+        <span class="box">|</span>
+        <span class="box">▼</span>
+   <span class="hnf">SMMU</span>  translate (+ protection check)
+        <span class="box">|</span>   <span class="cmt">TLB hit -&gt; fast;  miss -&gt; page-table walk (slow)</span>
+        <span class="box">▼</span>
+   <span class="cmt">physical</span> address enters the fabric as <span class="rnf">RN-I</span> / <span class="rnf">RN-D</span> traffic
+        <span class="box">|</span>
+        <span class="box">▼</span>
+   <span class="rnf">RN SAM</span> -&gt; <span class="hnf">HN-F</span> -&gt; <span class="snf">SN-F</span>       <span class="cmt">everything from Lessons 3-6</span>
+</pre></div>
+  <p>So every address in this course &mdash; the SAM's input, the hash, the home node, the snoop filter &mdash; is a <b>physical</b> address. The mesh has no notion of virtual addresses. Two practical consequences:</p>
+  <ul class="tight">
+    <li><b>SMMU latency is additive</b> to the device access path. A translation miss triggers a page-table walk, which is itself memory traffic on the mesh &mdash; so translation misses generate fabric load, not just delay.</li>
+    <li>When debugging a device performance problem, <b>the translation layer is a suspect before the fabric is</b>. A poor SMMU TLB hit rate can look exactly like an interconnect problem.</li>
+  </ul>
+</section>
+
+<section id="smmudvm">
+  <h3><span class="n">6</span>The connection back to DVM</h3>
+  <p>Here is why the SMMU belongs in a CMN-700 course at all. The SMMU has <b>translation caches</b> &mdash; TLBs. When software changes a page-table entry used by a device, those caches must be invalidated, exactly as a core's TLB must be.</p>
+  <p>That is <b>DVM traffic</b>, and it explains Lesson 11's cast list:</p>
+  <ul class="tight">
+    <li><b>RN-D</b> exists precisely because an I/O-side agent with translation caches must participate in DVM. That is the whole reason for the variant.</li>
+    <li>The DN in the HN-D therefore distributes maintenance to I/O-side participants, not just CPU clusters.</li>
+    <li>Adding translation-caching devices <b>increases the DVM participant count</b> &mdash; which, per Lesson 11's scaling discussion, lengthens the convoy that a sync must wait on.</li>
+  </ul>
+  <div class="card" style="border-left:3px solid var(--snf)">
+    <h6><span class="dot b-snf"></span>The satisfying closure</h6>
+    <p>Lesson 2 introduced RN-D as "an RN-I that also handles DVM" &mdash; a definition without a motivation. The SMMU is the motivation. Devices behind an SMMU cache translations, so they must receive TLB maintenance, so they need a DVM-capable request node. Being able to make that connection unprompted shows the pieces are joined up in your head rather than memorised separately.</p>
+  </div>
+</section>
+
+<section id="check">
+  <h3><span class="n">7</span>Self-check</h3>
+  <div class="quiz" data-correct="1" data-fb="Tags live in memory, so caching them with data avoids turning each tagged access into two memory accesses.">
+    <div class="q">1. Why does the SLC store MTE tags alongside data?</div>
+    <button class="opt">To increase cache capacity.</button>
+    <button class="opt">Because tags are memory-resident &mdash; caching them avoids a second memory access per tagged access.</button>
+    <button class="opt">Because tags cannot be stored in DRAM.</button>
+    <button class="opt">To allow tags to drift from their data.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="Translation happens in the SMMU before the request reaches the fabric \u2014 the mesh only ever sees physical addresses.">
+    <div class="q">2. What kind of address does the mesh see?</div>
+    <button class="opt">Virtual addresses, translated at the home node.</button>
+    <button class="opt">Virtual addresses, translated at the memory controller.</button>
+    <button class="opt">Physical addresses &mdash; translation already happened upstream.</button>
+    <button class="opt">Either, depending on the channel.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="An SMMU translation miss triggers a page-table walk, which is itself memory traffic crossing the mesh.">
+    <div class="q">3. Why does a poor SMMU TLB hit rate affect the fabric?</div>
+    <button class="opt">Misses cause page-table walks, which generate real memory traffic on the mesh.</button>
+    <button class="opt">Misses disable the snoop filter.</button>
+    <button class="opt">Misses force all traffic to become non-coherent.</button>
+    <button class="opt">They do not &mdash; translation is entirely outside the fabric.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="Devices behind an SMMU cache translations, so they must receive TLB maintenance \u2014 which is exactly why RN-D exists.">
+    <div class="q">4. Why does RN-D exist?</div>
+    <button class="opt">To provide extra bandwidth for I/O.</button>
+    <button class="opt">To bypass the snoop filter for DMA.</button>
+    <button class="opt">To connect PCIe peer-to-peer traffic.</button>
+    <button class="opt">Because I/O-side agents with translation caches must participate in DVM.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">8</span>Interview Q&amp;A</h3>
+  <details><summary>What does MTE cost the memory system?</summary><div class="ans">Tags are stored in memory, so a naive implementation would turn every tagged access into two accesses &mdash; one for data, one for the tag &mdash; which would be a serious bandwidth and latency penalty. The design response is to store tags alongside data in the cache, so an SLC hit returns both and the second access disappears. The costs are a modest capacity overhead, since tag storage occupies area that could have held data, the fact that tag information must travel with data through the fabric, and the requirement that tags stay consistent with the line they protect rather than living in an independent side table that could drift.</div></details>
+  <details><summary>Where does the SMMU sit relative to the interconnect?</summary><div class="ans">Upstream of it. The SMMU translates a device's virtual address to a physical one and applies protection checks, and only then does the request enter the fabric. So everything in the interconnect &mdash; the SAM, the address hash, the home node, the snoop filter &mdash; operates on physical addresses; the mesh has no notion of virtual addressing. Two consequences follow: SMMU latency is additive to the device access path, and a translation miss triggers a page-table walk that is itself memory traffic on the mesh. So when a device is performing badly, the translation layer is a suspect before the fabric is, because a poor TLB hit rate can look exactly like an interconnect problem.</div></details>
+  <details><summary>How does the SMMU relate to DVM?</summary><div class="ans">The SMMU holds translation caches, so when software changes a page-table entry that a device uses, those caches must be invalidated just as a core's TLB must be. That maintenance is DVM traffic, and it is the reason RN-D exists &mdash; an I/O-side agent with translation caches has to be able to participate in DVM. It also means adding translation-caching devices increases the DVM participant count, which lengthens the set of agents a DVM sync must wait on. Since a sync is bounded by the slowest responder, more participants means a longer barrier.</div></details>
+  <details><summary>Why would you put an SMMU in front of a device at all?</summary><div class="ans">Three reasons. Devices can use virtual addresses, so a driver can hand over a buffer without requiring physically contiguous or pinned memory. Isolation: a device can only reach memory its translation tables permit, which is what makes device pass-through to a VM safe and contains a misbehaving or compromised device. And address-space sharing, so a process and an accelerator can traverse the same pointer-based data structures. The cost is translation latency on the device path and page-table-walk traffic on misses.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">9</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li><b>MTE</b> tags are memory-resident &#8594; cached with data in the SLC to avoid doubling access count.</li>
+    <li>MTE costs: capacity overhead, tags travel with data, tags must stay coherent with their line.</li>
+    <li><b>SMMU</b> is separate IP, upstream of the mesh: translates device virtual &#8594; physical, plus protection.</li>
+    <li>The mesh therefore only ever sees <b>physical addresses</b>.</li>
+    <li>Translation misses cause <b>page-table walks &mdash; real mesh traffic</b>; suspect translation before the fabric.</li>
+    <li>SMMU translation caches make devices <b>DVM participants</b> &mdash; the reason <b>RN-D</b> exists, and a factor in DVM sync latency.</li>
+  </ul>
+  <div class="chips"><span class="chip">MTE</span><span class="chip">tag granule</span><span class="chip">data + tag in SLC</span><span class="chip">SMMU / IOMMU</span><span class="chip">MMU-600 / 700</span><span class="chip">page-table walk</span><span class="chip">device pass-through</span><span class="chip">RN-D rationale</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_appendix_b_chi_cache_states.html">◄ Appendix B &middot; CHI cache states</a>
+  <a href="cmn700_index.html">Course index ►</a>
+</div>
+<p class="note" style="margin-top:18px">That closes every item from the gap analysis. The course is complete: 13 lessons, 3 appendices, an overview, a course map and an index.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

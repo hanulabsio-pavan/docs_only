@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 . Lesson 14 - Cache Stashing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 &middot; LESSON 14</div>
+  <h1>Cache Stashing in Depth</h1>
+  <a href="#why">Push vs pull</a>
+  <a href="#target">Targeting a stash</a>
+  <a href="#hint">A hint, not a command</a>
+  <a href="#state">Coherency state impact</a>
+  <a href="#sf">Snoop-filter pressure</a>
+  <a href="#flow">Worked flow: NIC</a>
+  <a href="#pollution">Failure mode: pollution</a>
+  <a href="#prefetch">Stash vs prefetch</a>
+  <a href="#qos">Interaction with QoS &amp; CBusy</a>
+  <a href="#decide">Decision framework</a>
+  <a href="#debug">Debugging a stash</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Gap remediation &middot; Lesson 14 &mdash; promoted to a standalone lesson</div>
+<h2 class="title">Cache Stashing in Depth</h2>
+<p class="lede">The one optimisation that pushes instead of pulls — and the only one whose failure mode makes things actively worse. Previously a section inside Lesson 6; promoted here so it stands on its own.</p>
+
+<div class="obj"><h4>By the end of this lesson you can</h4>
+<ul>
+  <li>Explain how a stash is targeted &mdash; which agent, and which cache level.</li>
+  <li>Say why a stash is advisory, and what it means that a target may decline it.</li>
+  <li>Describe the coherency-state and snoop-filter consequences of stashing.</li>
+  <li>Explain the cache-pollution failure mode and the three conditions for a stash to pay off.</li>
+  <li>Contrast stashing with prefetching, and debug a stash that is not helping.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>Push versus pull</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Normal way: hungry consumer go fetch data. Stash way: producer <b>push</b> data into consumer cache before consumer even ask. Packet arrive, NIC shove it into the core cache that will process it. Cold miss become hit. But careful &mdash; push into wrong cache and you throw out something useful. Then you made it slower.</p></div>
+  <p>Every other optimisation in this course is a <b>pull</b>: a requester asks for something, and the fabric answers faster. DMT removes a data leg. DCT avoids DRAM. Atomics avoid line migration. All of them improve what happens <i>after</i> a request is issued.</p>
+  <p><b>Stashing inverts the direction.</b> A producer &mdash; typically a NIC, an accelerator, or a DMA engine &mdash; pushes data toward a cache so that it is already warm when the consumer eventually looks. The consumer's request then hits instead of missing.</p>
+  <p>It is the only optimisation in the set whose failure mode makes things <b>actively worse</b> rather than merely failing to help. That asymmetry is why it deserves a lesson of its own, and why interviewers use it to separate people who know the feature list from people who understand the memory system.</p>
+  <div class="card" style="border-left:3px solid var(--dat)">
+    <h6><span class="dot b-dat"></span>What is actually being saved</h6>
+    <p>Not bandwidth. The data had to cross the fabric regardless &mdash; the packet was arriving either way. What stashing changes is <b>when</b> the memory latency is paid: before the consumer needs the data, off the critical path, rather than in front of the consumer as a blocking miss. Say this precisely, because "stashing saves bandwidth" is wrong and an interviewer may be listening for it.</p>
+  </div>
+</section>
+
+<section id="target">
+  <h3><span class="n">2</span>Targeting a stash</h3>
+  <p>A stash is not "write this somewhere useful" &mdash; the request has to name a destination. Two independent choices matter, and they carry different risk.</p>
+  <table>
+    <tr><th>Choice</th><th>Meaning</th><th>Risk if wrong</th></tr>
+    <tr><td><b>Which agent</b></td><td>The stash identifies a target requester &mdash; conceptually "put this near this core or cluster". This is what lets a NIC aim a packet at the specific core that will process it.</td><td>High. Target the wrong core and you both fail to help the real consumer <i>and</i> pollute an innocent cache.</td></tr>
+    <tr><td><b>Which cache level</b></td><td>The hint can express whether the line should land in a cache close to the core, or in the shared SLC region.</td><td>Moderate. Closer means a faster hit but a smaller, more precious resource, so aggressive close-in stashing pollutes sooner.</td></tr>
+  </table>
+  <p>The trade in one line: <b>closer to the core is a bigger win when right and a bigger loss when wrong.</b> Stashing into the shared SLC is the conservative choice &mdash; less upside, much less pollution risk, because the SLC is large and shared by design.</p>
+  <p class="note">Exact field names and encodings are a CHI and TRM lookup. What matters conceptually is that both <i>who</i> and <i>how close</i> are expressible, because they are separate decisions with separate consequences.</p>
+</section>
+
+<section id="hint">
+  <h3><span class="n">3</span>A hint, not a command</h3>
+  <p>This is the detail most candidates miss, and the one that most changes how you reason about the feature.</p>
+  <p>A stash is <b>advisory</b>. The target is permitted to <b>decline</b> it. If the target cache is under pressure, or the request arrives at an inconvenient moment, the data may end up at a shared level instead, or simply be written toward memory as an ordinary write would be.</p>
+  <div class="ascii-wrap"><div class="bar">Accepted versus declined &mdash; both are correct outcomes</div>
+<pre class="ascii">   producer issues write + stash hint (target: <span class="rnf">core N</span>)
+        <span class="box">|</span>
+        <span class="box">+---</span> target <span class="snf">ACCEPTS</span>  -&gt; line lands near core N   -&gt; later read <span class="snf">HITS</span>
+        <span class="box">|</span>
+        <span class="box">+---</span> target <span class="snp">DECLINES</span> -&gt; line goes to a shared level
+                                or toward memory           -&gt; later read <span class="snp">MISSES</span>
+
+   <span class="cmt">both paths are functionally correct - coherency is never at risk.</span>
+   <span class="cmt">only the performance benefit differs.</span>
+</pre></div>
+  <p>The consequence for real systems is important: <b>stashing can be enabled and doing nothing at all</b>, silently. There is no error, no fault, no log line. If you expected a hit-rate improvement and do not see one, the question is not only "is it configured" but "is it being accepted" &mdash; and those need different investigations.</p>
+</section>
+
+<section id="state">
+  <h3><span class="n">4</span>What it does to coherency state</h3>
+  <p>A stashed line is a real cached copy. It is not metadata or a prediction &mdash; it is a line in a cache, with all the obligations that implies. Using Appendix B's vocabulary:</p>
+  <ul class="tight">
+    <li>The line arrives in a <b>defined coherence state</b> and is snoopable like any other copy. A later writer elsewhere must invalidate it.</li>
+    <li>The target cache did not request this line, yet now holds it &mdash; so from the home node's perspective a <b>new sharer has appeared</b> for that address.</li>
+    <li>If the stash carries modified data, the usual clean/dirty reasoning applies: someone owes the writeback, and that responsibility has to be well-defined.</li>
+  </ul>
+  <p>So stashing is not a free side channel into a cache. It participates fully in coherency, which is precisely why it has bookkeeping costs &mdash; covered next.</p>
+</section>
+
+<section id="sf">
+  <h3><span class="n">5</span>Snoop-filter pressure &mdash; the hidden cost</h3>
+  <p>Because a stash creates a sharer, the home node's <b>snoop filter must record it</b>. That consumes a directory entry.</p>
+  <p>Now recall Lesson 4's sizing argument: the snoop filter should be roughly 1.5&times; the aggregate private cache it covers, and when it runs out of entries it must evict directory entries, which forces <b>back-invalidation</b> of lines still live in core caches. Connect the two ideas:</p>
+  <div class="ascii-wrap"><div class="bar">Aggressive stashing raises directory occupancy</div>
+<pre class="ascii">   stash accepted  -&gt;  new sharer recorded  -&gt;  <span class="hnf">SF entry consumed</span>
+                                                    <span class="box">|</span>
+        many stashes in flight                      <span class="box">▼</span>
+        <span class="box">------------------------------&gt;</span>  SF occupancy rises
+                                                    <span class="box">|</span>
+                                    if SF becomes capacity-limited
+                                                    <span class="box">▼</span>
+                        <span class="snp">back-invalidation of lines still in use</span>  <span class="flag">(L4)</span>
+</pre></div>
+  <p>So stashing can degrade performance through a <b>second, indirect route</b> that has nothing to do with the target cache: by inflating directory occupancy until the snoop filter starts evicting entries for unrelated hot lines. This is a genuinely non-obvious interaction, and naming it is a strong signal that you think about the system rather than the feature.</p>
+</section>
+
+<section id="flow">
+  <h3><span class="n">6</span>Worked flow: the NIC receive path</h3>
+  <p>The canonical use case. A packet arrives and some core must process it.</p>
+  <div class="ascii-wrap"><div class="bar">Cold-miss baseline versus stashed</div>
+<pre class="ascii"><span class="cmt">-- baseline: no stash --</span>
+  <span class="rnf">NIC</span> <span class="dat">--DAT--&gt;</span> <span class="hnf">HN-F</span> <span class="dat">--&gt;</span> <span class="snf">SN-F</span>          <span class="cmt">packet written to memory</span>
+  <span class="cmt">...later, core polls the ring...</span>
+  <span class="rnf">core</span> <span class="req">--REQ--&gt;</span> <span class="hnf">HN-F</span> <span class="req">--&gt;</span> <span class="snf">SN-F</span>         <span class="cmt">cold miss, full DRAM latency</span>
+  <span class="rnf">core</span> <span class="dat">&lt;--------- DAT ---------</span>       <span class="cmt">latency is IN FRONT of the consumer</span>
+
+<span class="cmt">-- with stashing --</span>
+  <span class="rnf">NIC</span> <span class="dat">--write + stash hint (target: core N)--&gt;</span> <span class="hnf">HN-F</span>
+                                                 <span class="box">|</span> record new sharer in SF
+                                                 <span class="box">▼</span>
+                                       <span class="snp">push line toward</span> <span class="rnf">core N</span>
+  <span class="cmt">...later...</span>
+  <span class="rnf">core N</span> reads  -&gt;  <span class="snf">HIT</span>                   <span class="cmt">latency paid OFF the critical path</span>
+</pre></div>
+  <p>Why this case works so well &mdash; note that all three conditions from &sect;10 happen to hold:</p>
+  <ul class="tight">
+    <li>The <b>consumer is known</b>, because receive-side steering has already decided which core handles this flow.</li>
+    <li>Consumption is <b>imminent</b>, because the core is polling or about to be interrupted.</li>
+    <li>The data is <b>genuinely needed</b> &mdash; a packet header will certainly be read, not speculatively guessed at.</li>
+  </ul>
+  <p>Change any one of those and the calculation shifts. If the consumer thread migrates to another core, condition one fails and the stash lands in the wrong cache.</p>
+</section>
+
+<section id="pollution">
+  <h3><span class="n">7</span>The failure mode: cache pollution</h3>
+  <div class="card" style="border-left:3px solid var(--warn)">
+    <h6><span class="dot" style="background:var(--warn)"></span>The mechanism, in one sentence</h6>
+    <p>A stash <b>allocates</b>, and allocation <b>evicts</b>. Push data into a cache that does not want it and you have discarded something the core was actively using, to make room for something it may never read.</p>
+  </div>
+  <p>The common causes, each with its own signature:</p>
+  <table>
+    <tr><th>Cause</th><th>What happens</th></tr>
+    <tr><td><b>Wrong target</b></td><td>The consumer thread migrated, or steering and affinity disagree. The stash pollutes an uninvolved core while the real consumer still misses &mdash; the worst case, because you pay both costs.</td></tr>
+    <tr><td><b>Stash rate exceeds drain rate</b></td><td>The producer stashes faster than the consumer processes. Stashed lines begin evicting <i>each other</i>, so even correctly targeted data is gone before it is read.</td></tr>
+    <tr><td><b>Read-once data</b></td><td>Data that is touched once and never reused still displaces genuinely hot lines. The stash "works" and still loses.</td></tr>
+    <tr><td><b>Target cache already under pressure</b></td><td>A busy core has no spare capacity, so every stash is a straight trade of something useful for something speculative.</td></tr>
+    <tr><td><b>Directory pressure</b></td><td>The indirect route from &sect;5 &mdash; SF occupancy rises until back-invalidation starts hurting unrelated lines.</td></tr>
+  </table>
+  <p>Note the pattern: <b>most failure modes are about the consumer, not the producer.</b> Stashing is a statement about someone else's cache, made by an agent that cannot see its contents. That is what makes it risky.</p>
+</section>
+
+<section id="prefetch">
+  <h3><span class="n">8</span>Stash versus prefetch</h3>
+  <p>These are mirror images, and the symmetry is genuinely illuminating.</p>
+  <table>
+    <tr><th></th><th>Prefetch (pull)</th><th>Stash (push)</th></tr>
+    <tr><td>Initiated by</td><td>The consumer, speculating about its own future</td><td>The producer, which is holding real data</td></tr>
+    <tr><td>Knows the data exists?</td><td><b>No</b> &mdash; guessing an address</td><td><b>Yes</b> &mdash; it has the data in hand</td></tr>
+    <tr><td>Knows the consumer?</td><td><b>Yes</b>, trivially &mdash; itself</td><td><b>No</b> &mdash; must be told, and can be wrong</td></tr>
+    <tr><td>Sees the target cache?</td><td>Yes &mdash; its own</td><td>No &mdash; someone else's</td></tr>
+    <tr><td>Failure mode</td><td>Wasted bandwidth and fetching the wrong address</td><td>Polluting another agent's cache</td></tr>
+    <tr><td>Throttled by</td><td>CBusy prefetch throttling (Lesson 7)</td><td>Target declining the hint (&sect;3)</td></tr>
+  </table>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Prefetcher know <b>who</b> but guess <b>what</b>. Stash know <b>what</b> but must be told <b>who</b>. Each only as good as the half it not control. That the whole insight.</p></div>
+  <p>They are complementary rather than competing: prefetching hides latency for data a consumer can predict, stashing hides latency for data a producer knows is coming. A well-tuned system uses both, on different traffic.</p>
+</section>
+
+<section id="qos">
+  <h3><span class="n">9</span>Interaction with QoS and congestion control</h3>
+  <p>Stashing does not live in isolation from Lesson 7's mechanisms, and the interactions are worth being able to discuss:</p>
+  <ul class="tight">
+    <li><b>Stashes are real fabric traffic.</b> They consume mesh bandwidth and home-node tracker capacity like any other write, so they participate in QoS arbitration and can be queued behind other work.</li>
+    <li><b>Under congestion, stashing gets less useful.</b> When completers are busy, a stash competes with demand traffic &mdash; and it is speculative about <i>usefulness</i> even though it is certain about the data. Congestion is exactly when you would rather not spend capacity on optimisations.</li>
+    <li><b>Declining becomes more likely under load</b>, which is a reasonable behaviour: the mechanism degrades toward "do nothing" precisely when the system is stressed.</li>
+    <li><b>Prioritisation matters.</b> A stash given the same QoS class as latency-critical demand traffic can displace it. Bulk stashing generally wants a lower class.</li>
+  </ul>
+  <p class="note">Compare with CBusy from Lesson 7: prefetch throttling is a closed loop that reduces speculative load under congestion. Stash declining is a looser analogue &mdash; a target-side rather than source-side pressure valve.</p>
+</section>
+
+<section id="decide">
+  <h3><span class="n">10</span>Decision framework: should you stash?</h3>
+  <p>Three conditions, all of which must hold. This is the compact answer to "when should you use stashing?"</p>
+  <div class="grid g3">
+    <div class="card"><h6><span class="dot b-rnf"></span>1. Consumer known</h6><p>You can identify which agent will read the data, and that identity is stable &mdash; no thread migration between stash and consumption.</p></div>
+    <div class="card"><h6><span class="dot b-hnf"></span>2. Consumption imminent</h6><p>The data will be read soon, so it survives in the cache until it is needed rather than being evicted first.</p></div>
+    <div class="card"><h6><span class="dot b-snf"></span>3. Room to spare</h6><p>The target cache has capacity, and the snoop filter is not near its limit. Otherwise you are trading away something useful.</p></div>
+  </div>
+  <table>
+    <tr><th>Scenario</th><th>Stash?</th><th>Why</th></tr>
+    <tr><td>NIC receive with steering pinned to a core</td><td><b>Yes</b></td><td>All three conditions hold; the canonical win.</td></tr>
+    <tr><td>Accelerator writing results a known core will read next</td><td><b>Yes</b></td><td>Known consumer, imminent read.</td></tr>
+    <tr><td>Bulk DMA of a large buffer</td><td><b>No</b></td><td>Volume exceeds any cache; stashes evict each other and pollute. Let it go to memory.</td></tr>
+    <tr><td>Data consumed much later</td><td><b>No</b></td><td>Will be evicted before use &mdash; you paid the pollution cost for nothing.</td></tr>
+    <tr><td>Consumer thread migrates freely</td><td><b>No</b></td><td>Condition one fails; you will frequently target the wrong cache.</td></tr>
+    <tr><td>Target cores already cache-pressured</td><td><b>Careful</b></td><td>Consider stashing to the shared SLC instead of close to the core.</td></tr>
+  </table>
+</section>
+
+<section id="debug">
+  <h3><span class="n">11</span>Debugging a stash that is not helping</h3>
+  <p>Using Lesson 9's instrumentation, in order:</p>
+  <table>
+    <tr><th>Step</th><th>Check</th><th>Interpretation</th></tr>
+    <tr><td>1</td><td>Is the consumer's hit rate actually improving?</td><td>If not, the mechanism is not delivering &mdash; continue. Do not assume it works because it is enabled.</td></tr>
+    <tr><td>2</td><td>Are stashes being <b>accepted</b>?</td><td>If largely declined, the target is under pressure &mdash; consider stashing to the SLC instead, or reducing rate.</td></tr>
+    <tr><td>3</td><td>Is the <b>target correct</b>?</td><td>Compare steering or affinity configuration against where the consumer thread actually runs. Migration is a common culprit.</td></tr>
+    <tr><td>4</td><td>Has the target's <b>eviction rate</b> risen?</td><td>Rising evictions with flat or worse hit rate is the pollution signature.</td></tr>
+    <tr><td>5</td><td>Has <b>snoop-filter back-invalidation</b> risen?</td><td>The indirect cost from &sect;5 &mdash; stashing is inflating directory occupancy and hurting unrelated lines.</td></tr>
+    <tr><td>6</td><td>Is stash <b>rate</b> above consumer drain rate?</td><td>Stashed lines are evicting each other; throttle the producer or stash further out.</td></tr>
+  </table>
+  <p>The diagnostic pair worth memorising: <b>evictions up while hit rate is flat or falling</b> is pollution. <b>Hit rate flat with no change in evictions</b> suggests the stashes are being declined and nothing is happening at all.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">12</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="The data had to move anyway \u2014 what changes is that memory latency is paid off the critical path rather than in front of the consumer.">
+    <div class="q">1. What does stashing actually save?</div>
+    <button class="opt">Fabric bandwidth, since the data no longer crosses the mesh.</button>
+    <button class="opt">Snoop-filter entries.</button>
+    <button class="opt">Nothing in bandwidth &mdash; it moves memory latency off the consumer's critical path.</button>
+    <button class="opt">DRAM capacity.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="A stash allocates, and allocation evicts \u2014 mis-targeted stashing discards data the core was actively using.">
+    <div class="q">2. You enable stashing and throughput <i>drops</i>. Most likely reason?</div>
+    <button class="opt">Stashing disabled the snoop filter.</button>
+    <button class="opt">Cache pollution &mdash; stashed lines evicted data the target was actively using.</button>
+    <button class="opt">Coherency broke, so results are recomputed.</button>
+    <button class="opt">Stashing forces every read to DRAM.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="A stash is advisory \u2014 the target may decline it, so the feature can be enabled and silently doing nothing.">
+    <div class="q">3. A stash arrives at a target cache under heavy pressure. What may happen?</div>
+    <button class="opt">The transaction fails and reports an error.</button>
+    <button class="opt">Coherency is suspended for that line.</button>
+    <button class="opt">The line is force-installed, flushing the set.</button>
+    <button class="opt">The target may decline the hint &mdash; the operation completes, but the benefit does not appear.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="A stash creates a sharer, so the snoop filter must record it \u2014 raising directory occupancy toward the back-invalidation threshold.">
+    <div class="q">4. How can stashing hurt performance <i>without</i> polluting the target cache?</div>
+    <button class="opt">By consuming snoop-filter entries and pushing the directory toward back-invalidation.</button>
+    <button class="opt">By disabling DMT.</button>
+    <button class="opt">By reversing dimension-ordered routing.</button>
+    <button class="opt">By invalidating the SAM.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="A prefetcher knows who will consume but guesses what; a stash knows what but must be told who.">
+    <div class="q">5. The core asymmetry between prefetch and stash is&hellip;</div>
+    <button class="opt">Prefetch is coherent; stash is not.</button>
+    <button class="opt">Prefetch uses DAT; stash uses SNP.</button>
+    <button class="opt">Prefetch knows who but guesses what; stash knows what but must be told who.</button>
+    <button class="opt">Prefetch is hardware-only; stash is software-only.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="Bulk DMA volume exceeds any cache, so stashed lines evict one another and pollute without helping.">
+    <div class="q">6. Which case should you <b>not</b> stash?</div>
+    <button class="opt">NIC receive with steering pinned to a core.</button>
+    <button class="opt">Bulk DMA of a large buffer.</button>
+    <button class="opt">Accelerator results a known core reads next.</button>
+    <button class="opt">A packet header about to be parsed.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Rising evictions with flat or falling hit rate is the pollution signature; flat hit rate with unchanged evictions suggests stashes are being declined.">
+    <div class="q">7. Evictions at the target are up but its hit rate is flat. What is this?</div>
+    <button class="opt">Cache pollution &mdash; the stashes are landing but displacing useful data.</button>
+    <button class="opt">Stashes are being declined.</button>
+    <button class="opt">A snoop-filter sizing bug only.</button>
+    <button class="opt">Normal, expected behaviour.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">13</span>Interview Q&amp;A</h3>
+  <details><summary>What is cache stashing and what does it save?</summary><div class="ans">It inverts the usual direction of data movement: instead of a consumer pulling data, a producer such as a NIC or accelerator pushes it toward a cache so it is already warm when the consumer looks. Crucially it does not save bandwidth &mdash; the data had to cross the fabric regardless. What it changes is when the memory latency is paid: off the critical path, before the consumer needs it, rather than as a blocking miss in front of it. The canonical case is a NIC stashing an inbound packet toward the core that receive-side steering has already assigned to that flow.</div></details>
+  <details><summary>You enable stashing and performance gets worse. Why?</summary><div class="ans">Cache pollution. A stash allocates, and allocation evicts, so pushing data into a cache that does not want it discards something the core was actively using in favour of something it may never read. Common causes: the consumer thread migrated so the stash targets the wrong core, which is the worst case because the real consumer still misses; stashing faster than the consumer drains, so stashed lines evict each other; stashing read-once data that displaces genuinely hot lines; and a target cache already under pressure, where every stash is a straight trade of useful for speculative. There is also an indirect route &mdash; each accepted stash creates a sharer and consumes a snoop-filter entry, so aggressive stashing raises directory occupancy and can trigger back-invalidation of unrelated lines.</div></details>
+  <details><summary>Is a stash guaranteed to land where you asked?</summary><div class="ans">No &mdash; it is advisory, and the target is permitted to decline it. Under pressure the line may end up at a shared level or simply be written toward memory. Both outcomes are functionally correct and coherency is never at risk; only the performance benefit differs. That matters for debugging, because stashing can be enabled and silently doing nothing, with no error or log line. So when a stash is not helping, the first two questions are whether it is configured and whether it is being accepted, and those need different investigations.</div></details>
+  <details><summary>How does stashing differ from prefetching?</summary><div class="ans">They are mirror images. A prefetch is a pull: the consumer initiates it and trivially knows the consumer is itself, but it is guessing which address it will need, and it can see its own cache. A stash is a push: the producer initiates it and knows the data is real because it is holding it, but it must be told who the consumer is, can be wrong, and cannot see the target cache. So a prefetcher knows who but guesses what; a stash knows what but must be told who. Each is only as good as the half it does not control, and the failure modes follow &mdash; wasted bandwidth for prefetch, which CBusy throttles, versus polluting someone else's cache for a stash.</div></details>
+  <details><summary>When should you use stashing, and when not?</summary><div class="ans">Three conditions must all hold: the consumer is known and stable, consumption is imminent so the line survives until it is read, and the target has room to spare including snoop-filter headroom. NIC receive with steering pinned to a core satisfies all three, as does an accelerator writing results a known core reads next. Do not stash bulk DMA of a large buffer, because the volume exceeds any cache and the stashes evict each other; do not stash data consumed much later, because it will be evicted before use; and do not stash when the consumer thread migrates freely. If target cores are already pressured, stash to the shared SLC instead of close to the core &mdash; less upside, much less pollution risk.</div></details>
+  <details><summary>How would you debug a stash that is not helping?</summary><div class="ans">Work outward from the consumer using the PMU. First confirm whether the consumer's hit rate actually improved, rather than assuming the feature works because it is enabled. Then check whether stashes are being accepted or declined, since declining points at target pressure. Then verify the target is correct by comparing steering or affinity configuration against where the consumer thread really runs. Then look at the target's eviction rate, because rising evictions with a flat or falling hit rate is the pollution signature. Then check snoop-filter back-invalidation for the indirect cost. Finally compare stash rate against consumer drain rate. The pair worth remembering: evictions up with hit rate flat means pollution; hit rate flat with evictions unchanged means the stashes are probably being declined and nothing is happening.</div></details>
+  <details><summary>How does stashing interact with QoS and congestion control?</summary><div class="ans">Stashes are real fabric traffic, so they consume mesh bandwidth and home-node tracker capacity and participate in QoS arbitration. That means under congestion stashing becomes less attractive, because it competes with demand traffic while being speculative about usefulness even though it is certain about the data. Declining also becomes more likely under load, which is reasonable behaviour &mdash; the mechanism degrades toward doing nothing exactly when the system is stressed. And prioritisation matters: a stash sharing a QoS class with latency-critical demand traffic can displace it, so bulk stashing generally wants a lower class. It is a looser, target-side analogue of CBusy's source-side prefetch throttling.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">14</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>Stashing is a <b>push</b>, not a pull &mdash; the producer warms a consumer's cache in advance.</li>
+    <li>It saves <b>latency position, not bandwidth</b>: the data moved anyway.</li>
+    <li>Targeting names <b>which agent</b> and <b>which cache level</b>; closer is bigger win when right, bigger loss when wrong.</li>
+    <li>It is a <b>hint the target may decline</b> &mdash; so it can be enabled and silently doing nothing.</li>
+    <li>A stashed line is a real sharer &#8594; consumes a <b>snoop-filter entry</b> &#8594; can trigger back-invalidation (L4).</li>
+    <li>Failure mode is <b>cache pollution</b>: allocation evicts. Most causes concern the consumer, not the producer.</li>
+    <li>Mirror of prefetch: prefetch knows <i>who</i> and guesses <i>what</i>; stash knows <i>what</i> and must be told <i>who</i>.</li>
+    <li>Three conditions to stash: consumer known, consumption imminent, room to spare.</li>
+    <li>Diagnosis: evictions up + hit rate flat = pollution; hit rate flat + evictions unchanged = being declined.</li>
+  </ul>
+  <div class="chips"><span class="chip">cache stashing</span><span class="chip">stash target</span><span class="chip">advisory hint</span><span class="chip">decline</span><span class="chip">cache pollution</span><span class="chip">SF occupancy</span><span class="chip">back-invalidation</span><span class="chip">stash vs prefetch</span><span class="chip">drain rate</span><span class="chip">receive-side steering</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson13_cxl.html">◄ L13 &middot; CXL deep dive</a>
+  <a href="cmn700_appendix_a_power_translation.html">Appendix A &middot; POWER translation ►</a>
+</div>
+<p class="note" style="margin-top:18px">Lesson 6 covers stashing briefly in the context of the other CHI-E optimisations and links here for the full treatment.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

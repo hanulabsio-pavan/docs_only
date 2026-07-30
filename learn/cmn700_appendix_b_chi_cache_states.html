@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 . Appendix B - CHI Cache States</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 &middot; APPENDIX B</div>
+  <h1>CHI Cache States &amp; Transitions</h1>
+  <a href="#why">Why this matters</a>
+  <a href="#axes">Two axes</a>
+  <a href="#states">The state set</a>
+  <a href="#writeback">Who owes the writeback</a>
+  <a href="#silent">Silent transitions</a>
+  <a href="#sfmismatch">State vs snoop filter</a>
+  <a href="#map">Mapping to flows</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Gap remediation &middot; Appendix B &mdash; reference, gated by self-test</div>
+<h2 class="title">CHI Cache States &amp; Transitions</h2>
+<p class="lede">The vocabulary every coherency answer rests on: two axes, five states, who owes the writeback, and why the snoop filter is allowed to be wrong.</p>
+
+<div class="obj"><h4>Purpose of this appendix</h4>
+<ul>
+  <li>Give the CHI cache-state vocabulary that every coherency answer implicitly rests on.</li>
+  <li>Make explicit who owes a writeback in each state, and which transitions can happen silently.</li>
+  <li>Clear up the most common confusion: a cache's line state is <i>not</i> the same as what the snoop filter records.</li>
+</ul>
+<p style="margin:10px 0 0; font-size:13.5px; color:var(--ink-dim)">This was delivered as an appendix rather than a full lesson because you have already studied CHI directly. Use the self-test in &sect;1 &mdash; if it is comfortable, treat this as reference only.</p>
+</div>
+
+<section id="why">
+  <h3><span class="n">1</span>Self-test first</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Before read: try answer these three from memory. If easy, this page just reference card. If hard, read properly &mdash; every DMT/DCT/snoop answer sit on top of this.</p></div>
+  <ul class="tight">
+    <li>Name the CHI cache states and what each pair of letters means.</li>
+    <li>In which states may a cache drop a line without telling anyone?</li>
+    <li>In which states does the cache owe the writeback &mdash; and can a <i>shared</i> line owe one?</li>
+  </ul>
+  <p>If the third question gave you pause, that is the one worth reading for. It is also the one that separates a CHI answer from a textbook MESI answer.</p>
+</section>
+
+<section id="axes">
+  <h3><span class="n">2</span>Two independent axes</h3>
+  <p>CHI state names are built from two orthogonal properties. Once you see them as two axes rather than a list of five acronyms, the set becomes obvious rather than memorised.</p>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-rnf"></span>Unique vs Shared</h6><p><b>Unique</b> &mdash; this is the only cached copy, so the cache may write to the line without asking anyone. <b>Shared</b> &mdash; other caches may also hold it, so a write needs permission first.</p></div>
+    <div class="card"><h6><span class="dot b-hnf"></span>Clean vs Dirty</h6><p><b>Clean</b> &mdash; this cache does <i>not</i> owe a writeback. <b>Dirty</b> &mdash; this cache holds modified data and <i>is responsible</i> for getting it written back.</p></div>
+  </div>
+  <div class="ascii-wrap"><div class="bar">The state set as a 2x2, plus Invalid</div>
+<pre class="ascii">                 <span class="cmt">CLEAN</span>              <span class="cmt">DIRTY</span>
+              <span class="cmt">(owe nothing)</span>     <span class="cmt">(owe writeback)</span>
+
+  <span class="cmt">UNIQUE</span>          <span class="rnf">UC</span>                 <span class="hnf">UD</span>
+  <span class="cmt">(only copy)</span>  UniqueClean        UniqueDirty
+
+  <span class="cmt">SHARED</span>          <span class="rnf">SC</span>                 <span class="hnf">SD</span>
+  <span class="cmt">(may be others)</span> SharedClean       SharedDirty
+
+  plus  <span class="box">I</span> = Invalid  (not present)
+</pre></div>
+  <p>There are also <b>partial and empty variants</b> of the unique states, used when a cache has permission for a line but does not hold all of its data as valid &mdash; useful for full-line writes where fetching the old data would be wasted work. Treat those as an optimisation detail; confirm exact naming and rules in the CHI specification.</p>
+</section>
+
+<section id="states">
+  <h3><span class="n">3</span>The state set in words</h3>
+  <table>
+    <tr><th>State</th><th>Only copy?</th><th>Owes writeback?</th><th>Meaning in practice</th></tr>
+    <tr><td><code>I</code> &mdash; Invalid</td><td>&mdash;</td><td>No</td><td>Not present. Any access misses.</td></tr>
+    <tr><td><code>SC</code> &mdash; SharedClean</td><td>No</td><td>No</td><td>Read-only working copy. Others may have it too. Cheapest state to hold and to drop.</td></tr>
+    <tr><td><code>UC</code> &mdash; UniqueClean</td><td>Yes</td><td>No</td><td>Sole copy, unmodified. Can be written <i>locally</i> without asking &mdash; which turns it into UD.</td></tr>
+    <tr><td><code>SD</code> &mdash; SharedDirty</td><td>No</td><td><b>Yes</b></td><td>The interesting one. Others may hold read-only copies, but <b>this cache</b> owns the writeback duty. Equivalent in spirit to the Owned state in MOESI.</td></tr>
+    <tr><td><code>UD</code> &mdash; UniqueDirty</td><td>Yes</td><td><b>Yes</b></td><td>Sole copy, modified. Classic "modified" state.</td></tr>
+  </table>
+  <p class="note">The existence of SD is what makes CHI more than MESI: dirty data can be shared without immediately writing back, with one designated holder responsible. That enables cache-to-cache transfer of dirty data (Lesson 6's DCT) without a memory round trip.</p>
+</section>
+
+<section id="writeback">
+  <h3><span class="n">4</span>Who owes the writeback</h3>
+  <p>This is the single most useful thing to have straight, because it determines what must happen on eviction and on snoop.</p>
+  <ul class="tight">
+    <li><b>Clean states (SC, UC):</b> nobody is waiting on this cache. The line can be discarded.</li>
+    <li><b>Dirty states (SD, UD):</b> this cache holds the only up-to-date data. It cannot simply drop the line &mdash; it must either <b>write it back</b> or <b>transfer the responsibility</b> to another agent (for example by supplying the data in a snoop response, passing dirty ownership along).</li>
+    <li><b>Shared and dirty simultaneously</b> is legal and important: SD means read-only copies may exist elsewhere while this cache carries the writeback duty.</li>
+  </ul>
+  <div class="ascii-wrap"><div class="bar">Eviction depends entirely on the clean/dirty axis</div>
+<pre class="ascii">   evict a line in <span class="rnf">SC</span> or <span class="rnf">UC</span>   -&gt;  may just drop it        <span class="cmt">(silent eviction)</span>
+   evict a line in <span class="hnf">SD</span> or <span class="hnf">UD</span>   -&gt;  must copy back, or hand
+                                    responsibility to someone else
+</pre></div>
+</section>
+
+<section id="silent">
+  <h3><span class="n">5</span>Silent transitions</h3>
+  <p>A <b>silent</b> transition is one a cache may make <i>without notifying</i> the home node. They exist because notifying on every state change would flood the fabric with messages that carry no useful information.</p>
+  <table>
+    <tr><th>Transition</th><th>Silent?</th><th>Why</th></tr>
+    <tr><td><code>SC &#8594; I</code></td><td>Yes</td><td>Dropping a clean shared copy loses nothing and obliges nobody.</td></tr>
+    <tr><td><code>UC &#8594; I</code></td><td>Yes</td><td>Dropping a clean sole copy still loses no data.</td></tr>
+    <tr><td><code>UC &#8594; UD</code></td><td>Yes</td><td>The cache already has exclusive permission, so writing locally needs no further permission.</td></tr>
+    <tr><td><code>UD</code> or <code>SD &#8594; I</code></td><td><b>No</b></td><td>Would destroy the only up-to-date copy. Requires a copyback or transfer of responsibility.</td></tr>
+    <tr><td><code>SC &#8594; UC/UD</code></td><td><b>No</b></td><td>Gaining exclusivity requires invalidating other copies &mdash; that needs the home node.</td></tr>
+  </table>
+  <p>The pattern: <b>giving up rights on clean data is silent; acquiring rights, or discarding dirty data, is not.</b> That one sentence covers most cases.</p>
+</section>
+
+<section id="sfmismatch">
+  <h3><span class="n">6</span>Cache state is not snoop-filter state</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Cache quietly throw line away (silent eviction). Home node's list still say "that cache has it." So home send snoop, cache reply "not here." Not a bug. List is allowed to be pessimistic &mdash; never miss a real sharer, but may name a stale one.</p></div>
+  <p>Because clean lines can be silently evicted, the snoop filter's record and the cache's actual state can diverge. The snoop filter is permitted to be <b>conservative</b>: it must never <i>fail</i> to list an agent that really holds a line, but it may list an agent that has since dropped it.</p>
+  <div class="ascii-wrap"><div class="bar">Legal divergence between SF record and cache reality</div>
+<pre class="ascii">   <span class="rnf">RN-F</span> holds line in <span class="rnf">SC</span>        <span class="hnf">SF</span> records: RN-F is a sharer
+        <span class="box">|</span>
+        <span class="box">▼</span> silent eviction (allowed)
+   <span class="rnf">RN-F</span> now <span class="box">I</span>                     <span class="hnf">SF</span> still records: RN-F is a sharer
+        <span class="box">|</span>
+        <span class="box">▼</span> later request arrives at home
+   home sends <span class="snp">SNP</span> to RN-F  -&gt;  RN-F responds "I do not have it"
+        <span class="cmt">correct behaviour, not an error; SF updates and moves on</span>
+</pre></div>
+  <p>Two consequences worth being able to state:</p>
+  <ul class="tight">
+    <li>A snoop returning "not present" is normal traffic, not a fault.</li>
+    <li>This is part of why snoop-filter <b>sizing</b> (Lesson 4) is about tracking capacity rather than perfect accuracy &mdash; and why an undersized SF causes real harm through forced back-invalidation, while a merely stale SF entry only costs one wasted snoop.</li>
+  </ul>
+</section>
+
+<section id="map">
+  <h3><span class="n">7</span>Mapping back to the flows you already know</h3>
+  <table>
+    <tr><th>Lesson 6 flow</th><th>What the states explain</th></tr>
+    <tr><td>Read miss, no sharers</td><td>Line installs as <code>SC</code> for a shared read, or <code>UC</code> if the requester takes it exclusively.</td></tr>
+    <tr><td>Store to a line already held</td><td><code>UC &#8594; UD</code> silently &mdash; no fabric traffic at all. If held <code>SC</code>, an upgrade is needed first, which does require the home node.</td></tr>
+    <tr><td><b>DCT</b> cache-to-cache</td><td>Only meaningful because a peer may hold usable data in <code>UD</code> or <code>SD</code>. Dirty data can be supplied directly, and writeback responsibility travels with it &mdash; no DRAM access.</td></tr>
+    <tr><td>Write-back</td><td>Discharges the duty carried by <code>UD</code> or <code>SD</code>, which is exactly why the state matters on eviction.</td></tr>
+    <tr><td>Snoop returning no data</td><td>The cache was clean and silently evicted, or never held it &mdash; the SF was being conservative.</td></tr>
+  </table>
+  <p>Every one of those answers gets one level deeper when the state is named. That is the payoff for this appendix.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">8</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="SD means other read-only copies may exist while this cache still owes the writeback \u2014 CHI's equivalent of MOESI's Owned.">
+    <div class="q">1. What makes SharedDirty (SD) notable?</div>
+    <button class="opt">It is the only state that permits reads.</button>
+    <button class="opt">It means the line is present in memory only.</button>
+    <button class="opt">The line may be shared read-only elsewhere, yet this cache still owes the writeback.</button>
+    <button class="opt">It cannot be snooped.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Clean states can be dropped silently; dirty states must be written back or have responsibility transferred.">
+    <div class="q">2. Which lines may be dropped without notifying the home node?</div>
+    <button class="opt">Clean ones (SC, UC).</button>
+    <button class="opt">Dirty ones (SD, UD).</button>
+    <button class="opt">Any line at all.</button>
+    <button class="opt">None &mdash; every eviction is announced.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="UC to UD is silent because the cache already holds exclusive permission.">
+    <div class="q">3. A cache holding a line in UC performs a store. What happens on the fabric?</div>
+    <button class="opt">It must request permission from the home node first.</button>
+    <button class="opt">Nothing &mdash; UC to UD is a silent local transition.</button>
+    <button class="opt">It must invalidate all other copies.</button>
+    <button class="opt">It must write back immediately.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="Silent eviction of clean lines means the SF may name an agent that no longer holds the line; it must never omit one that does.">
+    <div class="q">4. Why can a snoop legitimately return "I do not have this line"?</div>
+    <button class="opt">The snoop was corrupted in transit.</button>
+    <button class="opt">The snoop filter is broken and needs resizing.</button>
+    <button class="opt">The address hash sent it to the wrong home node.</button>
+    <button class="opt">The cache silently evicted a clean line, so the SF's record is conservatively stale.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">9</span>Interview Q&amp;A</h3>
+  <details><summary>Name the CHI cache states and what the letters mean.</summary><div class="ans">Invalid, plus four states built from two axes. Unique versus Shared says whether this is the only cached copy, which determines whether a write needs permission. Clean versus Dirty says whether this cache owes a writeback. That gives SharedClean, UniqueClean, SharedDirty and UniqueDirty. There are also partial and empty variants of the unique states for cases where a cache has permission without holding all the data valid, which helps full-line writes avoid fetching data that is about to be overwritten.</div></details>
+  <details><summary>How does CHI differ from textbook MESI?</summary><div class="ans">The key addition is SharedDirty. In MESI, dirty implies exclusive, so sharing dirty data requires writing back first. CHI allows a line to be shared read-only by several caches while one designated holder retains the writeback responsibility &mdash; conceptually the Owned state in MOESI. That is what makes cache-to-cache transfer of dirty data possible without a memory round trip, which is precisely what Direct Cache Transfer exploits.</div></details>
+  <details><summary>Which transitions can happen silently and why?</summary><div class="ans">Giving up rights on clean data is silent: SharedClean to Invalid, UniqueClean to Invalid. So is UniqueClean to UniqueDirty, because the cache already holds exclusive permission and needs no further authorisation to write. What is not silent is discarding dirty data, since that would destroy the only up-to-date copy, and acquiring rights such as going from shared to unique, since that requires invalidating other copies through the home node. The general rule: relinquishing clean rights is silent, acquiring rights or dropping dirty data is not.</div></details>
+  <details><summary>Why can a cache's state disagree with the snoop filter?</summary><div class="ans">Because clean lines may be evicted silently, so the filter can still list an agent that has already dropped the line. The filter is deliberately conservative: it must never omit an agent that genuinely holds a line, but it may name a stale one. The consequence is that a snoop returning "not present" is normal, not an error. It also clarifies the sizing discussion &mdash; a stale entry costs one wasted snoop, whereas an undersized filter forces back-invalidation of lines still in active use, which is far more damaging.</div></details>
+  <details><summary>Who is responsible for writing a line back?</summary><div class="ans">Whichever cache holds it in a dirty state, SharedDirty or UniqueDirty. On eviction that cache must either copy the line back or transfer the responsibility to another agent, for example by supplying the data in a snoop response so dirty ownership moves with it. Clean states carry no such duty and can simply be dropped.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">10</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>Two axes: <b>Unique/Shared</b> (may I write without asking?) and <b>Clean/Dirty</b> (do I owe a writeback?).</li>
+    <li>States: <code>I</code>, <code>SC</code>, <code>UC</code>, <code>SD</code>, <code>UD</code>, plus partial/empty unique variants.</li>
+    <li><b>SD</b> is the CHI-specific one &mdash; shared read-only elsewhere, writeback still owed here. Enables DCT of dirty data.</li>
+    <li>Silent: relinquishing clean rights, and <code>UC &#8594; UD</code>. Not silent: dropping dirty data, or acquiring rights.</li>
+    <li>Snoop-filter records may be <b>conservatively stale</b> &mdash; a "not present" snoop response is normal.</li>
+  </ul>
+  <div class="chips"><span class="chip">I / SC / UC / SD / UD</span><span class="chip">unique vs shared</span><span class="chip">clean vs dirty</span><span class="chip">silent transition</span><span class="chip">silent eviction</span><span class="chip">writeback responsibility</span><span class="chip">conservative SF</span><span class="chip">MOESI Owned</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson11_dvm.html">◄ L11 &middot; DVM</a>
+  <a href="cmn700_appendix_a_power_translation.html">Appendix A &middot; POWER translation ►</a>
+</div>
+<p class="note" style="margin-top:18px">If the self-test in section 1 was uncomfortable, say so and this can be expanded into a full lesson with worked transition exercises.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

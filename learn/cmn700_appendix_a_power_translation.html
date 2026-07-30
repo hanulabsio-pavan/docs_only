@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 . Appendix A - POWER Translation Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 &middot; APPENDIX A</div>
+  <h1>POWER &#8596; CMN-700 Translation Guide</h1>
+  <a href="#why">Why rehearse this</a>
+  <a href="#table">Mapping table</a>
+  <a href="#contrast">The real contrast</a>
+  <a href="#alink">A-link vs CML</a>
+  <a href="#answers">Rehearsed answers</a>
+  <a href="#caveats">Where it breaks</a>
+  <a href="#fill">Your side of the sheet</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Gap remediation &middot; Appendix A &mdash; differentiator</div>
+<h2 class="title">POWER &#8596; CMN-700 Translation Guide</h2>
+<p class="lede">Turning thirteen years of coherent-fabric experience into answers you can give on demand &mdash; with the analogy's limits marked so you never over-claim.</p>
+
+<div class="obj"><h4>Purpose of this appendix</h4>
+<ul>
+  <li>Turn thirteen years of coherent-fabric experience into answers you can give on demand.</li>
+  <li>Provide a defensible mapping between POWER concepts and CMN-700 equivalents.</li>
+  <li>Mark clearly where the analogy holds and where it breaks &mdash; so you never over-claim.</li>
+</ul>
+<p style="margin:10px 0 0; font-size:13.5px; color:var(--ink-dim)">The CMN-700 column is authoritative. The POWER column reflects what you described &mdash; per-chip MCD with MCD.cg and MCD.io variants, and A-link between systems. Verify the POWER details against your own internal documentation before relying on them; treat this as a rehearsal scaffold, not a source.</p>
+</div>
+
+<section id="why">
+  <h3><span class="n">1</span>Why this needs rehearsing</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Experience only count if you can translate it fast. Interviewer ask CMN-700 question. Best answer: give CMN-700 answer first, <i>then</i> add "we solved same problem differently in POWER, here is the trade." That show depth. Bad answer: claim they same thing. They not.</p></div>
+  <p>This is not a knowledge gap &mdash; you already know coherent fabrics deeply. It is an <b>articulation</b> gap. Under interview pressure the risk is one of two failures:</p>
+  <ul class="tight">
+    <li><b>Under-claiming:</b> answering as if CMN-700 were entirely new to you, discarding your strongest asset.</li>
+    <li><b>Over-claiming:</b> asserting that MCD "is" an HN-F, and getting corrected on a real architectural difference.</li>
+  </ul>
+  <p>The winning pattern is a three-part answer: <b>CMN-700 mechanism first, then the POWER parallel, then the difference that matters.</b> Lead with the architecture you are being interviewed on.</p>
+</section>
+
+<section id="table">
+  <h3><span class="n">2</span>Mapping table</h3>
+  <table>
+    <tr><th>Function</th><th>POWER (as you described)</th><th>CMN-700</th><th>Fit</th></tr>
+    <tr><td>Compute-domain coherency point</td><td><b>MCD.cg</b></td><td><b>HN-F</b> (HN-S) &mdash; SLC slice + snoop filter, Point of Coherency/Serialization</td><td>Close</td></tr>
+    <tr><td>I/O-domain coherency point</td><td><b>MCD.io</b></td><td><b>HN-I</b>, and <b>HN-P</b> where PCIe peer-to-peer optimisation is wanted</td><td>Close</td></tr>
+    <tr><td>Sharer tracking</td><td>Snoop filter / directory in MCD</td><td>Snoop filter co-located in each HN-F</td><td>Close</td></tr>
+    <tr><td>Chip-to-chip coherent link</td><td><b>A-link</b></td><td><b>CML</b> over <b>CXS-B</b>, via the <b>CCG</b> gateway (CCRA / CCHA / CCLA)</td><td>Close in role</td></tr>
+    <tr><td>Coherent requester with caches</td><td>Core / core module</td><td><b>RN-F</b>, typically a cluster behind a <b>DSU</b></td><td>Close</td></tr>
+    <tr><td>Non-coherent or I/O master</td><td>I/O agent behind MCD.io</td><td><b>RN-I</b>, or <b>RN-D</b> if it needs DVM</td><td>Close</td></tr>
+    <tr><td>Memory endpoint</td><td>Memory controller</td><td><b>SN-F</b> (or <b>SBSX</b> bridging to an ACE5-Lite controller)</td><td>Close</td></tr>
+    <tr><td>Transport topology</td><td>Chip interconnect + A-link</td><td>2-D mesh of <b>XPs</b>, dimension-ordered routing</td><td><span class="flag">Differs</span></td></tr>
+    <tr><td>Coherency distribution</td><td><b>Per-chip</b> MCD (two units)</td><td><b>Many</b> HN-F slices spread across the mesh</td><td><span class="flag">Differs &mdash; the key one</span></td></tr>
+  </table>
+</section>
+
+<section id="contrast">
+  <h3><span class="n">3</span>The contrast that actually matters</h3>
+  <p>If you take one thing from this appendix, take this. The interesting difference is not naming &mdash; it is <b>how coherency is distributed</b>.</p>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-hnf"></span>POWER: fewer, larger coherency points</h6><p>A small number of coherency directors per chip, split by domain (compute versus I/O). Each is a substantial centralised unit handling a broad address range.</p></div>
+    <div class="card"><h6><span class="dot b-rnf"></span>CMN-700: many, smaller coherency points</h6><p>Coherency is sliced across many HN-F nodes, each owning a hash-selected subset of addresses, each with its own SLC slice and snoop filter, all operating in parallel across the mesh.</p></div>
+  </div>
+  <p>Consequences you can discuss intelligently:</p>
+  <table>
+    <tr><th>Dimension</th><th>Fewer, larger</th><th>Many, smaller (CMN-700)</th></tr>
+    <tr><td>Throughput scaling</td><td>Bounded by the coherency unit's own capacity</td><td>Scales with slice count &mdash; more slices, more parallel engines</td></tr>
+    <tr><td>Address mapping</td><td>Broad ranges per unit</td><td>Hash-interleaved; balance becomes a tuning problem (Lesson 5)</td></tr>
+    <tr><td>Failure mode under load</td><td>The unit becomes the bottleneck</td><td>A <i>single</i> hot slice becomes the bottleneck if hashing is poor</td></tr>
+    <tr><td>Locality</td><td>Coherency point location is fixed and known</td><td>Home may be several hops away &mdash; placement matters (Lesson 7)</td></tr>
+  </table>
+  <p class="note">This is a genuinely good thing to volunteer, because it shows you understand the design space rather than one point in it. It also sets you up to talk about hashing and placement without being asked.</p>
+</section>
+
+<section id="alink">
+  <h3><span class="n">4</span>A-link versus CML &mdash; same problem, comparable shape</h3>
+  <p>Both solve: extend one coherency domain past a single chip. Both pay the same taxes: added latency, a narrower link than the on-chip fabric, and the cost of tracking remote sharers.</p>
+  <div class="ascii-wrap"><div class="bar">The shape is the same; the naming differs</div>
+<pre class="ascii">  POWER                                CMN-700
+  chip A                               die A
+   cores + <span class="hnf">MCD.cg</span> / <span class="hnf">MCD.io</span>            <span class="rnf">RN-F</span> + <span class="hnf">HN-F</span> slices + <span class="snf">SN-F</span>
+        <span class="box">|</span>                                    <span class="box">|</span>
+     <span class="req">A-link</span>  <span class="cmt">(coherent chip-to-chip)</span>    <span class="rtr">CCG</span> <span class="req">=== CXS-B ===</span> <span class="rtr">CCG</span>
+        <span class="box">|</span>                                    <span class="box">|</span>
+  chip B                               die B
+</pre></div>
+  <p>Where CMN-700 adds structure you should name: the gateway decomposes into <b>CCRA</b> (proxies remote requesters locally), <b>CCHA</b> (represents remote home/coherency locally) and <b>CCLA</b> (drives the link) &mdash; and a <b>Super Home Node</b> can serve as the central coherency point for memory shared across dice. If POWER has analogous internal roles, that is a good question to ask <i>them</i>, which reads as engagement rather than ignorance.</p>
+</section>
+
+<section id="answers">
+  <h3><span class="n">5</span>Rehearsed answers</h3>
+  <p>Each follows the pattern: CMN-700 first, POWER parallel second, difference third. Say them aloud until they are fluent.</p>
+
+  <details><summary>"You have not worked with CMN-700 before. Will that be a problem?"</summary><div class="ans">I have spent my career on coherent fabrics for server-class systems, which is the same problem space. In POWER I worked with per-chip coherency directors &mdash; separate compute and I/O variants &mdash; with directory-based sharer tracking and a coherent chip-to-chip link for multi-chip configurations. CMN-700 solves the same problems with a different distribution strategy: coherency is sliced across many home nodes on a 2-D mesh, each with its own cache slice and snoop filter, with addresses hashed across them. So the concepts transfer directly &mdash; point of coherency, directory tracking, remote coherency over a narrower link. What I have had to learn is the mesh-specific material: the crosspoint and node-ID routing model, the SAM and hashing layer, and the CMN-700 gateway structure.</div></details>
+
+  <details><summary>"What is the equivalent of an HN-F in your experience?"</summary><div class="ans">Functionally the closest analogue is the compute-side coherency director &mdash; MCD.cg in the system I worked on. It serves the same role: it is the ordering point for its address range and it tracks sharers through a directory. The difference worth naming is granularity. That was a per-chip unit covering a broad address range, whereas an HN-F is one of many slices, each owning a hash-selected subset with its own SLC slice and snoop filter. So CMN-700 scales coherency throughput by adding slices, which in turn makes address hashing and interleaving a first-class tuning concern &mdash; a hot slice is a failure mode that a more centralised design does not have in the same form.</div></details>
+
+  <details><summary>"How would you approach debugging a coherency performance problem here?"</summary><div class="ans">The same method I would use on any coherent fabric, mapped onto CMN-700's instrumentation. First characterise: bandwidth and latency against offered load, to distinguish saturation from an imbalance at low load. Then localise using the distributed PMU &mdash; per-crosspoint DTMs feeding global counters in the DTC &mdash; to see whether one home node or one crosspoint is disproportionately hot. Then classify: a hot home node points at address hashing or interleave granularity; a hot crosspoint points at placement or a funnelling path; uniform saturation points at a genuine capacity limit. I would also check snoop-filter back-invalidation rate, since an undersized filter produces spurious misses that look like a bandwidth problem. Then zoom in with watchpoints and change one variable at a time.</div></details>
+
+  <details><summary>"What did you find genuinely different about CMN-700?"</summary><div class="ans">Three things. First, routing is by node ID over a 2-D mesh with dimension-ordered routing, so hop count and therefore placement become explicit design levers in a way they are not with a more centralised interconnect. Second, the SAM and hashing layer is a real tuning surface &mdash; you can get correctness right and performance badly wrong purely through interleave choices. Third, DVM: because translation maintenance has no directory to narrow recipients, it is broadcast-natured and scales quite differently from address-based traffic, with the sync bounded by the slowest responder. That last one struck me as the most interesting asymmetry in the design.</div></details>
+
+  <details><summary>"Why are you moving from POWER to Arm?"</summary><div class="ans">Keep this brief, honest and forward-looking, and pivot to substance. Something like: the problems I find most interesting are coherent fabric scaling and the memory system, and the Arm infrastructure ecosystem is where a lot of that work is happening now &mdash; chiplets, CXL-attached memory, very high core counts. My background is directly applicable, and I would rather apply it where the scaling problems are hardest. Then stop &mdash; do not criticise your current employer or architecture.</div></details>
+</section>
+
+<section id="caveats">
+  <h3><span class="n">6</span>Where the analogy breaks &mdash; know these before you are corrected</h3>
+  <ul class="tight">
+    <li><b>These are analogies, not equivalences.</b> Say "the closest analogue" or "functionally comparable", never "it is the same as".</li>
+    <li><b>Topology is genuinely different.</b> A 2-D mesh with dimension-ordered routing and hop-count-dependent latency is not the same transport model. Do not map it onto whatever POWER uses.</li>
+    <li><b>Distribution granularity is the substantive difference</b> &mdash; per-chip directors versus many hash-interleaved slices. Lead with this if pressed, because it is the difference an architect would care about.</li>
+    <li><b>Do not guess at CMN-700 specifics from POWER habits.</b> Where you are unsure, say you would confirm against the TRM. That reads as discipline, not weakness.</li>
+    <li><b>Do not disclose anything confidential.</b> Talk about architectural patterns and public-level concepts, not internal implementation detail, performance figures, or roadmaps. If a question pushes there, say the pattern is what you can discuss.</li>
+    <li><b>Protocol families differ.</b> CHI has its own state set and messaging rules (Appendix B). Do not assume state names or ordering rules carry across.</li>
+  </ul>
+</section>
+
+<section id="fill">
+  <h3><span class="n">7</span>Your side of the sheet</h3>
+  <p>The CMN-700 column of this appendix is complete. The POWER column deliberately is not, because you hold that knowledge and should phrase it in terms you are comfortable defending. Before the interview, fill in for yourself:</p>
+  <ul class="tight">
+    <li>How sharer tracking is actually organised on your side &mdash; directory structure, and how it is sized relative to core caches. This gives you a direct comparison against the roughly 1.5&times; snoop-filter rule from Lesson 4.</li>
+    <li>How addresses map to coherency points in your system, so you can compare against SAM hashing and interleaving.</li>
+    <li>What congestion or throttling mechanism exists, so you can compare against CBusy.</li>
+    <li>What observability you use in practice, so you can compare against the DTM/DTC model.</li>
+    <li>One concrete problem you personally debugged and fixed. This is the highest-value item in the whole appendix &mdash; a specific story beats any amount of terminology.</li>
+  </ul>
+  <div class="card" style="border-left:3px solid var(--snf)">
+    <h6><span class="dot b-snf"></span>The one story to prepare</h6>
+    <p>Have one coherency or fabric problem you can walk through end to end: the symptom, how you localised it, what the root cause was, what you changed, and how you verified it. Interviewers remember the story long after they forget whether you knew what CCLA stands for.</p>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">8</span>Interview Q&amp;A</h3>
+  <details><summary>Compare centralised versus distributed coherency points.</summary><div class="ans">Fewer, larger coherency points are simpler to reason about and give a fixed, known location for ordering, but throughput is bounded by the unit itself and it becomes the bottleneck under load. Many smaller points, as in CMN-700's HN-F slices, scale throughput with slice count and remove the central bottleneck, but they introduce two new concerns: address hashing must keep load balanced or one slice becomes hot, and the home for a given address may be several hops away, so placement and interleaving become first-class performance levers.</div></details>
+  <details><summary>What is common to every coherent chip-to-chip link, regardless of naming?</summary><div class="ans">Three costs, always. Remote access latency is materially higher because of gateway translation plus link traversal. The link is narrower than the on-chip fabric, so heavy cross-chip sharing saturates the link before the fabric. And tracking remote sharers adds directory and snoop burden that does not exist for purely local traffic. The design response is the same everywhere: keep working sets local and treat cross-chip coherent traffic as a scarce resource. CMN-700's specific answer is the CCG gateway over CXS-B with a fast path that bypasses the transaction layer to trim latency.</div></details>
+  <details><summary>How do you talk about prior experience without over-claiming?</summary><div class="ans">Lead with the architecture you are being interviewed on, then offer the parallel, then name the difference. Use "the closest analogue is" rather than "it is the same as". Be explicit about what you have had to learn &mdash; for CMN-700 that is the mesh routing model, the SAM and hashing layer, and the gateway structure. Volunteering the difference before being corrected on it is what makes the comparison credible rather than presumptuous.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">9</span>Recap</h3>
+  <ul class="tight">
+    <li>Answer pattern: <b>CMN-700 mechanism &#8594; POWER parallel &#8594; the difference that matters.</b></li>
+    <li>Closest analogues: MCD.cg &#8776; HN-F, MCD.io &#8776; HN-I/HN-P, A-link &#8776; CML via CCG.</li>
+    <li>The substantive difference is <b>distribution granularity</b>: per-chip directors versus many hash-interleaved slices.</li>
+    <li>Say "closest analogue", never "the same as". Volunteer the difference before being corrected.</li>
+    <li>Prepare <b>one debugging story</b> end to end &mdash; it outperforms terminology.</li>
+    <li>Keep to architectural patterns; do not disclose internal detail.</li>
+  </ul>
+  <div class="chips"><span class="chip">MCD.cg &#8776; HN-F</span><span class="chip">MCD.io &#8776; HN-I / HN-P</span><span class="chip">A-link &#8776; CML / CCG</span><span class="chip">distribution granularity</span><span class="chip">analogy not equivalence</span><span class="chip">one debugging story</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_appendix_b_chi_cache_states.html">◄ Appendix B &middot; CHI cache states</a>
+  <a href="cmn700_index.html">Course index ►</a>
+</div>
+<p class="note" style="margin-top:18px">Remaining from the gap analysis: security/Realm and CXL sub-protocols, both held pending the job description; plus a low-priority sweep for CAL, MTE and SMMU.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

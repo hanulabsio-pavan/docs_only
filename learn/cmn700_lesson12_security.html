@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 . Lesson 12 - Security on the Mesh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 &middot; LESSON 12</div>
+  <h1>Security on the Mesh &mdash; Secure, Non-Secure &amp; Realm</h1>
+  <a href="#why">Why the fabric cares</a>
+  <a href="#pas">Physical address spaces</a>
+  <a href="#gpc">Granule protection</a>
+  <a href="#mesh">What the mesh must do</a>
+  <a href="#cache">Caches &amp; the snoop filter</a>
+  <a href="#mpam">Secure MPAM</a>
+  <a href="#config">Protecting configuration</a>
+  <a href="#caveat">Version caveat</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Gap remediation &middot; Lesson 12</div>
+<h2 class="title">Security on the Mesh &mdash; Secure, Non-Secure &amp; Realm</h2>
+<p class="lede">Why isolation is an interconnect problem and not only an MMU problem &mdash; and what that forces on the SLC, the snoop filter and the address map.</p>
+
+<div class="obj"><h4>By the end of this lesson you can</h4>
+<ul>
+  <li>Explain physical address spaces and why they are more than an access-permission bit.</li>
+  <li>Describe granule protection checking and where in the path it happens.</li>
+  <li>Say what the mesh itself must enforce &mdash; in caches, the snoop filter, and configuration.</li>
+  <li>Explain why MPAM has separate secure and non-secure partition spaces.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>Why an interconnect has to care about security</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Isolation is easy if you only check at the door. But data live in caches all over the mesh, and the snoop filter remember who has what. If cache mix up "secure copy" and "normal copy" of same address, isolation broken &mdash; and no software can fix it. So fabric must keep them apart, not just the MMU.</p></div>
+  <p>It is tempting to think of security as an MMU concern: check permissions at translation, and the rest of the system just moves bytes. That breaks down in a coherent fabric for one reason &mdash; <b>the fabric caches things and remembers who has them</b>.</p>
+  <p>If a shared last-level cache slice can hold a line without knowing which security context it belongs to, then two contexts referencing the same physical address could hit each other's data. If a snoop filter tracks sharers without that distinction, a snoop could leak the existence &mdash; or the content &mdash; of another context's line. So isolation has to be enforced <i>in the interconnect</i>, in the same structures Lessons 4 and 5 covered.</p>
+</section>
+
+<section id="pas">
+  <h3><span class="n">2</span>Physical address spaces</h3>
+  <p>Classic Arm TrustZone defines two security states and, correspondingly, <b>Secure</b> and <b>Non-secure</b> address spaces. Armv9's <b>Realm Management Extension (RME)</b>, part of Arm's <b>Confidential Compute Architecture (CCA)</b>, extends this to <b>four physical address spaces (PAS)</b>:</p>
+  <table>
+    <tr><th>PAS</th><th>Broadly for</th></tr>
+    <tr><td><b>Non-secure</b></td><td>Normal-world software: the OS, hypervisor, ordinary applications.</td></tr>
+    <tr><td><b>Secure</b></td><td>TrustZone secure world &mdash; trusted firmware and secure services.</td></tr>
+    <tr><td><b>Realm</b></td><td>Confidential VMs whose memory is protected even from the hypervisor.</td></tr>
+    <tr><td><b>Root</b></td><td>The most privileged space, owning the monitor that manages the others.</td></tr>
+  </table>
+  <p>The critical architectural point: <b>the same physical address in two different PAS is architecturally a different location.</b> This is not "the same memory with different permissions" &mdash; the PAS is effectively part of the address. That is precisely why caches and directories cannot ignore it.</p>
+  <div class="ascii-wrap"><div class="bar">Same PA, different PAS = distinct locations</div>
+<pre class="ascii">   PA 0x8000_0000 in <span class="rnf">Non-secure</span>  <span class="box">|</span>
+   PA 0x8000_0000 in <span class="hnf">Secure</span>      <span class="box">|</span>  four architecturally
+   PA 0x8000_0000 in <span class="snp">Realm</span>       <span class="box">|</span>  distinct locations
+   PA 0x8000_0000 in <span class="rtr">Root</span>        <span class="box">|</span>
+
+   <span class="cmt">a cache tag must therefore carry PAS, not just the address bits</span>
+</pre></div>
+</section>
+
+<section id="gpc">
+  <h3><span class="n">3</span>Granule protection checking</h3>
+  <p>Something must decide whether a given access is <i>allowed</i> to target a given PAS. Under RME that is the <b>granule protection check (GPC)</b>, driven by a <b>granule protection table (GPT)</b> that records, per granule of physical memory, which PAS may access it.</p>
+  <p>Two things to keep straight:</p>
+  <ul class="tight">
+    <li><b>Translation</b> converts a virtual address to a physical address and a target PAS. This happens in the MMU for a core, or the <b>SMMU</b> for a device (see Appendix C).</li>
+    <li><b>Granule protection checking</b> then validates that the resulting PAS is permitted for that physical granule. A failure is a fault, not a silent wrong answer.</li>
+  </ul>
+  <p>Because checking happens at or near the translation point, requests that reach the mesh have already been validated. The mesh's job is therefore <b>faithful carriage and correct separation</b> &mdash; keep the PAS attached to the request, and never let two PAS collide in a shared structure.</p>
+  <p class="note">This division of labour is the answer to "does the interconnect do the security check?" &mdash; not the permission decision, but the isolation that makes the decision meaningful downstream.</p>
+</section>
+
+<section id="mesh">
+  <h3><span class="n">4</span>What the mesh must actually do</h3>
+  <table>
+    <tr><th>Structure</th><th>Requirement</th></tr>
+    <tr><td>Request routing</td><td>The security attribute travels <b>with</b> the request as part of its identity, all the way to the home node and memory.</td></tr>
+    <tr><td>SAM / address decode</td><td>Address decoding must respect the security context &mdash; a region may be mapped for one PAS and not another, and the map must not let a request reach a target it should not.</td></tr>
+    <tr><td>SLC slices</td><td>Cached lines must be distinguishable by PAS so lookups cannot alias across contexts.</td></tr>
+    <tr><td>Snoop filter</td><td>Sharer tracking must likewise distinguish contexts, so snoops never cross a boundary.</td></tr>
+    <tr><td>Memory path</td><td>The attribute reaches the memory controller, since memory-side protection and encryption depend on it.</td></tr>
+    <tr><td>Configuration registers</td><td>Access to the interconnect's own control state must itself be restricted &mdash; see &sect;7.</td></tr>
+  </table>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Rule is simple: security label ride along with request from start to finish, and every place that <i>remembers</i> something must remember the label too. Cache, directory, address map. Forget label anywhere &#8594; hole.</p></div>
+</section>
+
+<section id="cache">
+  <h3><span class="n">5</span>Caches and the snoop filter &mdash; the interesting part</h3>
+  <p>This is where a security question becomes a <i>coherency</i> question, and where your Lesson 4 knowledge pays off.</p>
+  <h5>The SLC slice</h5>
+  <p>A shared last-level cache is, by construction, shared across everything on the mesh. For it to be safe, a lookup for address A in one PAS must not match a line cached for address A in another. So the PAS participates in identifying the line &mdash; conceptually part of the tag rather than an attribute hanging off it.</p>
+  <p>A capacity consequence worth naming: if several contexts are active on the same physical addresses, they occupy <b>separate cache entries</b>. Isolation is not free &mdash; you can lose effective capacity to duplication across contexts.</p>
+  <h5>The snoop filter</h5>
+  <p>The directory has the same requirement for a subtler reason. Recall from Lesson 4 that the snoop filter's job is to tell the home node <i>who to snoop</i>. If it conflated contexts:</p>
+  <ul class="tight">
+    <li>A snoop could be sent to an agent in a different security context &mdash; at minimum leaking that an address is in use, potentially worse.</li>
+    <li>An invalidation in one context could destroy another context's line, which is an availability and correctness problem as well as a security one.</li>
+  </ul>
+  <p>So sharer tracking is per-context. And that has the same capacity implication: directory entries, like cache entries, are consumed per context rather than per address.</p>
+  <div class="ascii-wrap"><div class="bar">Isolation costs capacity in both structures</div>
+<pre class="ascii">   without contexts:   addr A  -&gt; 1 SLC line, 1 SF entry
+   with two contexts:  addr A  -&gt; <span class="rnf">NS line</span> + <span class="hnf">S line</span>       (2 SLC lines)
+                                <span class="rnf">NS entry</span> + <span class="hnf">S entry</span>     (2 SF entries)
+
+   <span class="cmt">so heavy multi-context use tightens the SF sizing pressure from L4</span>
+</pre></div>
+</section>
+
+<section id="mpam">
+  <h3><span class="n">6</span>Why MPAM is split secure / non-secure</h3>
+  <p>Lesson 10 introduced MPAM and mentioned node variants named for secure and non-secure MPAM. Now the reason is clear.</p>
+  <p>MPAM lets software tag traffic with a <b>partition ID</b> and then partition SLC capacity and memory bandwidth by that ID. If there were a single partition-ID space shared across security contexts, then:</p>
+  <ul class="tight">
+    <li>Secure and non-secure software would have to <b>agree</b> on the meaning of partition IDs &mdash; an unacceptable coupling.</li>
+    <li>One context could infer or influence the other's resource allocation, which is a side channel.</li>
+  </ul>
+  <p>So the partition-ID spaces are <b>separate</b>, each with its own configuration, which is why you see distinct secure and non-secure MPAM node variants in the register and node naming. Each security context partitions resources independently.</p>
+  <p class="note">Good interview beat: MPAM's split is not bureaucracy &mdash; a shared ID space would be both a coupling problem and an information-leak surface.</p>
+</section>
+
+<section id="config">
+  <h3><span class="n">7</span>Protecting the interconnect's own configuration</h3>
+  <p>Here is a point candidates routinely miss. The mesh's configuration <i>is</i> a security asset. Consider what an attacker could do with unrestricted access to it:</p>
+  <ul class="tight">
+    <li><b>Remap the SAM</b> so a secure address range targets somewhere it should not &mdash; redirecting or exposing traffic without touching a single page table.</li>
+    <li><b>Reconfigure MPAM</b> to starve another context of cache or bandwidth, a denial-of-service or a timing side channel.</li>
+    <li><b>Use the PMU</b> as a measurement device: per-crosspoint counters and watchpoints (Lesson 9) observe traffic patterns, which is exactly the primitive a side-channel attack wants.</li>
+  </ul>
+  <p>So access to configuration, MPAM control and debug/trace facilities must itself be restricted by security context. The observability that makes the fabric tunable is the same observability an attacker would like &mdash; which is why debug and trace access control is a security feature, not an inconvenience.</p>
+</section>
+
+<section id="caveat">
+  <h3><span class="n">8</span>An honest caveat on versions</h3>
+  <div class="card" style="border-left:3px solid var(--warn)">
+    <h6><span class="dot" style="background:var(--warn)"></span>Confirm the RME support level for your target release</h6>
+    <p>Secure / non-secure separation is long-standing and solidly applicable to CMN-700 &mdash; the secure and non-secure MPAM node variants are direct evidence of it. <b>Full RME / CCA support</b> (the four-PAS model with granule protection) arrived with the Armv9 confidential-compute wave, and exactly which interconnect generations and configurations implement which parts is a release-specific question. Before asserting a specific RME capability of CMN-700 in an interview, verify against the TRM for the release in question. The <i>architectural reasoning</i> in this lesson holds regardless; the implementation checklist is what varies.</p>
+  </div>
+  <p>Saying "the four-PAS model is where Arm is going, and here is what any coherent fabric has to do to support it &mdash; I would confirm the specific support level in the TRM" is a strong answer. Asserting a capability you have not verified is not.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">9</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="Under RME the PAS is effectively part of the address \u2014 the same PA in two PAS is architecturally distinct.">
+    <div class="q">1. The same physical address in Secure and Non-secure space refers to&hellip;</div>
+    <button class="opt">the same location with different permissions.</button>
+    <button class="opt">the same location, cached once.</button>
+    <button class="opt">architecturally distinct locations.</button>
+    <button class="opt">an illegal configuration.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="A shared directory that conflated contexts could snoop across a boundary or invalidate another context's line.">
+    <div class="q">2. Why must the snoop filter distinguish security contexts?</div>
+    <button class="opt">To reduce its size.</button>
+    <button class="opt">Otherwise a snoop could cross a security boundary or invalidate another context's line.</button>
+    <button class="opt">Because snoops are always broadcast.</button>
+    <button class="opt">To support DMT.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="A shared partition-ID space would couple the two contexts and create an information-leak surface.">
+    <div class="q">3. Why does MPAM have separate secure and non-secure partition-ID spaces?</div>
+    <button class="opt">A shared ID space would couple the contexts and create a side channel.</button>
+    <button class="opt">Secure software cannot use MPAM.</button>
+    <button class="opt">To double the number of usable IDs.</button>
+    <button class="opt">Because memory controllers require it.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="Per-crosspoint counters and watchpoints observe traffic patterns \u2014 exactly the primitive a side-channel attack needs.">
+    <div class="q">4. Why is PMU and trace access itself security-relevant?</div>
+    <button class="opt">It can corrupt cache data.</button>
+    <button class="opt">It consumes mesh bandwidth.</button>
+    <button class="opt">It disables the snoop filter.</button>
+    <button class="opt">It is a traffic-observation primitive usable for side-channel measurement.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="Translation produces a PA and target PAS; the granule protection check then validates that PAS is permitted for that granule.">
+    <div class="q">5. What does granule protection checking add on top of translation?</div>
+    <button class="opt">It converts virtual addresses to physical ones.</button>
+    <button class="opt">It validates that the resulting PAS is permitted for that physical granule.</button>
+    <button class="opt">It allocates cache lines.</button>
+    <button class="opt">It routes the request across the mesh.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">10</span>Interview Q&amp;A</h3>
+  <details><summary>Why does a coherent interconnect need to be security-aware at all &mdash; isn't that the MMU's job?</summary><div class="ans">The MMU or SMMU makes the permission decision, but the fabric caches data and remembers who holds it, and those structures would break isolation if they were context-blind. A shared SLC slice must not let a lookup for an address in one security context hit a line cached for the same address in another, and the snoop filter must not track sharers in a way that lets a snoop cross a boundary or invalidate another context's line. So the split is: translation and granule protection decide what is allowed, and the interconnect provides the separation that makes that decision meaningful in every structure downstream.</div></details>
+  <details><summary>What are the four physical address spaces, and why does the distinction matter to caches?</summary><div class="ans">Non-secure, Secure, Realm and Root, under Armv9's Realm Management Extension as part of Arm CCA. The key point is that the same physical address in two different PAS is architecturally a distinct location, not the same memory with different permissions. So the PAS effectively participates in identifying a cache line rather than being an attribute hanging off it. A consequence worth naming is capacity: if multiple contexts touch the same addresses, they occupy separate cache lines and separate directory entries, so isolation costs effective capacity and tightens snoop-filter sizing pressure.</div></details>
+  <details><summary>Where does granule protection checking happen relative to the mesh?</summary><div class="ans">At or near the translation point &mdash; the MMU for a core, the SMMU for a device. Translation yields a physical address and a target PAS, and the granule protection check validates against a granule protection table that this PAS may access that granule; a failure is a fault rather than a silently wrong result. Requests therefore arrive at the mesh already validated, and the mesh's responsibility is faithful carriage of the security attribute plus correct separation in every structure that retains state.</div></details>
+  <details><summary>Why is MPAM split into secure and non-secure partition spaces?</summary><div class="ans">Because a single shared partition-ID space would create two problems. Secure and non-secure software would have to agree on what each ID means, which is an unacceptable coupling between contexts that are supposed to be isolated. And one context could infer or influence the other's resource allocation, which is an information-leak and denial-of-service surface. Separate ID spaces with separate configuration let each context partition cache capacity and bandwidth independently, which is why distinct secure and non-secure MPAM node variants appear in the naming.</div></details>
+  <details><summary>Why does interconnect configuration access need protecting?</summary><div class="ans">Because the configuration is itself a security asset. Remapping the SAM could redirect or expose a secure address range without touching a page table. Reconfiguring MPAM could starve another context of cache or bandwidth, giving denial of service or a timing channel. And the PMU is a traffic-observation primitive &mdash; per-crosspoint counters and watchpoints reveal patterns, which is exactly what a side-channel attack wants. So configuration, MPAM control and debug and trace access all have to be restricted by security context; observability is dual-use.</div></details>
+  <details><summary>Does CMN-700 support full RME?</summary><div class="ans">Secure and non-secure separation is solidly there &mdash; the secure and non-secure MPAM node variants are direct evidence. Full RME and CCA support, meaning the four-PAS model with granule protection, came in with the Armv9 confidential-compute wave, and precisely which interconnect generations and configurations implement which parts is release-specific. I would confirm the support level against the TRM for the target release rather than assert it. The architectural requirements on any coherent fabric are the same either way, which is what I would talk through.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">11</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>Classic TrustZone: <b>Secure / Non-secure</b>. RME under Arm CCA adds <b>Realm</b> and <b>Root</b> &mdash; four PAS.</li>
+    <li>The same PA in different PAS is <b>architecturally distinct</b> &mdash; PAS effectively part of the address.</li>
+    <li><b>Translation</b> yields PA + target PAS; <b>granule protection check</b> validates it against the GPT.</li>
+    <li>The mesh must carry the attribute end to end and distinguish contexts in <b>SLC</b>, <b>snoop filter</b> and <b>address decode</b>.</li>
+    <li>Isolation costs <b>capacity</b>: separate lines and directory entries per context.</li>
+    <li>MPAM is split secure / non-secure to avoid coupling and side channels.</li>
+    <li><b>Configuration and PMU access are security-relevant</b> &mdash; observability is dual-use.</li>
+    <li>Verify RME support level per release in the TRM; do not assert it.</li>
+  </ul>
+  <div class="chips"><span class="chip">TrustZone</span><span class="chip">PAS</span><span class="chip">RME</span><span class="chip">Arm CCA</span><span class="chip">Realm / Root</span><span class="chip">GPT / GPC</span><span class="chip">MPAM_S / MPAM_NS</span><span class="chip">side channel</span><span class="chip">dual-use observability</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson11_dvm.html">◄ L11 &middot; DVM</a>
+  <a href="cmn700_lesson13_cxl.html">L13 &middot; CXL deep dive ►</a>
+</div>
+<p class="note" style="margin-top:18px">Next: CXL in depth — the three sub-protocols, the three device types, bias modes, and how memory pooling reaches the mesh.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>

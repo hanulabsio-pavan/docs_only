@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMN-700 . Lesson 13 - CXL Deep Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --rnf:#39d4e6; --hnf:#f5b942; --snf:#52d273; --router:#b48cff;
+  --req:#4d9fff; --rsp:#b48cff; --dat:#52d273; --snp:#ff9b42;
+  --warn:#ff7a7a; --ok:#52d273;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--rnf); text-decoration:none}
+.shell{display:grid; grid-template-columns:240px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--router); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--rnf)}
+main{padding:38px 52px 120px; max-width:920px}
+.kick{font-family:var(--mono); color:var(--router); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:680px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--rnf); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rnf)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--router); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--hnf); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hnf)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-rnf{background:var(--rnf)} .b-hnf{background:var(--hnf)} .b-snf{background:var(--snf)} .b-rtr{background:var(--router)}
+.b-req{background:var(--req)} .b-rsp{background:var(--rsp)} .b-dat{background:var(--dat)} .b-snp{background:var(--snp)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--rnf); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .rnf{color:var(--rnf);font-weight:600} .ascii .hnf{color:var(--hnf);font-weight:600}
+.ascii .snf{color:var(--snf);font-weight:600} .ascii .rtr{color:var(--router);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic} .ascii .hex{color:#e07b5a}
+.ascii .req{color:var(--req);font-weight:600} .ascii .rsp{color:var(--rsp);font-weight:600}
+.ascii .dat{color:var(--dat);font-weight:600} .ascii .snp{color:var(--snp);font-weight:600}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--rnf)}
+.flag{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--ok); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--router); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">CMN-700 &middot; LESSON 13</div>
+  <h1>CXL Deep Dive &mdash; Sub-Protocols, Device Types &amp; Pooling</h1>
+  <a href="#why">Beyond the model</a>
+  <a href="#three">Three sub-protocols</a>
+  <a href="#types">Three device types</a>
+  <a href="#bias">Bias modes</a>
+  <a href="#hdm">Host-managed device memory</a>
+  <a href="#mesh">Reaching the mesh</a>
+  <a href="#pool">Pooling &amp; switching</a>
+  <a href="#choose">Choosing a type</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+</nav>
+<main>
+<div class="kick">Gap remediation &middot; Lesson 13</div>
+<h2 class="title">CXL Deep Dive &mdash; Sub-Protocols, Device Types &amp; Pooling</h2>
+<p class="lede">Past “host-based coherency”: the three sub-protocols, the three device types, why bias modes exist, and how CXL memory becomes just another SAM target.</p>
+
+<div class="obj"><h4>By the end of this lesson you can</h4>
+<ul>
+  <li>Distinguish CXL.io, CXL.cache and CXL.mem and say which direction each serves.</li>
+  <li>Classify Type 1, Type 2 and Type 3 devices by sub-protocol usage.</li>
+  <li>Explain host and device bias, and why bias flipping exists.</li>
+  <li>Describe how CXL-attached memory reaches the mesh through the gateway and SAM.</li>
+</ul></div>
+
+<section id="why">
+  <h3><span class="n">1</span>Past the coherency model</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Lesson 8 said "CXL is host-based coherency." True but not enough. Real question interviewer ask: <i>which</i> CXL? Device with cache but no memory? Device with own memory? Plain memory box? Each use different mix of three sub-protocols. Learn the three, learn the three types, and it all click.</p></div>
+  <p>Lesson 8 established the contrast that matters most &mdash; CXL resolves coherency <b>host-side</b>, whereas CCIX resolves it near the memory. That is the right first answer. But CXL is not one thing, and a follow-up question will usually go straight to which flavour you mean.</p>
+  <p>The whole structure follows from a simple observation: a device attached over a coherent link might want to <b>cache the host's memory</b>, or <b>expose its own memory to the host</b>, or <b>both</b>, or <b>neither</b>. Three sub-protocols cover those needs, and three device types are just the useful combinations.</p>
+</section>
+
+<section id="three">
+  <h3><span class="n">2</span>The three sub-protocols</h3>
+  <table>
+    <tr><th>Sub-protocol</th><th>Direction</th><th>What it does</th></tr>
+    <tr><td><b>CXL.io</b></td><td>&mdash;</td><td>The PCIe-based foundation: discovery, enumeration, configuration, register access, interrupts, plain DMA. <b>Every</b> CXL device uses it &mdash; it is how the device is found and set up.</td></tr>
+    <tr><td><b>CXL.cache</b></td><td>Device &#8594; host memory</td><td>Lets the <b>device cache host memory coherently</b>. The device becomes a caching agent that the host must keep coherent, so the host snoops it.</td></tr>
+    <tr><td><b>CXL.mem</b></td><td>Host &#8594; device memory</td><td>Lets the <b>host access memory attached to the device</b> as if it were ordinary system memory. The device is the memory target.</td></tr>
+  </table>
+  <div class="ascii-wrap"><div class="bar">The two coherent sub-protocols point in opposite directions</div>
+<pre class="ascii">                 <span class="rnf">HOST</span>                       <span class="snf">DEVICE</span>
+                   <span class="box">|</span>                            <span class="box">|</span>
+   <span class="req">CXL.io</span>      <span class="box">|</span>&lt;--- discovery / config / DMA ---&gt;<span class="box">|</span>   <span class="cmt">always present</span>
+                   <span class="box">|</span>                            <span class="box">|</span>
+   <span class="snp">CXL.cache</span>   <span class="box">|</span>&lt;--- device caches HOST memory ---<span class="box">|</span>   <span class="cmt">device is a cache</span>
+                   <span class="box">|</span>      host must snoop it      <span class="box">|</span>
+                   <span class="box">|</span>                            <span class="box">|</span>
+   <span class="dat">CXL.mem</span>     <span class="box">|</span>--- host reads DEVICE memory ---&gt;<span class="box">|</span>   <span class="cmt">device is memory</span>
+                   <span class="box">|</span>                            <span class="box">|</span>
+</pre></div>
+  <p>Keeping the two coherent ones straight is the whole game: <b>CXL.cache is the device reaching into host memory; CXL.mem is the host reaching into device memory.</b> Opposite directions, different implications for who tracks coherency.</p>
+</section>
+
+<section id="types">
+  <h3><span class="n">3</span>The three device types</h3>
+  <p>The types are simply which sub-protocols a device uses:</p>
+  <table>
+    <tr><th>Type</th><th>Sub-protocols</th><th>Has device memory?</th><th>Typical device</th></tr>
+    <tr><td><b>Type 1</b></td><td>CXL.io + CXL.cache</td><td>No</td><td>A coherent accelerator or smart NIC that caches host memory but exposes none of its own.</td></tr>
+    <tr><td><b>Type 2</b></td><td>CXL.io + CXL.cache + CXL.mem</td><td>Yes</td><td>A full accelerator &mdash; GPU or ML accelerator &mdash; with its own memory, which both caches host memory and exposes its own to the host.</td></tr>
+    <tr><td><b>Type 3</b></td><td>CXL.io + CXL.mem</td><td>Yes</td><td>A memory expander or buffer. No device cache; it is memory the host consumes.</td></tr>
+  </table>
+  <p>Note what is absent: there is no type using CXL.io alone, because that would just be a PCIe device. And Type 3 has no CXL.cache because a memory box has nothing to cache &mdash; it <i>is</i> the memory.</p>
+  <div class="grid g3">
+    <div class="card"><h6><span class="dot b-rnf"></span>Type 1 &mdash; cache only</h6><p>Needs to be snooped by the host. Simplest coherency footprint, but adds a remote caching agent.</p></div>
+    <div class="card"><h6><span class="dot b-hnf"></span>Type 2 &mdash; both</h6><p>The most complex: a caching agent <i>and</i> a memory target. Bias modes exist for this case.</p></div>
+    <div class="card"><h6><span class="dot b-snf"></span>Type 3 &mdash; memory only</h6><p>The memory-capacity and pooling workhorse. No device cache means no snooping into the device.</p></div>
+  </div>
+</section>
+
+<section id="bias">
+  <h3><span class="n">4</span>Bias modes &mdash; the Type 2 problem</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Accelerator has own memory. Accelerator want to chew on it fast, thousands of times. If every access must ask host "may I? is anyone else holding this?" &#8594; slow, pointless. So: flip a switch. <b>Device bias</b> = "this memory is mine right now, I work alone, no asking." <b>Host bias</b> = "host may be looking, go through coherency." Flip when handing work over.</p></div>
+  <p>A Type 2 device owns memory that the host can also access coherently. That creates a tension: while the accelerator is computing over its own memory, routing every access through host coherency would add latency for no benefit. <b>Bias modes</b> resolve it:</p>
+  <table>
+    <tr><th>Mode</th><th>Who effectively owns it</th><th>Use</th></tr>
+    <tr><td><b>Host bias</b></td><td>Host coherency governs</td><td>The host is reading or writing the region &mdash; typically while staging input or collecting results. Device access pays coherency cost.</td></tr>
+    <tr><td><b>Device bias</b></td><td>Device operates locally</td><td>The accelerator is working on the region and the host is not touching it. Device accesses avoid host coherency overhead.</td></tr>
+  </table>
+  <p>The transition between them &mdash; <b>bias flip</b> &mdash; is the synchronisation point: it happens at the handover between host and device phases of a computation. The mental model is a baton pass rather than continuous shared access.</p>
+  <p class="note">Interview framing: bias exists because <i>coherency has a cost, and sometimes nobody needs it</i>. That is a more sophisticated point than reciting the two mode names.</p>
+</section>
+
+<section id="hdm">
+  <h3><span class="n">5</span>Host-managed device memory</h3>
+  <p>Memory a device exposes via CXL.mem is <b>host-managed device memory (HDM)</b>. The wording matters: the memory is physically on the device, but it is <b>mapped into the host's physical address space and managed by the host</b>. Software sees system memory; it happens to live across a link.</p>
+  <p>Consequences to be able to state:</p>
+  <ul class="tight">
+    <li>It occupies host physical address space, so it must be discovered and mapped at configuration time.</li>
+    <li>It has <b>different performance characteristics</b> from directly-attached DRAM &mdash; higher latency, and bandwidth bounded by the link. This is a NUMA problem, and software placement matters.</li>
+    <li>For Type 3 devices this is the entire point: <b>capacity expansion</b> beyond what the host's own memory channels can provide.</li>
+  </ul>
+</section>
+
+<section id="mesh">
+  <h3><span class="n">6</span>How this reaches the CMN-700 mesh</h3>
+  <p>Now connect it to the machinery from Lessons 5 and 8. The gateway is the <b>CCG</b>, whose internal agents map neatly onto the two coherent sub-protocols:</p>
+  <table>
+    <tr><th>Direction</th><th>Sub-protocol</th><th>Gateway agent involved</th></tr>
+    <tr><td>A remote device caching host memory</td><td>CXL.cache</td><td><b>CCRA</b> &mdash; proxies the remote requester into the local mesh, so local home nodes see it as a participant to be snooped.</td></tr>
+    <tr><td>The host accessing device memory</td><td>CXL.mem</td><td><b>CCHA</b> &mdash; represents the remote home / memory locally, so a local request can be routed to it.</td></tr>
+    <tr><td>Either</td><td>&mdash;</td><td><b>CCLA</b> &mdash; drives the physical link.</td></tr>
+  </table>
+  <div class="ascii-wrap"><div class="bar">CXL-attached memory becomes just another SAM target</div>
+<pre class="ascii">   core <span class="rnf">RN-F</span> reads an address in CXL memory
+        <span class="box">|</span>
+        <span class="box">▼</span>  <span class="rnf">RN SAM</span> lookup
+   target is not a local <span class="hnf">HN-F</span> ... it is the <span class="rtr">CCG</span>
+        <span class="box">|</span>
+        <span class="box">▼</span>  route across mesh to the gateway
+   <span class="rtr">CCG</span> (<span class="hnf">CCHA</span> represents the remote memory) <span class="req">== CXS/CXL ==&gt;</span> <span class="snf">device memory</span>
+        <span class="box">|</span>
+        <span class="box">▼</span>  data returns, latency &gt; local DRAM
+</pre></div>
+  <p>This is the satisfying part: <b>nothing new is needed in the addressing model.</b> Lesson 5 said the RN SAM maps an address to a target ID and that a target can be a CCG for remote memory. CXL memory expansion is exactly that case. And where memory is shared across dice or devices, the <b>Super Home Node</b> from Lesson 8 can act as the central coherency point.</p>
+</section>
+
+<section id="pool">
+  <h3><span class="n">7</span>Pooling, switching and sharing</h3>
+  <p>Later CXL generations add topology beyond one host and one device:</p>
+  <ul class="tight">
+    <li><b>Switching</b> lets multiple devices sit behind a switch rather than being point-to-point, which is what makes fabric-like topologies possible.</li>
+    <li><b>Pooling</b> lets a memory device's capacity be divided among <b>several hosts</b>, each getting a portion. The economic driver: stranded memory. In a conventional server, memory bought for one machine cannot help a neighbouring machine that needs it. Pooling turns memory into an allocatable resource.</li>
+    <li><b>Sharing</b> &mdash; multiple hosts coherently accessing the <i>same</i> region &mdash; is the harder step, and the one with the most demanding coherency requirements.</li>
+  </ul>
+  <p class="note">Exact capabilities are versioned across CXL 1.1, 2.0 and 3.x, and which are supported depends on both the CXL revision and the interconnect release. Speak about the capability progression confidently, and confirm specific version support in the TRM and CXL specification rather than asserting it.</p>
+</section>
+
+<section id="choose">
+  <h3><span class="n">8</span>Choosing a type &mdash; the design question</h3>
+  <table>
+    <tr><th>Requirement</th><th>Type</th><th>Reasoning</th></tr>
+    <tr><td>Accelerator working on host data structures, no local memory</td><td><b>Type 1</b></td><td>Needs CXL.cache to cache host memory coherently; exposes nothing.</td></tr>
+    <tr><td>Accelerator with large local memory, collaborating with host</td><td><b>Type 2</b></td><td>Needs both directions, plus bias modes to avoid paying coherency during local compute phases.</td></tr>
+    <tr><td>More memory capacity than the host's channels allow</td><td><b>Type 3</b></td><td>Pure CXL.mem expansion; no device cache needed.</td></tr>
+    <tr><td>Reduce stranded memory across many servers</td><td><b>Type 3 + pooling</b></td><td>Capacity allocated per host from a shared device.</td></tr>
+    <tr><td>Symmetric peers, coherency resolved near memory</td><td><i>Consider CCIX instead</i></td><td>This is the case CXL's host-based model fits least well &mdash; back to Lesson 8's contrast.</td></tr>
+  </table>
+</section>
+
+<section id="check">
+  <h3><span class="n">9</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="CXL.cache is the device caching host memory; CXL.mem is the host accessing device memory \u2014 opposite directions.">
+    <div class="q">1. CXL.cache and CXL.mem differ how?</div>
+    <button class="opt">CXL.cache is faster; CXL.mem is slower.</button>
+    <button class="opt">CXL.cache is for reads, CXL.mem for writes.</button>
+    <button class="opt">CXL.cache lets the device cache host memory; CXL.mem lets the host access device memory.</button>
+    <button class="opt">They are two names for the same thing.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="Type 3 is a memory expander \u2014 CXL.io plus CXL.mem, with no device cache.">
+    <div class="q">2. A memory expander with no device cache is which type?</div>
+    <button class="opt">Type 1</button>
+    <button class="opt">Type 3</button>
+    <button class="opt">Type 2</button>
+    <button class="opt">None &mdash; CXL always requires a device cache.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Device bias lets the accelerator work on its own memory without paying host coherency cost during local compute phases.">
+    <div class="q">3. Why does device bias exist?</div>
+    <button class="opt">So an accelerator can work on its own memory without paying host coherency overhead.</button>
+    <button class="opt">To let the host bypass the SAM.</button>
+    <button class="opt">To increase link width.</button>
+    <button class="opt">To disable CXL.io.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="The RN SAM can target a CCG for remote memory \u2014 CXL-attached memory is exactly that case, no new addressing model needed.">
+    <div class="q">4. How does a core's request reach CXL-attached memory on a CMN-700 system?</div>
+    <button class="opt">Via a dedicated non-coherent side channel.</button>
+    <button class="opt">Only through DMA from an RN-I.</button>
+    <button class="opt">The snoop filter routes it directly.</button>
+    <button class="opt">The RN SAM maps the address to the CCG as its target, and the mesh routes there.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="Pooling divides a device's capacity among several hosts, addressing stranded memory.">
+    <div class="q">5. The economic driver for memory pooling is&hellip;</div>
+    <button class="opt">reducing link latency.</button>
+    <button class="opt">eliminating the need for coherency.</button>
+    <button class="opt">stranded memory &mdash; capacity bought for one host cannot help another.</button>
+    <button class="opt">lowering CPU core counts.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">10</span>Interview Q&amp;A</h3>
+  <details><summary>What are the three CXL sub-protocols?</summary><div class="ans">CXL.io is the PCIe-based foundation used by every device for discovery, enumeration, configuration, interrupts and plain DMA. CXL.cache lets the device cache host memory coherently, which makes the device a caching agent the host must snoop. CXL.mem lets the host access memory attached to the device as if it were system memory. The two coherent ones point in opposite directions, and that is the distinction to keep clear: CXL.cache is the device reaching into host memory, CXL.mem is the host reaching into device memory.</div></details>
+  <details><summary>Explain the three device types.</summary><div class="ans">They are just which sub-protocols a device uses. Type 1 is CXL.io plus CXL.cache: an accelerator or smart NIC that caches host memory but exposes none of its own. Type 2 adds CXL.mem: a full accelerator with its own memory that both caches host memory and exposes its own, which is the most complex case and the one bias modes exist for. Type 3 is CXL.io plus CXL.mem with no device cache: a memory expander or buffer, which is the pooling and capacity-expansion workhorse. There is no CXL.io-only type, because that would simply be a PCIe device.</div></details>
+  <details><summary>What are bias modes and why do they exist?</summary><div class="ans">They apply to Type 2 devices, which own memory the host can also access coherently. Under host bias, host coherency governs the region, which suits phases where the host is staging input or collecting results. Under device bias, the device operates on its own memory locally without paying host coherency overhead, which suits the compute phase. The transition, a bias flip, is the synchronisation point at handover between phases. The underlying insight is that coherency has a cost and sometimes nobody needs it &mdash; so the model is a baton pass rather than continuous shared access.</div></details>
+  <details><summary>How does CXL-attached memory integrate with the CMN-700 mesh?</summary><div class="ans">Through the CCG gateway, and crucially it needs no new addressing model. The RN SAM maps a physical address to a target ID, and a target can be a CCG for remote memory &mdash; CXL memory expansion is exactly that case. A core's request routes across the mesh to the gateway, where the CCHA represents the remote memory locally, and the CCLA drives the link. In the other direction, a remote device caching host memory is proxied into the local mesh by the CCRA so local home nodes treat it as a participant to snoop. Where memory is shared across dice or devices, a Super Home Node can serve as the central coherency point.</div></details>
+  <details><summary>What is host-managed device memory, and what is the catch?</summary><div class="ans">Memory physically resident on the device but mapped into the host's physical address space and managed by the host, exposed through CXL.mem. Software sees system memory that happens to live across a link. The catch is performance asymmetry: latency is higher and bandwidth is bounded by the link, so it is a NUMA problem and software placement matters. For Type 3 devices that trade is the entire point &mdash; capacity beyond what the host's own memory channels can provide, accepting slower access for more of it.</div></details>
+  <details><summary>Why is memory pooling economically interesting?</summary><div class="ans">Stranded memory. In a conventional server, DRAM bought for one machine cannot help a neighbouring machine that needs it, so fleets are provisioned for peak per-node demand and much of that capacity sits idle. Pooling lets a device's capacity be divided among several hosts, turning memory into an allocatable resource. Sharing, where multiple hosts coherently access the same region, is the harder step with the most demanding coherency requirements. Which of these is available depends on the CXL revision, so I would confirm specific version support rather than assume it.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">11</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li><b>CXL.io</b> always present (PCIe-based: discovery, config, DMA).</li>
+    <li><b>CXL.cache</b> = device caches host memory. <b>CXL.mem</b> = host accesses device memory. Opposite directions.</li>
+    <li><b>Type 1</b> io+cache (no device memory) &middot; <b>Type 2</b> all three (accelerator + memory) &middot; <b>Type 3</b> io+mem (memory expander).</li>
+    <li><b>Bias modes</b> (host / device, with bias flip) let a Type 2 device skip coherency cost during local compute.</li>
+    <li><b>HDM</b> = device memory mapped into host address space &mdash; a NUMA tier, not free capacity.</li>
+    <li>On the mesh: <b>CCRA</b> proxies a remote caching device; <b>CCHA</b> represents remote memory; the <b>RN SAM simply targets the CCG</b>.</li>
+    <li>Pooling addresses <b>stranded memory</b>; sharing is harder. Confirm version support in the specs.</li>
+  </ul>
+  <div class="chips"><span class="chip">CXL.io</span><span class="chip">CXL.cache</span><span class="chip">CXL.mem</span><span class="chip">Type 1 / 2 / 3</span><span class="chip">host bias</span><span class="chip">device bias</span><span class="chip">bias flip</span><span class="chip">HDM</span><span class="chip">pooling</span><span class="chip">stranded memory</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="cmn700_lesson12_security.html">◄ L12 &middot; Security</a>
+  <a href="cmn700_appendix_a_power_translation.html">Appendix A &middot; POWER translation ►</a>
+</div>
+<p class="note" style="margin-top:18px">Appendices: A translates all of this into POWER terms, B covers CHI cache states, C covers MTE and the SMMU's place in the request path.</p>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav.side a')];
+const secs=links.map(a=>{const h=a.getAttribute('href');return h&&h.startsWith('#')?document.querySelector(h):null;});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite \u2014 the highlighted option is right. '+fbt);
+  }));
+});
+</script>
+</body>
+</html>
