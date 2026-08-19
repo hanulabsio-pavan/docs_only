@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power ISA · Lesson 3 — Instruction Categories</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --acc:#4fa3ff; --gold:#f5b942; --grn:#52d273; --vio:#b48cff; --cyn:#39d4e6;
+  --org:#ff9b42; --pnk:#ff7ab6; --warn:#ff7a7a;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--acc); text-decoration:none}
+.shell{display:grid; grid-template-columns:250px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--vio); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--acc)}
+nav.side .home{margin-top:20px; padding-top:14px; border-top:1px solid var(--line-soft); font-size:12px; color:var(--ink-faint)}
+main{padding:38px 52px 120px; max-width:960px}
+.kick{font-family:var(--mono); color:var(--vio); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:700px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--acc); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--acc)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--vio); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:20px 0 6px; color:var(--ink)}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--gold); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.gotcha{background:linear-gradient(180deg,#1d1113,#170d0f); border:1px solid #45222a;
+  border-left:3px solid var(--warn); border-radius:var(--radius); padding:14px 16px; margin:14px 0}
+.gotcha .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--warn)}
+.gotcha p{margin:4px 0 0; color:#f0d9dc; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-acc{background:var(--acc)} .b-gold{background:var(--gold)} .b-grn{background:var(--grn)}
+.b-vio{background:var(--vio)} .b-org{background:var(--org)} .b-cyn{background:var(--cyn)} .b-pnk{background:var(--pnk)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--cyn); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .a{color:var(--acc);font-weight:600} .ascii .g{color:var(--gold);font-weight:600}
+.ascii .s{color:var(--grn);font-weight:600} .ascii .v{color:var(--vio);font-weight:600}
+.ascii .o{color:var(--org);font-weight:600} .ascii .cmt{color:#5a6b7a;font-style:italic}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--grn); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--vio); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+
+/* ---------- instruction explorer ---------- */
+.explorer{border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin:16px 0; background:var(--panel)}
+.exp-top{display:flex; gap:10px; padding:14px 16px; background:var(--bg2); border-bottom:1px solid var(--line); flex-wrap:wrap; align-items:center}
+.exp-top input{flex:1 1 220px; background:var(--panel); border:1px solid var(--line); color:var(--ink);
+  font-family:var(--mono); font-size:14px; padding:8px 12px; border-radius:7px}
+.exp-top input:focus{outline:none; border-color:var(--acc)}
+.exp-cats{display:flex; flex-wrap:wrap; gap:6px; padding:12px 16px; border-bottom:1px solid var(--line-soft); background:var(--bg2)}
+.exp-cats button{font-family:var(--mono); font-size:11.5px; background:var(--panel); border:1px solid var(--line);
+  color:var(--ink-dim); padding:5px 11px; border-radius:16px; cursor:pointer; transition:.12s; display:flex; align-items:center; gap:6px}
+.exp-cats button:hover{color:var(--ink)}
+.exp-cats button.on{color:#0b0f14; font-weight:600}
+.exp-list{max-height:460px; overflow-y:auto}
+.ins{display:grid; grid-template-columns:150px 1fr; gap:14px; padding:11px 16px;
+  border-bottom:1px solid var(--line-soft); transition:.12s}
+.ins:hover{background:var(--panel2)}
+.ins .m{font-family:var(--mono); font-size:13.5px; font-weight:600}
+.ins .m .form{display:block; font-size:10px; font-weight:400; color:var(--ink-faint); letter-spacing:.5px; margin-top:2px}
+.ins .d{font-size:13.5px; color:var(--ink-dim)}
+.ins .d em{color:var(--ink); font-style:normal}
+.exp-foot{padding:10px 16px; font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); background:var(--bg2); border-top:1px solid var(--line-soft)}
+.empty{padding:34px 16px; text-align:center; color:var(--ink-faint); font-size:14px}
+mark{background:rgba(79,163,255,.25); color:var(--ink); border-radius:3px; padding:0 2px}
+
+/* ---------- BO builder ---------- */
+.bobuild{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:16px 0}
+.bobuild .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px}
+.bobuild select{background:var(--bg2); border:1px solid var(--line); color:var(--ink);
+  font-family:var(--mono); font-size:13px; padding:7px 10px; border-radius:7px}
+.bobuild .out{background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--grn);
+  border-radius:7px; padding:12px 14px}
+.bobuild .out .asm{font-family:var(--mono); font-size:17px; color:var(--grn)}
+.bobuild .out .enc{font-family:var(--mono); font-size:12px; color:var(--ink-faint); margin-top:6px}
+.bobuild .out .ex{font-size:13.5px; color:var(--ink-dim); margin-top:8px}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr} .ins{grid-template-columns:1fr; gap:3px} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">POWER ISA · LESSON 03</div>
+  <h1>Instruction Categories</h1>
+  <a href="#map">The category map</a>
+  <a href="#explorer">Instruction explorer</a>
+  <a href="#fixed">Fixed-point</a>
+  <a href="#rotate">Rotate &amp; mask</a>
+  <a href="#loadstore">Load / store</a>
+  <a href="#simple">Simplified mnemonics</a>
+  <a href="#float">Floating-point</a>
+  <a href="#vector">Vector: VMX, VSX, MMA</a>
+  <a href="#branch">Branches &amp; the CR</a>
+  <a href="#bobuilder">BO/BI builder</a>
+  <a href="#system">System &amp; storage control</a>
+  <a href="#prefixed">Prefixed (v3.1)</a>
+  <a href="#walk">Reading real code</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="powerisa_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Foundational Knowledge · Lesson 3 of 3</div>
+<h2 class="title">Instruction Categories</h2>
+<p class="lede">The actual instruction set: integer, load/store, floating-point, vector, branch and system — plus the v3.1 prefixed encodings that broke the 32-bit ceiling.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Place any Power instruction into the right category and name its likely form.</li>
+    <li>Explain why <code>rlwinm</code> replaces a whole family of shift and extract instructions.</li>
+    <li>Read the <code>BO</code>/<code>BI</code> encoding and understand how CTR loops branch in one instruction.</li>
+    <li>Tell VMX, VSX and MMA apart and say what each is for.</li>
+    <li>Read an unfamiliar Power function prologue and epilogue without help.</li>
+  </ul>
+</div>
+
+<section id="map">
+  <h3><span class="n">1</span>The category map</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Six families only: <span style="color:var(--acc)">move numbers around registers</span>, <span style="color:var(--grn)">move numbers to/from memory</span>, <span style="color:var(--gold)">do float maths</span>, <span style="color:var(--vio)">do many numbers at once</span>, <span style="color:var(--org)">jump somewhere</span>, <span style="color:var(--pnk)">talk to the machine itself</span>. Everything else is a variation.</p></div>
+
+  <div class="ascii-wrap"><div class="bar">Instruction families and their usual primary opcodes</div>
+<pre class="ascii">  <span class="a">FIXED-POINT</span>          arithmetic, logical, compare, rotate/shift
+                       <span class="cmt">opcodes 7–15, 20–31   forms D, X, XO, M, MD</span>
+
+  <span class="s">LOAD / STORE</span>         byte/half/word/double, update &amp; indexed,
+                       byte-reverse, atomics
+                       <span class="cmt">opcodes 32–47, 58, 62, 31   forms D, DS, X</span>
+
+  <span class="g">FLOATING-POINT</span>       scalar binary FP + fused multiply-add,
+                       decimal FP (DFP), IEEE-128
+                       <span class="cmt">opcodes 48–63   forms D, X, A</span>
+
+  <span class="v">VECTOR</span>               VMX/AltiVec (opcode 4) · VSX (opcodes 60/61)
+                       · MMA accumulators (v3.1)
+
+  <span class="o">BRANCH &amp; CR</span>          b / bc / bclr / bcctr, CR logical ops, isel
+                       <span class="cmt">opcodes 16, 18, 19   forms I, B, XL</span>
+
+  <span class="cmt">SYSTEM</span>               mtspr/mfspr, sc, rfid, traps, TLB &amp; cache control
+                       <span class="cmt">opcodes 17, 19, 31   forms X, XFX, XL</span>
+</pre></div>
+
+  <p>A useful mental shortcut: <b>primary opcode 31 is the junk drawer</b>. Hundreds of register-to-register operations — arithmetic, logical, indexed loads and stores, atomics, SPR moves, cache and TLB control — all live there, separated by a 9- or 10-bit extended opcode.</p>
+</section>
+
+<section id="explorer">
+  <h3><span class="n">2</span>Instruction explorer</h3>
+  <p>Search by mnemonic or description, or filter by category. 172 instructions — a representative slice, not the full ~1,000+ of the real ISA.</p>
+
+  <div class="explorer">
+    <div class="exp-top">
+      <input type="text" id="insSearch" placeholder="Search: try 'multiply', 'atomic', 'rlwinm', 'barrier'…" spellcheck="false">
+      <button id="insClear" style="font-family:var(--mono);font-size:12px;background:var(--panel);border:1px solid var(--line);color:var(--ink-dim);padding:8px 12px;border-radius:7px;cursor:pointer">Clear</button>
+    </div>
+    <div class="exp-cats" id="insCats"></div>
+    <div class="exp-list" id="insList"></div>
+    <div class="exp-foot" id="insFoot"></div>
+  </div>
+</section>
+
+<section id="fixed">
+  <h3><span class="n">3</span>Fixed-point instructions</h3>
+  <p>The integer core. Two things to internalise before anything else:</p>
+  <ul class="tight">
+    <li><b>Word vs doubleword.</b> A <code>w</code> suffix means the operation is on 32 bits, <code>d</code> means 64. <code>mullw</code> multiplies 32-bit values, <code>mulld</code> multiplies 64-bit ones. Results are still written to a 64-bit register.</li>
+    <li><b><code>subf</code> subtracts backwards.</b> <code>subf RT,RA,RB</code> computes <b>RB − RA</b>, not RA − RB. This exists because it lets one XO-form encoding also express negate and reverse-subtract, but it catches everyone once.</li>
+  </ul>
+
+  <table>
+    <tr><th>Group</th><th>Representative instructions</th><th>Notes</th></tr>
+    <tr><td>Add / subtract</td><td><code>add</code>, <code>addi</code>, <code>addis</code>, <code>addc</code>, <code>adde</code>, <code>subf</code>, <code>subfc</code>, <code>subfe</code>, <code>neg</code></td><td><code>c</code> = writes carry, <code>e</code> = extends (reads carry) — that pair builds arbitrary-precision arithmetic.</td></tr>
+    <tr><td>Multiply / divide</td><td><code>mullw</code>, <code>mulld</code>, <code>mulhd</code>, <code>mulhdu</code>, <code>mulli</code>, <code>divw</code>, <code>divd</code>, <code>divdu</code>, <code>modsd</code></td><td><code>mulld</code> + <code>mulhd</code> together give the full 128-bit product. Modulo instructions arrived in v3.0.</td></tr>
+    <tr><td>Compare</td><td><code>cmpw</code>, <code>cmpd</code>, <code>cmpwi</code>, <code>cmpdi</code>, <code>cmplw</code>, <code>cmpld</code></td><td>An <code>l</code> means <i>logical</i>, i.e. unsigned. Each names its destination CR field.</td></tr>
+    <tr><td>Logical</td><td><code>and</code>, <code>or</code>, <code>xor</code>, <code>nand</code>, <code>nor</code>, <code>eqv</code>, <code>andc</code>, <code>orc</code>, <code>andi.</code>, <code>ori</code>, <code>xoris</code></td><td><code>andc</code> = AND with complement (a &amp; ~b), a genuine one-instruction win. Note <code>andi.</code> <b>always</b> sets CR0.</td></tr>
+    <tr><td>Sign/bit</td><td><code>extsb</code>, <code>extsh</code>, <code>extsw</code>, <code>cntlzd</code>, <code>cnttzd</code>, <code>popcntd</code>, <code>bpermd</code></td><td><code>cnttzd</code> (count trailing zeros) and <code>bpermd</code> (bit permute) came with v2.06/v3.0.</td></tr>
+    <tr><td>Shift</td><td><code>slw</code>, <code>srw</code>, <code>sraw</code>, <code>srawi</code>, <code>sld</code>, <code>srd</code>, <code>srad</code>, <code>sradi</code></td><td><code>sra*</code> are arithmetic (sign-propagating) right shifts and also set XER[CA] — used to implement round-toward-zero division by powers of two.</td></tr>
+    <tr><td>Select</td><td><code>isel</code></td><td>Branchless conditional select on a CR bit (A-form). The compiler's answer to unpredictable branches.</td></tr>
+  </table>
+
+  <div class="ascii-wrap"><div class="bar">Building a 64-bit constant — the classic four-instruction dance</div>
+<pre class="ascii">  <span class="cmt"># load 0x1234_5678_9ABC_DEF0 into r3</span>
+  <span class="a">lis</span>     r3, 0x1234        <span class="cmt"># addis r3,0,0x1234  → r3 = 0x1234 &lt;&lt; 16</span>
+  <span class="a">ori</span>     r3, r3, 0x5678    <span class="cmt"># r3 = 0x1234_5678</span>
+  <span class="a">rldicr</span>  r3, r3, 32, 31    <span class="cmt"># shift left 32</span>
+  <span class="a">oris</span>    r3, r3, 0x9ABC
+  <span class="a">ori</span>     r3, r3, 0xDEF0
+  <span class="cmt"># v3.1 alternative — one prefixed instruction covers 34 bits:</span>
+  <span class="s">pli</span>     r3, 0x123456789   <span class="cmt"># (paddi with RA=0)</span>
+</pre></div>
+  <p class="note">This is a direct consequence of fixed 32-bit encoding: no single instruction can carry a 64-bit immediate. It's also exactly the pain v3.1's prefixed instructions were designed to reduce.</p>
+</section>
+
+<section id="rotate">
+  <h3><span class="n">4</span>Rotate-and-mask: the Swiss army knife</h3>
+  <p>Power has no dedicated bit-field-extract or bit-field-insert instruction, because <code>rlwinm</code> and <code>rldicl</code> already do all of it. The idea: <b>rotate left by N, then AND with a mask defined by a begin and end bit</b>. One instruction, three operations.</p>
+
+  <div class="ascii-wrap"><div class="bar">rlwinm RA, RS, SH, MB, ME</div>
+<pre class="ascii">   RS  <span class="box">┌────────────────────────────────┐</span>
+       <span class="box">│</span> the 32-bit source value        <span class="box">│</span>
+       <span class="box">└────────────────────────────────┘</span>
+                    <span class="box">│</span> <span class="a">rotate left by SH</span>
+                    <span class="box">▼</span>
+       <span class="box">┌────────────────────────────────┐</span>
+       <span class="box">└────────────────────────────────┘</span>
+                    <span class="box">│</span> <span class="g">AND with mask of 1s from bit MB to bit ME</span>
+                    <span class="box">▼</span>
+   RA  <span class="box">┌────────────────────────────────┐</span>
+       <span class="box">│</span>0000<span class="s">XXXXXXXXXXX</span>000000000000000<span class="box">│</span>
+       <span class="box">└────────────────────────────────┘</span>
+
+   <span class="cmt">Everything below is the SAME instruction, different SH/MB/ME:</span>
+     <span class="a">slwi</span>   rA,rS,n     =  rlwinm rA,rS, n,    0,   31-n
+     <span class="a">srwi</span>   rA,rS,n     =  rlwinm rA,rS, 32-n, n,   31
+     <span class="a">clrlwi</span> rA,rS,n     =  rlwinm rA,rS, 0,    n,   31
+     <span class="a">extlwi</span> rA,rS,n,b   =  rlwinm rA,rS, b,    0,   n-1
+     <span class="a">rotlwi</span> rA,rS,n     =  rlwinm rA,rS, n,    0,   31
+</pre></div>
+
+  <p>The 64-bit family is <code>rldicl</code> / <code>rldicr</code> / <code>rldic</code> / <code>rldimi</code> (MD-form), where a single <code>mb</code> or <code>me</code> value suffices because one end of the mask is implicit. <code>rldimi</code> is the insert variant — it merges a rotated field into the destination without disturbing the surrounding bits.</p>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Why 20 different shift instructions when one rotate + mask do all? Assembler give you pretty names (<code>slwi</code>, <code>srwi</code>, <code>clrldi</code>), hardware see one instruction. Fewer opcodes, simpler decoder, same power.</p></div>
+</section>
+
+<section id="loadstore">
+  <h3><span class="n">5</span>Load and store</h3>
+  <p>The naming is completely systematic once you see the pattern:</p>
+  <div class="ascii-wrap"><div class="bar">Decoding a load/store mnemonic</div>
+<pre class="ascii">        <span class="a">l</span>  <span class="g">w</span>  <span class="s">z</span>  <span class="v">u</span>  <span class="o">x</span>
+        <span class="box">│</span>  <span class="box">│</span>  <span class="box">│</span>  <span class="box">│</span>  <span class="box">└─</span> <span class="o">x</span> = indexed  (EA = RA|0 + RB)   else displacement
+        <span class="box">│</span>  <span class="box">│</span>  <span class="box">│</span>  <span class="box">└──</span> <span class="v">u</span> = update   (write EA back into RA)
+        <span class="box">│</span>  <span class="box">│</span>  <span class="box">└─────</span> <span class="s">z</span> = zero-extend   <span class="s">a</span> = algebraic (sign-extend)
+        <span class="box">│</span>  <span class="box">└────────</span> <span class="g">b</span>=byte  <span class="g">h</span>=halfword  <span class="g">w</span>=word  <span class="g">d</span>=doubleword
+        <span class="box">└───────────</span> <span class="a">l</span> = load   <span class="a">st</span> = store
+
+   so:  <span class="a">lwzux</span> = load word, zero-extend, update RA, indexed by RB
+        <span class="a">lha</span>   = load halfword, sign-extend, displacement form
+        <span class="a">stdu</span>  = store doubleword and update  <span class="cmt">(the stack-push idiom)</span>
+</pre></div>
+
+  <table>
+    <tr><th>Group</th><th>Instructions</th><th>Why it exists</th></tr>
+    <tr><td>Basic</td><td><code>lbz</code>, <code>lhz</code>, <code>lha</code>, <code>lwz</code>, <code>lwa</code>, <code>ld</code> / <code>stb</code>, <code>sth</code>, <code>stw</code>, <code>std</code></td><td>The bread and butter. Note there is no <code>lba</code> — sign-extend a byte with <code>lbz</code> + <code>extsb</code>.</td></tr>
+    <tr><td>Update</td><td><code>lwzu</code>, <code>ldu</code>, <code>stwu</code>, <code>stdu</code></td><td>Pointer walk and stack frame management in one instruction.</td></tr>
+    <tr><td>Indexed</td><td><code>lwzx</code>, <code>ldx</code>, <code>stwx</code>, <code>stdx</code>, <code>lwzux</code>…</td><td>Array access with a runtime index, no address arithmetic needed.</td></tr>
+    <tr><td>Byte-reverse</td><td><code>lhbrx</code>, <code>lwbrx</code>, <code>ldbrx</code>, <code>stwbrx</code>, <code>stdbrx</code></td><td>Read/write foreign-endian data (network byte order, file formats) without changing MSR[LE].</td></tr>
+    <tr><td>Atomic</td><td><code>lbarx</code>, <code>lharx</code>, <code>lwarx</code>, <code>ldarx</code>, <code>lqarx</code> / <code>stbcx.</code>, <code>stwcx.</code>, <code>stdcx.</code>, <code>stqcx.</code></td><td>Load-and-reserve / store-conditional pairs — every lock and lock-free structure on Power.</td></tr>
+    <tr><td>Multiple</td><td><code>lmw</code>, <code>stmw</code></td><td>Load/store multiple registers. Compact but slow on modern cores; compilers avoid them.</td></tr>
+    <tr><td>Quadword</td><td><code>lq</code>, <code>stq</code></td><td>128-bit access into an even/odd GPR pair; alignment-sensitive.</td></tr>
+    <tr><td>FP &amp; vector</td><td><code>lfs</code>, <code>lfd</code>, <code>stfd</code>, <code>lvx</code>, <code>stvx</code>, <code>lxv</code>, <code>stxv</code>, <code>lxvd2x</code></td><td><code>lfs</code> converts single→double on load. <code>lvx</code> <b>truncates</b> the address to a 16-byte boundary; <code>lxv</code> (v3.0) does unaligned properly.</td></tr>
+  </table>
+
+  <div class="gotcha"><span class="tag">gotcha</span>
+  <p><b><code>lvx</code> silently ignores the low 4 address bits.</b> The classic VMX idiom used <code>lvsl</code> plus two <code>lvx</code> loads and a <code>vperm</code> to assemble an unaligned vector. Since v3.0, <code>lxv</code>/<code>stxv</code> handle unaligned vector access directly — use those in new code.</p></div>
+</section>
+
+<section id="simple">
+  <h3><span class="n">6</span>Simplified mnemonics — what you actually read</h3>
+  <p>Disassembly is full of instructions that do not exist in the encoding. They are <b>simplified (extended) mnemonics</b>: friendly names the assembler maps onto a real instruction with fixed operands. Knowing the top ten makes reading Power assembly ten times easier.</p>
+  <table>
+    <tr><th>You write / see</th><th>Really encodes</th><th>Meaning</th></tr>
+    <tr><td><code>li r3,42</code></td><td><code>addi r3,0,42</code></td><td>Load immediate (relies on RA|0).</td></tr>
+    <tr><td><code>lis r3,0x1234</code></td><td><code>addis r3,0,0x1234</code></td><td>Load immediate shifted — the top half of a constant.</td></tr>
+    <tr><td><code>mr r3,r4</code></td><td><code>or r3,r4,r4</code></td><td>Move register.</td></tr>
+    <tr><td><code>not r3,r4</code></td><td><code>nor r3,r4,r4</code></td><td>Bitwise complement.</td></tr>
+    <tr><td><code>nop</code></td><td><code>ori r0,r0,0</code></td><td>No operation.</td></tr>
+    <tr><td><code>blr</code></td><td><code>bclr 20,0,0</code></td><td>Return (branch to Link Register, BO=20 = always).</td></tr>
+    <tr><td><code>bctrl</code></td><td><code>bcctrl 20,0,0</code></td><td>Indirect call through the Count Register.</td></tr>
+    <tr><td><code>bdnz label</code></td><td><code>bc 16,0,label</code></td><td>Decrement CTR, branch if it isn't zero — a whole loop in one instruction.</td></tr>
+    <tr><td><code>beq cr0,label</code></td><td><code>bc 12,2,label</code></td><td>Branch if the EQ bit of CR0 is set.</td></tr>
+    <tr><td><code>mflr r0</code> / <code>mtctr r12</code></td><td><code>mfspr r0,8</code> / <code>mtspr 9,r12</code></td><td>Move from/to the special registers.</td></tr>
+    <tr><td><code>srdi r3,r3,32</code></td><td><code>rldicl r3,r3,32,32</code></td><td>Shift right — a rotate-and-mask in disguise.</td></tr>
+    <tr><td><code>clrldi r3,r3,32</code></td><td><code>rldicl r3,r3,0,32</code></td><td>Zero-extend a 32-bit value to 64 bits.</td></tr>
+  </table>
+</section>
+
+<section id="float">
+  <h3><span class="n">7</span>Floating-point</h3>
+  <p>Power has had strong floating-point since POWER1 — the RS/6000 was a scientific workstation, and it shows. Three distinct families now coexist:</p>
+
+  <div class="grid g3">
+    <div class="card"><h6><span class="dot b-gold"></span>Binary FP</h6><p>IEEE 754 single and double precision, plus <b>IEEE binary-128</b> in hardware from v3.0. Operates on FPRs (i.e. the high half of VSR0–31).</p></div>
+    <div class="card"><h6><span class="dot b-cyn"></span>Decimal FP</h6><p>IEEE 754-2008 decimal64 and decimal128, added in <b>v2.05</b>. Exact decimal arithmetic — no 0.1 + 0.2 surprises. Built for finance.</p></div>
+    <div class="card"><h6><span class="dot b-vio"></span>Vector FP</h6><p>VSX <code>xv*</code> instructions doing 2 doubles or 4 singles per instruction, on the full 128-bit VSRs.</p></div>
+  </div>
+
+  <table>
+    <tr><th>Group</th><th>Instructions</th><th>Note</th></tr>
+    <tr><td>Arithmetic</td><td><code>fadd</code>, <code>fsub</code>, <code>fmul</code>, <code>fdiv</code>, <code>fsqrt</code>, <code>fabs</code>, <code>fneg</code></td><td>An <code>s</code> suffix (<code>fadds</code>) means single-precision rounding of the result.</td></tr>
+    <tr><td><b>Fused multiply-add</b></td><td><code>fmadd</code>, <code>fmsub</code>, <code>fnmadd</code>, <code>fnmsub</code></td><td>Computes <code>(A×C) ± B</code> with <b>one</b> rounding at the end. More accurate and faster than separate ops — the reason Power dominated scientific benchmarks for years.</td></tr>
+    <tr><td>Compare / select</td><td><code>fcmpu</code>, <code>fcmpo</code>, <code>fsel</code></td><td><code>fcmpo</code> raises an exception on a signalling NaN; <code>fcmpu</code> does not. <code>fsel</code> is a branchless FP select.</td></tr>
+    <tr><td>Convert / round</td><td><code>frsp</code>, <code>fctid</code>, <code>fctiw</code>, <code>fcfid</code>, <code>frin</code>, <code>friz</code>, <code>frip</code>, <code>frim</code></td><td>The <code>fri*</code> round-to-integer family (v2.02+) avoids a trip through FPSCR to change rounding mode.</td></tr>
+    <tr><td>Estimates</td><td><code>fre</code>, <code>frsqrte</code></td><td>Fast reciprocal / reciprocal-square-root estimates for Newton-Raphson refinement.</td></tr>
+    <tr><td>Decimal</td><td><code>dadd</code>, <code>dsub</code>, <code>dmul</code>, <code>ddiv</code>, <code>dqua</code>, <code>dcffix</code></td><td>Operates on densely-packed-decimal values in FPRs / FPR pairs.</td></tr>
+    <tr><td>IEEE-128</td><td><code>xsaddqp</code>, <code>xsmulqp</code>, <code>xsdivqp</code>, <code>xssqrtqp</code></td><td>True quad precision in hardware from v3.0 — not the old double-double "long double".</td></tr>
+  </table>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Fused multiply-add = multiply and add, round only once at end. Two operations, one rounding, one instruction. Matrix maths is nothing but multiply-add, so this instruction is why Power good at science.</p></div>
+</section>
+
+<section id="vector">
+  <h3><span class="n">8</span>Vector: VMX, VSX and MMA</h3>
+  <p>Three generations, layered rather than replaced.</p>
+
+  <div class="ascii-wrap"><div class="bar">Three generations of parallel maths</div>
+<pre class="ascii">  <span class="g">VMX / AltiVec</span> <span class="cmt">(1999, PowerPC G4)</span>
+     32 x 128-bit VRs · integer + single-precision float SIMD
+     <span class="cmt">vaddubm, vmsumubm, vperm, vcmpequb, lvx/stvx</span>
+              <span class="box">│</span>
+              <span class="box">▼</span>
+  <span class="a">VSX</span> <span class="cmt">(v2.06, POWER7 — extended in v3.0 as VSX-3)</span>
+     64 x 128-bit VSRs · unifies FPRs and VRs
+     double-precision vector float · better unaligned access
+     <span class="cmt">xvadddp, xsmaddadp, xxpermdi, xxsel, lxv/stxv</span>
+              <span class="box">│</span>
+              <span class="box">▼</span>
+  <span class="o">MMA</span> <span class="cmt">(v3.1, POWER10)</span>
+     8 x 512-bit accumulators, each overlaying 4 VSRs
+     one instruction = a rank-1 update of a whole output tile
+     <span class="cmt">xxsetaccz, xvf32ger, xvi8ger4, xvbf16ger2, xxmfacc</span>
+</pre></div>
+
+  <table>
+    <tr><th></th><th>VMX / AltiVec</th><th>VSX</th><th>MMA</th></tr>
+    <tr><td>Registers</td><td>32 × 128-bit VR</td><td>64 × 128-bit VSR</td><td>8 × 512-bit ACC</td></tr>
+    <tr><td>Added in</td><td>PowerPC (1999); in Power ISA from v2.03</td><td>v2.06 (2010)</td><td>v3.1 (2020)</td></tr>
+    <tr><td>Double-precision vectors</td><td>No</td><td>Yes</td><td>Yes (via accumulate)</td></tr>
+    <tr><td>Killer feature</td><td><code>vperm</code> — arbitrary byte shuffle across two vectors</td><td>Twice the registers; scalar FP and vector share one file</td><td>Outer-product accumulate for GEMM / AI inference</td></tr>
+    <tr><td>Typical use</td><td>Codecs, string ops, crypto</td><td>HPC kernels, general vectorised loops</td><td>Dense matrix multiply, ML inference</td></tr>
+  </table>
+
+  <p>The key MMA insight: a normal SIMD FMA does <i>one row</i> of work per instruction and must keep re-reading operands. An MMA <code>ger</code> ("generalised outer product") instruction updates an entire accumulator tile from two input vectors, so the operand-fetch-to-arithmetic ratio collapses. That is what makes it worth eight special 512-bit registers.</p>
+  <p class="note">Practical note: you rarely write MMA by hand. GCC and LLVM expose it through <code>__builtin_mma_*</code> intrinsics, and libraries like OpenBLAS use it under the hood.</p>
+</section>
+
+<section id="branch">
+  <h3><span class="n">9</span>Branches and the Condition Register</h3>
+  <p>Four branch instructions cover everything:</p>
+  <table>
+    <tr><th>Instruction</th><th>Form</th><th>Target</th><th>Reach</th></tr>
+    <tr><td><code>b</code> / <code>bl</code> / <code>ba</code> / <code>bla</code></td><td>I</td><td>PC + (LI × 4), or absolute</td><td><b>±32 MB</b></td></tr>
+    <tr><td><code>bc</code> and friends</td><td>B</td><td>PC + (BD × 4)</td><td><b>±32 KB</b></td></tr>
+    <tr><td><code>bclr</code> (<code>blr</code>)</td><td>XL</td><td>the Link Register</td><td>anywhere</td></tr>
+    <tr><td><code>bcctr</code> (<code>bctr</code>)</td><td>XL</td><td>the Count Register</td><td>anywhere</td></tr>
+  </table>
+  <p>Add <code>l</code> to any of them (<code>bl</code>, <code>bctrl</code>) to set <b>LK=1</b>, which saves the return address in LR — that's a call.</p>
+
+  <h5>The BO / BI encoding</h5>
+  <p>Conditional branches take two 5-bit fields. <b>BI</b> selects <i>which bit of the CR</i> to test (bits 0–31, so field = BI÷4, condition = BI mod 4 → LT/GT/EQ/SO). <b>BO</b> says <i>how</i> to test — and, crucially, whether to decrement CTR at the same time.</p>
+  <table>
+    <tr><th>BO</th><th>Behaviour</th><th>Usual mnemonic</th></tr>
+    <tr><td><code>0b01100</code> = 12</td><td>Branch if CR[BI] is <b>true</b></td><td><code>beq</code>, <code>blt</code>, <code>bgt</code>…</td></tr>
+    <tr><td><code>0b00100</code> = 4</td><td>Branch if CR[BI] is <b>false</b></td><td><code>bne</code>, <code>bge</code>, <code>ble</code>…</td></tr>
+    <tr><td><code>0b10100</code> = 20</td><td>Branch <b>always</b> (ignore CR)</td><td><code>blr</code>, <code>bctr</code>, <code>b</code></td></tr>
+    <tr><td><code>0b10000</code> = 16</td><td>Decrement CTR, branch if CTR ≠ 0</td><td><code>bdnz</code></td></tr>
+    <tr><td><code>0b10010</code> = 18</td><td>Decrement CTR, branch if CTR = 0</td><td><code>bdz</code></td></tr>
+  </table>
+  <p>The low bits of BO also carry a <b>static branch hint</b>, which the assembler writes as a <code>+</code> or <code>-</code> suffix: <code>bne- retry</code> means "predict not taken". You see this constantly in atomic retry loops, where the retry path is genuinely rare.</p>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>CTR is a counter with a branch built in. <code>bdnz</code> = "take one off counter, jump back if not zero". Loop with no compare, no separate decrement. One instruction per iteration of loop overhead.</p></div>
+
+  <h5>Combining conditions without branching</h5>
+  <p><code>crand</code>, <code>cror</code>, <code>crxor</code>, <code>crnand</code>, <code>crnor</code>, <code>creqv</code> and <code>mcrf</code> operate on individual CR bits. A compiler can evaluate <code>if (a &lt; b &amp;&amp; c != d)</code> as two compares into different CR fields, one <code>crand</code>, and a single branch — instead of two branches. And <code>isel</code> removes the branch entirely for simple selections.</p>
+</section>
+
+<section id="bobuilder">
+  <h3><span class="n">10</span>BO / BI builder</h3>
+  <p>Pick a condition and see the real encoding the assembler produces.</p>
+  <div class="bobuild">
+    <div class="row">
+      <label style="font-size:13px;color:var(--ink-dim)">Branch when</label>
+      <select id="boSel">
+        <option value="12|0">CR field is LT (less than)</option>
+        <option value="12|1">CR field is GT (greater than)</option>
+        <option value="12|2" selected>CR field is EQ (equal)</option>
+        <option value="12|3">CR field is SO (summary overflow)</option>
+        <option value="4|0">NOT LT  (i.e. ≥)</option>
+        <option value="4|1">NOT GT  (i.e. ≤)</option>
+        <option value="4|2">NOT EQ  (i.e. ≠)</option>
+        <option value="20|0">always</option>
+        <option value="16|0">CTR ≠ 0 after decrement</option>
+        <option value="18|0">CTR = 0 after decrement</option>
+      </select>
+      <label style="font-size:13px;color:var(--ink-dim)">in</label>
+      <select id="crSel">
+        <option value="0">cr0</option><option value="1">cr1</option><option value="2">cr2</option>
+        <option value="3">cr3</option><option value="4">cr4</option><option value="5">cr5</option>
+        <option value="6">cr6</option><option value="7">cr7</option>
+      </select>
+      <label style="font-size:13px;color:var(--ink-dim)">hint</label>
+      <select id="hintSel">
+        <option value="">none</option><option value="+">+ likely taken</option><option value="-">− unlikely</option>
+      </select>
+    </div>
+    <div class="out" id="boOut"></div>
+  </div>
+</section>
+
+<section id="system">
+  <h3><span class="n">11</span>System &amp; storage-control instructions</h3>
+  <table>
+    <tr><th>Group</th><th>Instructions</th><th>Purpose</th></tr>
+    <tr><td>SPR access</td><td><code>mtspr</code>, <code>mfspr</code>, <code>mtcrf</code>, <code>mfcr</code>, <code>mtmsr</code>, <code>mfmsr</code></td><td>Move to/from the special-purpose registers and machine state. Most SPRs are privileged.</td></tr>
+    <tr><td>System call</td><td><code>sc</code>, <code>scv</code> (v3.0)</td><td>The user→kernel transition. <code>scv</code> is a faster variant with its own vector.</td></tr>
+    <tr><td>Return from interrupt</td><td><code>rfid</code>, <code>hrfid</code></td><td>Restore MSR and PC from SRR0/SRR1 (or HSRR0/1) — privileged.</td></tr>
+    <tr><td>Traps</td><td><code>tw</code>, <code>td</code>, <code>twi</code>, <code>tdi</code>, <code>trap</code></td><td>Conditional trap on a comparison. Used for bounds checks, assertions and debugger breakpoints.</td></tr>
+    <tr><td>Barriers</td><td><code>sync</code>, <code>lwsync</code>, <code>ptesync</code>, <code>isync</code>, <code>eieio</code></td><td>Memory ordering (see Lesson 2). All are Book II except <code>ptesync</code>.</td></tr>
+    <tr><td>Cache control</td><td><code>dcbz</code>, <code>dcbf</code>, <code>dcbst</code>, <code>dcbt</code>, <code>dcbtst</code>, <code>icbi</code></td><td><code>dcbz</code> zeroes a cache block without reading memory — the fast <code>memset(0)</code>. <code>dcbt</code> is a prefetch hint. <code>icbi</code> is mandatory after writing code (JITs!).</td></tr>
+    <tr><td>TLB / segment</td><td><code>tlbie</code>, <code>tlbiel</code>, <code>tlbsync</code>, <code>slbia</code>, <code>slbmte</code></td><td>Translation invalidation — hypervisor/OS only.</td></tr>
+    <tr><td>Thread control</td><td><code>or 1,1,1</code> / <code>or 2,2,2</code>, <code>wait</code>, <code>nap</code></td><td>SMT priority hints encoded as no-op <code>or</code> forms — a genuinely odd but standard Power idiom for spin loops.</td></tr>
+  </table>
+  <div class="gotcha"><span class="tag">jit gotcha</span>
+  <p>After writing instructions into memory you must run <code>dcbst</code> (push the data out of the D-cache), <code>sync</code>, <code>icbi</code> (invalidate the I-cache line) and <code>isync</code> before executing them. Power's split Harvard caches are <b>not</b> coherent with each other for instruction fetch — skipping this produces the worst kind of intermittent bug.</p></div>
+</section>
+
+<section id="prefixed">
+  <h3><span class="n">12</span>Prefixed instructions — v3.1's big change</h3>
+  <p>For 30 years every Power instruction was exactly 32 bits. v3.1 adds a second tier: a <b>prefix word</b> (primary opcode <b>1</b>) immediately followed by a <b>suffix word</b>, making a single 64-bit instruction.</p>
+
+  <div class="ascii-wrap"><div class="bar">A prefixed instruction — 8 bytes, two words</div>
+<pre class="ascii">   <span class="box">┌──────── word 0 : PREFIX ────────┬──────── word 1 : SUFFIX ────────┐</span>
+   <span class="box">│</span> <span class="a">OPCD=1</span> <span class="g">type</span> <span class="v">R</span> <span class="o">high-order immediate</span> <span class="box">│</span> looks like a normal        <span class="box">│</span>
+   <span class="box">│</span>                                 <span class="box">│</span> D-form instruction         <span class="box">│</span>
+   <span class="box">└─────────────────────────────────┴─────────────────────────────────┘</span>
+     <span class="cmt">18 more immediate bits  +  16 from the suffix  =  34-bit displacement</span>
+     <span class="cmt">R = 1 means the displacement is relative to the address of the prefix</span>
+
+   <span class="s">paddi</span>  r3, r4, 0x1FFFFFFFF   <span class="cmt"># ±8 GB immediate add, one instruction</span>
+   <span class="s">pld</span>    r3, sym@pcrel         <span class="cmt"># PC-relative load — no TOC pointer needed</span>
+   <span class="s">pli</span>    r3, 0x123456789       <span class="cmt"># 34-bit load immediate</span>
+</pre></div>
+
+  <ul class="tight">
+    <li><b>34-bit displacements</b> replace multi-instruction constant and address construction.</li>
+    <li><b>PC-relative addressing</b> (the <code>R</code> bit) makes position-independent code far cheaper — historically Power leaned on a TOC/GOT pointer in <code>r2</code> for this.</li>
+    <li>Prefixed instructions <b>must not cross a 64-byte boundary</b>; the assembler pads to keep that true.</li>
+    <li>The prefix/suffix pair is architecturally <b>one instruction</b> — you cannot branch to the suffix, and an interrupt reports the address of the prefix.</li>
+    <li>MMA instructions use a prefixed form (<code>MMIRR</code>) to carry the extra operand masks.</li>
+  </ul>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>32 bits too small to hold big number. Old way: four instructions to build one constant. New way: glue two words together, get 34 bits of room. Cost: decoder must look at two words. Worth it.</p></div>
+</section>
+
+<section id="walk">
+  <h3><span class="n">13</span>Reading real code: a function, start to finish</h3>
+  <p>Everything in this lesson shows up in the first and last few instructions of any Power function. Here is a typical non-leaf function under the ELFv2 (ppc64le) ABI.</p>
+
+  <div class="ascii-wrap"><div class="bar">Prologue, body, epilogue</div>
+<pre class="ascii">  <span class="cmt"># ---- prologue -------------------------------------------------</span>
+  <span class="a">mflr</span>    r0                  <span class="cmt"># get return address out of LR (mfspr r0,8)</span>
+  <span class="a">std</span>     r0, 16(r1)          <span class="cmt"># save it in the caller's frame LR slot</span>
+  <span class="a">stdu</span>    r1, -64(r1)         <span class="cmt"># push a 64-byte frame AND update the SP, atomically</span>
+  <span class="a">std</span>     r31, 56(r1)         <span class="cmt"># save a callee-saved register</span>
+
+  <span class="cmt"># ---- body -----------------------------------------------------</span>
+  <span class="g">mr</span>      r31, r3             <span class="cmt"># or r31,r3,r3   — stash the first argument</span>
+  <span class="g">cmpdi</span>   r3, 0               <span class="cmt"># compare against 0, result into cr0</span>
+  <span class="g">beq</span>     .Ldone              <span class="cmt"># bc 12,2,.Ldone  — branch if cr0[EQ]</span>
+  <span class="g">li</span>      r4, 10              <span class="cmt"># addi r4,0,10   — the RA|0 trick</span>
+  <span class="g">mtctr</span>   r4                  <span class="cmt"># mtspr 9,r4     — set up a loop count</span>
+.Lloop:
+  <span class="v">ld</span>      r5, 0(r31)          <span class="cmt"># DS-form load</span>
+  <span class="v">addi</span>    r31, r31, 8         <span class="cmt"># advance the pointer</span>
+  <span class="v">bdnz</span>    .Lloop              <span class="cmt"># bc 16,0,.Lloop — decrement CTR and loop</span>
+  <span class="s">bl</span>      helper              <span class="cmt"># call: sets LK=1, so LR is clobbered</span>
+  <span class="s">nop</span>                         <span class="cmt"># slot the linker may patch for TOC restore</span>
+.Ldone:
+  <span class="cmt"># ---- epilogue -------------------------------------------------</span>
+  <span class="o">ld</span>      r31, 56(r1)         <span class="cmt"># restore callee-saved register</span>
+  <span class="o">addi</span>    r1, r1, 64          <span class="cmt"># pop the frame</span>
+  <span class="o">ld</span>      r0, 16(r1)          <span class="cmt"># reload the saved return address</span>
+  <span class="o">mtlr</span>    r0                  <span class="cmt"># mtspr 8,r0</span>
+  <span class="o">blr</span>                         <span class="cmt"># bclr 20,0,0 — return</span>
+</pre></div>
+
+  <p>Three things to notice, because they are pure Power:</p>
+  <ul class="tight">
+    <li><b>LR is a register, not a stack slot.</b> Any non-leaf function must save and restore it explicitly — that's why <code>mflr</code>/<code>mtlr</code> bracket every real function.</li>
+    <li><b><code>stdu</code> pushes the frame in one instruction</b> and keeps the stack chain valid at every instant, which is what makes Power backtraces reliable.</li>
+    <li><b>The loop has no compare and no separate decrement</b> — <code>mtctr</code> plus <code>bdnz</code> is the whole loop control.</li>
+  </ul>
+</section>
+
+<section id="check">
+  <h3><span class="n">14</span>Self-check</h3>
+  <div class="quiz" data-correct="1" data-fb="subf RT,RA,RB computes RB − RA. The operand order is reversed relative to what most people expect.">
+    <div class="q">1. What does <code>subf r3,r4,r5</code> compute?</div>
+    <button class="opt">r3 = r4 − r5</button>
+    <button class="opt">r3 = r5 − r4</button>
+    <button class="opt">r4 = r5 − r3</button>
+    <button class="opt">r3 = −(r4 + r5)</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="rlwinm rotates left by SH then ANDs with a mask from bit MB to bit ME — so shifts, extracts and clears are all the same instruction.">
+    <div class="q">2. Why does Power get away without dedicated bit-field-extract instructions?</div>
+    <button class="opt">It doesn't — you must use shift-then-AND with two instructions.</button>
+    <button class="opt">The compiler emits a library call.</button>
+    <button class="opt"><code>rlwinm</code>/<code>rldicl</code> rotate-and-mask do it in one instruction.</button>
+    <button class="opt">Bit fields are handled by the vector unit.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="lwzux = load word, zero-extend, update RA with the computed EA, indexed by RB.">
+    <div class="q">3. Decode the mnemonic <code>lwzux</code>.</div>
+    <button class="opt">Load word, zero-extend, update the base register, indexed addressing.</button>
+    <button class="opt">Load word, sign-extend, unsigned, exclusive.</button>
+    <button class="opt">Load word, zero-extend, unaligned, exclusive.</button>
+    <button class="opt">Load doubleword, zero-extend, update, indexed.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="bdnz is bc with BO=16: decrement CTR and branch if it's non-zero — loop control in a single instruction, no compare needed.">
+    <div class="q">4. What makes <code>bdnz</code> special?</div>
+    <button class="opt">It branches without touching the pipeline.</button>
+    <button class="opt">It is a prefixed 64-bit instruction.</button>
+    <button class="opt">It compares two GPRs and branches.</button>
+    <button class="opt">It decrements CTR and branches if non-zero — one instruction of loop overhead.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="fmadd computes (A×C)+B with a single rounding at the end — more accurate than a separate multiply and add, and usually the same latency as one multiply.">
+    <div class="q">5. Why is <code>fmadd</code> better than <code>fmul</code> followed by <code>fadd</code>?</div>
+    <button class="opt">It uses fewer registers.</button>
+    <button class="opt">It can operate on vectors.</button>
+    <button class="opt">It rounds only once, so it is more accurate as well as faster.</button>
+    <button class="opt">It sets CR0 automatically.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="MMA accumulators are 512 bits and hold an output tile that outer-product instructions accumulate into — that's what makes dense matrix multiply efficient.">
+    <div class="q">6. What is an MMA accumulator?</div>
+    <button class="opt">A 128-bit register for vector reductions.</button>
+    <button class="opt">A 512-bit register holding a matrix tile, updated by outer-product instructions.</button>
+    <button class="opt">A special GPR used for loop counts.</button>
+    <button class="opt">The carry chain used by <code>adde</code>.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Primary opcode 1 marks a prefix word; the following word is its suffix, and together they form one 64-bit instruction with a 34-bit displacement.">
+    <div class="q">7. In v3.1, primary opcode 1 means…</div>
+    <button class="opt">this word is a prefix; the next word completes a 64-bit instruction.</button>
+    <button class="opt">an illegal instruction trap.</button>
+    <button class="opt">a hypervisor call.</button>
+    <button class="opt">a vector instruction.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="Power's instruction and data caches are not coherent for fetch. After writing code you need dcbst, sync, icbi and isync before executing it.">
+    <div class="q">8. Your JIT writes machine code into a buffer and jumps to it. What must you do first?</div>
+    <button class="opt">Nothing — the caches are coherent.</button>
+    <button class="opt">Issue an <code>eieio</code>.</button>
+    <button class="opt">Set MSR[IR]=0.</button>
+    <button class="opt">Flush with <code>dcbst</code>, then <code>sync</code>, <code>icbi</code> and <code>isync</code>.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="lis loads the high 16 bits (addis RT,0,val), then ori fills in the low 16 — the standard two-instruction 32-bit constant idiom.">
+    <div class="q">9. <code>lis r3,0x1234</code> followed by <code>ori r3,r3,0x5678</code> leaves r3 holding…</div>
+    <button class="opt">0x0000000012345678 shifted left by 16</button>
+    <button class="opt">0x0000000012345678</button>
+    <button class="opt">0x1234567800000000</button>
+    <button class="opt">0x0000000000005678</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">15</span>Interview Q&amp;A</h3>
+  <details><summary>Give me the instruction categories in Power ISA.</summary><div class="ans">Fixed-point (arithmetic, logical, compare, rotate/shift), load/store, floating-point (binary, decimal, and IEEE-128 from v3.0), vector (VMX/AltiVec, VSX, and MMA from v3.1), branch and condition-register operations, and system/storage-control (SPR access, system call, traps, barriers, cache and TLB management). Encoding-wise, primary opcode 31 hosts the bulk of the register-to-register work behind an extended opcode.</div></details>
+  <details><summary>Explain <code>rlwinm</code>.</summary><div class="ans">Rotate Left Word Immediate then AND with Mask. It rotates the low 32 bits of RS left by SH, builds a mask of ones from bit MB through bit ME, ANDs the two, and writes RA. Because the mask endpoints are independent, one instruction expresses left shift, right shift, rotate, field extract and field clear — which is why <code>slwi</code>, <code>srwi</code>, <code>clrlwi</code>, <code>extlwi</code> and <code>rotlwi</code> are all simplified mnemonics for it. The 64-bit equivalents are <code>rldicl</code>/<code>rldicr</code>/<code>rldic</code>, and <code>rldimi</code> adds field insert.</div></details>
+  <details><summary>How does a loop work on Power without a compare?</summary><div class="ans">Load the trip count into the Count Register with <code>mtctr</code>, then end the loop with <code>bdnz</code>. That's <code>bc</code> with BO=16, which decrements CTR and branches if the result is non-zero — decrement, test and branch in one instruction, with no CR involvement and no dependency on the comparison unit. <code>bdz</code> is the branch-if-zero variant.</div></details>
+  <details><summary>What are BO and BI?</summary><div class="ans">In a conditional branch, BI is the 5-bit index of the CR bit to test — the CR field is BI÷4 and the condition within it (LT/GT/EQ/SO) is BI mod 4. BO is the 5-bit control field saying how to branch: test true (12), test false (4), branch always (20), or decrement CTR and test it (16 / 18), with the low bits carrying a static prediction hint that the assembler writes as <code>+</code> or <code>-</code>. Every friendly mnemonic like <code>beq</code>, <code>bne-</code> or <code>bdnz</code> is a particular BO/BI pair.</div></details>
+  <details><summary>VMX vs VSX vs MMA?</summary><div class="ans">VMX (AltiVec) came from PowerPC: 32 × 128-bit vector registers, integer and single-precision SIMD, with <code>vperm</code> as its signature instruction. VSX (v2.06) unified the FP and vector register files into 64 × 128-bit VSRs and added double-precision vector arithmetic and better unaligned access. MMA (v3.1) adds eight 512-bit accumulators overlaying VSR0–31; a single outer-product instruction updates a whole output tile, which is what makes dense matrix multiply and ML inference efficient on POWER10.</div></details>
+  <details><summary>What did prefixed instructions change, and what constraints do they bring?</summary><div class="ans">They break the fixed 32-bit encoding: a prefix word with primary opcode 1 plus a suffix word forms one 64-bit instruction, giving 34-bit displacements and, via the R bit, PC-relative addressing — so building a large constant or addressing a global no longer needs several instructions or a TOC pointer in r2. The constraints: a prefixed instruction may not cross a 64-byte boundary, you cannot branch into the suffix, and the pair is architecturally a single instruction for interrupt reporting.</div></details>
+  <details><summary>Why does Power have simplified mnemonics, and which ones matter?</summary><div class="ans">Because many common operations are special cases of general instructions, and reading the general form is painful. The ones you must know on sight: <code>li</code>/<code>lis</code> (addi/addis with RA=0), <code>mr</code> (or rX,rY,rY), <code>not</code> (nor), <code>nop</code> (ori r0,r0,0), <code>blr</code> (bclr 20,0,0), <code>bctrl</code>, <code>bdnz</code>, <code>mflr</code>/<code>mtlr</code>/<code>mtctr</code> (mfspr/mtspr), and the <code>srdi</code>/<code>clrldi</code> family (rldicl).</div></details>
+  <details><summary>Walk me through a Power function prologue.</summary><div class="ans"><code>mflr r0</code> pulls the return address out of the Link Register, <code>std r0,16(r1)</code> saves it into the caller's frame LR slot, and <code>stdu r1,-N(r1)</code> allocates the frame and updates the stack pointer in one atomic instruction so the backchain is never inconsistent. Callee-saved registers (r14–r31) are then stored into the new frame. The epilogue reverses it: restore registers, pop the frame, <code>ld r0,16(r1)</code>, <code>mtlr r0</code>, <code>blr</code>.</div></details>
+  <details><summary>What do you need to do after generating code at runtime?</summary><div class="ans">Power's L1 instruction and data caches are not coherent for instruction fetch, so a JIT must explicitly synchronise: <code>dcbst</code> on each modified block to push it out of the data cache, then <code>sync</code>, then <code>icbi</code> on each block to invalidate the instruction cache, then <code>isync</code> to discard anything already fetched or speculated. Omitting this gives intermittent failures that depend on cache state.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">16</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>Six families: fixed-point · load/store · floating-point · vector · branch/CR · system. <b>Opcode 31 is the junk drawer.</b></li>
+    <li><code>w</code> = 32-bit, <code>d</code> = 64-bit; <code>l</code> in a compare means unsigned; <code>.</code> sets CR0; <code>o</code> sets XER[OV].</li>
+    <li><b><code>subf</code> is backwards</b>: <code>subf RT,RA,RB</code> = RB − RA.</li>
+    <li><b>rotate-and-mask</b> (<code>rlwinm</code>, <code>rldicl</code>) is the shift/extract/insert engine behind a dozen mnemonics.</li>
+    <li>Load/store naming is systematic: <code>l|st</code> + <code>b|h|w|d</code> + <code>z|a</code> + <code>u</code> + <code>x</code>.</li>
+    <li>Branches: <code>b</code> ±32 MB · <code>bc</code> ±32 KB · <code>blr</code>/<code>bctr</code> via LR/CTR; <b>BO</b> = how to test, <b>BI</b> = which CR bit; <code>bdnz</code> is a whole loop.</li>
+    <li>Vector layers: <b>VMX</b> (32×128) &#8594; <b>VSX</b> (64×128) &#8594; <b>MMA</b> (8×512 accumulators).</li>
+    <li><b>v3.1 prefixed</b>: opcode 1 prefix + suffix = 64-bit instruction, 34-bit displacement, PC-relative.</li>
+    <li>Self-modifying/JIT code needs <code>dcbst</code> · <code>sync</code> · <code>icbi</code> · <code>isync</code>.</li>
+  </ul>
+  <div class="chips"><span class="chip">subf</span><span class="chip">rlwinm / rldicl</span><span class="chip">lwzux</span><span class="chip">lwarx / stwcx.</span><span class="chip">fmadd</span><span class="chip">vperm</span><span class="chip">xvf32ger</span><span class="chip">BO / BI</span><span class="chip">bdnz</span><span class="chip">blr / bctrl</span><span class="chip">isel</span><span class="chip">dcbz / icbi</span><span class="chip">paddi / pld</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="powerisa_lesson02_architecture.html">&#9668; L2 · Architecture overview</a>
+  <a href="powerisa_course_map.html">Course map &#9658;</a>
+</div>
+<p class="note" style="margin-top:18px">That completes the foundational track. From here the natural next steps are the Book II memory model in depth, the ELFv2 ABI, and writing a small Power core (Microwatt is a readable starting point).</p>
+</main>
+</div>
+
+<script>
+/* ---------- scroll-spy ---------- */
+const links=[...document.querySelectorAll('nav.side a')].filter(a=>a.getAttribute('href').startsWith('#'));
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* ---------- quizzes ---------- */
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite — the highlighted option is right. '+fbt);
+  }));
+});
+
+/* ---------- instruction explorer ---------- */
+const CATS=[
+ {k:'fixed', n:'Fixed-point', c:'#4fa3ff'},
+ {k:'ls',    n:'Load / store', c:'#52d273'},
+ {k:'fp',    n:'Floating-point', c:'#f5b942'},
+ {k:'vec',   n:'Vector / VSX / MMA', c:'#b48cff'},
+ {k:'br',    n:'Branch & CR', c:'#ff9b42'},
+ {k:'sys',   n:'System & storage', c:'#ff7ab6'}
+];
+const INS=[
+/* fixed-point */
+{m:'add',    f:'XO', c:'fixed', d:'RT ← RA + RB. Add <em>.</em> for CR0, <em>o</em> for XER overflow.'},
+{m:'addi',   f:'D',  c:'fixed', d:'RT ← (RA|0) + signed immediate. With RA=0 this is <em>li</em>.'},
+{m:'addis',  f:'D',  c:'fixed', d:'RT ← (RA|0) + (immediate &lt;&lt; 16). With RA=0 this is <em>lis</em>.'},
+{m:'addc',   f:'XO', c:'fixed', d:'Add, writing the carry out to XER[CA].'},
+{m:'adde',   f:'XO', c:'fixed', d:'Add extended: RA + RB + XER[CA]. Chains for multi-word arithmetic.'},
+{m:'subf',   f:'XO', c:'fixed', d:'Subtract from: RT ← <em>RB − RA</em>. Operand order is reversed.'},
+{m:'subfc',  f:'XO', c:'fixed', d:'Subtract from carrying — writes XER[CA] as a borrow.'},
+{m:'neg',    f:'XO', c:'fixed', d:'RT ← −RA (two&#39;s complement negate).'},
+{m:'mulli',  f:'D',  c:'fixed', d:'Multiply low immediate: RT ← RA × signed 16-bit immediate.'},
+{m:'mullw',  f:'XO', c:'fixed', d:'Multiply low word — 32×32 product placed in a 64-bit register.'},
+{m:'mulld',  f:'XO', c:'fixed', d:'Multiply low doubleword — low 64 bits of the 64×64 product.'},
+{m:'mulhd',  f:'XO', c:'fixed', d:'Multiply high doubleword — high 64 bits. Pair with mulld for 128-bit.'},
+{m:'mulhdu', f:'XO', c:'fixed', d:'Unsigned multiply high doubleword.'},
+{m:'divw',   f:'XO', c:'fixed', d:'Divide word (signed 32-bit).'},
+{m:'divd',   f:'XO', c:'fixed', d:'Divide doubleword (signed 64-bit).'},
+{m:'divdu',  f:'XO', c:'fixed', d:'Divide doubleword unsigned.'},
+{m:'modsd',  f:'X',  c:'fixed', d:'Modulo signed doubleword — added in v3.0 (before that, multiply and subtract).'},
+{m:'cmpw',   f:'X',  c:'fixed', d:'Compare 32-bit signed; writes LT/GT/EQ/SO into the named CR field.'},
+{m:'cmpd',   f:'X',  c:'fixed', d:'Compare 64-bit signed.'},
+{m:'cmpwi',  f:'D',  c:'fixed', d:'Compare word immediate — the most common compare in real code.'},
+{m:'cmpdi',  f:'D',  c:'fixed', d:'Compare doubleword immediate.'},
+{m:'cmplw',  f:'X',  c:'fixed', d:'Compare logical (unsigned) word.'},
+{m:'cmpld',  f:'X',  c:'fixed', d:'Compare logical (unsigned) doubleword.'},
+{m:'and',    f:'X',  c:'fixed', d:'RA ← RS &amp; RB. Destination is RA for logical instructions.'},
+{m:'andi.',  f:'D',  c:'fixed', d:'AND immediate — <em>always</em> sets CR0; there is no non-recording form.'},
+{m:'or',     f:'X',  c:'fixed', d:'RA ← RS | RB. With RS=RB this is the <em>mr</em> move idiom.'},
+{m:'ori',    f:'D',  c:'fixed', d:'OR immediate. <em>ori r0,r0,0</em> is the architected nop.'},
+{m:'xor',    f:'X',  c:'fixed', d:'Exclusive OR.'},
+{m:'nand',   f:'X',  c:'fixed', d:'NOT(RS &amp; RB).'},
+{m:'nor',    f:'X',  c:'fixed', d:'NOT(RS | RB). With RS=RB this is the <em>not</em> idiom.'},
+{m:'eqv',    f:'X',  c:'fixed', d:'Equivalence — NOT(RS ⊕ RB).'},
+{m:'andc',   f:'X',  c:'fixed', d:'AND with complement: RS &amp; ¬RB. Saves an instruction over not+and.'},
+{m:'orc',    f:'X',  c:'fixed', d:'OR with complement: RS | ¬RB.'},
+{m:'extsb',  f:'X',  c:'fixed', d:'Extend sign of byte to 64 bits.'},
+{m:'extsh',  f:'X',  c:'fixed', d:'Extend sign of halfword.'},
+{m:'extsw',  f:'X',  c:'fixed', d:'Extend sign of word — the canonical int32→int64 conversion.'},
+{m:'cntlzd', f:'X',  c:'fixed', d:'Count leading zeros, doubleword. Used for fast log2 and normalisation.'},
+{m:'cnttzd', f:'X',  c:'fixed', d:'Count trailing zeros (v3.0).'},
+{m:'popcntd',f:'X',  c:'fixed', d:'Population count — number of set bits in a doubleword.'},
+{m:'bpermd', f:'X',  c:'fixed', d:'Bit permute doubleword — gather 8 selected bits (v2.06).'},
+{m:'slw',    f:'X',  c:'fixed', d:'Shift left word by the amount in RB.'},
+{m:'srw',    f:'X',  c:'fixed', d:'Shift right word (logical).'},
+{m:'srawi',  f:'X',  c:'fixed', d:'Shift right algebraic word immediate — sign-propagating, sets XER[CA].'},
+{m:'sld',    f:'X',  c:'fixed', d:'Shift left doubleword.'},
+{m:'srd',    f:'X',  c:'fixed', d:'Shift right doubleword (logical).'},
+{m:'sradi',  f:'XS', c:'fixed', d:'Shift right algebraic doubleword immediate.'},
+{m:'rlwinm', f:'M',  c:'fixed', d:'Rotate left word immediate then AND with mask — the shift/extract Swiss army knife.'},
+{m:'rlwimi', f:'M',  c:'fixed', d:'Rotate left word immediate then mask <em>insert</em> — merges a field into RA.'},
+{m:'rldicl', f:'MD', c:'fixed', d:'Rotate left doubleword immediate then clear left. Behind <em>srdi</em> and <em>clrldi</em>.'},
+{m:'rldicr', f:'MD', c:'fixed', d:'Rotate left doubleword immediate then clear right. Behind <em>sldi</em>.'},
+{m:'rldimi', f:'MD', c:'fixed', d:'64-bit rotate and mask insert — bit-field insert in one instruction.'},
+{m:'isel',   f:'A',  c:'fixed', d:'Integer select: RT ← RA or RB depending on a CR bit. Branchless conditional move.'},
+{m:'paddi',  f:'MLS',c:'fixed', d:'v3.1 prefixed add immediate — 34-bit immediate, optionally PC-relative.'},
+{m:'pli',    f:'MLS',c:'fixed', d:'v3.1 load immediate — 34 bits in one instruction (paddi with RA=0).'},
+/* load / store */
+{m:'lbz',    f:'D',  c:'ls', d:'Load byte and zero-extend.'},
+{m:'lhz',    f:'D',  c:'ls', d:'Load halfword and zero-extend.'},
+{m:'lha',    f:'D',  c:'ls', d:'Load halfword algebraic (sign-extend).'},
+{m:'lwz',    f:'D',  c:'ls', d:'Load word and zero-extend. EA = (RA|0) + displacement.'},
+{m:'lwa',    f:'DS', c:'ls', d:'Load word algebraic — sign-extends 32→64 bits.'},
+{m:'ld',     f:'DS', c:'ls', d:'Load doubleword. The DS displacement is scaled by 4.'},
+{m:'ldu',    f:'DS', c:'ls', d:'Load doubleword with update — writes the EA back into RA.'},
+{m:'lwzx',   f:'X',  c:'ls', d:'Load word and zero, indexed: EA = (RA|0) + RB.'},
+{m:'lwzux',  f:'X',  c:'ls', d:'Load word and zero, update, indexed — array walk in one instruction.'},
+{m:'ldx',    f:'X',  c:'ls', d:'Load doubleword indexed.'},
+{m:'stb',    f:'D',  c:'ls', d:'Store byte.'},
+{m:'sth',    f:'D',  c:'ls', d:'Store halfword.'},
+{m:'stw',    f:'D',  c:'ls', d:'Store word (low 32 bits of RS).'},
+{m:'std',    f:'DS', c:'ls', d:'Store doubleword.'},
+{m:'stdu',   f:'DS', c:'ls', d:'Store doubleword with update — the stack-frame push idiom.'},
+{m:'stwx',   f:'X',  c:'ls', d:'Store word indexed.'},
+{m:'lwbrx',  f:'X',  c:'ls', d:'Load word byte-reversed indexed — read foreign-endian data.'},
+{m:'ldbrx',  f:'X',  c:'ls', d:'Load doubleword byte-reversed indexed (v2.06).'},
+{m:'stwbrx', f:'X',  c:'ls', d:'Store word byte-reversed indexed.'},
+{m:'lwarx',  f:'X',  c:'ls', d:'Load word and reserve — takes an atomic reservation on the block.'},
+{m:'ldarx',  f:'X',  c:'ls', d:'Load doubleword and reserve.'},
+{m:'stwcx.', f:'X',  c:'ls', d:'Store word conditional — succeeds only if the reservation held; reports in CR0[EQ].'},
+{m:'stdcx.', f:'X',  c:'ls', d:'Store doubleword conditional.'},
+{m:'lqarx',  f:'X',  c:'ls', d:'Load quadword and reserve — 128-bit atomics (v2.07).'},
+{m:'lmw',    f:'D',  c:'ls', d:'Load multiple words into consecutive GPRs. Compact but slow; compilers avoid it.'},
+{m:'lq',     f:'DQ', c:'ls', d:'Load quadword into an even/odd GPR pair.'},
+{m:'lfs',    f:'D',  c:'ls', d:'Load floating single — converts to double precision in the register.'},
+{m:'lfd',    f:'D',  c:'ls', d:'Load floating double.'},
+{m:'stfd',   f:'D',  c:'ls', d:'Store floating double.'},
+{m:'pld',    f:'8LS',c:'ls', d:'v3.1 prefixed load doubleword — 34-bit displacement, PC-relative option.'},
+/* floating-point */
+{m:'fadd',   f:'A',  c:'fp', d:'Floating add (double). <em>fadds</em> rounds to single.'},
+{m:'fsub',   f:'A',  c:'fp', d:'Floating subtract.'},
+{m:'fmul',   f:'A',  c:'fp', d:'Floating multiply.'},
+{m:'fdiv',   f:'A',  c:'fp', d:'Floating divide.'},
+{m:'fsqrt',  f:'A',  c:'fp', d:'Floating square root.'},
+{m:'fmadd',  f:'A',  c:'fp', d:'Fused multiply-add: (FRA × FRC) + FRB with a <em>single</em> rounding.'},
+{m:'fmsub',  f:'A',  c:'fp', d:'Fused multiply-subtract.'},
+{m:'fnmadd', f:'A',  c:'fp', d:'Negative fused multiply-add.'},
+{m:'fabs',   f:'X',  c:'fp', d:'Floating absolute value.'},
+{m:'fneg',   f:'X',  c:'fp', d:'Floating negate.'},
+{m:'fcmpu',  f:'X',  c:'fp', d:'Compare unordered — does not signal on a quiet NaN.'},
+{m:'fcmpo',  f:'X',  c:'fp', d:'Compare ordered — raises the invalid-operation exception on NaN.'},
+{m:'fsel',   f:'A',  c:'fp', d:'Floating select — branchless conditional based on the sign of FRA.'},
+{m:'frsp',   f:'X',  c:'fp', d:'Round to single precision.'},
+{m:'fctid',  f:'X',  c:'fp', d:'Convert floating to integer doubleword.'},
+{m:'fcfid',  f:'X',  c:'fp', d:'Convert integer doubleword to floating.'},
+{m:'frin',   f:'X',  c:'fp', d:'Round to nearest integer (also friz/frip/frim for zero/up/down).'},
+{m:'fre',    f:'A',  c:'fp', d:'Reciprocal estimate — seed for Newton-Raphson refinement.'},
+{m:'frsqrte',f:'A',  c:'fp', d:'Reciprocal square-root estimate.'},
+{m:'mffs',   f:'X',  c:'fp', d:'Move from FPSCR — read rounding mode and exception flags.'},
+{m:'mtfsf',  f:'XFL',c:'fp', d:'Move to FPSCR fields — set the rounding mode.'},
+{m:'dadd',   f:'X',  c:'fp', d:'Decimal floating-point add (v2.05) — exact decimal arithmetic for finance.'},
+{m:'dmul',   f:'X',  c:'fp', d:'Decimal floating-point multiply.'},
+{m:'dqua',   f:'Z23',c:'fp', d:'Decimal quantize — set the exponent, i.e. round to a given decimal place.'},
+{m:'xsaddqp',f:'X',  c:'fp', d:'IEEE binary-128 add in hardware (v3.0) — true quad precision.'},
+{m:'xsmulqp',f:'X',  c:'fp', d:'IEEE binary-128 multiply.'},
+/* vector */
+{m:'vaddubm',f:'VX', c:'vec', d:'VMX: add 16 unsigned bytes, modulo.'},
+{m:'vadduwm',f:'VX', c:'vec', d:'VMX: add 4 unsigned words, modulo.'},
+{m:'vaddsbs',f:'VX', c:'vec', d:'VMX: add signed bytes with <em>saturation</em> — sets VSCR[SAT].'},
+{m:'vperm',  f:'VA', c:'vec', d:'VMX: arbitrary byte permute across two vectors — the signature AltiVec instruction.'},
+{m:'vsel',   f:'VA', c:'vec', d:'VMX: bitwise select between two vectors under a mask.'},
+{m:'vcmpequb',f:'VC',c:'vec', d:'VMX: compare bytes for equality, producing a mask (and optionally CR6).'},
+{m:'vmsumubm',f:'VA',c:'vec', d:'VMX: multiply-sum of unsigned bytes — dot-product building block.'},
+{m:'lvx',    f:'X',  c:'vec', d:'VMX load vector indexed — <em>truncates</em> the address to 16 bytes.'},
+{m:'lvsl',   f:'X',  c:'vec', d:'Load vector for shift left — builds the permute control for unaligned VMX loads.'},
+{m:'stvx',   f:'X',  c:'vec', d:'VMX store vector indexed.'},
+{m:'xvadddp',f:'XX3',c:'vec', d:'VSX: add 2 double-precision values per instruction.'},
+{m:'xvaddsp',f:'XX3',c:'vec', d:'VSX: add 4 single-precision values.'},
+{m:'xvmaddadp',f:'XX3',c:'vec',d:'VSX: vector fused multiply-add, double precision.'},
+{m:'xsmaddadp',f:'XX3',c:'vec',d:'VSX: <em>scalar</em> fused multiply-add using the VSR file.'},
+{m:'xxpermdi',f:'XX3',c:'vec',d:'VSX: permute doublewords between two VSRs — the workhorse shuffle.'},
+{m:'xxsel',  f:'XX4',c:'vec', d:'VSX: bitwise select across the full 128 bits.'},
+{m:'xxspltw',f:'XX2',c:'vec', d:'VSX: splat (broadcast) one word across the vector.'},
+{m:'lxv',    f:'DQ', c:'vec', d:'VSX load vector (v3.0) — handles unaligned addresses properly, unlike lvx.'},
+{m:'stxv',   f:'DQ', c:'vec', d:'VSX store vector (v3.0).'},
+{m:'lxvd2x', f:'X',  c:'vec', d:'VSX load two doublewords indexed — common in ppc64le kernels.'},
+{m:'xxsetaccz',f:'X',c:'vec', d:'MMA: zero an accumulator before starting a tile computation (v3.1).'},
+{m:'xvf32ger',f:'MMIRR',c:'vec',d:'MMA: single-precision outer product (rank-1 update) into an accumulator.'},
+{m:'xvf64ger',f:'MMIRR',c:'vec',d:'MMA: double-precision outer product accumulate.'},
+{m:'xvi8ger4',f:'MMIRR',c:'vec',d:'MMA: 8-bit integer outer product — quantised ML inference.'},
+{m:'xvbf16ger2',f:'MMIRR',c:'vec',d:'MMA: bfloat16 outer product — training/inference datatype.'},
+{m:'xxmfacc',f:'X',  c:'vec', d:'MMA: move accumulator contents back out into the four underlying VSRs.'},
+/* branch */
+{m:'b',      f:'I',  c:'br', d:'Unconditional branch, ±32 MB. Add <em>l</em> for a call, <em>a</em> for absolute.'},
+{m:'bl',     f:'I',  c:'br', d:'Branch and link — a call. Saves the return address in LR.'},
+{m:'bc',     f:'B',  c:'br', d:'Branch conditional, ±32 KB. BO says how to test, BI which CR bit.'},
+{m:'beq',    f:'B',  c:'br', d:'Simplified: bc 12,BI — branch if the EQ bit of a CR field is set.'},
+{m:'bne',    f:'B',  c:'br', d:'Simplified: bc 4,BI — branch if EQ is clear.'},
+{m:'bdnz',   f:'B',  c:'br', d:'Decrement CTR and branch if non-zero. A complete loop in one instruction.'},
+{m:'bdz',    f:'B',  c:'br', d:'Decrement CTR and branch if zero.'},
+{m:'bclr',   f:'XL', c:'br', d:'Branch conditional to Link Register. BO=20 gives <em>blr</em>, the function return.'},
+{m:'bcctr',  f:'XL', c:'br', d:'Branch conditional to Count Register — function pointers, virtual calls, jump tables.'},
+{m:'crand',  f:'XL', c:'br', d:'AND two CR bits — combine conditions without branching.'},
+{m:'cror',   f:'XL', c:'br', d:'OR two CR bits.'},
+{m:'crxor',  f:'XL', c:'br', d:'XOR two CR bits. <em>crxor n,n,n</em> is the idiom for clearing one.'},
+{m:'mcrf',   f:'XL', c:'br', d:'Copy one 4-bit CR field to another.'},
+{m:'mfcr',   f:'X',  c:'br', d:'Move the whole 32-bit CR into a GPR.'},
+{m:'mtcrf',  f:'XFX',c:'br', d:'Move a GPR into selected CR fields under a mask.'},
+/* system */
+{m:'mfspr',  f:'XFX',c:'sys', d:'Move from special-purpose register — behind mflr, mfctr, mfxer.'},
+{m:'mtspr',  f:'XFX',c:'sys', d:'Move to special-purpose register — behind mtlr, mtctr.'},
+{m:'mfmsr',  f:'X',  c:'sys', d:'Move from Machine State Register (privileged).'},
+{m:'mtmsrd', f:'X',  c:'sys', d:'Move to MSR, doubleword (privileged) — change mode, enable interrupts.'},
+{m:'sc',     f:'SC', c:'sys', d:'System call — the user-to-kernel transition.'},
+{m:'scv',    f:'SC', c:'sys', d:'System call vectored (v3.0) — lower-overhead syscall path.'},
+{m:'rfid',   f:'XL', c:'sys', d:'Return from interrupt, doubleword — restores MSR and PC from SRR0/SRR1.'},
+{m:'td',     f:'X',  c:'sys', d:'Trap doubleword on a condition — bounds checks and assertions.'},
+{m:'twi',    f:'D',  c:'sys', d:'Trap word immediate. <em>twi 31,r0,0</em> is a common breakpoint encoding.'},
+{m:'sync',   f:'X',  c:'sys', d:'Full memory barrier (hwsync). L=1 selects the cheaper lwsync.'},
+{m:'lwsync', f:'X',  c:'sys', d:'Lightweight barrier — orders load→load, load→store, store→store.'},
+{m:'isync',  f:'XL', c:'sys', d:'Instruction synchronise — discard speculated instructions; part of acquire.'},
+{m:'eieio',  f:'X',  c:'sys', d:'Enforce in-order execution of I/O — ordering for device storage.'},
+{m:'dcbz',   f:'X',  c:'sys', d:'Data cache block zero — zeroes a block without reading memory. Fast memset.'},
+{m:'dcbf',   f:'X',  c:'sys', d:'Data cache block flush.'},
+{m:'dcbst',  f:'X',  c:'sys', d:'Data cache block store — push a modified block toward memory.'},
+{m:'dcbt',   f:'X',  c:'sys', d:'Data cache block touch — a software prefetch hint.'},
+{m:'icbi',   f:'X',  c:'sys', d:'Instruction cache block invalidate — mandatory after generating code.'},
+{m:'tlbie',  f:'X',  c:'sys', d:'TLB invalidate entry (hypervisor).'},
+{m:'slbmte', f:'X',  c:'sys', d:'Move to segment lookaside buffer entry — hashed-page-table MMU only.'},
+{m:'wait',   f:'X',  c:'sys', d:'Wait for an event — low-power idle in a spin loop.'}
+];
+let activeCat=null, query='';
+const catsEl=document.getElementById('insCats'), listEl=document.getElementById('insList'),
+      footEl=document.getElementById('insFoot'), searchEl=document.getElementById('insSearch');
+CATS.forEach(c=>{
+  const b=document.createElement('button'); b.dataset.k=c.k;
+  b.innerHTML='<span style="width:8px;height:8px;border-radius:2px;background:'+c.c+';display:inline-block"></span>'+c.n;
+  b.addEventListener('click',()=>{activeCat = (activeCat===c.k? null : c.k); paintCats(); draw();});
+  catsEl.appendChild(b);
+});
+function paintCats(){
+  [...catsEl.children].forEach(b=>{
+    const c=CATS.find(x=>x.k===b.dataset.k);
+    const on = activeCat===c.k;
+    b.classList.toggle('on',on);
+    b.style.background = on ? c.c : '';
+    b.style.borderColor = on ? c.c : '';
+  });
+}
+function esc(s){return s.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}
+function hl(s,q){ if(!q) return s;
+  try{ return s.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>'); }
+  catch(e){ return s; } }
+function draw(){
+  const q=query.trim().toLowerCase();
+  const rows=INS.filter(i=>{
+    if(activeCat && i.c!==activeCat) return false;
+    if(!q) return true;
+    return i.m.toLowerCase().includes(q) || i.d.toLowerCase().includes(q) || i.f.toLowerCase()===q;
+  });
+  if(!rows.length){ listEl.innerHTML='<div class="empty">No instruction matches “'+esc(query)+'”.<br><span style="font-size:12.5px">Try: multiply · atomic · barrier · vector · rotate · immediate</span></div>'; }
+  else{
+    listEl.innerHTML=rows.map(i=>{
+      const col=CATS.find(c=>c.k===i.c).c;
+      return '<div class="ins"><div class="m" style="color:'+col+'">'+hl(i.m,query.trim())+
+        '<span class="form">'+i.f+'-form</span></div><div class="d">'+hl(i.d,query.trim())+'</div></div>';
+    }).join('');
+  }
+  footEl.textContent = rows.length+' of '+INS.length+' instructions'+
+    (activeCat? '  ·  category: '+CATS.find(c=>c.k===activeCat).n : '')+
+    (q? '  ·  matching “'+query.trim()+'”' : '');
+}
+searchEl.addEventListener('input',e=>{query=e.target.value; draw();});
+document.getElementById('insClear').addEventListener('click',()=>{query=''; searchEl.value=''; activeCat=null; paintCats(); draw();});
+paintCats(); draw();
+
+/* ---------- BO / BI builder ---------- */
+const boSel=document.getElementById('boSel'), crSel=document.getElementById('crSel'),
+      hintSel=document.getElementById('hintSel'), boOut=document.getElementById('boOut');
+const CONDNAME=['lt','gt','eq','so'], TRUEM=['blt','bgt','beq','bso'], FALSEM=['bge','ble','bne','bns'];
+function boDraw(){
+  const [boS,condS]=boSel.value.split('|'); let bo=+boS; const cond=+condS;
+  const cr=+crSel.value, hint=hintSel.value;
+  let bi, mnem, expl;
+  if(bo===20){ bi=0; mnem='bc 20,0,'; expl='BO=20 means "branch always" — the CR is ignored entirely. You mostly meet it as the BO inside <code>blr</code> (<code>bclr 20,0,0</code>) and <code>bctr</code>. A plain unconditional branch uses the I-form <code>b</code> instead, because it reaches ±32 MB rather than ±32 KB.'; }
+  else if(bo===16||bo===18){ bi=0;
+    mnem = bo===16?'bdnz':'bdz';
+    expl = 'BO='+bo+' decrements CTR and branches on the result'+(bo===16?' being non-zero':' being zero')+
+           '. No CR bit is consulted, so BI is 0. This is Power’s zero-overhead loop.'; }
+  else {
+    bi = cr*4 + cond;
+    mnem = (bo===12? TRUEM[cond] : FALSEM[cond]);
+    expl = 'BI='+bi+' selects CR bit '+bi+' — that is field <b>cr'+cr+'</b> (BI÷4 = '+cr+
+           ') and condition <b>'+CONDNAME[cond].toUpperCase()+'</b> (BI mod 4 = '+cond+'). BO='+bo+
+           ' means branch if that bit is <b>'+(bo===12?'set':'clear')+'</b>.';
+  }
+  /* hint bits: assembler encodes the at-bits; show the effect */
+  let boShown=bo, hintTxt='';
+  if(hint==='+'){ boShown=bo|1; hintTxt=' The <code>+</code> suffix sets the low BO bit to hint "likely taken" (BO='+boShown+').'; }
+  if(hint==='-'){ boShown=bo|1; hintTxt=' The <code>-</code> suffix encodes the "unlikely taken" hint in the BO field.'; }
+  const asm = mnem + hint + (bo===12||bo===4 ? ' cr'+cr+', target' : ' target');
+  boOut.innerHTML='<div class="asm">'+asm+'</div>'+
+    '<div class="enc">encodes as &nbsp; bc '+boShown+', '+bi+', target'+
+    '&nbsp;&nbsp;(primary opcode 16, B-form)</div>'+
+    '<div class="ex">'+expl+hintTxt+'</div>';
+}
+[boSel,crSel,hintSel].forEach(e=>e.addEventListener('change',boDraw));
+boDraw();
+</script>
+</body>
+</html>

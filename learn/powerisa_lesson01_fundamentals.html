@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power ISA · Lesson 1 — Fundamentals &amp; History</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --acc:#4fa3ff;      /* Power blue */
+  --gold:#f5b942;     /* history / caveman */
+  --grn:#52d273;      /* open source / ok */
+  --vio:#b48cff;      /* section headers */
+  --cyn:#39d4e6;
+  --warn:#ff7a7a;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--acc); text-decoration:none}
+.shell{display:grid; grid-template-columns:250px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--vio); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--acc)}
+nav.side .home{margin-top:20px; padding-top:14px; border-top:1px solid var(--line-soft); font-size:12px; color:var(--ink-faint)}
+main{padding:38px 52px 120px; max-width:940px}
+.kick{font-family:var(--mono); color:var(--vio); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:700px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--acc); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--acc)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--vio); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--gold); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-acc{background:var(--acc)} .b-gold{background:var(--gold)} .b-grn{background:var(--grn)} .b-vio{background:var(--vio)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--cyn); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .a{color:var(--acc);font-weight:600} .ascii .g{color:var(--gold);font-weight:600}
+.ascii .s{color:var(--grn);font-weight:600} .ascii .v{color:var(--vio);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--grn); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--vio); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+hr.soft{border:none; border-top:1px solid var(--line-soft); margin:26px 0}
+
+/* ---------- interactive timeline ---------- */
+.tl{margin:18px 0}
+.tl-rail{display:flex; gap:0; align-items:stretch; overflow-x:auto; padding-bottom:6px;
+  border-bottom:1px solid var(--line); position:relative}
+.tl-node{flex:1 0 92px; background:none; border:none; color:var(--ink-faint); cursor:pointer;
+  font-family:var(--mono); font-size:11.5px; padding:10px 4px 14px; position:relative; transition:.15s; text-align:center}
+.tl-node::after{content:""; position:absolute; left:50%; bottom:-5px; width:9px; height:9px; margin-left:-4.5px;
+  border-radius:50%; background:var(--line); border:2px solid var(--bg); transition:.15s}
+.tl-node:hover{color:var(--ink)}
+.tl-node.on{color:var(--acc); font-weight:600}
+.tl-node.on::after{background:var(--acc); box-shadow:0 0 0 4px rgba(79,163,255,.18)}
+.tl-node .yr{display:block; font-size:13px}
+.tl-node .lbl{display:block; font-size:10px; letter-spacing:.5px; opacity:.85; margin-top:2px}
+.tl-body{background:var(--panel); border:1px solid var(--line); border-top:none;
+  border-radius:0 0 var(--radius) var(--radius); padding:18px 20px; min-height:150px}
+.tl-body h5{margin:0 0 4px; font-size:18px; color:var(--ink)}
+.tl-body .era{font-family:var(--mono); font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold)}
+.tl-body p{font-size:14px; color:var(--ink-dim); margin:8px 0 0}
+.tl-body .facts{margin:10px 0 0; padding-left:18px}
+.tl-body .facts li{font-size:13.5px; color:var(--ink-dim); margin:4px 0}
+.tl-ctl{display:flex; gap:8px; margin-top:12px}
+.tl-ctl button{font-family:var(--mono); font-size:12px; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink-dim); padding:5px 12px; border-radius:7px; cursor:pointer}
+.tl-ctl button:hover{background:var(--panel2); color:var(--ink)}
+
+/* ---------- books explorer ---------- */
+.books{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0}
+.book{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; cursor:pointer; transition:.15s; text-align:left; color:inherit; font-family:inherit}
+.book:hover{border-color:var(--acc); transform:translateY(-2px)}
+.book.on{border-color:var(--acc); background:var(--panel2); box-shadow:0 0 0 1px var(--acc) inset}
+.book .bk{font-family:var(--mono); font-size:11px; letter-spacing:1.5px; color:var(--acc)}
+.book .t{font-size:15px; font-weight:600; margin:4px 0 0}
+.book .w{font-size:12.5px; color:var(--ink-faint); margin-top:4px}
+.book-detail{background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin-top:4px}
+.book-detail h6{margin:0 0 6px; font-size:15px; font-family:var(--sans)}
+.book-detail ul{margin:6px 0 0; padding-left:18px} .book-detail li{font-size:13.5px; color:var(--ink-dim); margin:4px 0}
+
+/* ---------- openness comparison ---------- */
+.cmp td.y{color:var(--grn)} .cmp td.n{color:var(--warn)} .cmp td.m{color:var(--gold)}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3,.books{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">POWER ISA · LESSON 01</div>
+  <h1>Fundamentals &amp; History</h1>
+  <a href="#what">What an ISA is</a>
+  <a href="#roots">RISC roots: the 801</a>
+  <a href="#timeline">Interactive timeline</a>
+  <a href="#split">The great fork &amp; merge</a>
+  <a href="#versions">Version history</a>
+  <a href="#open">The 2019 open-sourcing</a>
+  <a href="#howopen">How open is "open"?</a>
+  <a href="#books">Books I / II / III</a>
+  <a href="#subsets">Compliancy subsets</a>
+  <a href="#today">Where it runs today</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="powerisa_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Foundational Knowledge · Lesson 1 of 3</div>
+<h2 class="title">Fundamentals &amp; History of Power ISA</h2>
+<p class="lede">Where Power came from, why it forked into three architectures and merged back into one, and what actually changed when IBM open-sourced it in 2019.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Explain what an ISA specifies — and what it deliberately does <i>not</i>.</li>
+    <li>Trace the lineage IBM 801 &#8594; POWER &#8594; PowerPC &#8594; Book E &#8594; unified Power ISA.</li>
+    <li>Name the major spec versions and the headline feature each one added.</li>
+    <li>State precisely what IBM opened in August 2019, and how that differs from Arm and RISC-V.</li>
+    <li>Navigate the spec: which Book answers which kind of question.</li>
+  </ul>
+</div>
+
+<section id="what">
+  <h3><span class="n">1</span>What an ISA actually is</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>ISA = contract. Software say what it want. Hardware promise what it do. Contract on paper, not in silicon. Many different chips, same contract &#8594; same program run everywhere.</p></div>
+
+  <p>An <b>Instruction Set Architecture</b> is the boundary between software and hardware — the part of a processor that a compiler, an OS kernel or an assembly programmer can actually see. Power ISA is a <i>specification document</i>, not a chip. IBM's POWER10, a Microwatt FPGA softcore and a Libre-SOC design can all be radically different silicon while implementing the same contract.</p>
+
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-acc"></span>The ISA <b>does</b> specify</h6><p>Instruction encodings and semantics · architected registers · addressing modes · memory ordering rules · exception/interrupt behaviour · privilege levels · the virtual memory model.</p></div>
+    <div class="card"><h6><span class="dot b-gold"></span>The ISA <b>does not</b> specify</h6><p>Pipeline depth · issue width · cache sizes and hierarchy · branch predictors · clock speed · physical bus protocols · how many cycles anything takes. Those are <i>microarchitecture</i>.</p></div>
+  </div>
+
+  <p>That separation is exactly why an architecture can survive 30+ years. The Power contract written for a 1990 RS/6000 still describes, in its lineage, the instructions a 2024 POWER10 executes.</p>
+</section>
+
+<section id="roots">
+  <h3><span class="n">2</span>RISC roots: IBM's 801 project</h3>
+  <p>Power did not start as a product. It started as a <b>research argument</b>. In the mid-1970s at IBM's Watson Research Center, <b>John Cocke</b>'s team built the <b>IBM 801</b> (named after the building) on a heretical premise: compilers only ever use a small fraction of a CISC machine's elaborate instructions, so a machine with <i>fewer, simpler, uniformly-encoded</i> instructions could be clocked faster and pipelined harder — and a good compiler would make up the difference.</p>
+
+  <p>That premise gave the whole RISC family its DNA, and Power inherits it directly:</p>
+  <ul class="tight">
+    <li><b>Load/store architecture</b> — only explicit load and store instructions touch memory; arithmetic works register-to-register.</li>
+    <li><b>Fixed-width instructions</b> — every instruction is 32 bits, so the decoder always knows where the next one begins.</li>
+    <li><b>A large register file</b> — 32 general-purpose registers, so intermediate values stay out of memory.</li>
+    <li><b>Compiler as first-class citizen</b> — the hardware exposes a regular machine and lets the compiler schedule it.</li>
+  </ul>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Old CISC machine like Swiss army knife with 400 blades. Cocke say: you only use 6 blades. Give me 6 sharp blades, I cut faster. Compiler smart enough to do rest.</p></div>
+  <p class="note">The 801 shipped as a product only indirectly (as an I/O controller and in the ROMP chip behind the IBM RT PC), but its architecture became the seed of POWER.</p>
+</section>
+
+<section id="timeline">
+  <h3><span class="n">3</span>Interactive timeline</h3>
+  <p>Click a milestone to expand it. Use <span class="chip">&#8592; / &#8594;</span> or the buttons to walk the whole lineage.</p>
+
+  <div class="tl">
+    <div class="tl-rail" id="tlRail"></div>
+    <div class="tl-body" id="tlBody"></div>
+    <div class="tl-ctl">
+      <button id="tlPrev">&#9664; Previous</button>
+      <button id="tlNext">Next &#9654;</button>
+      <span class="note" style="margin-left:auto; font-style:normal" id="tlPos"></span>
+    </div>
+  </div>
+</section>
+
+<section id="split">
+  <h3><span class="n">4</span>The great fork — and the merge back</h3>
+  <p>Between 1993 and 2005 "Power" meant three related-but-diverging things at once. Understanding that split is the single most confusing part of Power history, and it explains the shape of the spec today.</p>
+
+  <div class="ascii-wrap"><div class="bar">One family, three branches, one reunion</div>
+<pre class="ascii">                       <span class="g">IBM 801</span> <span class="cmt">(1975-80, research RISC)</span>
+                          <span class="box">|</span>
+                       <span class="g">POWER1</span> <span class="cmt">(1990, RS/6000)</span>
+                          <span class="box">|</span>
+                    <span class="a">PowerPC</span> <span class="cmt">(1991-93, AIM alliance: Apple + IBM + Motorola)</span>
+             <span class="box">┌────────────┴────────────┬─────────────────┐</span>
+        <span class="v">POWER (IBM)</span>              <span class="a">PowerPC (AIM)</span>       <span class="s">Book E (1999)</span>
+        <span class="cmt">servers, AIX</span>            <span class="cmt">Macs, consoles</span>      <span class="cmt">embedded / Freescale</span>
+        <span class="cmt">POWER3..POWER5</span>          <span class="cmt">G3/G4/G5, Xbox360</span>  <span class="cmt">PowerQUICC, e500</span>
+             <span class="box">└────────────┬────────────┴─────────────────┘</span>
+                          <span class="box">|</span>
+                <span class="s">Power ISA v2.03</span> <span class="cmt">(2006) — one spec again</span>
+                          <span class="box">|</span>
+              <span class="s">v2.06 VSX · v2.07 · v3.0 · v3.1 MMA</span>
+                          <span class="box">|</span>
+             <span class="s">Open-sourced, OpenPOWER &#8594; Linux Foundation</span> <span class="cmt">(2019)</span>
+</pre></div>
+
+  <table>
+    <tr><th>Branch</th><th>Driven by</th><th>Typical parts</th><th>What made it different</th></tr>
+    <tr><td><b>POWER</b></td><td>IBM</td><td>POWER3 – POWER5, RS/6000, pSeries</td><td>Big-endian AIX servers; aggressive SMP, huge caches, RAS features.</td></tr>
+    <tr><td><b>PowerPC</b></td><td>AIM alliance</td><td>601/603/604, G3, G4 (AltiVec), G5, Xbox 360, PS3 Cell PPE, GameCube/Wii</td><td>Cheaper, lower-power, bi-endian; added the <b>AltiVec/VMX</b> 128-bit SIMD unit on the G4.</td></tr>
+    <tr><td><b>Book E</b></td><td>Motorola/Freescale + IBM</td><td>PowerQUICC, e200/e500 cores, automotive &amp; networking</td><td>A <i>different</i> privileged model: software-managed TLBs, no segment registers, tuned for deterministic embedded use.</td></tr>
+  </table>
+
+  <p>In <b>2006</b>, <b>Power ISA v2.03</b> folded PowerPC v2.02 and the Book E extension into a single document. The embedded and server worlds kept their differences, but they were now <i>categories inside one specification</i> rather than separate architectures — which is why modern Book III splits into <code>Book III-S</code> (server) and <code>Book III-E</code> (embedded).</p>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>One tribe split in three: big-server tribe, desktop tribe, tiny-embedded tribe. Fight over how memory-map work. 2006 they sit down, write one book, put tribe differences in separate chapters. Peace.</p></div>
+</section>
+
+<section id="versions">
+  <h3><span class="n">5</span>Version history — what each release bought you</h3>
+  <table>
+    <tr><th>Version</th><th>Year</th><th>Headline additions</th><th>Flagship silicon</th></tr>
+    <tr><td><code>v2.03</code></td><td>2006</td><td><b>The merge.</b> PowerPC + Book E unified; category system introduced.</td><td>POWER5+, PA6T</td></tr>
+    <tr><td><code>v2.04</code></td><td>2007</td><td>Hypervisor/virtualisation refinements for the server category.</td><td>—</td></tr>
+    <tr><td><code>v2.05</code></td><td>2007</td><td><b>Decimal floating-point (DFP)</b> — IEEE 754-2008 decimal, for money maths.</td><td>POWER6</td></tr>
+    <tr><td><code>v2.06</code></td><td>2009/10</td><td><b>VSX</b> — Vector-Scalar eXtension: 64 × 128-bit registers unifying FP and vector state.</td><td>POWER7</td></tr>
+    <tr><td><code>v2.07</code></td><td>2013</td><td><b>Transactional memory</b>, VMX crypto (AES/SHA), enhanced PMU, 8 threads/core support.</td><td>POWER8</td></tr>
+    <tr><td><code>v3.0</code></td><td>2017</td><td><b>VSX-3</b>, IEEE-128 binary float in hardware, <b>radix MMU</b>, and the new <b>compliancy-subset</b> model.</td><td>POWER9</td></tr>
+    <tr><td><code>v3.0B / v3.0C</code></td><td>2017 / 2020</td><td>Errata + the version published for open reference implementations.</td><td>Microwatt, A2O</td></tr>
+    <tr><td><code>v3.1</code></td><td>2020</td><td><b>Prefixed (64-bit) instructions</b>, PC-relative addressing, <b>MMA</b> matrix-math accumulators.</td><td>POWER10</td></tr>
+    <tr><td><code>v3.1B / v3.1C</code></td><td>2021 / 2024</td><td>Clarifications and errata under OpenPOWER Foundation stewardship.</td><td>—</td></tr>
+  </table>
+  <p class="note">Rule of thumb for interviews: <b>2.06 = VSX</b>, <b>2.07 = transactional memory</b>, <b>3.0 = radix MMU + subsets</b>, <b>3.1 = prefixed instructions + MMA</b>.</p>
+</section>
+
+<section id="open">
+  <h3><span class="n">6</span>August 2019: the open-sourcing</h3>
+  <p>At the OpenPOWER Summit in San Diego (August 2019) IBM announced that the <b>Power ISA specification itself</b> would be released under an open, <b>royalty-free</b> licence, with a grant of the patent rights needed to implement it. Alongside the ISA, IBM opened reference hardware — including softcore designs (the <b>A2I</b> and <b>A2O</b> cores) — and moved the <b>OpenPOWER Foundation</b> under the <b>Linux Foundation</b>.</p>
+
+  <div class="grid g3">
+    <div class="card"><h6><span class="dot b-grn"></span>Royalty-free</h6><p>Implement Power ISA in your own silicon or FPGA without paying IBM a per-unit fee or a licence fee.</p></div>
+    <div class="card"><h6><span class="dot b-grn"></span>Patent grant</h6><p>Rights to the IBM patents needed to build a compliant implementation, which is what makes "free spec" actually usable.</p></div>
+    <div class="card"><h6><span class="dot b-grn"></span>Neutral governance</h6><p>OpenPOWER Foundation under the Linux Foundation; the ISA is evolved by a <b>Technical Working Group</b> with a public RFC process.</p></div>
+  </div>
+
+  <p>Practically, this is why projects like <b>Microwatt</b> (a small Power ISA core in VHDL, open-sourced by IBM), <b>Libre-SOC</b> (an open GPU/CPU hybrid targeting Power) and various FPGA softcores can exist without a commercial architecture licence.</p>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Before: want build Power chip? Talk to IBM lawyer, pay. After 2019: take spec, build chip, owe nothing. IBM keep making own chips, but now anyone can join. Same move Sun once did, RISC-V born doing.</p></div>
+</section>
+
+<section id="howopen">
+  <h3><span class="n">7</span>How open is "open"? Power vs Arm vs RISC-V</h3>
+  <p>"Open source" means different things for an ISA than for software. The spec being free does not make any particular <i>implementation</i> free — POWER10 is still proprietary IBM silicon.</p>
+  <table class="cmp">
+    <tr><th></th><th>Power ISA</th><th>Arm</th><th>RISC-V</th></tr>
+    <tr><td>Spec freely readable</td><td class="y">Yes</td><td class="m">Yes (registration)</td><td class="y">Yes</td></tr>
+    <tr><td>Implement without a fee</td><td class="y">Yes (since 2019)</td><td class="n">No — architecture licence</td><td class="y">Yes</td></tr>
+    <tr><td>Add your own instructions</td><td class="m">Yes, in defined opcode space</td><td class="n">Only via Arm Custom Instructions</td><td class="y">Yes, custom opcode space</td></tr>
+    <tr><td>Governance</td><td class="m">OpenPOWER Fdn (Linux Fdn), IBM-led</td><td class="n">Arm Holdings</td><td class="y">RISC-V International</td></tr>
+    <tr><td>Maturity of the base spec</td><td class="y">30+ years, server-hardened</td><td class="y">Very mature</td><td class="m">Younger, fast-moving</td></tr>
+    <tr><td>Existing high-end silicon</td><td class="y">POWER9/POWER10</td><td class="y">Neoverse, Apple M-series</td><td class="m">Emerging</td></tr>
+  </table>
+  <p class="note">The honest summary: Power gives you a battle-tested, server-grade ISA for free; RISC-V gives you a cleaner slate and a bigger open ecosystem; Arm gives you the broadest commercial tooling but charges for the right to build.</p>
+</section>
+
+<section id="books">
+  <h3><span class="n">8</span>The spec's shape: Books I, II and III</h3>
+  <p>The Power ISA document is deliberately layered by <i>who needs to read it</i>. Click a book below.</p>
+
+  <div class="books" id="bookGrid"></div>
+  <div class="book-detail" id="bookDetail"></div>
+
+  <p style="margin-top:14px">The layering matters in practice: a compiler back-end author lives in <b>Book I</b>, a lock-free-data-structure or driver author needs <b>Book II</b>, and only a kernel/hypervisor engineer opens <b>Book III</b>.</p>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Book I = what instructions do. Book II = rules when many CPUs share memory. Book III = secret king-mode stuff for OS. Read only book you need.</p></div>
+</section>
+
+<section id="subsets">
+  <h3><span class="n">9</span>Compliancy subsets — you don't have to build all of it</h3>
+  <p>Before v3.0, "Power compliant" implicitly meant "implements essentially everything". That's a brutal bar for a small embedded core or an FPGA softcore. Version 3.0 replaced it with a <b>Base architecture plus at least one compliancy subset</b>, with optional features layered on top.</p>
+  <table>
+    <tr><th>Level</th><th>Roughly means</th><th>Typical target</th></tr>
+    <tr><td><b>Base</b></td><td>The mandatory core every compliant implementation must have.</td><td>Everything</td></tr>
+    <tr><td><code>SFS</code> — Scalar Fixed-point Subset</td><td>Integer scalar core, no floating-point required.</td><td>Tiny embedded / softcore</td></tr>
+    <tr><td><code>SFFS</code> — Scalar Fixed-point + Floating-point Subset</td><td>Adds scalar FP; still no vector requirement.</td><td>Microwatt-class cores, MCUs</td></tr>
+    <tr><td><code>LCS</code> — Linux Compliancy Subset</td><td>Enough of the architecture to boot and run mainstream Linux.</td><td>Open Linux-capable cores</td></tr>
+    <tr><td><code>ACS</code> — AIX Compliancy Subset</td><td>The full server-class surface AIX depends on.</td><td>IBM POWER servers</td></tr>
+  </table>
+  <p>This is the mechanism that makes the open ISA genuinely usable: you can build a legal, compliant Power core that fits in a modest FPGA by targeting <code>SFFS</code>, without pretending to implement transactional memory or a radix MMU.</p>
+</section>
+
+<section id="today">
+  <h3><span class="n">10</span>Where Power ISA actually runs</h3>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-acc"></span>Enterprise servers</h6><p>IBM Power Systems (POWER9, POWER10) running AIX, IBM i and Linux — databases, SAP HANA, and mainframe-adjacent RAS-heavy workloads.</p></div>
+    <div class="card"><h6><span class="dot b-vio"></span>Supercomputing</h6><p><b>Summit</b> (Oak Ridge) and <b>Sierra</b> (Livermore) — POWER9 CPUs paired with NVIDIA Volta GPUs over NVLink; both were #1/#2 on the TOP500 in 2018–19.</p></div>
+    <div class="card"><h6><span class="dot b-grn"></span>Open cores</h6><p><b>Microwatt</b> (VHDL, fits an FPGA), <b>A2I / A2O</b> (IBM's opened cores), <b>Libre-SOC</b>, plus Chiselwatt and other community cores.</p></div>
+    <div class="card"><h6><span class="dot b-gold"></span>Embedded &amp; legacy</h6><p>NXP/Freescale e-series in automotive and networking, plus a long tail of consoles (Xbox 360, PS3 PPE, Wii) and Macs pre-2006.</p></div>
+  </div>
+  <p class="note">Note the common mix-up: the Frontier and Aurora exascale machines are <i>not</i> Power — they use AMD and Intel CPUs respectively. Summit and Sierra are the POWER9 flagships.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">11</span>Self-check</h3>
+  <div class="quiz" data-correct="1" data-fb="An ISA is the software-visible contract. Pipeline depth, cache size and branch prediction are microarchitecture, which the ISA deliberately leaves free.">
+    <div class="q">1. Which of these is <b>not</b> specified by an ISA?</div>
+    <button class="opt">Instruction encodings and their semantics</button>
+    <button class="opt">Pipeline depth and L2 cache size</button>
+    <button class="opt">The architected register set</button>
+    <button class="opt">Memory ordering rules</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="Power ISA v2.03 (2006) merged PowerPC v2.02 with the Book E embedded extension into a single specification.">
+    <div class="q">2. What did Power ISA v2.03 in 2006 accomplish?</div>
+    <button class="opt">It introduced VSX vector-scalar registers.</button>
+    <button class="opt">It open-sourced the architecture.</button>
+    <button class="opt">It merged PowerPC and the Book E embedded extension into one spec.</button>
+    <button class="opt">It added the radix MMU.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="v3.1 (2020, POWER10) introduced 8-byte prefixed instructions — the first break from strictly 32-bit encoding — plus PC-relative addressing and MMA.">
+    <div class="q">3. Which version first allowed instructions longer than 32 bits?</div>
+    <button class="opt">v2.06</button>
+    <button class="opt">v2.07</button>
+    <button class="opt">v3.0</button>
+    <button class="opt">v3.1</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="The 2019 announcement opened the specification royalty-free with the patent rights needed to implement it. IBM's own POWER10 silicon remains proprietary.">
+    <div class="q">4. What exactly did IBM open-source in August 2019?</div>
+    <button class="opt">The ISA specification, royalty-free, with an implementation patent grant.</button>
+    <button class="opt">The full RTL of POWER9 and POWER10.</button>
+    <button class="opt">The AIX operating system.</button>
+    <button class="opt">Nothing binding — it was a statement of intent only.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="Book II covers the storage model as seen by an application: memory ordering, atomics (lwarx/stwcx.), and cache-management instructions.">
+    <div class="q">5. You're writing a lock-free queue and need the memory-ordering rules. Which Book?</div>
+    <button class="opt">Book I</button>
+    <button class="opt">Book II</button>
+    <button class="opt">Book III-S</button>
+    <button class="opt">Book III-E</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="Compliancy subsets (Base + SFS / SFFS / LCS / ACS) let a small core be legally compliant without implementing the entire server-class architecture.">
+    <div class="q">6. Why do compliancy subsets matter for open hardware?</div>
+    <button class="opt">They make the ISA run faster on FPGAs.</button>
+    <button class="opt">They remove the need for a patent grant.</button>
+    <button class="opt">A small core can be fully compliant by implementing Base + one subset instead of everything.</button>
+    <button class="opt">They define the cache hierarchy an implementation must use.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">12</span>Interview Q&amp;A</h3>
+  <details><summary>In one minute: what is Power ISA and where did it come from?</summary><div class="ans">Power ISA is an open, royalty-free 64-bit RISC instruction set architecture stewarded by the OpenPOWER Foundation under the Linux Foundation, and led by IBM. It descends from IBM's 801 research RISC of the late 1970s, which became POWER in the RS/6000 (1990), then PowerPC via the Apple–IBM–Motorola alliance (1991), which itself branched into server POWER, desktop PowerPC and embedded Book E. Those branches were reunified as Power ISA v2.03 in 2006, and IBM open-sourced the specification in August 2019.</div></details>
+  <details><summary>What's the difference between POWER, PowerPC and Power ISA?</summary><div class="ans">POWER was IBM's original server architecture and is now the brand for the processors. PowerPC was the AIM-alliance derivative aimed at desktop and embedded, and it added things like AltiVec. Power ISA (from v2.03, 2006) is the single unified specification that both lineages plus Book E embedded now conform to. Modern usage: "Power ISA" = the architecture spec, "POWER10" = an IBM implementation of it.</div></details>
+  <details><summary>What does "IBM open-sourced Power" actually mean — can I build a Power chip?</summary><div class="ans">Yes. The specification is published under an open licence, is royalty-free, and comes with a grant of the IBM patents needed to implement it, so you can design and ship a Power ISA core without an architecture licence or per-unit fee. What's <i>not</i> open is IBM's own implementations — POWER9/POWER10 RTL is proprietary. IBM did separately open-source reference cores such as A2I, A2O and Microwatt.</div></details>
+  <details><summary>How is Power's openness different from RISC-V's?</summary><div class="ans">RISC-V was designed open from day one with a deliberately small base ISA and reserved custom opcode space, governed by a vendor-neutral body. Power was opened in 2019 after 30 years as a commercial server architecture, so you inherit a mature, high-end, server-hardened design — including things like a strong virtualisation and RAS story — but the governance is still IBM-led and the encoding space is largely spoken for. Power is "mature architecture made free"; RISC-V is "free architecture growing up".</div></details>
+  <details><summary>Explain the Books structure.</summary><div class="ans">Book I is the user-level instruction set — the instructions and registers an application programmer or compiler sees. Book II is the virtual environment: the storage model, memory ordering, atomics and cache-management instructions available to applications. Book III is the operating environment — privileged state, interrupts, address translation — and splits into III-S for server and III-E for embedded, which is the legacy of the Book E merge.</div></details>
+  <details><summary>Why did v3.0 introduce compliancy subsets?</summary><div class="ans">To make the architecture implementable at smaller scale. Requiring every implementation to support the entire spec excluded small embedded cores and FPGA softcores. Since v3.0, a design implements the Base architecture plus at least one subset — SFS, SFFS, LCS or ACS — and may add optional features. That's what lets a core like Microwatt be legitimately Power-compliant.</div></details>
+  <details><summary>Name three things v3.1 added and why they matter.</summary><div class="ans">(1) Prefixed instructions — an 8-byte encoding formed from a prefix word plus a suffix word, which breaks the 32-bit limit and enables 34-bit displacements. (2) PC-relative addressing, which makes position-independent code much cheaper. (3) MMA, the Matrix-Multiply Assist facility with 512-bit accumulator registers, targeting AI/ML inference throughput on POWER10.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">13</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>An ISA is the software-visible contract; microarchitecture is everything the ISA leaves free.</li>
+    <li>Lineage: <b>801 &#8594; POWER (1990) &#8594; PowerPC (1993) &#8594; three-way fork &#8594; unified Power ISA v2.03 (2006)</b>.</li>
+    <li>Milestones: <b>2.06 VSX · 2.07 TM · 3.0 radix MMU + subsets · 3.1 prefixed instrs + MMA</b>.</li>
+    <li><b>Aug 2019</b>: spec open-sourced royalty-free with patent grant; OpenPOWER moved under the Linux Foundation.</li>
+    <li>Spec layering: <b>Book I</b> user instructions · <b>Book II</b> storage model · <b>Book III-S/E</b> privileged.</li>
+    <li>Compliance = <b>Base + at least one subset</b> (SFS / SFFS / LCS / ACS) + optional features.</li>
+  </ul>
+  <div class="chips"><span class="chip">IBM 801</span><span class="chip">John Cocke</span><span class="chip">AIM alliance</span><span class="chip">Book E</span><span class="chip">v2.03 merge</span><span class="chip">VSX</span><span class="chip">MMA</span><span class="chip">OpenPOWER</span><span class="chip">Microwatt</span><span class="chip">SFFS</span><span class="chip">Summit / Sierra</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="powerisa_course_map.html">&#9668; Course map</a>
+  <a href="powerisa_lesson02_architecture.html">L2 · Architecture overview &#9658;</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L2): open the machine — every architected register, the memory and endianness model, and how a 32-bit instruction word is actually laid out.</p>
+</main>
+</div>
+
+<script>
+/* ---------- scroll-spy ---------- */
+const links=[...document.querySelectorAll('nav.side a')].filter(a=>a.getAttribute('href').startsWith('#'));
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* ---------- quizzes ---------- */
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite — the highlighted option is right. '+fbt);
+  }));
+});
+
+/* ---------- interactive timeline ---------- */
+const TL=[
+ {yr:'1975', lbl:'801', era:'Research', t:'IBM 801 — the first RISC',
+  p:'John Cocke’s team at IBM Research argues that compilers use only a small slice of a CISC instruction set, and that a simpler, uniformly-encoded machine can be clocked and pipelined much harder.',
+  f:['Load/store architecture with 32 registers','Fixed 32-bit instruction words','Compiler-centric design philosophy','Shipped indirectly as the ROMP chip in the IBM RT PC']},
+ {yr:'1990', lbl:'POWER1', era:'Product', t:'POWER1 ships in the RS/6000',
+  p:'IBM turns the 801 ideas into a commercial superscalar workstation CPU. POWER stands for Performance Optimization With Enhanced RISC.',
+  f:['Multi-chip superscalar design','Established the core instruction set later inherited by PowerPC','Targeted technical/UNIX workstations running AIX']},
+ {yr:'1991', lbl:'AIM', era:'Alliance', t:'Apple + IBM + Motorola form AIM',
+  p:'The AIM alliance sets out to turn POWER into a single-chip, cheaper, bi-endian architecture that can power desktops as well as servers. The result is PowerPC.',
+  f:['PowerPC 601 ships 1993 — first Power Macs','Bi-endian: can run big- or little-endian','Simplified/removed some POWER1 instructions','Added a clean 32-bit and 64-bit definition']},
+ {yr:'1999', lbl:'Book E', era:'Divergence', t:'Book E splits off for embedded',
+  p:'Motorola and IBM define Book E: a PowerPC variant with a different privileged architecture aimed at embedded control — software-managed TLBs, no segment model, tighter determinism.',
+  f:['Powers PowerQUICC, e200/e500 cores','Automotive, networking, industrial control','Creates a genuine three-way architectural split']},
+ {yr:'2006', lbl:'v2.03', era:'Reunification', t:'Power ISA v2.03 — one spec again',
+  p:'PowerPC v2.02 and Book E are folded into a single document. Differences survive as categories and as the Book III-S / Book III-E split rather than as separate architectures.',
+  f:['Introduces the category/optional-feature mechanism','Book III-S (server) vs Book III-E (embedded)','The name "Power ISA" starts here']},
+ {yr:'2010', lbl:'VSX', era:'Vector era', t:'v2.06 brings VSX',
+  p:'The Vector-Scalar eXtension unifies the 32 floating-point registers and 32 AltiVec vector registers into 64 architected 128-bit VSRs — the register model still used today.',
+  f:['64 × 128-bit VSRs','FPRs overlay VSR0–31; VRs map to VSR32–63','Shipped in POWER7','Earlier: v2.05 (2007) added decimal floating-point']},
+ {yr:'2013', lbl:'v2.07', era:'POWER8', t:'Transactional memory & crypto',
+  p:'v2.07 adds hardware transactional memory, VMX crypto acceleration (AES, SHA), a much richer PMU, and support for up to 8 SMT threads per core.',
+  f:['Hardware transactional memory (tbegin./tend.)','In-core AES/SHA acceleration','POWER8 with CAPI attached accelerators']},
+ {yr:'2017', lbl:'v3.0', era:'POWER9', t:'Radix MMU and compliancy subsets',
+  p:'v3.0 adds a radix-tree MMU (Linux-friendly, replacing the hashed page table as the default), hardware IEEE binary-128 float, VSX-3 — and formalises compliancy subsets so partial implementations can still be compliant.',
+  f:['Radix MMU alongside the hashed page table','IEEE 128-bit binary FP in hardware','Base + SFS / SFFS / LCS / ACS subset model','POWER9 powers Summit and Sierra']},
+ {yr:'2019', lbl:'OPEN', era:'Open source', t:'IBM open-sources the Power ISA',
+  p:'At the OpenPOWER Summit, IBM releases the ISA specification royalty-free with the patent rights needed to implement it, opens softcore designs, and moves the OpenPOWER Foundation under the Linux Foundation.',
+  f:['Royalty-free implementation rights + patent grant','A2I and A2O softcores opened','Microwatt: a small Power core in VHDL','Governance via a public RFC / Technical Working Group process']},
+ {yr:'2020', lbl:'v3.1', era:'POWER10', t:'Prefixed instructions and MMA',
+  p:'v3.1 breaks the 32-bit instruction limit with 8-byte prefixed instructions, adds PC-relative addressing, and introduces the Matrix-Multiply Assist facility for AI/ML throughput.',
+  f:['Prefix word + suffix word = 64-bit instruction','34-bit displacements (paddi, pld, pstd)','PC-relative addressing for cheap PIC code','MMA: 8 × 512-bit accumulators','Later: v3.1B (2021) and v3.1C (2024) errata']}
+];
+const rail=document.getElementById('tlRail'), body=document.getElementById('tlBody'), pos=document.getElementById('tlPos');
+let cur=0;
+TL.forEach((e,i)=>{
+  const b=document.createElement('button');
+  b.className='tl-node'; b.innerHTML='<span class="yr">'+e.yr+'</span><span class="lbl">'+e.lbl+'</span>';
+  b.addEventListener('click',()=>show(i)); rail.appendChild(b);
+});
+function show(i){
+  cur=(i+TL.length)%TL.length; const e=TL[cur];
+  [...rail.children].forEach((n,k)=>n.classList.toggle('on',k===cur));
+  body.innerHTML='<div class="era">'+e.era+' &middot; '+e.yr+'</div><h5>'+e.t+'</h5><p>'+e.p+'</p><ul class="facts">'+
+    e.f.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+  pos.textContent=(cur+1)+' / '+TL.length;
+  rail.children[cur].scrollIntoView({block:'nearest',inline:'nearest'});
+}
+document.getElementById('tlPrev').addEventListener('click',()=>show(cur-1));
+document.getElementById('tlNext').addEventListener('click',()=>show(cur+1));
+document.addEventListener('keydown',ev=>{
+  if(ev.target.tagName==='INPUT')return;
+  if(ev.key==='ArrowLeft')show(cur-1); if(ev.key==='ArrowRight')show(cur+1);
+});
+show(0);
+
+/* ---------- books explorer ---------- */
+const BOOKS=[
+ {k:'BOOK I', t:'User Instruction Set', w:'For compiler & application authors',
+  d:'Everything an ordinary program can execute, and the state it can see.',
+  l:['The architected registers: GPRs, FPRs, VRs/VSRs, CR, LR, CTR, XER',
+     'All non-privileged instructions: fixed-point, floating-point, vector, branch',
+     'Instruction encoding formats (D-form, X-form, XO-form, A-form, …)',
+     'Numeric behaviour: IEEE 754 binary and decimal floating-point rules',
+     'This is the book a compiler back-end is written against.']},
+ {k:'BOOK II', t:'Virtual Environment Architecture', w:'For concurrency & driver authors',
+  d:'How storage behaves when more than one thread or device touches it.',
+  l:['The weakly-ordered memory model and what reordering is legal',
+     'Barrier instructions: sync / hwsync, lwsync, eieio, isync',
+     'Atomic primitives: load-and-reserve / store-conditional (lwarx, stwcx.)',
+     'Cache-management instructions: dcbz, dcbf, dcbst, icbi',
+     'Storage attributes such as caching-inhibited and guarded',
+     'This is the book behind every lock-free algorithm on Power.']},
+ {k:'BOOK III', t:'Operating Environment Architecture', w:'For kernel & hypervisor authors',
+  d:'Privileged state — split into III-S (server) and III-E (embedded), the legacy of the Book E merge.',
+  l:['Privilege states: problem, privileged (supervisor), hypervisor',
+     'The Machine State Register (MSR) and privileged SPRs',
+     'Interrupts and exceptions: vectors, save/restore registers, rfid',
+     'Address translation: segments, hashed page table, and the radix MMU (v3.0+)',
+     'III-S: server model, hypervisor-capable. III-E: embedded model with software-managed TLBs.']}
+];
+const bg=document.getElementById('bookGrid'), bd=document.getElementById('bookDetail');
+BOOKS.forEach((b,i)=>{
+  const el=document.createElement('button'); el.className='book';
+  el.innerHTML='<div class="bk">'+b.k+'</div><div class="t">'+b.t+'</div><div class="w">'+b.w+'</div>';
+  el.addEventListener('click',()=>showBook(i)); bg.appendChild(el);
+});
+function showBook(i){
+  [...bg.children].forEach((n,k)=>n.classList.toggle('on',k===i));
+  const b=BOOKS[i];
+  bd.innerHTML='<h6>'+b.k+' — '+b.t+'</h6><p style="margin:0;color:var(--ink-dim);font-size:14px">'+b.d+
+    '</p><ul>'+b.l.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+}
+showBook(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power ISA · Lesson 2 — Architecture Overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --acc:#4fa3ff; --gold:#f5b942; --grn:#52d273; --vio:#b48cff; --cyn:#39d4e6;
+  --org:#ff9b42; --pnk:#ff7ab6; --warn:#ff7a7a;
+  --radius:10px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--acc); text-decoration:none}
+.shell{display:grid; grid-template-columns:250px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--vio); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s}
+nav.side a:hover{background:var(--panel); color:var(--ink)}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--acc)}
+nav.side .home{margin-top:20px; padding-top:14px; border-top:1px solid var(--line-soft); font-size:12px; color:var(--ink-faint)}
+main{padding:38px 52px 120px; max-width:960px}
+.kick{font-family:var(--mono); color:var(--vio); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:700px}
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--acc); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--acc)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--vio); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:18px 0 6px}
+p{margin:10px 0}
+.caveman{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--gold); border-radius:var(--radius); padding:14px 16px 14px 44px; position:relative; margin:14px 0}
+.caveman::before{content:"\1FAA8"; position:absolute; left:14px; top:12px; font-size:18px}
+.caveman .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold)}
+.caveman p{margin:4px 0 0; color:#e9dcc0; font-size:14.5px}
+.gotcha{background:linear-gradient(180deg,#1d1113,#170d0f); border:1px solid #45222a;
+  border-left:3px solid var(--warn); border-radius:var(--radius); padding:14px 16px; margin:14px 0}
+.gotcha .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--warn)}
+.gotcha p{margin:4px 0 0; color:#f0d9dc; font-size:14.5px}
+.grid{display:grid; gap:14px; margin:16px 0} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-acc{background:var(--acc)} .b-gold{background:var(--gold)} .b-grn{background:var(--grn)}
+.b-vio{background:var(--vio)} .b-org{background:var(--org)} .b-cyn{background:var(--cyn)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code{font-family:var(--mono); color:var(--cyn); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.45; padding:16px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .a{color:var(--acc);font-weight:600} .ascii .g{color:var(--gold);font-weight:600}
+.ascii .s{color:var(--grn);font-weight:600} .ascii .v{color:var(--vio);font-weight:600}
+.ascii .o{color:var(--org);font-weight:600} .ascii .cmt{color:#5a6b7a;font-style:italic}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--grn); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--vio); transition:.2s; font-family:var(--mono)}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+.navfoot{display:flex; justify-content:space-between; margin-top:40px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+
+/* ---------- register explorer ---------- */
+.regwrap{border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin:16px 0}
+.regtabs{display:flex; flex-wrap:wrap; background:var(--bg2); border-bottom:1px solid var(--line)}
+.regtabs button{flex:1 0 auto; background:none; border:none; border-bottom:2px solid transparent;
+  color:var(--ink-faint); font-family:var(--mono); font-size:12.5px; padding:11px 14px; cursor:pointer; transition:.15s}
+.regtabs button:hover{color:var(--ink); background:var(--panel)}
+.regtabs button.on{color:var(--acc); border-bottom-color:var(--acc); background:var(--panel)}
+.regbody{background:var(--panel); padding:18px 20px; min-height:230px}
+.regbody h5{margin:0; font-size:19px}
+.regbody .meta{font-family:var(--mono); font-size:12px; color:var(--gold); margin-top:3px}
+.regbody p.d{font-size:14px; color:var(--ink-dim); margin:10px 0}
+.regbody ul{margin:8px 0 0; padding-left:18px} .regbody li{font-size:13.5px; color:var(--ink-dim); margin:5px 0}
+.bitbar{display:flex; margin:14px 0 4px; border-radius:6px; overflow:hidden; border:1px solid var(--line); font-family:var(--mono)}
+.bitseg{padding:8px 6px; font-size:11px; text-align:center; color:#0b0f14; font-weight:600; white-space:nowrap; overflow:hidden}
+.bitlab{display:flex; font-family:var(--mono); font-size:10px; color:var(--ink-faint)}
+.bitlab span{text-align:center; overflow:hidden}
+
+/* ---------- VSX overlay ---------- */
+.vsx{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:16px 0}
+.vsxrow{display:flex; align-items:center; gap:10px; margin:7px 0; font-family:var(--mono); font-size:12px}
+.vsxrow .name{width:78px; color:var(--ink-faint); flex:none; text-align:right}
+.vsxbox{flex:1; display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; height:30px}
+.vsxhalf{flex:1; display:flex; align-items:center; justify-content:center; font-size:11px; transition:.2s}
+.h-fpr{background:rgba(245,185,66,.22); color:var(--gold); border-right:1px solid var(--line)}
+.h-none{background:rgba(107,124,140,.12); color:var(--ink-faint); border-right:1px solid var(--line)}
+.h-vr{background:rgba(180,140,255,.2); color:var(--vio)}
+.vsxlegend{display:flex; gap:16px; font-size:12px; color:var(--ink-dim); margin-top:12px; flex-wrap:wrap}
+.vsxlegend i{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:6px; vertical-align:-1px}
+
+/* ---------- endianness demo ---------- */
+.endian{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:16px 0}
+.endian .ctl{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px}
+.endian input[type=text]{background:var(--bg2); border:1px solid var(--line); color:var(--cyn);
+  font-family:var(--mono); font-size:14px; padding:7px 11px; border-radius:7px; width:220px}
+.tog{display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden}
+.tog button{background:var(--bg2); border:none; color:var(--ink-faint); font-family:var(--mono);
+  font-size:12.5px; padding:7px 14px; cursor:pointer}
+.tog button.on{background:var(--acc); color:#0b0f14; font-weight:600}
+.membytes{display:flex; gap:4px; flex-wrap:wrap; margin-top:6px}
+.mb{background:var(--bg2); border:1px solid var(--line); border-radius:6px; padding:7px 4px;
+  font-family:var(--mono); font-size:12px; text-align:center; min-width:52px}
+.mb .addr{display:block; font-size:9.5px; color:var(--ink-faint)}
+.mb .val{display:block; color:var(--cyn); font-size:13px; margin-top:2px}
+
+/* ---------- encoding decoder ---------- */
+.dec{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:16px 0}
+.dec .ctl{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:6px}
+.dec input{background:var(--bg2); border:1px solid var(--line); color:var(--cyn);
+  font-family:var(--mono); font-size:15px; padding:8px 12px; border-radius:7px; width:170px; letter-spacing:1px}
+.presets{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 14px}
+.presets button{font-family:var(--mono); font-size:11.5px; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink-dim); padding:5px 10px; border-radius:16px; cursor:pointer; transition:.12s}
+.presets button:hover{border-color:var(--acc); color:var(--ink)}
+.bitgrid{display:grid; grid-template-columns:repeat(32,1fr); gap:2px; margin:12px 0 2px; font-family:var(--mono)}
+.bit{aspect-ratio:1/1.5; display:flex; align-items:center; justify-content:center; font-size:11px;
+  border-radius:3px; background:var(--bg2); color:var(--ink-faint); border:1px solid transparent; transition:.15s}
+.bitnums{display:grid; grid-template-columns:repeat(32,1fr); gap:2px; font-family:var(--mono);
+  font-size:8px; color:var(--ink-faint); text-align:center}
+.fieldlist{margin-top:14px; display:grid; gap:6px}
+.fld{display:grid; grid-template-columns:70px 90px 1fr; gap:10px; align-items:baseline;
+  background:var(--bg2); border:1px solid var(--line-soft); border-radius:7px; padding:7px 11px; font-size:13px}
+.fld .fn{font-family:var(--mono); font-weight:600}
+.fld .fv{font-family:var(--mono); color:var(--cyn); font-size:12.5px}
+.fld .fd{color:var(--ink-dim); font-size:12.5px}
+.decout{margin-top:12px; padding:12px 14px; background:var(--bg2); border:1px solid var(--line);
+  border-left:3px solid var(--grn); border-radius:7px}
+.decout .asm{font-family:var(--mono); font-size:16px; color:var(--grn)}
+.decout .form{font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); letter-spacing:1px; text-transform:uppercase}
+.decout .expl{font-size:13.5px; color:var(--ink-dim); margin-top:7px}
+.decout.bad{border-left-color:var(--warn)} .decout.bad .asm{color:var(--warn)}
+@media(max-width:880px){ .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px} .g2,.g3{grid-template-columns:1fr}
+  .bit{font-size:0} .fld{grid-template-columns:60px 80px 1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">POWER ISA · LESSON 02</div>
+  <h1>Architecture Overview</h1>
+  <a href="#model">The programming model</a>
+  <a href="#regs">Register explorer</a>
+  <a href="#vsx">The VSX overlay</a>
+  <a href="#cr">Condition Register &amp; Rc</a>
+  <a href="#mem">Memory model</a>
+  <a href="#endian">Endianness lab</a>
+  <a href="#order">Ordering &amp; atomics</a>
+  <a href="#mmu">Address translation</a>
+  <a href="#bits">Bit numbering gotcha</a>
+  <a href="#forms">Instruction formats</a>
+  <a href="#decoder">Encoding decoder</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="powerisa_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Foundational Knowledge · Lesson 2 of 3</div>
+<h2 class="title">Architecture Overview</h2>
+<p class="lede">Every architected register, how memory behaves, and exactly how 32 bits of instruction word are carved into fields. This is the lesson you keep coming back to.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Name every architected register class and say what each is for.</li>
+    <li>Explain the VSX overlay: how FPRs and VRs live inside 64 VSRs.</li>
+    <li>Describe Power's weakly-ordered memory model and the barrier that fixes each problem.</li>
+    <li>Read a raw 32-bit instruction word and identify its form and fields by hand.</li>
+    <li>Avoid the two classic beginner traps: <code>RA|0</code> and MSB-is-bit-0 numbering.</li>
+  </ul>
+</div>
+
+<section id="model">
+  <h3><span class="n">1</span>The programming model at a glance</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Machine has three big buckets of registers: <span style="color:var(--acc)">32 integer</span>, <span style="color:var(--vio)">64 vector-float</span>, and <span style="color:var(--gold)">a few special ones</span> for branching and flags. Memory only touched by load/store. Everything else register-to-register.</p></div>
+
+  <div class="ascii-wrap"><div class="bar">The architected state a program can see</div>
+<pre class="ascii">  <span class="box">┌──────────────────────── USER STATE (Book I) ────────────────────────┐</span>
+  <span class="box">│</span>                                                                     <span class="box">│</span>
+  <span class="box">│</span>  <span class="a">GPR0 .. GPR31</span>      32 x 64-bit    integer / address arithmetic     <span class="box">│</span>
+  <span class="box">│</span>                                                                     <span class="box">│</span>
+  <span class="box">│</span>  <span class="v">VSR0 .. VSR63</span>      64 x 128-bit   vector + scalar floating point   <span class="box">│</span>
+  <span class="box">│</span>    <span class="g">└─ FPR0..31</span>     overlay the high 64 bits of VSR0..VSR31           <span class="box">│</span>
+  <span class="box">│</span>    <span class="v">└─ VR0..31</span>      are exactly VSR32..VSR63                          <span class="box">│</span>
+  <span class="box">│</span>    <span class="o">└─ ACC0..7</span>      512-bit MMA accumulators (v3.1)                   <span class="box">│</span>
+  <span class="box">│</span>                                                                     <span class="box">│</span>
+  <span class="box">│</span>  <span class="s">CR</span>  32-bit, 8 fields x 4 bits   <span class="cmt">comparison + branch conditions</span>    <span class="box">│</span>
+  <span class="box">│</span>  <span class="s">LR</span>  64-bit link register        <span class="cmt">return addresses</span>                   <span class="box">│</span>
+  <span class="box">│</span>  <span class="s">CTR</span> 64-bit count register       <span class="cmt">loop counts + indirect branches</span>    <span class="box">│</span>
+  <span class="box">│</span>  <span class="s">XER</span> carry / overflow / summary-overflow                          <span class="box">│</span>
+  <span class="box">│</span>  <span class="s">FPSCR</span> FP status &amp; rounding   <span class="s">VSCR</span> vector status                 <span class="box">│</span>
+  <span class="box">└─────────────────────────────────────────────────────────────────────┘</span>
+  <span class="box">┌────────────────── PRIVILEGED STATE (Book III) ──────────────────────┐</span>
+  <span class="box">│</span>  <span class="o">MSR</span> machine state   ·  <span class="o">SPRs</span> (SRR0/1, DAR, DSISR, PID, LPCR, …)   <span class="box">│</span>
+  <span class="box">└─────────────────────────────────────────────────────────────────────┘</span>
+</pre></div>
+  <p>Two design choices dominate everything else: <b>load/store</b> (memory is only reached by explicit loads and stores) and <b>triadic instructions</b> (most operations take two source operands and one distinct destination, so neither source is destroyed).</p>
+</section>
+
+<section id="regs">
+  <h3><span class="n">2</span>Register explorer</h3>
+  <p>Pick a register class. The bit bars use <b>Power bit numbering</b>, where bit 0 is the most-significant bit.</p>
+  <div class="regwrap">
+    <div class="regtabs" id="regTabs"></div>
+    <div class="regbody" id="regBody"></div>
+  </div>
+
+  <div class="gotcha"><span class="tag">classic trap #1</span>
+  <p><b><code>RA|0</code> — GPR0 is not always GPR0.</b> In load/store and <code>addi</code>-style instructions the base-register field is written <code>RA|0</code>: if the field encodes <b>0</b>, the value used is the <b>literal number zero</b>, not the contents of r0. That's why <code>li r3,5</code> assembles as <code>addi r3,0,5</code> and works, and why r0 is nearly useless as a pointer.</p></div>
+</section>
+
+<section id="vsx">
+  <h3><span class="n">3</span>The VSX overlay — one file, three names</h3>
+  <p>Before v2.06 there were two separate register files: 32 FPRs (64-bit, scalar floating-point) and 32 VRs (128-bit, AltiVec/VMX). <b>VSX</b> unified them into <b>64 architected 128-bit VSRs</b>. Nothing was thrown away — the old names became <i>views</i> onto the new file.</p>
+
+  <div class="vsx">
+    <div class="vsxrow" style="color:var(--ink-faint)"><span class="name"></span>
+      <div style="flex:1; display:flex; font-size:10.5px; letter-spacing:1px">
+        <span style="flex:1; text-align:center">BITS 0–63 (doubleword 0)</span>
+        <span style="flex:1; text-align:center">BITS 64–127 (doubleword 1)</span>
+      </div>
+    </div>
+    <div id="vsxRows"></div>
+    <div class="vsxlegend">
+      <span><i style="background:rgba(245,185,66,.5)"></i>FPR<i>n</i> lives here — the high doubleword of VSR<i>n</i></span>
+      <span><i style="background:rgba(180,140,255,.5)"></i>VR<i>n</i> = the whole of VSR<i>n</i>+32</span>
+      <span><i style="background:rgba(107,124,140,.3)"></i>Not addressable through the legacy FPR name</span>
+    </div>
+  </div>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>One big cupboard, 64 shelves, each shelf 128 bits wide. Old float name "FPR5" = left half of shelf 5. Old vector name "VR5" = whole shelf 37. Same cupboard, three ways to point at it.</p></div>
+
+  <table>
+    <tr><th>Name</th><th>Count &amp; width</th><th>Maps to</th><th>Used by</th></tr>
+    <tr><td><code>VSR0–VSR63</code></td><td>64 × 128-bit</td><td>the physical file</td><td>VSX instructions (<code>xs*</code>, <code>xv*</code>, <code>xx*</code>, <code>lxv</code>/<code>stxv</code>)</td></tr>
+    <tr><td><code>FPR0–FPR31</code></td><td>32 × 64-bit</td><td>bits 0:63 of VSR0–31</td><td>classic scalar FP (<code>fadd</code>, <code>lfd</code>, <code>fmadd</code>)</td></tr>
+    <tr><td><code>VR0–VR31</code></td><td>32 × 128-bit</td><td>VSR32–VSR63</td><td>VMX/AltiVec (<code>vaddubm</code>, <code>vperm</code>, <code>lvx</code>)</td></tr>
+    <tr><td><code>ACC0–ACC7</code></td><td>8 × 512-bit</td><td>groups of 4 VSRs (VSR0–31)</td><td>MMA matrix instructions (v3.1)</td></tr>
+  </table>
+  <p class="note">Consequence worth remembering: an MMA accumulator, while primed, occupies four VSRs — so ACC and the underlying VSRs cannot be used for other purposes at the same time.</p>
+</section>
+
+<section id="cr">
+  <h3><span class="n">4</span>The Condition Register and the <code>Rc</code> bit</h3>
+  <p>Power has no single "flags register" that every instruction silently clobbers. Instead there is a 32-bit <b>Condition Register</b> divided into <b>eight independent 4-bit fields</b>, <code>CR0</code>–<code>CR7</code>. A compiler can keep several live comparisons at once — that's the whole point.</p>
+
+  <div class="ascii-wrap"><div class="bar">CR layout — 8 fields, 4 bits each</div>
+<pre class="ascii"> bit  <span class="cmt">0        4        8       12       16       20       24       28    31</span>
+      <span class="box">┌────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┐</span>
+      <span class="box">│</span>  <span class="a">CR0</span>   <span class="box">│</span>  CR1   <span class="box">│</span>  CR2   <span class="box">│</span>  CR3   <span class="box">│</span>  CR4   <span class="box">│</span>  CR5   <span class="box">│</span>  CR6   <span class="box">│</span>  CR7   <span class="box">│</span>
+      <span class="box">└────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘</span>
+        <span class="box">│</span>
+        <span class="box">└─</span> each field = <span class="s">LT</span> <span class="s">GT</span> <span class="s">EQ</span> <span class="s">SO</span>
+             <span class="s">LT</span> less than / negative   <span class="s">GT</span> greater than / positive
+             <span class="s">EQ</span> equal / zero           <span class="s">SO</span> summary overflow (copied from XER[SO])
+</pre></div>
+
+  <ul class="tight">
+    <li>An instruction whose mnemonic ends in <b><code>.</code></b> has the <b><code>Rc</code> bit set</b> and updates <code>CR0</code> automatically: <code>add. r3,r4,r5</code> sets CR0 by comparing the result against zero.</li>
+    <li>Explicit compares choose their own field: <code>cmpd cr3,r4,r5</code> writes CR3.</li>
+    <li>Floating-point instructions with <code>Rc=1</code> update <b>CR1</b> (a copy of FPSCR exception summary bits), not CR0.</li>
+    <li>CR bits can be combined logically without branching: <code>crand</code>, <code>cror</code>, <code>crxor</code>, <code>mcrf</code>.</li>
+  </ul>
+
+  <p><b>XER</b> is the companion: it holds <code>CA</code> (carry), <code>OV</code> (overflow) and <code>SO</code> (sticky summary overflow), plus 32-bit-mode variants <code>CA32</code>/<code>OV32</code> added in v2.06. Instructions opt into carry/overflow behaviour explicitly — <code>addc</code> writes CA, <code>adde</code> reads and writes it, and the <code>o</code> suffix (<code>addo</code>) writes OV/SO.</p>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>x86 has one flag drawer everyone dumps into. Power has eight small drawers plus opt-in carry box. Instruction must ask to write flags (dot suffix). Compiler happy — keeps three comparisons alive, no clobber.</p></div>
+</section>
+
+<section id="mem">
+  <h3><span class="n">5</span>The memory model</h3>
+  <table>
+    <tr><th>Property</th><th>Power ISA</th></tr>
+    <tr><td>Address size</td><td>64-bit effective address (32-bit mode available via <code>MSR[SF]=0</code>)</td></tr>
+    <tr><td>Granularity</td><td>Byte-addressable</td></tr>
+    <tr><td>Access</td><td><b>Load/store only</b> — no arithmetic instruction reads memory</td></tr>
+    <tr><td>Alignment</td><td>Unaligned scalar accesses generally work but may be slower; some instructions (e.g. <code>lq</code>/<code>stq</code>, atomics) require alignment</td></tr>
+    <tr><td>Endianness</td><td><b>Bi-endian</b> — selected by <code>MSR[LE]</code>. Modern Linux (<code>ppc64le</code>, ELFv2 ABI) is little-endian; AIX and IBM i are big-endian</td></tr>
+    <tr><td>Cache</td><td>Harvard split L1 I/D; typical cache block 128 bytes on POWER8/9/10; managed with <code>dcbz</code>, <code>dcbf</code>, <code>dcbst</code>, <code>icbi</code></td></tr>
+    <tr><td>Ordering</td><td><b>Weakly ordered</b> — the hardware may reorder loads and stores unless you insert a barrier</td></tr>
+  </table>
+
+  <h5>Addressing modes</h5>
+  <p>There are only two, and everything else is built from them:</p>
+  <ul class="tight">
+    <li><b>Base + displacement</b> (D-form / DS-form): <code>EA = (RA|0) + sign_extend(D)</code> — e.g. <code>lwz r3,8(r4)</code>.</li>
+    <li><b>Base + index</b> (X-form): <code>EA = (RA|0) + (RB)</code> — e.g. <code>lwzx r3,r4,r5</code>.</li>
+  </ul>
+  <p>Both come in an <b>update</b> flavour (mnemonic suffix <code>u</code>) that writes the computed EA back into RA — <code>lwzu r3,8(r4)</code> loads <i>and</i> advances the pointer, which is why walking an array costs one instruction per element.</p>
+</section>
+
+<section id="endian">
+  <h3><span class="n">6</span>Endianness lab</h3>
+  <p>Type a 64-bit value and flip the mode. This is what a <code>std</code> (store doubleword) actually puts in memory.</p>
+
+  <div class="endian">
+    <div class="ctl">
+      <label style="font-size:13px;color:var(--ink-dim)">Value stored by <code style="color:var(--cyn)">std rX, 0(rBase)</code>:</label>
+      <input type="text" id="enVal" value="0x0123456789ABCDEF" spellcheck="false">
+      <div class="tog">
+        <button id="enBE" class="on">Big-endian (MSR[LE]=0)</button>
+        <button id="enLE">Little-endian (MSR[LE]=1)</button>
+      </div>
+    </div>
+    <div class="membytes" id="enBytes"></div>
+    <p class="note" id="enNote" style="margin-top:12px"></p>
+  </div>
+
+  <p>Endianness in Power is a <b>storage</b> property, not a register property: the register always holds the same 64-bit number. Only the byte order written to and read from memory changes. That is why byte-reversing loads and stores (<code>lwbrx</code>, <code>ldbrx</code>, <code>stwbrx</code>) exist — they let you read foreign-endian data without switching modes.</p>
+</section>
+
+<section id="order">
+  <h3><span class="n">7</span>Memory ordering &amp; atomics</h3>
+  <p>Power is one of the most <b>weakly ordered</b> mainstream architectures. Unless you say otherwise, the processor may reorder loads with loads, stores with stores, and loads with stores, and other cores may observe your writes out of order. Code that "just works" on x86 (which is nearly total-store-ordered) can break on Power — this is the single most common porting bug.</p>
+
+  <table>
+    <tr><th>Instruction</th><th>Guarantees</th><th>Use it when</th></tr>
+    <tr><td><code>sync</code> (a.k.a. <code>hwsync</code>)</td><td>Full barrier: all prior accesses complete before any later one starts.</td><td>The heavy hammer — mutex release/acquire pairs, sequential consistency.</td></tr>
+    <tr><td><code>lwsync</code></td><td>Lightweight: orders load→load, load→store, store→store — but <b>not</b> store→load.</td><td>Almost all producer/consumer and publish patterns. Much cheaper than <code>sync</code>.</td></tr>
+    <tr><td><code>isync</code></td><td>Instruction-fetch serialisation; discards speculated instructions.</td><td>After an acquire (paired with a conditional branch), and after modifying instruction memory.</td></tr>
+    <tr><td><code>eieio</code></td><td>Orders accesses to caching-inhibited / device storage.</td><td>MMIO device drivers.</td></tr>
+  </table>
+
+  <h5>Atomics: load-and-reserve / store-conditional</h5>
+  <p>Power has no compare-and-swap instruction. It has an <b>LL/SC pair</b>, which is strictly more general:</p>
+  <div class="ascii-wrap"><div class="bar">Atomic increment of a word at 0(r3)</div>
+<pre class="ascii">retry:
+    <span class="a">lwarx</span>   r4, 0, r3      <span class="cmt"># load word and RESERVE the address</span>
+    addi    r4, r4, 1      <span class="cmt"># modify in a register</span>
+    <span class="a">stwcx.</span>  r4, 0, r3      <span class="cmt"># store ONLY if reservation still held; sets CR0[EQ]</span>
+    bne-    retry          <span class="cmt"># someone else won the race — go again</span>
+    <span class="s">lwsync</span>                 <span class="cmt"># acquire barrier if this guards later accesses</span>
+</pre></div>
+  <p>If any other processor writes the reserved block between the <code>lwarx</code> and the <code>stwcx.</code>, the reservation is lost, the store fails, <code>CR0[EQ]</code> is 0, and the loop retries. Doubleword and other widths use <code>ldarx</code>/<code>stdcx.</code>, byte/halfword variants exist from v2.06+, and quadword from v2.07.</p>
+
+  <div class="gotcha"><span class="tag">porting trap</span>
+  <p>x86 gives you store→load ordering almost for free; Power does not. A publish pattern like <code>data = x; ready = 1;</code> needs an <code>lwsync</code> between the two stores, and the consumer needs a dependency or barrier before reading <code>data</code>. Missing barriers produce bugs that appear only under load, on real multi-socket hardware.</p></div>
+</section>
+
+<section id="mmu">
+  <h3><span class="n">8</span>Address translation &amp; privilege</h3>
+  <p>An address goes through up to two translations before it reaches DRAM:</p>
+  <div class="ascii-wrap"><div class="bar">EA &#8594; VA &#8594; RA</div>
+<pre class="ascii">  <span class="a">Effective Address</span> (what the instruction computes, 64-bit)
+          <span class="box">│</span>  segment / process table lookup
+          <span class="box">▼</span>
+  <span class="g">Virtual Address</span>
+          <span class="box">│</span>  page-table walk  ──  <span class="s">HPT</span> (hashed page table)  <span class="cmt">classic Power</span>
+          <span class="box">│</span>                   └─  <span class="s">Radix</span> (4-level tree)      <span class="cmt">v3.0 / POWER9+, Linux default</span>
+          <span class="box">▼</span>
+  <span class="v">Real Address</span> (physical)
+</pre></div>
+  <p>The <b>radix MMU</b> introduced in v3.0 was a big deal: a conventional multi-level page-table tree is what Linux, KVM and every other modern OS already expect, and it made nested (guest-inside-host) translation far cheaper than the hashed page table.</p>
+
+  <h5>Privilege states</h5>
+  <table>
+    <tr><th>State</th><th>MSR bits</th><th>Can do</th></tr>
+    <tr><td><b>Problem</b> (user)</td><td><code>MSR[PR]=1</code></td><td>Book I + Book II only. No privileged SPRs, no MMU control.</td></tr>
+    <tr><td><b>Privileged</b> (supervisor / OS)</td><td><code>MSR[PR]=0, MSR[HV]=0</code></td><td>Full OS control: interrupts, translation, most SPRs.</td></tr>
+    <tr><td><b>Hypervisor</b></td><td><code>MSR[HV]=1, MSR[PR]=0</code></td><td>Owns real memory and partitions; PowerVM/KVM live here.</td></tr>
+  </table>
+  <p>Other key MSR bits: <code>SF</code> (64-bit mode), <code>EE</code> (external interrupts enabled), <code>IR</code>/<code>DR</code> (instruction/data relocation, i.e. translation on), <code>LE</code> (endianness), <code>FP</code>/<code>VEC</code>/<code>VSX</code> (unit availability — used for lazy context switching).</p>
+</section>
+
+<section id="bits">
+  <h3><span class="n">9</span>Bit numbering — the gotcha that bites everyone</h3>
+  <div class="gotcha"><span class="tag">classic trap #2</span>
+  <p><b>Power numbers bits from the most-significant end.</b> In a 32-bit instruction word, <b>bit 0 is the MSB</b> and bit 31 is the LSB. In a 64-bit register, bit 0 is the MSB and bit 63 is the LSB. This is the exact opposite of the x86/RISC-V/C convention you probably have in your fingers. When the spec says "XER bit 34 is CA", that is <i>counting from the left</i>.</p></div>
+  <div class="ascii-wrap"><div class="bar">Same 32-bit word, two conventions</div>
+<pre class="ascii">  <span class="s">Power spec</span>   bit  0 <span class="box">────────────────────────────────&#8594;</span> bit 31
+                    <span class="a">MSB</span>                                  <span class="a">LSB</span>
+  <span class="o">C / x86</span>      bit 31 <span class="box">&#8592;────────────────────────────────</span> bit 0
+
+  So "primary opcode = bits 0:5" means the <span class="a">top six bits</span>:
+      word &gt;&gt; 26  &amp;  0x3F
+</pre></div>
+  <p>The practical conversion when writing code: a field at Power bits <code>[hi:lo]</code> of a 32-bit word is <code>(word &gt;&gt; (31 - lo)) &amp; ((1 &lt;&lt; (lo - hi + 1)) - 1)</code>.</p>
+</section>
+
+<section id="forms">
+  <h3><span class="n">10</span>Instruction formats (the "forms")</h3>
+  <p>Every base instruction is exactly <b>32 bits</b>, and the top 6 bits are always the <b>primary opcode</b>. Beyond that, the layout depends on the <i>form</i>. Most forms reuse an <b>extended opcode</b> field to pack many instructions under one primary opcode — primary opcode <b>31</b> alone hosts hundreds of them.</p>
+
+  <table>
+    <tr><th>Form</th><th>Layout (Power bit positions)</th><th>Example</th></tr>
+    <tr><td><code>I</code></td><td>OPCD(0:5) · LI(6:29) · AA(30) · LK(31)</td><td><code>b</code>, <code>bl</code> — ±32 MB branch</td></tr>
+    <tr><td><code>B</code></td><td>OPCD · BO(6:10) · BI(11:15) · BD(16:29) · AA · LK</td><td><code>bc</code> — ±32 KB conditional branch</td></tr>
+    <tr><td><code>D</code></td><td>OPCD · RT/RS(6:10) · RA(11:15) · D(16:31)</td><td><code>addi</code>, <code>lwz</code>, <code>ori</code></td></tr>
+    <tr><td><code>DS</code></td><td>OPCD · RT/RS · RA · DS(16:29) · XO(30:31)</td><td><code>ld</code>, <code>std</code> — displacement is a multiple of 4</td></tr>
+    <tr><td><code>X</code></td><td>OPCD · RT/RS · RA · RB(16:20) · XO(21:30) · Rc(31)</td><td><code>and</code>, <code>lwzx</code>, <code>cmp</code></td></tr>
+    <tr><td><code>XO</code></td><td>OPCD · RT · RA · RB · OE(21) · XO(22:30) · Rc</td><td><code>add</code>, <code>subf</code>, <code>mulld</code></td></tr>
+    <tr><td><code>XL</code></td><td>OPCD · BT/BO · BA/BI · BB · XO(21:30) · LK</td><td><code>bclr</code> (<code>blr</code>), <code>bcctr</code>, <code>crand</code></td></tr>
+    <tr><td><code>XFX</code></td><td>OPCD · RT · spr(11:20) · XO(21:30) · Rc</td><td><code>mtspr</code>, <code>mfspr</code> (hence <code>mflr</code>, <code>mtctr</code>)</td></tr>
+    <tr><td><code>A</code></td><td>OPCD · FRT · FRA · FRB · FRC(21:25) · XO(26:30) · Rc</td><td><code>fmadd</code>, <code>fsel</code>, <code>isel</code> — 4 operands</td></tr>
+    <tr><td><code>M</code></td><td>OPCD · RS · RA · RB/SH · MB(21:25) · ME(26:30) · Rc</td><td><code>rlwinm</code> — rotate-and-mask</td></tr>
+    <tr><td><code>MD</code></td><td>OPCD · RS · RA · sh · mb(21:26) · XO(27:29) · sh(30) · Rc</td><td><code>rldicl</code> — 64-bit rotate-and-mask</td></tr>
+    <tr><td><code>VA/VX/VC</code></td><td>VMX vector layouts using primary opcode 4</td><td><code>vaddubm</code>, <code>vperm</code></td></tr>
+    <tr><td><code>Prefixed</code> (v3.1)</td><td><b>64 bits</b>: prefix word (OPCD 1) + suffix word</td><td><code>paddi</code>, <code>pld</code> — 34-bit displacement, PC-relative</td></tr>
+  </table>
+  <p class="note">You do not memorise these. You learn to recognise the three or four you meet daily — D, X/XO, B and XL — and look the rest up.</p>
+</section>
+
+<section id="decoder">
+  <h3><span class="n">11</span>Interactive encoding decoder</h3>
+  <p>Click a preset or type any 32-bit hex word. The bit grid highlights each field; hover a field row to isolate it.</p>
+
+  <div class="dec">
+    <div class="ctl">
+      <label style="font-size:13px;color:var(--ink-dim)">Instruction word:</label>
+      <input type="text" id="decIn" value="0x38640064" spellcheck="false" maxlength="10">
+      <span class="note" style="font-style:normal">32-bit hex, e.g. <code style="color:var(--cyn)">7C642A14</code></span>
+    </div>
+    <div class="presets" id="decPresets"></div>
+    <div class="bitgrid" id="bitGrid"></div>
+    <div class="bitnums" id="bitNums"></div>
+    <div class="decout" id="decOut"></div>
+    <div class="fieldlist" id="fieldList"></div>
+  </div>
+
+  <p class="note">Try <code>60000000</code> — that is <code>ori r0,r0,0</code>, which is how Power spells <code>nop</code>. And <code>4E800020</code> is <code>bclr 20,0,0</code>, better known as <code>blr</code>, the function return.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">12</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="In D-form and load/store instructions the base field is RA|0: encoding 0 means the literal value zero, not the contents of GPR0.">
+    <div class="q">1. <code>addi r3,r0,100</code> — what does the <code>r0</code> operand mean here?</div>
+    <button class="opt">The 64-bit contents of GPR0.</button>
+    <button class="opt">An error — r0 cannot be a source.</button>
+    <button class="opt">The literal value 0, because the field is <code>RA|0</code>.</button>
+    <button class="opt">The stack pointer.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="FPRn occupies bits 0:63 (the high doubleword) of VSRn, and VRn is exactly VSR n+32.">
+    <div class="q">2. Where does FPR7 physically live under VSX?</div>
+    <button class="opt">It is VSR39 in full.</button>
+    <button class="opt">It is the high 64 bits of VSR7.</button>
+    <button class="opt">It is the low 64 bits of VSR7.</button>
+    <button class="opt">It is a separate register file, unrelated to VSRs.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="A trailing dot sets the Rc bit, which updates CR0 (or CR1 for floating-point instructions).">
+    <div class="q">3. What does the trailing dot in <code>add. r3,r4,r5</code> do?</div>
+    <button class="opt">Sets Rc=1, so CR0 is updated from the result.</button>
+    <button class="opt">Makes the add saturating.</button>
+    <button class="opt">Forces a 32-bit rather than 64-bit add.</button>
+    <button class="opt">Sets the carry bit in XER.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="lwsync orders load→load, load→store and store→store, which is exactly what a publish pattern needs, at far lower cost than a full sync.">
+    <div class="q">4. You publish data then set a ready flag. Cheapest correct barrier between the two stores?</div>
+    <button class="opt"><code>isync</code></button>
+    <button class="opt"><code>eieio</code></button>
+    <button class="opt"><code>sync</code> — nothing weaker is correct</button>
+    <button class="opt"><code>lwsync</code></button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="Power numbers bits with 0 at the most-significant end, so bits 0:5 are the top six bits: (word >> 26) & 0x3F.">
+    <div class="q">5. The spec says the primary opcode is bits 0:5. In C, how do you extract it from a word?</div>
+    <button class="opt"><code>word &amp; 0x3F</code></button>
+    <button class="opt"><code>(word &gt;&gt; 26) &amp; 0x3F</code></button>
+    <button class="opt"><code>(word &gt;&gt; 5) &amp; 0x3F</code></button>
+    <button class="opt"><code>(word &gt;&gt; 1) &amp; 0x3FF</code></button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="Power has no CAS instruction; it uses a load-and-reserve / store-conditional pair (lwarx/stwcx., ldarx/stdcx.) with a retry loop.">
+    <div class="q">6. How does Power implement an atomic read-modify-write?</div>
+    <button class="opt">A single <code>cas</code> instruction.</button>
+    <button class="opt">A <code>lock</code> prefix on the store.</button>
+    <button class="opt">A <code>lwarx</code>/<code>stwcx.</code> reservation loop.</button>
+    <button class="opt">By disabling interrupts around the sequence.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Endianness is a storage property controlled by MSR[LE]. The register contents are unchanged; only the byte order in memory differs.">
+    <div class="q">7. Switching <code>MSR[LE]</code> changes…</div>
+    <button class="opt">the byte order used when accessing memory, not the register contents.</button>
+    <button class="opt">the bit numbering used by the ISA.</button>
+    <button class="opt">the order of bits inside a register.</button>
+    <button class="opt">nothing on 64-bit implementations.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">13</span>Interview Q&amp;A</h3>
+  <details><summary>Walk me through the Power register file.</summary><div class="ans">32 general-purpose registers, 64 bits each, for integer and address arithmetic. 64 vector-scalar registers of 128 bits each — the VSX file — where the legacy 32 FPRs are the high doublewords of VSR0–31 and the 32 VMX vector registers are VSR32–63. Then the special registers: a 32-bit Condition Register split into eight 4-bit fields, the Link Register and Count Register for branching, XER for carry and overflow, FPSCR and VSCR for FP/vector status. v3.1 adds eight 512-bit MMA accumulators that overlay VSR0–31. Privileged state — MSR and the SPRs — sits in Book III.</div></details>
+  <details><summary>What is the <code>RA|0</code> convention and why does it exist?</summary><div class="ans">In load/store and immediate-arithmetic instructions, the base-register field is specified as <code>RA|0</code>: if the 5-bit field encodes register 0, the value used is the literal zero rather than the contents of GPR0. It exists so that the same encoding gives you both "base register plus displacement" and "absolute small address / load immediate" without spending a separate opcode. It's why <code>li rX,n</code> is just <code>addi rX,0,n</code>, and why compilers avoid using r0 as a pointer.</div></details>
+  <details><summary>Explain the VSX overlay and why IBM did it.</summary><div class="ans">Before v2.06 there were two disjoint files: 32 × 64-bit FPRs and 32 × 128-bit VMX vector registers. VSX defines 64 architected 128-bit VSRs and maps the old files onto them — FPRn is bits 0:63 of VSRn, VRn is VSR n+32. The motivation is register pressure and unification: vector code gets twice the registers, scalar FP and vector code share one datapath and one context-switch footprint, and instructions can move data between the scalar and vector worlds without going through memory.</div></details>
+  <details><summary>Power is weakly ordered. What does that mean in practice, and what are the barriers?</summary><div class="ans">The hardware may reorder loads and stores relative to program order, and other cores can observe your accesses in a different order, unless you insert barriers. <code>sync</code>/<code>hwsync</code> is the full barrier. <code>lwsync</code> is the cheap one, ordering load→load, load→store and store→store but not store→load — it's what most acquire/release and publish patterns need. <code>isync</code> serialises instruction fetch and is used after an acquire (with a conditional branch) and after modifying code. <code>eieio</code> orders device/caching-inhibited accesses. The porting hazard is that x86's near-TSO model hides missing barriers that Power exposes.</div></details>
+  <details><summary>How do you do an atomic compare-and-swap on Power?</summary><div class="ans">There isn't a CAS instruction. You build it from load-and-reserve and store-conditional: <code>lwarx</code> (or <code>ldarx</code>) takes a reservation on the address, you compare and compute in registers, then <code>stwcx.</code> (or <code>stdcx.</code>) stores only if the reservation survived, reporting success in CR0[EQ]. On failure you branch back and retry. Add <code>lwsync</code>/<code>isync</code> as needed for acquire/release semantics.</div></details>
+  <details><summary>Why does Power have eight condition register fields instead of one flags register?</summary><div class="ans">To reduce false dependencies and let the compiler keep several conditions live simultaneously. With a single flags register every comparison clobbers the last one, which serialises code and forces branches to sit right after their compare. With CR0–CR7, a compiler can evaluate several conditions early, combine them with the CR logical instructions (<code>crand</code>, <code>cror</code>) and branch once — good for deep pipelines. Flag writing is also opt-in via the Rc bit, so ordinary arithmetic doesn't create a dependency at all.</div></details>
+  <details><summary>What's the deal with Power's bit numbering?</summary><div class="ans">Power numbers bits from the most-significant end: bit 0 is the MSB. In a 32-bit instruction, bits 0:5 are the primary opcode — the top six bits. In a 64-bit register, bit 63 is the least-significant. Everyone coming from x86, Arm or RISC-V gets this backwards once. The conversion for a field at Power bits [hi:lo] is <code>(word &gt;&gt; (31-lo)) &amp; ((1&lt;&lt;(lo-hi+1))-1)</code>.</div></details>
+  <details><summary>Hashed page table vs radix — why did v3.0 add radix?</summary><div class="ans">The classic Power MMU used segments plus a hashed page table, which is unusual and awkward for operating systems designed around multi-level page-table trees, and it's especially painful for nested virtualisation because the host has to shadow guest translations. The radix MMU in v3.0 (POWER9) is a conventional 4-level radix tree, matching what Linux and KVM already expect, and it supports nested translation directly — so guest page-table walks get hardware support instead of hypervisor emulation.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">14</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li><b>32 GPRs</b> (64-bit) · <b>64 VSRs</b> (128-bit) with FPRs and VRs as views · CR, LR, CTR, XER, FPSCR.</li>
+    <li><b>CR = 8 × 4-bit fields</b> (LT GT EQ SO); the <code>.</code> suffix sets <code>Rc=1</code> and updates CR0 (CR1 for FP).</li>
+    <li>Load/store only; two addressing modes — <b>base+displacement</b> and <b>base+index</b> — each with an update form.</li>
+    <li>Bi-endian via <code>MSR[LE]</code>; endianness affects <i>memory</i>, never register contents.</li>
+    <li><b>Weakly ordered</b>: <code>sync</code> full · <code>lwsync</code> cheap · <code>isync</code> fetch · <code>eieio</code> device. Atomics via <code>lwarx</code>/<code>stwcx.</code>.</li>
+    <li>EA &#8594; VA &#8594; RA; <b>radix MMU</b> from v3.0. Privilege: problem / privileged / hypervisor via MSR.</li>
+    <li>All base instructions are <b>32 bits</b>, top 6 bits = primary opcode; forms D, DS, X, XO, XL, XFX, A, M, MD, I, B. <b>Bit 0 = MSB.</b></li>
+  </ul>
+  <div class="chips"><span class="chip">GPR / VSR / FPR / VR</span><span class="chip">RA|0</span><span class="chip">CR0–CR7</span><span class="chip">Rc bit</span><span class="chip">XER CA/OV/SO</span><span class="chip">MSR[LE]</span><span class="chip">lwsync</span><span class="chip">lwarx/stwcx.</span><span class="chip">radix MMU</span><span class="chip">D-form / X-form / XO-form</span><span class="chip">MSB = bit 0</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="powerisa_lesson01_fundamentals.html">&#9668; L1 · Fundamentals &amp; history</a>
+  <a href="powerisa_lesson03_instructions.html">L3 · Instruction categories &#9658;</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L3): the instruction set itself — fixed-point, floating-point, vector/VSX/MMA, branches, and the v3.1 prefixed encodings.</p>
+</main>
+</div>
+
+<script>
+/* ---------- scroll-spy ---------- */
+const links=[...document.querySelectorAll('nav.side a')].filter(a=>a.getAttribute('href').startsWith('#'));
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* ---------- quizzes ---------- */
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite — the highlighted option is right. '+fbt);
+  }));
+});
+
+/* ---------- register explorer ---------- */
+const REGS=[
+ {k:'GPR', n:'General Purpose Registers', m:'32 registers × 64 bits · GPR0–GPR31',
+  d:'The integer workhorses. Every address calculation, loop counter, struct offset and integer result passes through here.',
+  l:['Written <code>rN</code> in assembly. All 32 are architecturally identical — the roles below are pure ABI convention.',
+     '<b>The RA|0 quirk:</b> in D-form and load/store instructions, encoding register 0 in the base field means the literal value 0, not r0’s contents.',
+     'ELFv2 ABI roles: <code>r1</code> stack pointer · <code>r2</code> TOC/GOT pointer · <code>r3–r10</code> arguments and return values · <code>r12</code> function entry address for global calls · <code>r13</code> thread pointer · <code>r14–r31</code> callee-saved.',
+     '32-bit operations write a 64-bit result: <code>addw</code>-class instructions such as <code>add</code> operate on the full 64 bits, while <code>*w</code> compare/shift variants treat the low 32 bits as the value.'],
+  bits:[['GPR value',100,'var(--acc)']], labels:['0','63']},
+ {k:'VSR', n:'Vector-Scalar Registers', m:'64 registers × 128 bits · VSR0–VSR63',
+  d:'Introduced in v2.06 (VSX). A single unified file that serves scalar floating-point, SIMD vector work and, since v3.1, matrix math.',
+  l:['<code>FPR0–31</code> are the <b>high</b> doublewords (bits 0:63) of <code>VSR0–31</code>.',
+     '<code>VR0–31</code> (VMX/AltiVec) are exactly <code>VSR32–63</code>.',
+     'Element widths: 16 bytes, 8 halfwords, 4 words / single-precision floats, 2 doublewords / doubles, or one 128-bit quantity.',
+     'Accessed by <code>xs*</code> (scalar), <code>xv*</code> (vector), <code>xx*</code> (permute/logical) instructions, and by <code>lxv</code>/<code>stxv</code> loads and stores from v3.0.'],
+  bits:[['FPRn view (bits 0:63)',50,'var(--gold)'],['vector-only half (bits 64:127)',50,'var(--vio)']], labels:['0','63','64','127']},
+ {k:'ACC', n:'MMA Accumulators', m:'8 registers × 512 bits · ACC0–ACC7 (v3.1)',
+  d:'The Matrix-Multiply Assist facility. Each accumulator holds a small dense output tile that many rank-1 updates accumulate into, without spilling to memory.',
+  l:['Each ACC<i>n</i> overlays four VSRs from VSR0–VSR31, so those VSRs are unavailable while the accumulator is primed.',
+     'Primed with <code>xxmtacc</code> / drained with <code>xxmfacc</code>; zeroed with <code>xxsetaccz</code>.',
+     'Operations such as <code>xvf32ger</code> and <code>xvi8ger4</code> perform an outer-product (rank-1) update of the whole tile in one instruction.',
+     'Target: AI/ML inference and dense linear algebra throughput on POWER10.'],
+  bits:[['ACCn = 4 × VSR (512 bits)',100,'var(--org)']], labels:['0','511']},
+ {k:'CR', n:'Condition Register', m:'32 bits · eight 4-bit fields CR0–CR7',
+  d:'Comparison results and branch conditions. Eight independent fields mean several live conditions at once.',
+  l:['Each field holds <b>LT · GT · EQ · SO</b>.',
+     '<code>Rc=1</code> (the <code>.</code> suffix) on a fixed-point instruction updates <b>CR0</b> against zero; on a floating-point instruction it updates <b>CR1</b>.',
+     'Compare instructions choose their field explicitly: <code>cmpd cr5,r3,r4</code>.',
+     'CR bits can be combined without branching using <code>crand</code>, <code>cror</code>, <code>crnor</code>, <code>mcrf</code>.'],
+  bits:[['CR0',12.5,'var(--acc)'],['CR1',12.5,'var(--vio)'],['CR2',12.5,'var(--cyn)'],['CR3',12.5,'var(--grn)'],['CR4',12.5,'var(--gold)'],['CR5',12.5,'var(--org)'],['CR6',12.5,'#7aa2c9'],['CR7',12.5,'#c98fb0']], labels:['0','31']},
+ {k:'LR / CTR', n:'Link Register &amp; Count Register', m:'2 registers × 64 bits',
+  d:'The two branch-target registers. Neither is a GPR — they are separate architected state, moved with <code>mtspr</code>/<code>mfspr</code>.',
+  l:['<b>LR</b> receives the return address whenever a branch has <code>LK=1</code> (<code>bl</code>, <code>bctrl</code>). Return with <code>blr</code> (which is <code>bclr 20,0,0</code>).',
+     '<b>CTR</b> serves double duty: a hardware loop counter that <code>bdnz</code>/<code>bdz</code> decrement and test in a single instruction, and an indirect-branch target for <code>bctr</code>/<code>bctrl</code> (function pointers, virtual calls, switch tables).',
+     'Convenience mnemonics: <code>mflr r0</code> = <code>mfspr r0,8</code>; <code>mtctr r12</code> = <code>mtspr 9,r12</code>.',
+     'v2.07 adds <b>TAR</b>, a third branch-target register, used for indirect branches without disturbing LR or CTR.'],
+  bits:[['LR / CTR (64-bit address or count)',100,'var(--grn)']], labels:['0','63']},
+ {k:'XER', n:'Fixed-Point Exception Register', m:'64 bits',
+  d:'Carry, overflow and the sticky summary-overflow bit. Updated only when an instruction opts in.',
+  l:['<b>SO</b> (bit 32) — summary overflow, <i>sticky</i>: once set it stays set until explicitly cleared.',
+     '<b>OV</b> (bit 33) — overflow from the last <code>o</code>-suffixed instruction (<code>addo</code>, <code>subfo</code>).',
+     '<b>CA</b> (bit 34) — carry, written by <code>addc</code>/<code>subfc</code> and read+written by <code>adde</code>/<code>subfe</code> for multi-word arithmetic.',
+     'v2.06 adds <b>OV32</b> and <b>CA32</b> (bits 44/45) reflecting the 32-bit-width result.',
+     'Bits 57:63 hold the byte count used by the string load/store instructions.'],
+  bits:[['reserved / string count etc.',50,'#3f5468'],['SO OV CA',10,'var(--warn)'],['— · CA32/OV32 · —',40,'#5a7a95']], labels:['0','63']},
+ {k:'FPSCR / VSCR', n:'FP &amp; Vector Status/Control', m:'FPSCR 64-bit · VSCR 32-bit',
+  d:'Rounding modes, exception status and enable bits for the floating-point and vector units.',
+  l:['<b>FPSCR[RN]</b> — the 2-bit rounding mode: round-to-nearest-even, toward zero, toward +∞, toward −∞.',
+     'Sticky exception flags: invalid operation, overflow, underflow, zero-divide, inexact — plus per-exception enable bits.',
+     'Read/written with <code>mffs</code> / <code>mtfsf</code>; <code>Rc=1</code> on an FP instruction copies its summary into CR1.',
+     '<b>VSCR</b> holds <code>NJ</code> (non-Java mode: flush denormals to zero for speed) and <code>SAT</code> (a saturating vector op saturated).'],
+  bits:[['status &amp; enables',80,'var(--cyn)'],['RN',20,'var(--gold)']], labels:['0','63']},
+ {k:'MSR / SPRs', n:'Machine State Register &amp; SPRs', m:'Privileged — Book III',
+  d:'The mode register that says what the processor currently is, plus the wider special-purpose register space.',
+  l:['<b>MSR[SF]</b> 64-bit mode · <b>[HV]</b> hypervisor · <b>[PR]</b> problem (user) state · <b>[EE]</b> external interrupts enabled · <b>[IR]/[DR]</b> instruction/data translation on · <b>[LE]</b> little-endian · <b>[FP]/[VEC]/[VSX]</b> unit availability.',
+     'SPRs are a numbered space reached only through <code>mtspr</code> / <code>mfspr</code>: SRR0/SRR1 (interrupt save/restore), DAR and DSISR (fault address and cause), DEC (decrementer), PID, LPCR, PVR (processor version).',
+     'Some SPRs are user-readable (TB, PVR is not), most are privileged — that split is exactly what Book III defines.',
+     'Lazy context switching uses MSR[FP]/[VEC]/[VSX]: clear the bit, and the first FP/vector instruction traps so the OS can restore that state only if it is actually used.'],
+  bits:[['MSR mode &amp; enable bits',100,'#7aa2c9']], labels:['0','63']}
+];
+const rt=document.getElementById('regTabs'), rb=document.getElementById('regBody');
+REGS.forEach((r,i)=>{
+  const b=document.createElement('button'); b.textContent=r.k;
+  b.addEventListener('click',()=>showReg(i)); rt.appendChild(b);
+});
+function showReg(i){
+  [...rt.children].forEach((n,k)=>n.classList.toggle('on',k===i));
+  const r=REGS[i];
+  let bar='<div class="bitbar">'+r.bits.map(b=>'<div class="bitseg" style="flex:0 0 '+b[1]+'%;background:'+b[2]+'">'+b[0]+'</div>').join('')+'</div>';
+  let lab='<div class="bitlab">'+(r.labels.length===2
+     ? '<span style="flex:1;text-align:left">bit '+r.labels[0]+'</span><span style="flex:1;text-align:right">bit '+r.labels[1]+'</span>'
+     : '<span style="flex:1;text-align:left">bit '+r.labels[0]+'</span><span style="flex:1;text-align:center">'+r.labels[1]+' | '+r.labels[2]+'</span><span style="flex:1;text-align:right">bit '+r.labels[3]+'</span>')+'</div>';
+  rb.innerHTML='<h5>'+r.n+'</h5><div class="meta">'+r.m+'</div><p class="d">'+r.d+'</p>'+bar+lab+
+    '<ul>'+r.l.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+}
+showReg(0);
+
+/* ---------- VSX overlay rows ---------- */
+const vsxRows=document.getElementById('vsxRows');
+[[0,'VSR0','FPR0','—'],[1,'VSR1','FPR1','—'],[31,'VSR31','FPR31','—'],
+ [32,'VSR32','VR0','VR0'],[33,'VSR33','VR1','VR1'],[63,'VSR63','VR31','VR31']].forEach((r,idx)=>{
+  const isV = r[0]>=32;
+  const row=document.createElement('div'); row.className='vsxrow';
+  row.innerHTML='<span class="name">'+r[1]+'</span><div class="vsxbox">'+
+    (isV ? '<div class="vsxhalf h-vr" style="flex:2">'+r[2]+' (full 128 bits)</div>'
+         : '<div class="vsxhalf h-fpr">'+r[2]+'</div><div class="vsxhalf h-none">unused by FPR view</div>')+'</div>';
+  vsxRows.appendChild(row);
+  if(idx===1||idx===4){
+    const gap=document.createElement('div'); gap.className='vsxrow';
+    gap.innerHTML='<span class="name">⋮</span><div style="flex:1;color:var(--ink-faint);font-size:11px">'+
+      (idx===1?'VSR2 … VSR30 — same pattern':'VSR34 … VSR62 — same pattern')+'</div>';
+    vsxRows.appendChild(gap);
+  }
+});
+
+/* ---------- endianness lab ---------- */
+let enMode='BE';
+const enVal=document.getElementById('enVal'), enBytes=document.getElementById('enBytes'), enNote=document.getElementById('enNote');
+function drawEndian(){
+  let s=enVal.value.trim().replace(/^0[xX]/,'').replace(/[^0-9a-fA-F]/g,'');
+  if(!s) s='0';
+  s=s.slice(-16).padStart(16,'0').toUpperCase();
+  let bytes=[]; for(let i=0;i<16;i+=2) bytes.push(s.slice(i,i+2));
+  const order = enMode==='BE' ? bytes : bytes.slice().reverse();
+  enBytes.innerHTML=order.map((b,i)=>'<div class="mb"><span class="addr">base+'+i+'</span><span class="val">'+b+'</span></div>').join('');
+  enNote.textContent = enMode==='BE'
+    ? 'Big-endian: the most-significant byte (0x'+bytes[0]+') goes at the lowest address. Memory reads left-to-right like the written number. This is AIX / IBM i.'
+    : 'Little-endian: the least-significant byte (0x'+bytes[7]+') goes at the lowest address. The bytes appear reversed. This is ppc64le Linux (ELFv2 ABI).';
+}
+document.getElementById('enBE').addEventListener('click',function(){enMode='BE';this.classList.add('on');document.getElementById('enLE').classList.remove('on');drawEndian();});
+document.getElementById('enLE').addEventListener('click',function(){enMode='LE';this.classList.add('on');document.getElementById('enBE').classList.remove('on');drawEndian();});
+enVal.addEventListener('input',drawEndian);
+drawEndian();
+
+/* ---------- instruction encoding decoder ---------- */
+function fld(w,hi,lo){ return (w >>> (31-lo)) & ((lo-hi>=31)?0xFFFFFFFF:((1<<(lo-hi+1))-1)); }
+function sext(v,bits){ const m=1<<(bits-1); return (v ^ m) - m; }
+const FORMCOL={OPCD:'#4fa3ff',RT:'#52d273',RS:'#52d273',RA:'#f5b942',RB:'#ff9b42',
+  D:'#b48cff',DS:'#b48cff',SI:'#b48cff',UI:'#b48cff',XO:'#39d4e6',Rc:'#ff7ab6',OE:'#ff7ab6',
+  LK:'#ff7ab6',AA:'#ff7ab6',LI:'#b48cff',BD:'#b48cff',BO:'#52d273',BI:'#f5b942',
+  BF:'#52d273',L:'#ff7ab6',SH:'#ff9b42',MB:'#39d4e6',ME:'#c98fb0',spr:'#f5b942',BB:'#ff9b42',BT:'#52d273',BA:'#f5b942'};
+
+/* form templates: [name, hi, lo, describe] */
+const FORMS={
+ D:  [['OPCD',0,5],['RT',6,10],['RA',11,15],['D',16,31]],
+ Dst:[['OPCD',0,5],['RS',6,10],['RA',11,15],['D',16,31]],
+ Dlog:[['OPCD',0,5],['RS',6,10],['RA',11,15],['UI',16,31]],
+ Dcmp:[['OPCD',0,5],['BF',6,8],['L',10,10],['RA',11,15],['SI',16,31]],
+ DS: [['OPCD',0,5],['RT',6,10],['RA',11,15],['DS',16,29],['XO',30,31]],
+ X:  [['OPCD',0,5],['RS',6,10],['RA',11,15],['RB',16,20],['XO',21,30],['Rc',31,31]],
+ Xld:[['OPCD',0,5],['RT',6,10],['RA',11,15],['RB',16,20],['XO',21,30],['Rc',31,31]],
+ XO: [['OPCD',0,5],['RT',6,10],['RA',11,15],['RB',16,20],['OE',21,21],['XO',22,30],['Rc',31,31]],
+ XL: [['OPCD',0,5],['BO',6,10],['BI',11,15],['BB',16,20],['XO',21,30],['LK',31,31]],
+ XFX:[['OPCD',0,5],['RT',6,10],['spr',11,20],['XO',21,30],['Rc',31,31]],
+ I:  [['OPCD',0,5],['LI',6,29],['AA',30,30],['LK',31,31]],
+ B:  [['OPCD',0,5],['BO',6,10],['BI',11,15],['BD',16,29],['AA',30,30],['LK',31,31]],
+ M:  [['OPCD',0,5],['RS',6,10],['RA',11,15],['SH',16,20],['MB',21,25],['ME',26,30],['Rc',31,31]]
+};
+const RN=n=>'r'+n;
+const DECODERS=[
+ {op:14,form:'D',asm:w=>'addi '+RN(fld(w,6,10))+','+(fld(w,11,15)===0?'0':RN(fld(w,11,15)))+','+sext(fld(w,16,31),16),
+  fm:'D-form', ex:w=>'RT ← (RA|0) + sign_extend(SI). With RA=0 this is the <code>li</code> load-immediate idiom.'},
+ {op:15,form:'D',asm:w=>'addis '+RN(fld(w,6,10))+','+(fld(w,11,15)===0?'0':RN(fld(w,11,15)))+','+sext(fld(w,16,31),16),
+  fm:'D-form', ex:w=>'Add Immediate Shifted: RT ← (RA|0) + (SI &lt;&lt; 16). Paired with <code>addi</code>/<code>ori</code> to build 32-bit constants.'},
+ {op:24,form:'Dlog',asm:w=>{const rs=fld(w,6,10),ra=fld(w,11,15),ui=fld(w,16,31);
+    return (rs===0&&ra===0&&ui===0)?'nop':('ori '+RN(ra)+','+RN(rs)+','+ui);},
+  fm:'D-form', ex:w=>(w===0x60000000)?'<code>ori r0,r0,0</code> — the architected <b>no-op</b>. Note the operand order: RA is the destination for logical D-form instructions.':'RA ← RS | UI (zero-extended). Destination is RA, source is RS — the reverse of arithmetic D-form.'},
+ {op:32,form:'D',asm:w=>'lwz '+RN(fld(w,6,10))+','+sext(fld(w,16,31),16)+'('+(fld(w,11,15)===0?'0':RN(fld(w,11,15)))+')',
+  fm:'D-form', ex:w=>'Load Word and Zero: RT ← 32-bit value at EA = (RA|0) + D, zero-extended to 64 bits.'},
+ {op:36,form:'Dst',asm:w=>'stw '+RN(fld(w,6,10))+','+sext(fld(w,16,31),16)+'('+(fld(w,11,15)===0?'0':RN(fld(w,11,15)))+')',
+  fm:'D-form', ex:w=>'Store Word: the low 32 bits of RS are written to EA = (RA|0) + D.'},
+ {op:58,form:'DS',asm:w=>{const xo=fld(w,30,31); const d=sext(fld(w,16,29),14)*4;
+    return (xo===0?'ld ':xo===2?'lwa ':'ldu ')+RN(fld(w,6,10))+','+d+'('+(fld(w,11,15)===0?'0':RN(fld(w,11,15)))+')';},
+  fm:'DS-form', ex:w=>'DS-form: the 14-bit DS field is <b>scaled by 4</b>, so the displacement must be a multiple of 4. XO in bits 30:31 selects ld / ldu / lwa.'},
+ {op:62,form:'DS',asm:w=>{const xo=fld(w,30,31); const d=sext(fld(w,16,29),14)*4;
+    return (xo===0?'std ':'stdu ')+RN(fld(w,6,10))+','+d+'('+(fld(w,11,15)===0?'0':RN(fld(w,11,15)))+')';},
+  fm:'DS-form', ex:w=>'Store Doubleword. <code>stdu r1,-N(r1)</code> is the classic function-prologue stack push: store and update the pointer in one instruction.'},
+ {op:11,form:'Dcmp',asm:w=>(fld(w,10,10)?'cmpdi ':'cmpwi ')+'cr'+fld(w,6,8)+','+RN(fld(w,11,15))+','+sext(fld(w,16,31),16),
+  fm:'D-form (compare)', ex:w=>'Compare Immediate. BF picks which CR field receives LT/GT/EQ/SO; L selects 32-bit (0) or 64-bit (1) comparison.'},
+ {op:18,form:'I',asm:w=>{const li=sext(fld(w,6,29),24)*4; const aa=fld(w,30,30),lk=fld(w,31,31);
+    return 'b'+(lk?'l':'')+(aa?'a':'')+' '+(aa?'0x'+(li>>>0).toString(16):(li>=0?'+':'')+li);},
+  fm:'I-form', ex:w=>'Unconditional branch. The 24-bit LI field is scaled by 4, giving a ±32 MB reach. LK=1 saves the return address in LR (that is <code>bl</code>); AA=1 makes the target absolute.'},
+ {op:16,form:'B',asm:w=>{const bo=fld(w,6,10),bi=fld(w,11,15),bd=sext(fld(w,16,29),14)*4,lk=fld(w,31,31);
+    const cond=['lt','gt','eq','so'][bi&3], f=Math.floor(bi/4);
+    let m='bc '+bo+','+bi;
+    if(bo===12) m='b'+cond+' cr'+f;
+    else if(bo===4) m='b'+({lt:'ge',gt:'le',eq:'ne',so:'ns'})[cond]+' cr'+f;
+    return m+(lk?'l':'')+', '+(bd>=0?'+':'')+bd;},
+  fm:'B-form', ex:w=>'Conditional branch. BO says <i>how</i> to test (and whether to decrement CTR); BI says <i>which CR bit</i>. BD is a 14-bit scaled displacement — only ±32 KB, which is why long conditional branches invert and jump.'},
+ {op:31,form:'XO',xo:[22,30],table:{
+    266:{m:'add',   ex:'XO-form add: RT ← RA + RB. OE=1 would also update XER[OV/SO]; Rc=1 updates CR0.'},
+    40:{m:'subf',   ex:'Subtract From: RT ← RB − RA. Note the <b>reversed</b> operand order — a classic source of confusion.'},
+    10:{m:'addc',   ex:'Add Carrying: like add, but also writes XER[CA]. Used with <code>adde</code> for multi-word arithmetic.'},
+    138:{m:'adde',  ex:'Add Extended: RT ← RA + RB + XER[CA], and writes CA back out.'},
+    233:{m:'mulld', ex:'Multiply Low Doubleword: the low 64 bits of the 128-bit product.'},
+    73:{m:'mulhd',  ex:'Multiply High Doubleword: the high 64 bits of the product — pair with mulld for a full 128-bit result.'},
+    235:{m:'mullw', ex:'Multiply Low Word: 32×32 → 64-bit result.'},
+    489:{m:'divd',  ex:'Divide Doubleword (signed).'},
+    459:{m:'divwu', ex:'Divide Word Unsigned.'},
+    104:{m:'neg',   ex:'Negate: RT ← −RA. RB must be 0.'}}},
+ {op:31,form:'X',xo:[21,30],table:{
+    444:{m:'or',    ex:'RA ← RS | RB. When RS = RB this is the register-move idiom <code>mr RA,RS</code>.', rev:true},
+    28:{m:'and',    ex:'RA ← RS &amp; RB. X-form logical: destination is RA.', rev:true},
+    316:{m:'xor',   ex:'RA ← RS ⊕ RB.', rev:true},
+    476:{m:'nand',  ex:'RA ← ¬(RS &amp; RB).', rev:true},
+    124:{m:'nor',   ex:'RA ← ¬(RS | RB). <code>nor RA,RS,RS</code> is the <code>not</code> idiom.', rev:true},
+    0:{m:'cmp',     ex:'Compare: writes LT/GT/EQ/SO into the CR field named by BF (bits 6:8).'},
+    32:{m:'cmpl',   ex:'Compare Logical (unsigned).'},
+    23:{m:'lwzx',   ex:'Load Word and Zero Indexed: EA = (RA|0) + RB. The X-form addressing mode.'},
+    21:{m:'ldx',    ex:'Load Doubleword Indexed.'},
+    151:{m:'stwx',  ex:'Store Word Indexed.'},
+    20:{m:'lwarx',  ex:'Load Word And Reserve Indexed — takes a reservation for the <code>stwcx.</code> that follows.'},
+    150:{m:'stwcx.',ex:'Store Word Conditional Indexed — stores only if the reservation survives; reports success in CR0[EQ].'},
+    598:{m:'sync',  ex:'Full memory barrier. The L field (bits 9:10) selects hwsync (0) or lwsync (1).'},
+    339:{m:'mfspr', ex:'Move From SPR — this is how <code>mflr</code>, <code>mfctr</code> etc. are encoded.'},
+    467:{m:'mtspr', ex:'Move To SPR — <code>mtlr</code>, <code>mtctr</code>.'},
+    922:{m:'extsh', ex:'Extend Sign Halfword.'},
+    954:{m:'extsb', ex:'Extend Sign Byte.'},
+    986:{m:'extsw', ex:'Extend Sign Word — the canonical 32→64 sign extension.'},
+    58:{m:'cntlzd', ex:'Count Leading Zeros Doubleword.'},
+    506:{m:'popcntd',ex:'Population Count Doubleword.'}}},
+ {op:19,form:'XL',xo:[21,30],table:{
+    16:{m:'bclr',  ex:'Branch Conditional to Link Register. <code>bclr 20,0,0</code> (BO=20 = "always") is <b>blr</b>, the function return.'},
+    528:{m:'bcctr',ex:'Branch Conditional to Count Register — indirect calls and jump tables. BO=20 gives <code>bctr</code>/<code>bctrl</code>.'},
+    257:{m:'crand',ex:'CR AND: combine two condition bits without branching.'},
+    449:{m:'cror', ex:'CR OR.'},
+    150:{m:'isync',ex:'Instruction synchronise — discard speculatively fetched instructions.'},
+    0:{m:'mcrf',   ex:'Move one CR field to another.'}}},
+ {op:21,form:'M',asm:w=>'rlwinm '+RN(fld(w,11,15))+','+RN(fld(w,6,10))+','+fld(w,16,20)+','+fld(w,21,25)+','+fld(w,26,30),
+  fm:'M-form', ex:w=>'Rotate Left Word Immediate then AND with Mask — the Swiss army knife. One instruction can shift, extract a bit-field, or clear ranges. <code>slwi</code>, <code>srwi</code>, <code>extlwi</code>, <code>clrlwi</code> are all simplified mnemonics for this.'},
+ {op:1,form:null,asm:()=>'(prefix word)',fm:'Prefixed (v3.1)',
+  ex:()=>'Primary opcode 1 marks the <b>prefix</b> half of a 64-bit prefixed instruction (v3.1). The following word is the suffix — together they give 34-bit displacements and PC-relative addressing.'}
+];
+function decode(w){
+  const op=fld(w,0,5);
+  for(const d of DECODERS){
+    if(d.op!==op) continue;
+    if(d.table){
+      const xo=fld(w,d.xo[0],d.xo[1]);
+      const e=d.table[xo]; if(!e) continue;
+      const form=FORMS[d.form];
+      /* mnemonics that already carry a dot must not get a second one */
+      const dot = (fld(w,31,31) && !/\.$/.test(e.m)) ? '.' : '';
+      /* indexed load/store/atomic: an RA field of 0 means the literal 0, not r0 */
+      const IDX=/^(l|st)[bhwdq]?(z|a)?u?(arx|cx\.|x)$/;
+      const base = (IDX.test(e.m) && fld(w,11,15)===0) ? '0' : RN(fld(w,11,15));
+      let asm;
+      if(d.form==='XO') asm=e.m+dot+' '+RN(fld(w,6,10))+','+RN(fld(w,11,15))+','+RN(fld(w,16,20));
+      else if(d.form==='XL') asm=e.m+' '+fld(w,6,10)+','+fld(w,11,15)+','+fld(w,16,20)+(fld(w,31,31)?'l':'');
+      else if(e.rev) asm=e.m+dot+' '+RN(fld(w,11,15))+','+RN(fld(w,6,10))+','+RN(fld(w,16,20));
+      else asm=e.m+dot+' '+RN(fld(w,6,10))+','+base+','+RN(fld(w,16,20));
+      /* nicer aliases */
+      if(e.m==='or' && fld(w,6,10)===fld(w,16,20)) asm='mr '+RN(fld(w,11,15))+','+RN(fld(w,6,10))+'   (or '+RN(fld(w,11,15))+','+RN(fld(w,6,10))+','+RN(fld(w,16,20))+')';
+      if(e.m==='bclr' && fld(w,6,10)===20) asm='blr'+(fld(w,31,31)?'l':'')+'   (bclr 20,0,0)';
+      if(e.m==='bcctr'&& fld(w,6,10)===20) asm='bctr'+(fld(w,31,31)?'l':'')+'   (bcctr 20,0,0)';
+      if(e.m==='mfspr'){const s=fld(w,11,20); const n=((s&0x1F)<<5)|(s>>5);
+        asm=(n===8?'mflr ':n===9?'mfctr ':n===1?'mfxer ':'mfspr ')+RN(fld(w,6,10))+(n===8||n===9||n===1?'':','+n)+'   (SPR '+n+')';}
+      if(e.m==='mtspr'){const s=fld(w,11,20); const n=((s&0x1F)<<5)|(s>>5);
+        asm=(n===8?'mtlr ':n===9?'mtctr ':n===1?'mtxer ':'mtspr ')+RN(fld(w,6,10))+(n===8||n===9||n===1?'':','+n)+'   (SPR '+n+')';}
+      if(e.m==='sync'){const L=fld(w,9,10); asm=(L===1?'lwsync':L===2?'ptesync':'sync')+'   (sync L='+L+')';}
+      if(e.m==='cmp'||e.m==='cmpl') asm=e.m+(fld(w,10,10)?'d':'w')+' cr'+fld(w,6,8)+','+RN(fld(w,11,15))+','+RN(fld(w,16,20));
+      return {asm, form, fm:d.form+'-form', ex:e.ex};
+    }
+    return {asm:d.asm(w), form:FORMS[d.form]||[['OPCD',0,5],['(prefix payload)',6,31]], fm:d.fm, ex:d.ex(w)};
+  }
+  return null;
+}
+const FIELDDESC={OPCD:'primary opcode (bits 0:5)',RT:'target/destination register',RS:'source register',
+  RA:'first source / base register (RA|0 in D-form)',RB:'second source / index register',
+  D:'signed 16-bit displacement or immediate',DS:'signed 14-bit displacement, scaled ×4',
+  SI:'signed immediate',UI:'unsigned immediate',XO:'extended opcode',Rc:'record bit — 1 updates CR0',
+  OE:'overflow enable — 1 updates XER[OV/SO]',LK:'link bit — 1 saves the return address in LR',
+  AA:'absolute address bit',LI:'signed 24-bit branch displacement, scaled ×4',
+  BD:'signed 14-bit branch displacement, scaled ×4',BO:'branch options — how to test / CTR behaviour',
+  BI:'which CR bit to test',BF:'destination CR field',L:'operand length: 0 = 32-bit, 1 = 64-bit',
+  SH:'shift amount',MB:'mask begin',ME:'mask end',spr:'SPR number (halves swapped in the encoding)',
+  BB:'third CR bit operand',BT:'destination CR bit',BA:'first CR bit operand'};
+const gridEl=document.getElementById('bitGrid'), numsEl=document.getElementById('bitNums'),
+      outEl=document.getElementById('decOut'), listEl=document.getElementById('fieldList'), inEl=document.getElementById('decIn');
+numsEl.innerHTML=Array.from({length:32},(_,i)=>'<span>'+(i%4===0?i:'')+'</span>').join('');
+
+function render(){
+  let s=inEl.value.trim().replace(/^0[xX]/,'').replace(/[^0-9a-fA-F]/g,'');
+  const w=(parseInt(s||'0',16)>>>0);
+  const r=decode(w);
+  const bits=Array.from({length:32},(_,i)=>(w>>>(31-i))&1);
+  const form = r ? r.form : [['(unrecognised)',0,31]];
+  /* colour map per bit */
+  const colOf=new Array(32).fill(null), nameOf=new Array(32).fill('');
+  form.forEach(f=>{ for(let b=f[1];b<=f[2];b++){ colOf[b]=FORMCOL[f[0]]||'#5a7a95'; nameOf[b]=f[0]; } });
+  gridEl.innerHTML=bits.map((b,i)=>{
+    const c=colOf[i];
+    return '<div class="bit" data-f="'+nameOf[i]+'" style="'+(c?'background:'+c+'22;border-color:'+c+';color:'+c:'')+'">'+b+'</div>';
+  }).join('');
+  if(r){
+    outEl.className='decout';
+    outEl.innerHTML='<div class="form">'+r.fm+' &middot; 0x'+w.toString(16).toUpperCase().padStart(8,'0')+'</div>'+
+      '<div class="asm">'+r.asm+'</div><div class="expl">'+r.ex+'</div>';
+    listEl.innerHTML=form.map(f=>{
+      const v=fld(w,f[1],f[2]);
+      const c=FORMCOL[f[0]]||'#5a7a95';
+      return '<div class="fld" data-f="'+f[0]+'"><span class="fn" style="color:'+c+'">'+f[0]+'</span>'+
+        '<span class="fv">'+v+'  <span style="color:var(--ink-faint)">['+f[1]+':'+f[2]+']</span></span>'+
+        '<span class="fd">'+(FIELDDESC[f[0]]||'')+'</span></div>';
+    }).join('');
+    listEl.querySelectorAll('.fld').forEach(el=>{
+      el.addEventListener('mouseenter',()=>gridEl.querySelectorAll('.bit').forEach(b=>{
+        b.style.opacity = (b.dataset.f===el.dataset.f)?'1':'0.22';}));
+      el.addEventListener('mouseleave',()=>gridEl.querySelectorAll('.bit').forEach(b=>b.style.opacity='1'));
+    });
+  } else {
+    outEl.className='decout bad';
+    outEl.innerHTML='<div class="form">primary opcode '+fld(w,0,5)+' &middot; 0x'+w.toString(16).toUpperCase().padStart(8,'0')+'</div>'+
+      '<div class="asm">not in this demo decoder</div>'+
+      '<div class="expl">This teaching decoder covers a representative subset. The real Power ISA has hundreds of instructions under primary opcode 31 alone — try one of the presets above.</div>';
+    listEl.innerHTML='';
+  }
+}
+const PRESETS=[
+ ['38640064','addi r3,r4,100'],['80A60008','lwz r5,8(r6)'],['7C642A14','add r3,r4,r5'],
+ ['7C832378','mr r3,r4'],['F821FFF1','stdu r1,-16(r1)'],['E8830000','ld r4,0(r3)'],
+ ['2C030000','cmpwi r3,0'],['48000100','b +256'],['48000101','bl +256'],['4E800020','blr'],
+ ['4182000C','beq +12'],['7C0802A6','mflr r0'],['7C0903A6','mtctr r0'],['60000000','nop'],
+ ['7C001828','lwarx r0,0,r3'],['7C00192D','stwcx. r0,0,r3'],['7C2004AC','lwsync'],
+ ['546307BE','rlwinm r3,r3,0,30,31'],['04000000','prefix word (v3.1)']
+];
+const pEl=document.getElementById('decPresets');
+PRESETS.forEach(p=>{
+  const b=document.createElement('button'); b.textContent=p[1];
+  b.title='0x'+p[0];
+  b.addEventListener('click',()=>{inEl.value='0x'+p[0]; render();});
+  pEl.appendChild(b);
+});
+inEl.addEventListener('input',render);
+render();
+</script>
+</body>
+</html>

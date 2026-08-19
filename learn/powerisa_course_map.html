@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power ISA — Foundational Knowledge Course Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --acc:#4fa3ff; --gold:#f5b942; --grn:#52d273; --vio:#b48cff; --cyn:#39d4e6; --org:#ff9b42;
+  --radius:12px; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1100px 620px at 78% -12%, #17222f 0%, transparent 62%),
+    radial-gradient(900px 520px at -8% 8%, #131b24 0%, transparent 58%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--acc); text-decoration:none}
+.wrap{max-width:1080px; margin:0 auto; padding:44px 28px 110px}
+.topbar{display:flex; justify-content:space-between; align-items:center; font-family:var(--mono); font-size:12px; color:var(--ink-faint); margin-bottom:34px}
+.topbar a{color:var(--ink-faint)} .topbar a:hover{color:var(--ink)}
+.kick{font-family:var(--mono); color:var(--vio); font-size:12.5px; letter-spacing:2.5px; text-transform:uppercase}
+h1{font-size:42px; letter-spacing:-1px; margin:8px 0 10px; line-height:1.1}
+h1 .hl{background:linear-gradient(90deg,var(--acc),var(--cyn)); -webkit-background-clip:text; background-clip:text; color:transparent}
+.lede{color:var(--ink-dim); font-size:17px; max-width:660px; margin:0}
+.badges{display:flex; gap:8px; flex-wrap:wrap; margin:22px 0 0}
+.badge{font-family:var(--mono); font-size:11.5px; padding:5px 12px; border-radius:20px;
+  border:1px solid var(--line); background:var(--panel); color:var(--ink-dim)}
+.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:34px 0 8px}
+.stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px}
+.stat .v{font-family:var(--mono); font-size:26px; font-weight:600; color:var(--acc)}
+.stat .l{font-size:12px; color:var(--ink-faint); margin-top:3px}
+h2.sec{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--vio); border-bottom:1px solid var(--line); padding-bottom:9px; margin:52px 0 20px}
+
+/* lesson cards */
+.lessons{display:grid; gap:16px}
+.lesson{display:grid; grid-template-columns:64px 1fr; gap:20px; background:var(--panel);
+  border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px;
+  text-decoration:none; color:inherit; transition:.18s; position:relative; overflow:hidden}
+.lesson::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--acc); opacity:.5; transition:.18s}
+.lesson:hover{border-color:var(--acc); transform:translateY(-2px); background:var(--panel2)}
+.lesson:hover::before{opacity:1; width:4px}
+.lesson .num{font-family:var(--mono); font-size:34px; font-weight:600; color:var(--line);
+  line-height:1; padding-top:4px; transition:.18s}
+.lesson:hover .num{color:var(--acc)}
+.lesson h3{margin:0 0 6px; font-size:22px; letter-spacing:-.3px}
+.lesson .sub{color:var(--ink-dim); font-size:14.5px; margin:0 0 14px}
+.lesson .covers{display:flex; flex-wrap:wrap; gap:6px}
+.lesson .covers span{font-family:var(--mono); font-size:11px; padding:3px 9px; border-radius:14px;
+  border:1px solid var(--line-soft); background:var(--bg2); color:var(--ink-faint)}
+.lesson .interactive{margin-top:12px; font-size:12.5px; color:var(--grn); font-family:var(--mono)}
+.lesson .interactive::before{content:"\25B8 "; }
+
+/* prereq path */
+.path{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:auto}
+pre.ascii{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.5; padding:20px; margin:0; color:#bcd}
+.ascii .box{color:#3f5468} .ascii .a{color:var(--acc);font-weight:600} .ascii .g{color:var(--gold);font-weight:600}
+.ascii .s{color:var(--grn);font-weight:600} .ascii .v{color:var(--vio);font-weight:600}
+.ascii .cmt{color:#5a6b7a;font-style:italic}
+
+/* glossary */
+.gl-search{width:100%; background:var(--panel); border:1px solid var(--line); color:var(--ink);
+  font-family:var(--mono); font-size:14px; padding:11px 14px; border-radius:9px; margin-bottom:14px}
+.gl-search:focus{outline:none; border-color:var(--acc)}
+.glossary{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.gl{background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:12px 14px}
+.gl .t{font-family:var(--mono); font-size:13px; color:var(--cyn); font-weight:600}
+.gl .d{font-size:13px; color:var(--ink-dim); margin-top:3px}
+.gl-empty{grid-column:1/-1; padding:26px; text-align:center; color:var(--ink-faint); font-size:14px}
+
+/* resources */
+.res{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.rescard{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px}
+.rescard h4{margin:0 0 8px; font-size:15px; font-family:var(--mono); color:var(--gold)}
+.rescard ul{margin:0; padding-left:18px} .rescard li{font-size:13.5px; color:var(--ink-dim); margin:6px 0}
+footer{margin-top:64px; padding-top:22px; border-top:1px solid var(--line-soft);
+  color:var(--ink-faint); font-size:12.5px; font-family:var(--mono); text-align:center}
+@media(max-width:820px){ .stats{grid-template-columns:repeat(2,1fr)} .glossary,.res{grid-template-columns:1fr}
+  h1{font-size:31px} .lesson{grid-template-columns:1fr} .lesson .num{font-size:24px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="index.html">&#8592; HANUMA portal</a>
+    <span>OPEN ISA · OPENPOWER FOUNDATION · LINUX FOUNDATION</span>
+  </div>
+
+  <div class="kick">Foundational Knowledge Track</div>
+  <h1>IBM <span class="hl">Power ISA</span><br>from first principles</h1>
+  <p class="lede">Three interactive lessons covering the history, the architecture and the instruction set of the open, royalty-free RISC architecture behind IBM POWER — with live decoders, explorers and self-checks throughout.</p>
+
+  <div class="badges">
+    <span class="badge">Open-sourced Aug 2019</span>
+    <span class="badge">Royalty-free + patent grant</span>
+    <span class="badge">64-bit RISC</span>
+    <span class="badge">Current spec: v3.1C (2024)</span>
+    <span class="badge">POWER9 / POWER10 · Microwatt · Libre-SOC</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="v">3</div><div class="l">Interactive lessons</div></div>
+    <div class="stat"><div class="v">22</div><div class="l">Self-check questions</div></div>
+    <div class="stat"><div class="v">24</div><div class="l">Interview Q&amp;A</div></div>
+    <div class="stat"><div class="v">8</div><div class="l">Live interactive tools</div></div>
+  </div>
+
+  <h2 class="sec">The lessons</h2>
+  <div class="lessons">
+
+    <a class="lesson" href="powerisa_lesson01_fundamentals.html">
+      <div class="num">01</div>
+      <div>
+        <h3>Fundamentals &amp; History</h3>
+        <p class="sub">What an ISA is and isn’t · the IBM 801 · POWER, PowerPC and Book E · the 2006 reunification · every spec version · what IBM actually open-sourced in 2019 · the Books structure · compliancy subsets.</p>
+        <div class="covers">
+          <span>IBM 801 · John Cocke</span><span>AIM alliance</span><span>v2.03 merge</span>
+          <span>VSX · TM · radix · MMA</span><span>OpenPOWER</span><span>Book I / II / III</span><span>SFS · SFFS · LCS · ACS</span>
+        </div>
+        <div class="interactive">Interactive: clickable 10-stop timeline · Books explorer · 6 self-check questions</div>
+      </div>
+    </a>
+
+    <a class="lesson" href="powerisa_lesson02_architecture.html">
+      <div class="num">02</div>
+      <div>
+        <h3>Architecture Overview</h3>
+        <p class="sub">Every architected register · the VSX overlay · the Condition Register and the Rc bit · the memory model and endianness · weak ordering, barriers and atomics · address translation · instruction encoding formats.</p>
+        <div class="covers">
+          <span>GPR · VSR · FPR · VR · ACC</span><span>CR0–CR7</span><span>XER · LR · CTR · MSR</span>
+          <span>RA|0</span><span>MSB = bit 0</span><span>lwsync</span><span>lwarx/stwcx.</span><span>D / X / XO / XL forms</span>
+        </div>
+        <div class="interactive">Interactive: register explorer · VSX overlay diagram · endianness lab · live 32-bit encoding decoder with 19 presets · 7 self-check questions</div>
+      </div>
+    </a>
+
+    <a class="lesson" href="powerisa_lesson03_instructions.html">
+      <div class="num">03</div>
+      <div>
+        <h3>Instruction Categories</h3>
+        <p class="sub">Fixed-point · rotate-and-mask · load/store naming · simplified mnemonics · floating-point and FMA · VMX, VSX and MMA · branches, BO/BI and CTR loops · system and cache control · v3.1 prefixed instructions · reading a real function.</p>
+        <div class="covers">
+          <span>subf is backwards</span><span>rlwinm</span><span>lwzux</span><span>fmadd</span>
+          <span>vperm · xvf32ger</span><span>bdnz</span><span>blr / bctrl</span><span>dcbz · icbi</span><span>paddi · pld</span>
+        </div>
+        <div class="interactive">Interactive: searchable 172-instruction explorer with category filters · BO/BI branch builder · 9 self-check questions</div>
+      </div>
+    </a>
+
+  </div>
+
+  <h2 class="sec">How the lessons build on each other</h2>
+  <div class="path">
+<pre class="ascii">   <span class="cmt">no prerequisites beyond "you have seen assembly before"</span>
+                  <span class="box">│</span>
+   <span class="a">┌─────────────────▼──────────────────┐</span>
+   <span class="a">│  L1  Fundamentals &amp; History        │</span>  <span class="cmt">why the ISA looks the way it does;</span>
+   <span class="a">│      context, lineage, openness    │</span>  <span class="cmt">which Book answers which question</span>
+   <span class="a">└─────────────────┬──────────────────┘</span>
+                     <span class="box">│</span>  <span class="cmt">you now know what a "compliancy subset" and "Book II" mean</span>
+   <span class="g">┌─────────────────▼──────────────────┐</span>
+   <span class="g">│  L2  Architecture Overview         │</span>  <span class="cmt">the state and the rules:</span>
+   <span class="g">│      registers · memory · encoding │</span>  <span class="cmt">registers, ordering, instruction forms</span>
+   <span class="g">└─────────────────┬──────────────────┘</span>
+                     <span class="box">│</span>  <span class="cmt">you can now read a raw instruction word by hand</span>
+   <span class="v">┌─────────────────▼──────────────────┐</span>
+   <span class="v">│  L3  Instruction Categories        │</span>  <span class="cmt">the vocabulary:</span>
+   <span class="v">│      what each instruction does    │</span>  <span class="cmt">every family, plus real code walkthrough</span>
+   <span class="v">└─────────────────┬──────────────────┘</span>
+                     <span class="box">│</span>
+   <span class="s">natural next steps ▼</span>
+     <span class="cmt">· Book II in depth — the memory model and lock-free programming</span>
+     <span class="cmt">· the ELFv2 ABI (ppc64le) — calling convention, TOC, PLT</span>
+     <span class="cmt">· Microwatt — read a small, complete Power core in VHDL</span>
+     <span class="cmt">· compiler back-ends — how GCC/LLVM select Power instructions</span>
+</pre>
+  </div>
+
+  <h2 class="sec">Quick-reference glossary</h2>
+  <input class="gl-search" id="glSearch" type="text" placeholder="Filter the glossary — try 'VSX', 'barrier', 'CR', 'prefixed'…" spellcheck="false">
+  <div class="glossary" id="glossary"></div>
+
+  <h2 class="sec">Where to go for primary sources</h2>
+  <div class="res">
+    <div class="rescard">
+      <h4>Specifications</h4>
+      <ul>
+        <li><b>Power ISA v3.1</b> (2020) — the POWER10 baseline, adds prefixed instructions and MMA.</li>
+        <li><b>Power ISA v3.0B / 3.0C</b> — the version most open reference cores target.</li>
+        <li><b>v3.1C</b> (2024) — the current errata-corrected release from the OpenPOWER Foundation.</li>
+        <li>Published by the <b>Instruction Set Architecture Technical Working Group</b>, with a public RFC process for changes.</li>
+      </ul>
+    </div>
+    <div class="rescard">
+      <h4>Open implementations to read</h4>
+      <ul>
+        <li><b>Microwatt</b> — a small, readable Power ISA core in VHDL; fits in a modest FPGA.</li>
+        <li><b>A2I / A2O</b> — IBM’s opened server-class softcores.</li>
+        <li><b>Libre-SOC</b> — an open hybrid CPU/GPU/VPU effort built on Power.</li>
+        <li><b>Chiselwatt</b> — the same idea in Chisel, useful for comparison.</li>
+      </ul>
+    </div>
+    <div class="rescard">
+      <h4>Toolchain</h4>
+      <ul>
+        <li><b>GCC / LLVM</b> — both have mature Power back-ends; <code>-mcpu=power9</code> / <code>power10</code>.</li>
+        <li><b>binutils</b> — <code>objdump -d</code> is the fastest way to see real encodings.</li>
+        <li><b>QEMU</b> — full-system <code>ppc64</code> / <code>ppc64le</code> emulation for experimenting.</li>
+        <li><b>gem5</b> — cycle-level modelling if you care about microarchitecture.</li>
+      </ul>
+    </div>
+    <div class="rescard">
+      <h4>Where Power actually runs</h4>
+      <ul>
+        <li><b>IBM Power Systems</b> — POWER9 / POWER10 under AIX, IBM i and Linux.</li>
+        <li><b>Summit</b> (Oak Ridge) and <b>Sierra</b> (Livermore) — POWER9 + NVIDIA Volta supercomputers.</li>
+        <li><b>ppc64le Linux</b> — the little-endian ELFv2 platform most modern software targets.</li>
+        <li><b>Embedded</b> — NXP e-series in automotive and networking; plus a long console legacy.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    Power ISA foundational track · built for the HANUMA architecture portal · content reflects Power ISA v3.1 / v3.1C
+  </footer>
+</div>
+
+<script>
+const GLOSS=[
+ ['ACC','MMA accumulator: 8 × 512-bit registers (v3.1) overlaying VSR0–31, holding a matrix output tile.'],
+ ['AIM','Apple–IBM–Motorola alliance (1991) that produced PowerPC from POWER.'],
+ ['Book I','User instruction set: the instructions and registers an application or compiler sees.'],
+ ['Book II','Virtual environment: the storage model, memory ordering, atomics and cache-management instructions.'],
+ ['Book III','Operating environment: privileged state, interrupts and address translation. Splits into III-S (server) and III-E (embedded).'],
+ ['Book E','The 1999 embedded PowerPC variant with a different privileged model; merged into Power ISA in v2.03.'],
+ ['BO / BI','Branch conditional control fields. BO = how to test (and whether to decrement CTR); BI = which CR bit.'],
+ ['CR','Condition Register: 32 bits split into eight 4-bit fields CR0–CR7, each holding LT, GT, EQ and SO.'],
+ ['CTR','Count Register: hardware loop counter (bdnz/bdz) and indirect branch target (bctr).'],
+ ['D-form','Instruction format with a 16-bit signed displacement or immediate — addi, lwz, ori.'],
+ ['DFP','Decimal floating-point (v2.05): IEEE 754-2008 decimal64/128 for exact decimal arithmetic.'],
+ ['dcbz','Data cache block zero — zeroes a cache block without reading memory. The fast memset(0).'],
+ ['ELFv2','The little-endian ppc64le ABI used by modern Linux on Power.'],
+ ['FMA','Fused multiply-add: (A×C)±B with a single rounding. fmadd and friends.'],
+ ['FPR','Floating-Point Register: 32 × 64-bit, now the high doubleword of VSR0–31.'],
+ ['FPSCR','Floating-Point Status and Control Register: rounding mode plus exception flags and enables.'],
+ ['GPR','General-Purpose Register: 32 × 64-bit integer/address registers.'],
+ ['HPT','Hashed Page Table — the classic Power MMU, alternative to radix.'],
+ ['icbi','Instruction cache block invalidate. Mandatory after writing code, before executing it.'],
+ ['isel','Integer select — a branchless conditional move driven by a CR bit.'],
+ ['isync','Instruction synchronise: discards speculatively fetched instructions; part of an acquire sequence.'],
+ ['LCS','Linux Compliancy Subset — enough of the architecture to run mainstream Linux.'],
+ ['LR','Link Register: holds the return address; written by any branch with LK=1.'],
+ ['lwarx / stwcx.','Load-and-reserve / store-conditional — Power’s atomic primitive pair. No CAS instruction exists.'],
+ ['lwsync','Lightweight barrier: orders load→load, load→store, store→store, but not store→load.'],
+ ['Microwatt','A small open-source Power ISA core written in VHDL, released by IBM.'],
+ ['MMA','Matrix-Multiply Assist (v3.1): outer-product instructions accumulating into 512-bit ACC registers.'],
+ ['MSR','Machine State Register: mode bits including SF (64-bit), PR (user), HV (hypervisor), EE, IR/DR, LE.'],
+ ['OpenPOWER Foundation','The body stewarding Power ISA, hosted by the Linux Foundation since 2019.'],
+ ['Prefixed instruction','A v3.1 64-bit instruction: a prefix word (opcode 1) plus a suffix word. Gives 34-bit displacements and PC-relative addressing.'],
+ ['Radix MMU','The 4-level page-table tree MMU added in v3.0 (POWER9), replacing HPT as the Linux default.'],
+ ['RA|0','Convention where encoding register 0 in a base field means the literal value 0, not GPR0’s contents.'],
+ ['Rc bit','The record bit — the trailing "." on a mnemonic. Updates CR0 (or CR1 for floating-point).'],
+ ['rlwinm','Rotate Left Word Immediate then AND with Mask — the instruction behind slwi, srwi, clrlwi, extlwi.'],
+ ['SFFS','Scalar Fixed-point and Floating-point Subset — a compliancy level suited to small cores.'],
+ ['SPR','Special-Purpose Register — a numbered register space reached only via mtspr/mfspr.'],
+ ['subf','Subtract From: subf RT,RA,RB computes RB − RA. The operand order is reversed.'],
+ ['sync','Full memory barrier (hwsync). The heavy hammer for ordering.'],
+ ['TOC','Table of Contents — the global data pointer held in r2, historically how Power reached globals before PC-relative addressing.'],
+ ['VMX / AltiVec','The original 128-bit SIMD unit from PowerPC: 32 vector registers, integer and single-precision float.'],
+ ['VR','Vector Register: 32 × 128-bit VMX registers, which are exactly VSR32–63.'],
+ ['VSR','Vector-Scalar Register: 64 × 128-bit unified registers introduced by VSX in v2.06.'],
+ ['VSX','Vector-Scalar eXtension (v2.06): unified the FP and vector register files and added double-precision vectors.'],
+ ['XER','Fixed-point exception register: carry (CA), overflow (OV) and sticky summary overflow (SO).'],
+ ['XO-form','Instruction format for three-register arithmetic with an OE bit and 9-bit extended opcode — add, subf, mulld.']
+];
+const glEl=document.getElementById('glossary'), glS=document.getElementById('glSearch');
+function esc(s){return s.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}
+function drawGl(){
+  const q=glS.value.trim().toLowerCase();
+  const rows=GLOSS.filter(g=>!q || g[0].toLowerCase().includes(q) || g[1].toLowerCase().includes(q));
+  glEl.innerHTML = rows.length
+    ? rows.map(g=>'<div class="gl"><div class="t">'+g[0]+'</div><div class="d">'+g[1]+'</div></div>').join('')
+    : '<div class="gl-empty">Nothing matches “'+esc(glS.value)+'”.</div>';
+}
+glS.addEventListener('input',drawGl);
+drawGl();
+</script>
+</body>
+</html>
