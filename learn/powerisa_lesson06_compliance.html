@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power ISA · Lesson 6 — Compliance &amp; Design Flexibility</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="powerisa_shared.css">
+<style>
+/* ---------- subset builder ---------- */
+.builder{border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin:16px 0; background:var(--panel)}
+.bgrid{display:grid; grid-template-columns:1fr 300px}
+.bfeat{padding:16px 18px; border-right:1px solid var(--line)}
+.bfeat .grp{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--ink-faint); margin:16px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line-soft)}
+.bfeat .grp:first-child{margin-top:0}
+.feat{display:flex; align-items:flex-start; gap:10px; padding:7px 9px; border-radius:7px; cursor:pointer; transition:.12s}
+.feat:hover{background:var(--panel2)}
+.feat.locked{opacity:.62; cursor:not-allowed}
+.feat .box{width:15px; height:15px; flex:none; margin-top:3px; border-radius:4px;
+  border:1px solid var(--line); background:var(--bg2); position:relative; transition:.12s}
+.feat.on .box{background:var(--acc); border-color:var(--acc)}
+.feat.on .box::after{content:"✓"; position:absolute; inset:0; color:#0b0f14; font-size:11px;
+  line-height:14px; text-align:center; font-weight:700}
+.feat.locked .box{background:var(--grn); border-color:var(--grn)}
+.feat.locked .box::after{content:"✓"; position:absolute; inset:0; color:#0b0f14; font-size:11px;
+  line-height:14px; text-align:center; font-weight:700}
+.feat .t{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+.feat .d{font-size:12px; color:var(--ink-faint); margin-top:1px}
+.bout{padding:16px 18px; background:var(--bg2)}
+.bout .hdr{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-faint); margin-bottom:10px}
+.lvlrow{display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:8px;
+  border:1px solid var(--line); margin:6px 0; background:var(--panel); transition:.16s}
+.lvlrow.met{border-color:var(--grn); background:rgba(82,210,115,.1)}
+.lvlrow .ic{width:16px; text-align:center; font-family:var(--mono); font-size:13px; color:var(--ink-faint)}
+.lvlrow.met .ic{color:var(--grn)}
+.lvlrow .nm{font-family:var(--mono); font-size:12.5px; color:var(--ink-dim); flex:1}
+.lvlrow.met .nm{color:var(--ink)}
+.lvlrow .miss{font-size:11px; color:var(--ink-faint)}
+.runs{margin-top:16px}
+.runrow{display:flex; align-items:center; gap:9px; font-size:12.5px; margin:6px 0; color:var(--ink-faint)}
+.runrow.yes{color:var(--ink-dim)}
+.runrow .m{font-family:var(--mono); font-size:13px; width:16px; text-align:center}
+.runrow.yes .m{color:var(--grn)} .runrow .m{color:#3f4d5c}
+.bverdict{margin-top:16px; padding:12px 13px; background:var(--panel); border:1px solid var(--line);
+  border-left:3px solid var(--acc); border-radius:8px; font-size:12.5px; color:var(--ink-dim)}
+.bpresets{display:flex; gap:6px; flex-wrap:wrap; padding:12px 18px; border-top:1px solid var(--line); background:var(--bg2)}
+.bpresets button{font-family:var(--mono); font-size:11.5px; background:var(--panel); border:1px solid var(--line);
+  color:var(--ink-dim); padding:6px 12px; border-radius:16px; cursor:pointer; transition:.12s}
+.bpresets button:hover{border-color:var(--acc); color:var(--ink)}
+.bpresets .lbl{font-family:var(--mono); font-size:11px; color:var(--ink-faint); align-self:center; margin-right:4px}
+@media(max-width:880px){ .bgrid{grid-template-columns:1fr} .bfeat{border-right:none; border-bottom:1px solid var(--line)} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">POWER ISA · LESSON 06</div>
+  <h1>Compliance &amp; Design Flexibility</h1>
+  <a href="#problem">The all-or-nothing problem</a>
+  <a href="#model">Base + subset + options</a>
+  <a href="#subsets">The four subsets</a>
+  <a href="#builder">Subset builder</a>
+  <a href="#optional">Optional facilities</a>
+  <a href="#categories">Categories → subsets</a>
+  <a href="#microwatt">Case study: Microwatt</a>
+  <a href="#extend">Extending the ISA</a>
+  <a href="#impl">What is left to the implementer</a>
+  <a href="#tradeoff">The honest trade-off</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="powerisa_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Deep Dives · Lesson 6 of 7</div>
+<h2 class="title">Compliance Levels &amp; Design Flexibility</h2>
+<p class="lede">A 1,300-page specification is not something you implement on a weekend. The compliancy-subset model is what makes an open Power ISA actually buildable — and it is the single most important thing v3.0 added for anyone outside IBM.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Explain why "implement everything" was a barrier and what replaced it.</li>
+    <li>Name the Base architecture, the four compliancy subsets, and what each is aimed at.</li>
+    <li>Decide which subset a given design should target, and what software that unlocks.</li>
+    <li>Distinguish the old <i>category</i> mechanism from the current <i>subset</i> mechanism.</li>
+    <li>Describe how the ISA is changed — the TWG, the RFC process, and the rules for extensions.</li>
+  </ul>
+</div>
+
+<section id="problem">
+  <h3><span class="n">1</span>The all-or-nothing problem</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Old rule: to say "my chip is Power", must build <i>everything</i> — decimal maths, vectors, hypervisor, transactional memory. Small team cannot. So nobody outside IBM built one. New rule: build the mandatory core plus one named tier. Now small team can, and still say "Power" honestly.</p></div>
+
+  <p>Power ISA describes a full server architecture. Taken literally, a compliant implementation would need scalar and vector floating-point, decimal floating-point, 64 VSX registers, transactional memory, a hypervisor mode, two MMU designs, and hundreds of storage-control instructions. For an FPGA softcore or a microcontroller-class part, that is not a high bar — it is an impossible one.</p>
+
+  <p>The result before v3.0 was a fork in practice: everyone building small Power cores implemented "PowerPC-ish" subsets and described compliance informally. That is bad for everyone — software cannot know what it may assume, and vendors cannot make a claim that means anything.</p>
+
+  <p>Version 3.0 fixed this by making partial implementation <b>a first-class, named, testable thing</b>. The question changed from "are you compliant?" to <b>"which subset are you compliant with?"</b> — and that second question has a checkable answer.</p>
+</section>
+
+<section id="model">
+  <h3><span class="n">2</span>The model: Base + one subset + optional features</h3>
+
+  <div class="ascii-wrap"><div class="bar">How compliance is composed</div>
+<pre class="ascii">   <span class="box">┌────────────────────────────────────────────────────────────┐</span>
+   <span class="box">│</span>  <span class="o">OPTIONAL FACILITIES</span>  <span class="cmt">— pick any, in any combination</span>         <span class="box">│</span>
+   <span class="box">│</span>  VSX · MMA · DFP · transactional memory · radix MMU ·      <span class="box">│</span>
+   <span class="box">│</span>  hypervisor · PEF · 128-bit atomics · prefixed instrs      <span class="box">│</span>
+   <span class="box">└────────────────────────────────────────────────────────────┘</span>
+                              <span class="box">▲</span> layered on top of
+   <span class="box">┌────────────────────────────────────────────────────────────┐</span>
+   <span class="box">│</span>  <span class="a">EXACTLY ONE COMPLIANCY SUBSET</span>                            <span class="box">│</span>
+   <span class="box">│</span>  <span class="s">SFS</span> ⊂ <span class="s">SFFS</span> ⊂ <span class="s">LCS</span> ⊂ <span class="s">ACS</span>   <span class="cmt">— increasing surface area</span>      <span class="box">│</span>
+   <span class="box">└────────────────────────────────────────────────────────────┘</span>
+                              <span class="box">▲</span> built on
+   <span class="box">┌────────────────────────────────────────────────────────────┐</span>
+   <span class="box">│</span>  <span class="g">BASE ARCHITECTURE</span>  <span class="cmt">— mandatory for every implementation</span>    <span class="box">│</span>
+   <span class="box">│</span>  32 GPRs · 32-bit fixed instructions · load/store ·         <span class="box">│</span>
+   <span class="box">│</span>  branch &amp; CR model · the storage/ordering model ·           <span class="box">│</span>
+   <span class="box">│</span>  interrupt framework · privilege framework                 <span class="box">│</span>
+   <span class="box">└────────────────────────────────────────────────────────────┘</span>
+</pre></div>
+
+  <p>Three rules make this work:</p>
+  <ul class="tight">
+    <li><b>The Base is non-negotiable.</b> Register model, instruction encoding, memory ordering, the interrupt mechanism. Everything a compiler and an OS assume without asking.</li>
+    <li><b>You claim exactly one subset</b>, and the subsets nest: satisfying ACS implies satisfying LCS, and so on down.</li>
+    <li><b>Optional facilities are all-or-nothing individually.</b> You may omit VSX entirely, but you may not implement "most of" VSX — partial facilities are what fragment an ecosystem.</li>
+  </ul>
+
+  <div class="gotcha"><span class="tag">the important rule</span>
+  <p><b>Omitting a facility is legal; implementing it wrongly or partially is not.</b> This is what keeps the model from degenerating. Software can test for a facility once — via the ELF hardware capability bits on Linux, or the PVR and feature registers — and then rely on it completely. A "90% VSX" implementation would force every library to probe every instruction, which is exactly the failure mode the subset model exists to prevent.</p></div>
+</section>
+
+<section id="subsets">
+  <h3><span class="n">3</span>The four compliancy subsets</h3>
+  <table>
+    <tr><th>Subset</th><th>Roughly means</th><th>Aimed at</th><th>Rough scale</th></tr>
+    <tr><td><code>SFS</code><br><span class="note" style="font-style:normal">Scalar Fixed-point Subset</span></td>
+        <td>Integer scalar core. No floating-point required at all.</td>
+        <td>Deeply embedded controllers, minimal FPGA softcores, sequencers</td>
+        <td>Smallest useful Power core</td></tr>
+    <tr><td><code>SFFS</code><br><span class="note" style="font-style:normal">Scalar Fixed-point + Floating-point Subset</span></td>
+        <td>Adds scalar binary floating-point. Still no vector requirement.</td>
+        <td>Microcontroller-class parts, teaching cores, Microwatt-class designs</td>
+        <td>A capable general-purpose core</td></tr>
+    <tr><td><code>LCS</code><br><span class="note" style="font-style:normal">Linux Compliancy Subset</span></td>
+        <td>Everything a mainstream Linux kernel and userspace actually depend on.</td>
+        <td>Open Linux-capable SoCs, application processors</td>
+        <td>Needs an MMU, full privilege model, atomics</td></tr>
+    <tr><td><code>ACS</code><br><span class="note" style="font-style:normal">AIX Compliancy Subset</span></td>
+        <td>The full server-class surface AIX and IBM i depend on.</td>
+        <td>IBM POWER-class server processors</td>
+        <td>Essentially the whole architecture</td></tr>
+  </table>
+
+  <p>The jump that matters most in practice is <b>SFFS → LCS</b>. That is the boundary between "a core that runs firmware or an RTOS" and "a core that boots Linux". Crossing it means committing to a real MMU, the full interrupt and privilege model, and the atomic primitives the kernel's locking depends on — a substantial engineering step, and the reason most hobby and academic Power cores sit at SFFS.</p>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>SFS = can count. SFFS = can count with decimal point. LCS = can run Linux. ACS = can run the bank. Each tier contains the one below.</p></div>
+</section>
+
+<section id="builder">
+  <h3><span class="n">4</span>Subset builder</h3>
+  <p>Tick what your hypothetical core implements. The Base is mandatory and pre-ticked. The panel tells you the highest subset you satisfy and what that unlocks.</p>
+
+  <div class="builder">
+    <div class="bgrid">
+      <div class="bfeat" id="featList"></div>
+      <div class="bout">
+        <div class="hdr">Compliance reached</div>
+        <div id="lvlList"></div>
+        <div class="runs">
+          <div class="hdr" style="margin-top:16px">What this core could run</div>
+          <div id="runList"></div>
+        </div>
+        <div class="bverdict" id="verdict"></div>
+      </div>
+    </div>
+    <div class="bpresets" id="presets"><span class="lbl">Load a real design:</span></div>
+  </div>
+  <p class="note">This is a teaching model, not the normative checklist. The Power ISA specification defines subsets instruction-by-instruction in its compliancy appendix; the groupings here capture the shape of those requirements, not their exact letter.</p>
+</section>
+
+<section id="optional">
+  <h3><span class="n">5</span>Optional facilities in practice</h3>
+  <p>Above the subset line, facilities are independent choices. Each is discoverable by software, and each has a real cost in area and verification effort.</p>
+
+  <table>
+    <tr><th>Facility</th><th>Since</th><th>Cost to implement</th><th>Why you would</th></tr>
+    <tr><td><b>VMX / AltiVec</b></td><td>v2.03</td><td>32 × 128-bit register file + integer SIMD datapath</td><td>Codecs, crypto, string operations</td></tr>
+    <tr><td><b>VSX</b></td><td>v2.06</td><td>Extends the register file to 64 × 128-bit and unifies with FP</td><td>HPC and any vectorised floating-point work</td></tr>
+    <tr><td><b>MMA</b></td><td>v3.1</td><td>8 × 512-bit accumulators + outer-product engines</td><td>ML inference, dense linear algebra</td></tr>
+    <tr><td><b>DFP</b></td><td>v2.05</td><td>A separate decimal arithmetic datapath — expensive</td><td>Finance, ERP, anything with regulatory decimal semantics</td></tr>
+    <tr><td><b>Transactional memory</b></td><td>v2.07</td><td>Speculative state tracking and rollback — very invasive</td><td>Lock elision in databases and language runtimes</td></tr>
+    <tr><td><b>Radix MMU</b></td><td>v3.0</td><td>A hardware tree walker, plus nested support</td><td>Modern OS expectations, cheap virtualisation</td></tr>
+    <tr><td><b>Hypervisor state</b></td><td>Book III-S</td><td>A third privilege level, HSRR pairs, LPID/LPCR machinery</td><td>Running partitions; unnecessary for a single-OS device</td></tr>
+    <tr><td><b>PEF / ultravisor</b></td><td>v3.0 era</td><td>A fourth privilege level and secure-memory partitioning</td><td>Confidential computing</td></tr>
+    <tr><td><b>Prefixed instructions</b></td><td>v3.1</td><td>Decoder must handle 8-byte instructions and boundary rules</td><td>Cheaper large constants and PC-relative code</td></tr>
+    <tr><td><b>Quadword atomics</b></td><td>v2.07</td><td>128-bit reservation granularity</td><td>Lock-free structures needing double-width CAS</td></tr>
+  </table>
+
+  <h5>How software finds out</h5>
+  <p>On Linux, the kernel publishes a bitmask through the ELF auxiliary vector — <code>AT_HWCAP</code> and <code>AT_HWCAP2</code> — with entries such as <code>PPC_FEATURE_HAS_VSX</code>, <code>PPC_FEATURE2_ARCH_3_00</code> and <code>PPC_FEATURE2_ARCH_3_1</code>. Libraries use IFUNC resolvers to select a VSX or scalar implementation of a function once, at load time, rather than branching per call. Below the OS, the <b><code>PVR</code></b> (Processor Version Register) identifies the implementation, and firmware device-tree properties describe what is present.</p>
+  <p class="note">This is the practical payoff of "all-or-nothing per facility": <code>glibc</code> can bind <code>memcpy</code> to a VSX variant once and never check again.</p>
+</section>
+
+<section id="categories">
+  <h3><span class="n">6</span>From categories to subsets — the history</h3>
+  <p>The subset model was not the first attempt. Versions 2.03 through 2.07 used <b>categories</b>, a legacy of the 2006 merge: the spec was tagged so that <i>Server</i>, <i>Embedded</i>, <i>Vector</i>, <i>VSX</i>, <i>Floating-Point</i> and others could be included or excluded, and an implementation declared which categories it supported.</p>
+
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-gold"></span>Categories (v2.03–v2.07)</h6><p>Orthogonal, fine-grained tags scattered through the document. Flexible in principle — but the combinations were effectively unbounded, so "which categories?" produced a long answer that software could not reason about simply.</p></div>
+    <div class="card"><h6><span class="dot b-grn"></span>Subsets (v3.0 onward)</h6><p>A small number of named, nested, <b>ordered</b> tiers, plus independent optional facilities. "Which subset?" has four possible answers, and each one implies a concrete set of guarantees.</p></div>
+  </div>
+
+  <p>The design lesson is worth stating plainly, because it generalises well beyond Power: <b>fine-grained configurability produces a combinatorial explosion that nobody can target.</b> A small number of named tiers, each meaning something concrete to software, is far more useful than an arbitrary feature matrix — even though it is strictly less expressive. The category mechanism has not vanished from the document, but subsets are the mechanism that actually gets used.</p>
+</section>
+
+<section id="microwatt">
+  <h3><span class="n">7</span>Case study: Microwatt</h3>
+  <p>Microwatt is IBM's open-source Power ISA core, written in VHDL and released alongside the 2019 open-sourcing. It exists precisely to demonstrate that the subset model works.</p>
+
+  <div class="ascii-wrap"><div class="bar">Roughly what a small open Power core looks like</div>
+<pre class="ascii">   <span class="s">IMPLEMENTED</span>                          <span class="o">OMITTED</span>
+   <span class="box">├─</span> 64-bit Base architecture           <span class="box">├─</span> VMX / VSX vector units
+   <span class="box">├─</span> 32 GPRs, full fixed-point set      <span class="box">├─</span> MMA
+   <span class="box">├─</span> scalar floating-point              <span class="box">├─</span> decimal floating-point
+   <span class="box">├─</span> branch / CR / CTR / LR model       <span class="box">├─</span> transactional memory
+   <span class="box">├─</span> load/store incl. atomics           <span class="box">├─</span> hypervisor state
+   <span class="box">├─</span> interrupts and privilege           <span class="box">└─</span> most storage-control instructions
+   <span class="box">└─</span> an MMU sufficient to boot Linux
+
+   <span class="cmt">Result: a legitimately Power-compliant core, small enough to fit a modest</span>
+   <span class="cmt">FPGA, that boots real software — without implementing a server architecture.</span>
+</pre></div>
+
+  <p>Two things about Microwatt are instructive beyond the core itself:</p>
+  <ul class="tight">
+    <li><b>It is readable.</b> A few thousand lines of VHDL implementing a real ISA is a genuinely good way to learn processor design — far more approachable than any commercial RTL.</li>
+    <li><b>It proves the licensing claim.</b> A core that anyone can build, extend and ship without an architecture licence is the concrete demonstration that "open" means something here.</li>
+  </ul>
+  <p class="note">The family also includes Chiselwatt (the same idea in Chisel) and IBM's larger opened A2I and A2O server cores, which sit much higher up the subset ladder.</p>
+</section>
+
+<section id="extend">
+  <h3><span class="n">8</span>Extending the ISA — and how not to</h3>
+  <p>Open does not mean unconstrained. If everyone adds instructions in whatever encoding space they like, the ecosystem forks and the openness becomes worthless.</p>
+
+  <h5>The governance path</h5>
+  <div class="ascii-wrap"><div class="bar">How the specification actually changes</div>
+<pre class="ascii">   idea
+     <span class="box">│</span>
+     <span class="box">▼</span>
+   <span class="a">RFC</span> <span class="cmt">— a Request for Change, submitted to the</span>
+        <span class="cmt">Instruction Set Architecture Technical Working Group (TWG).</span>
+        <span class="cmt">Members submit directly; non-members via a public path.</span>
+     <span class="box">│</span>
+     <span class="box">▼</span>
+   <span class="g">TWG review</span> <span class="cmt">— encoding space, software impact, verification burden,</span>
+                <span class="cmt">interaction with existing facilities and subsets.</span>
+     <span class="box">│</span>
+     <span class="box">▼</span>
+   <span class="s">accepted into a future revision</span> <span class="cmt">(e.g. v3.1B → v3.1C)</span>
+        <span class="cmt">— under OpenPOWER Foundation / Linux Foundation stewardship.</span>
+</pre></div>
+
+  <h5>The encoding-space constraint</h5>
+  <p>This is where Power differs sharply from RISC-V, and it is an honest weakness. RISC-V reserved <i>custom</i> opcode space from day one, so a vendor extension has a defined home that will never collide with a future standard extension. Power's 32-bit encoding has been filled in over thirty years — primary opcode 31 alone carries hundreds of extended opcodes — so there is far less free space, and adding instructions requires care and coordination rather than a private corner.</p>
+
+  <ul class="tight">
+    <li>Unallocated encodings are <b>reserved</b>, not free: an implementation should treat them as illegal (raising a Program interrupt), because a future revision may define them.</li>
+    <li>v3.1's prefixed encoding did open genuine new space — an 8-byte instruction has room that a 4-byte one does not — which is part of why it matters strategically, not just for 34-bit displacements.</li>
+    <li>The practical guidance for anyone extending Power is to go through the RFC process rather than squatting on encodings, precisely because the alternative is a fork nobody's toolchain supports.</li>
+  </ul>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Spec is shared village map. Anyone may propose new building — but must ask council, or two people build on same plot and both houses fall. RISC-V left empty field for private huts. Power's land mostly used already, so must ask.</p></div>
+</section>
+
+<section id="impl">
+  <h3><span class="n">9</span>What the ISA deliberately leaves to the implementer</h3>
+  <p>Subsets are about which <i>architecture</i> you implement. Separately, the architecture leaves an enormous amount to the microarchitect — this is the Lesson 1 point, made concrete.</p>
+
+  <table>
+    <tr><th>Free choice</th><th>Real-world spread</th></tr>
+    <tr><td>Pipeline depth, issue width, execution order</td><td>Microwatt is a simple in-order pipeline; POWER10 is a wide out-of-order superscalar</td></tr>
+    <tr><td>SMT degree</td><td>None, SMT2, SMT4 or SMT8 — POWER9 shipped SMT4 and SMT8 core variants of the same architecture</td></tr>
+    <tr><td>Cache sizes, associativity, hierarchy depth</td><td>A softcore may have a few KB; POWER10 has ~120 MB of shared L3</td></tr>
+    <tr><td>Cache line size</td><td>Architecturally discoverable, not fixed — though 128 bytes is the modern Power norm</td></tr>
+    <tr><td>Branch prediction, prefetchers</td><td>Entirely implementation-defined; Power exposes <code>DSCR</code> so software can steer prefetch</td></tr>
+    <tr><td>Which page sizes are supported</td><td>4 KB, 64 KB, 2 MB, 1 GB — an implementation need not offer all</td></tr>
+    <tr><td>Endianness support</td><td>Bi-endian is architected, but an implementation may support only one mode</td></tr>
+    <tr><td>Interrupt latency, timing of anything</td><td>The ISA specifies <i>what</i> happens, never <i>when</i></td></tr>
+  </table>
+
+  <p>Two related ideas that are easy to conflate but must not be:</p>
+  <ul class="tight">
+    <li><b>Subsets</b> change what software may <i>assume exists</i>. Getting this wrong means an illegal-instruction trap.</li>
+    <li><b>Microarchitecture</b> changes how fast software runs. Getting this wrong means a slow program, not a broken one.</li>
+  </ul>
+</section>
+
+<section id="tradeoff">
+  <h3><span class="n">10</span>The honest trade-off</h3>
+  <p>Subsets solve a real problem, and they create a real one. It is worth being able to argue both sides.</p>
+
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-grn"></span>What it buys</h6><p>Small implementations become possible and legitimate. Vendors can make a compliance claim that is testable. Software gets a small number of tiers to target rather than an unbounded feature matrix. The open-source promise becomes actionable rather than theoretical.</p></div>
+    <div class="card"><h6><span class="dot b-gold"></span>What it costs</h6><p>"Power ISA" no longer names one thing. A binary built for a POWER10 will not run on an SFFS core. Distributions must pick a baseline — which is why <code>ppc64le</code> Linux effectively targets POWER8 or POWER9 as a floor, and why the useful question is always "which subset, which optional facilities, which ISA version?"</p></div>
+  </div>
+
+  <p>Every configurable ISA faces this, and each answers it differently: Arm ships profiles (A/R/M) and architecture versions; RISC-V ships an extension-letter soup plus curated profiles (RVA23 and similar) precisely because the soup proved unmanageable. Power's four ordered tiers are on the conservative end of that spectrum — less expressive, harder to fragment.</p>
+
+  <div class="gotcha"><span class="tag">practical consequence</span>
+  <p>When someone says "it runs on Power", that is not yet a complete statement. The complete statement names the <b>ISA version</b> (v3.0? v3.1?), the <b>subset</b>, and the <b>optional facilities</b> assumed — and for distribution binaries, the <b>baseline</b> the toolchain targeted. Getting this wrong is how you ship a binary that dies with an illegal-instruction trap on a customer's older machine.</p></div>
+</section>
+
+<section id="check">
+  <h3><span class="n">11</span>Self-check</h3>
+  <div class="quiz" data-correct="1" data-fb="Compliance is Base architecture + exactly one compliancy subset + any optional facilities you choose.">
+    <div class="q">1. How is compliance composed in Power ISA v3.0+?</div>
+    <button class="opt">Any combination of instructions the vendor documents.</button>
+    <button class="opt">Base architecture + exactly one subset + optional facilities.</button>
+    <button class="opt">The whole specification, or nothing.</button>
+    <button class="opt">One category per Book.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="SFFS adds scalar floating-point to the integer-only SFS, but requires no vector unit.">
+    <div class="q">2. What does SFFS add over SFS?</div>
+    <button class="opt">Vector instructions.</button>
+    <button class="opt">Hypervisor state.</button>
+    <button class="opt">Scalar floating-point.</button>
+    <button class="opt">Decimal floating-point.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Partial facilities are what fragment an ecosystem — software must be able to test once and then rely on the whole facility.">
+    <div class="q">3. May an implementation provide "most of" VSX?</div>
+    <button class="opt">No — optional facilities are all-or-nothing individually.</button>
+    <button class="opt">Yes, as long as it documents which parts.</button>
+    <button class="opt">Yes, if it targets LCS or above.</button>
+    <button class="opt">Only with an IBM licence.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="LCS is the boundary at which a core can boot mainstream Linux — it requires a real MMU, the full privilege and interrupt model, and the atomics the kernel depends on.">
+    <div class="q">4. You are building an SoC that must boot mainstream Linux. Minimum subset?</div>
+    <button class="opt">SFS</button>
+    <button class="opt">SFFS</button>
+    <button class="opt">ACS</button>
+    <button class="opt">LCS</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="Categories (v2.03–v2.07) were fine-grained orthogonal tags; v3.0 replaced them with a small number of nested, ordered subsets that software can actually target.">
+    <div class="q">5. What replaced the older "category" mechanism, and why?</div>
+    <button class="opt">Nothing — categories are still the primary mechanism.</button>
+    <button class="opt">Nested ordered subsets, because unbounded category combinations were untargetable.</button>
+    <button class="opt">Per-instruction licensing.</button>
+    <button class="opt">The PVR register.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="Unallocated encodings are reserved for future revisions, so an implementation should treat them as illegal and raise a Program interrupt.">
+    <div class="q">6. What should an implementation do with an unallocated opcode?</div>
+    <button class="opt">Treat it as a no-op.</button>
+    <button class="opt">Use it for a vendor extension — it is free space.</button>
+    <button class="opt">Treat it as illegal and raise a Program interrupt; it is reserved.</button>
+    <button class="opt">Trap to the hypervisor.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Linux exposes facility presence through AT_HWCAP/AT_HWCAP2 in the ELF auxiliary vector, and libraries bind with IFUNC resolvers at load time.">
+    <div class="q">7. How does a Linux userspace library discover whether VSX is present?</div>
+    <button class="opt"><code>AT_HWCAP</code> / <code>AT_HWCAP2</code> from the ELF auxiliary vector.</button>
+    <button class="opt">By executing a VSX instruction and catching the trap.</button>
+    <button class="opt">By reading the PVR directly from userspace.</button>
+    <button class="opt">It cannot — VSX is mandatory.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="RISC-V reserved custom opcode space from the start; Power's 32-bit space was largely allocated over three decades, so extensions must go through the TWG's RFC process.">
+    <div class="q">8. Why is adding custom instructions harder on Power than on RISC-V?</div>
+    <button class="opt">Power forbids extensions entirely.</button>
+    <button class="opt">Extensions require an IBM licence fee.</button>
+    <button class="opt">Power instructions are variable length.</button>
+    <button class="opt">Power's encoding space is largely allocated and has no reserved custom region.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">12</span>Interview Q&amp;A</h3>
+  <details><summary>Explain Power's compliancy-subset model.</summary><div class="ans">From v3.0, an implementation must provide the Base architecture — the register model, 32-bit fixed encoding, load/store and branch semantics, the storage and ordering model, and the interrupt and privilege framework — plus exactly one named compliancy subset, plus any optional facilities it chooses. The subsets nest in order: SFS is integer-only, SFFS adds scalar floating-point, LCS is what mainstream Linux needs, and ACS is the full server surface AIX depends on. Optional facilities like VSX, MMA, DFP, transactional memory and the hypervisor sit above that and are individually all-or-nothing.</div></details>
+  <details><summary>Why was this added, and why does it matter for open hardware?</summary><div class="ans">Because "implement the whole specification" is an impossible bar for anything smaller than a server processor, so partial implementations existed anyway but had no way to make a meaningful compliance claim. Naming and ordering the tiers turns "are you compliant?" — which had one honest answer, no — into "which subset?", which has four answers a vendor can claim and a test suite can check. Without it, open-sourcing the ISA in 2019 would have been a gesture: nobody outside IBM could have built something and legitimately called it Power.</div></details>
+  <details><summary>Which subset would you target for a new design, and why?</summary><div class="ans">It follows from the software. If the part runs firmware or an RTOS and never needs floating point, SFS keeps it as small as possible. Add scalar FP and you are at SFFS, which is where most FPGA softcores and teaching cores sit — Microwatt-class. The moment the product needs to boot mainstream Linux, you are committing to LCS, which means a real MMU, the full privilege and interrupt model, and the atomic primitives the kernel's locking depends on — a significant step up in verification effort. ACS is really only for server processors intended to run AIX or IBM i.</div></details>
+  <details><summary>Why must optional facilities be all-or-nothing?</summary><div class="ans">So software can test once and then rely on it. On Linux a library checks <code>AT_HWCAP2</code> at load time and binds, say, <code>memcpy</code> to a VSX implementation through an IFUNC resolver — one check, then full confidence. If implementations could ship 90% of VSX, every library would have to probe individual instructions or defensively avoid the facility, which destroys the value of having it. Omitting a facility entirely is clean; implementing it partially fragments the ecosystem.</div></details>
+  <details><summary>How do you change the Power ISA?</summary><div class="ans">Through an RFC — a Request for Change — to the Instruction Set Architecture Technical Working Group under the OpenPOWER Foundation, which is itself hosted by the Linux Foundation. Members submit directly and there is a public path for non-members. The TWG reviews encoding-space impact, software and toolchain consequences, verification burden, and interaction with existing facilities and subsets, and accepted changes land in a future revision. That governance is the difference between an open specification and an abandoned one.</div></details>
+  <details><summary>What are the downsides of the subset model?</summary><div class="ans">"Power ISA" stops naming a single target. A binary compiled for POWER10 with MMA and prefixed instructions will not run on an SFFS core, so distributions must choose and publish a baseline — which is why ppc64le Linux effectively floors at POWER8/POWER9. The complete description of a target is version plus subset plus optional facilities, and getting it wrong ships binaries that die with illegal-instruction traps on older machines. Every configurable ISA has this problem; Power's four ordered tiers are a conservative answer compared with RISC-V's extension matrix.</div></details>
+  <details><summary>What does the ISA leave to the implementer, as distinct from the subset choice?</summary><div class="ans">Everything about how it goes fast. Pipeline depth and width, in-order versus out-of-order, SMT degree — POWER9 shipped SMT4 and SMT8 variants of the same architecture — cache sizes, associativity and hierarchy depth, branch predictors and prefetchers, and which of the supported page sizes are actually implemented. The distinction that matters: a subset mismatch means an illegal-instruction trap, a microarchitecture difference means a slower program. One is a correctness boundary, the other a performance one.</div></details>
+  <details><summary>Compare Power's approach to configurability with Arm's and RISC-V's.</summary><div class="ans">Arm ships profiles — A for application, R for real-time, M for microcontroller — plus numbered architecture versions with mandated features per version, and controls the whole thing centrally. RISC-V started maximally granular with per-extension letters, discovered that the combinatorial space was untargetable, and layered curated profiles on top. Power sits in between and on the conservative end: four ordered, nested tiers plus a modest set of independent optional facilities. Less expressive than RISC-V, harder to fragment, and easier for software to reason about than a feature matrix.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">13</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>Compliance = <b>Base + exactly one subset + optional facilities</b> (v3.0 onward).</li>
+    <li>Subsets nest: <b>SFS ⊂ SFFS ⊂ LCS ⊂ ACS</b>. The decisive step is <b>SFFS → LCS</b>, i.e. "can boot Linux".</li>
+    <li>Optional facilities (VSX, MMA, DFP, TM, radix, hypervisor, PEF, prefixed) are <b>all-or-nothing individually</b>.</li>
+    <li>Software discovers facilities via <b><code>AT_HWCAP</code>/<code>AT_HWCAP2</code></b> and binds once with IFUNC; <b>PVR</b> identifies the implementation.</li>
+    <li><b>Categories</b> (v2.03–2.07) were replaced by subsets because unbounded combinations are untargetable.</li>
+    <li><b>Microwatt</b> is the proof case: SFFS-class, boots Linux, fits a modest FPGA, no architecture licence.</li>
+    <li>Unallocated encodings are <b>reserved, not free</b>; extensions go through the <b>TWG RFC process</b>.</li>
+    <li>Microarchitecture — pipeline, SMT, caches, predictors — remains entirely the implementer's choice.</li>
+  </ul>
+  <div class="chips"><span class="chip">Base architecture</span><span class="chip">SFS</span><span class="chip">SFFS</span><span class="chip">LCS</span><span class="chip">ACS</span><span class="chip">optional facility</span><span class="chip">AT_HWCAP2</span><span class="chip">IFUNC</span><span class="chip">PVR</span><span class="chip">categories</span><span class="chip">Microwatt</span><span class="chip">ISA TWG</span><span class="chip">RFC</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="powerisa_lesson05_features.html">&#9668; L5 · Key features</a>
+  <a href="powerisa_lesson07_comparison.html">L7 · Power vs x86 vs Arm &#9658;</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L7): the comparison everyone actually asks for — how Power stacks up against x86 and Arm on encoding, registers, memory ordering, virtualisation and licensing.</p>
+</main>
+</div>
+
+<script>
+/* ---------- scroll-spy + quizzes ---------- */
+const links=[...document.querySelectorAll('nav.side a')].filter(a=>a.getAttribute('href').startsWith('#'));
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite — the highlighted option is right. '+fbt);
+  }));
+});
+
+/* ---------- subset builder ---------- */
+const FEATURES=[
+ {g:'Base architecture (mandatory)', items:[
+   {k:'base', t:'Base', d:'32 GPRs · 32-bit fixed encoding · load/store · branch &amp; CR model · storage and ordering model · interrupt and privilege framework', locked:true}]},
+ {g:'Core facilities', items:[
+   {k:'fpu',   t:'Scalar floating-point', d:'FPRs, fadd/fmul/fmadd, FPSCR. The step from SFS to SFFS.'},
+   {k:'mmu',   t:'MMU with translation', d:'EA→VA→RA, page tables, TLB. Without this you cannot run a protected OS.'},
+   {k:'priv',  t:'Full privilege &amp; interrupt model', d:'Problem/privileged states, SRR0/SRR1, rfid, the whole vector table.'},
+   {k:'atomic',t:'Atomics &amp; barriers', d:'lwarx/stwcx., sync, lwsync, isync. Kernel locking depends on these.'},
+   {k:'timer', t:'Timebase &amp; decrementer', d:'The scheduler tick and a monotonic clock.'}]},
+ {g:'Optional facilities', items:[
+   {k:'vmx',   t:'VMX / AltiVec', d:'32 × 128-bit vector registers, integer SIMD, vperm.'},
+   {k:'vsx',   t:'VSX', d:'64 × 128-bit VSRs, vector double-precision. Implies the VMX register view.'},
+   {k:'mma',   t:'MMA', d:'8 × 512-bit accumulators, outer-product instructions (v3.1).'},
+   {k:'dfp',   t:'Decimal floating-point', d:'IEEE 754-2008 decimal64/128 in hardware (v2.05).'},
+   {k:'tm',    t:'Transactional memory', d:'Speculative state with rollback (v2.07). Very invasive to implement.'},
+   {k:'radix', t:'Radix MMU', d:'4-level tree walk plus nested translation (v3.0).'},
+   {k:'hyp',   t:'Hypervisor state', d:'MSR[HV], HSRR pairs, LPID/LPCR/PTCR — the partitioning machinery.'},
+   {k:'pref',  t:'Prefixed instructions', d:'8-byte instructions, 34-bit displacements, PC-relative (v3.1).'},
+   {k:'pef',   t:'PEF / ultravisor', d:'A fourth privilege level and secure memory for confidential computing.'}]}
+];
+const LEVELS=[
+ {k:'SFS',  n:'SFS — Scalar Fixed-point',        req:['base']},
+ {k:'SFFS', n:'SFFS — + Floating-point',         req:['base','fpu']},
+ {k:'LCS',  n:'LCS — Linux Compliancy',          req:['base','fpu','mmu','priv','atomic','timer']},
+ {k:'ACS',  n:'ACS — AIX Compliancy',            req:['base','fpu','mmu','priv','atomic','timer','vmx','vsx','dfp','hyp']}
+];
+const RUNS=[
+ {n:'Bare-metal firmware / bootloader', need:['base']},
+ {n:'An RTOS or bare-metal control loop', need:['base','timer']},
+ {n:'Numeric / DSP code without vectors', need:['base','fpu']},
+ {n:'A protected multi-process OS', need:['base','mmu','priv','atomic','timer']},
+ {n:'Mainstream Linux (ppc64le userspace)', need:['base','fpu','mmu','priv','atomic','timer']},
+ {n:'Vectorised libraries (OpenBLAS, glibc VSX paths)', need:['base','fpu','vsx']},
+ {n:'ML inference using MMA intrinsics', need:['base','fpu','vsx','mma']},
+ {n:'Financial software needing exact decimal', need:['base','fpu','dfp']},
+ {n:'KVM / PowerVM partitions', need:['base','fpu','mmu','priv','atomic','timer','hyp']},
+ {n:'Confidential computing (Secure VMs)', need:['base','fpu','mmu','priv','atomic','timer','hyp','pef']}
+];
+const PRESETS=[
+ {n:'Microwatt', s:['base','fpu','mmu','priv','atomic','timer']},
+ {n:'Tiny embedded core', s:['base','timer']},
+ {n:'POWER9-class', s:['base','fpu','mmu','priv','atomic','timer','vmx','vsx','dfp','tm','radix','hyp','pef']},
+ {n:'POWER10-class', s:['base','fpu','mmu','priv','atomic','timer','vmx','vsx','mma','dfp','radix','hyp','pref','pef']},
+ {n:'Clear all', s:['base']}
+];
+let sel=new Set(['base']);
+const flEl=document.getElementById('featList'), lvEl=document.getElementById('lvlList'),
+      rnEl=document.getElementById('runList'), vdEl=document.getElementById('verdict'),
+      psEl=document.getElementById('presets');
+FEATURES.forEach(g=>{
+  const h=document.createElement('div'); h.className='grp'; h.textContent=g.g; flEl.appendChild(h);
+  g.items.forEach(it=>{
+    const d=document.createElement('div');
+    d.className='feat'+(it.locked?' locked':''); d.dataset.k=it.k;
+    d.innerHTML='<div class="box"></div><div><div class="t">'+it.t+'</div><div class="d">'+it.d+'</div></div>';
+    if(!it.locked) d.addEventListener('click',()=>{
+      if(sel.has(it.k)) sel.delete(it.k); else sel.add(it.k);
+      if(it.k==='vsx'&&sel.has('vsx')) sel.add('vmx');       /* VSX implies the VMX view */
+      if(it.k==='vmx'&&!sel.has('vmx')){ sel.delete('vsx'); sel.delete('mma'); }
+      if(it.k==='mma'&&sel.has('mma')){ sel.add('vsx'); sel.add('vmx'); }
+      if(it.k==='pef'&&sel.has('pef')) sel.add('hyp');       /* ultravisor sits above the hypervisor */
+      if(it.k==='hyp'&&!sel.has('hyp')) sel.delete('pef');
+      bDraw();
+    });
+    flEl.appendChild(d);
+  });
+});
+PRESETS.forEach(p=>{
+  const b=document.createElement('button'); b.textContent=p.n;
+  b.addEventListener('click',()=>{sel=new Set(p.s); bDraw();});
+  psEl.appendChild(b);
+});
+const NAMEOF={};
+FEATURES.forEach(g=>g.items.forEach(i=>NAMEOF[i.k]=i.t));
+function bDraw(){
+  flEl.querySelectorAll('.feat').forEach(d=>{
+    if(!d.classList.contains('locked')) d.classList.toggle('on', sel.has(d.dataset.k));
+  });
+  let top=null;
+  lvEl.innerHTML=LEVELS.map(l=>{
+    const missing=l.req.filter(r=>!sel.has(r));
+    const met=missing.length===0; if(met) top=l;
+    return '<div class="lvlrow'+(met?' met':'')+'"><span class="ic">'+(met?'✓':'○')+'</span>'+
+      '<span class="nm">'+l.n+'</span>'+
+      (met?'':'<span class="miss">needs '+missing.map(m=>NAMEOF[m]).join(', ')+'</span>')+'</div>';
+  }).join('');
+  rnEl.innerHTML=RUNS.map(r=>{
+    const ok=r.need.every(n=>sel.has(n));
+    return '<div class="runrow'+(ok?' yes':'')+'"><span class="m">'+(ok?'✓':'✗')+'</span>'+r.n+'</div>';
+  }).join('');
+  const opt=[...sel].filter(k=>!['base','fpu','mmu','priv','atomic','timer'].includes(k));
+  vdEl.innerHTML = top
+    ? '<b style="color:var(--ink)">Compliant at '+top.k+'</b>'+
+      (opt.length? ', with optional facilities: '+opt.map(k=>NAMEOF[k]).join(', ')+'.' : ', with no optional facilities.')+
+      (top.k==='SFFS' ? ' <span style="color:var(--ink-faint)">Add an MMU, the full privilege model, atomics and a timebase to reach LCS and boot Linux.</span>' : '')+
+      (top.k==='SFS'  ? ' <span style="color:var(--ink-faint)">Add scalar floating-point to reach SFFS.</span>' : '')
+    : 'Not compliant with any subset — the Base architecture is mandatory.';
+}
+bDraw();
+</script>
+</body>
+</html>

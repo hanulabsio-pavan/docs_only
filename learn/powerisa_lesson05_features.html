@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power ISA · Lesson 5 — Key Features</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="powerisa_shared.css">
+<style>
+/* ---------- FMA lab ---------- */
+.lab{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:16px 0}
+.lab .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
+.lab select,.lab input{background:var(--bg2); border:1px solid var(--line); color:var(--ink);
+  font-family:var(--mono); font-size:13px; padding:7px 11px; border-radius:7px}
+.lab input{width:190px; color:var(--cyn)}
+.lab select:focus,.lab input:focus{outline:none; border-color:var(--acc)}
+.fmagrid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.fmabox{background:var(--bg2); border:1px solid var(--line); border-radius:9px; padding:14px 16px}
+.fmabox.sep{border-left:3px solid var(--warn)} .fmabox.fus{border-left:3px solid var(--grn)}
+.fmabox .h{font-family:var(--mono); font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:var(--ink-faint)}
+.fmabox .v{font-family:var(--mono); font-size:17px; margin-top:8px; word-break:break-all}
+.fmabox.sep .v{color:var(--warn)} .fmabox.fus .v{color:var(--grn)}
+.fmabox .steps{font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); margin-top:10px; line-height:1.7}
+.fmaverdict{margin-top:12px; padding:12px 14px; background:var(--bg2); border:1px solid var(--line);
+  border-left:3px solid var(--acc); border-radius:8px; font-size:13.5px; color:var(--ink-dim)}
+
+/* ---------- vector lane visualiser ---------- */
+.vlab{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:16px 0}
+.vctl{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:6px}
+.vctl .lbl{font-size:12.5px; color:var(--ink-faint); font-family:var(--mono)}
+.vctl button{font-family:var(--mono); font-size:11.5px; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink-dim); padding:6px 12px; border-radius:16px; cursor:pointer; transition:.12s}
+.vctl button:hover{color:var(--ink); border-color:var(--acc)}
+.vctl button.on{background:var(--acc); border-color:var(--acc); color:#0b0f14; font-weight:600}
+.vreg{margin:14px 0 0}
+.vrow{display:flex; align-items:center; gap:10px; margin:8px 0}
+.vrow .rn{width:74px; flex:none; text-align:right; font-family:var(--mono); font-size:12px; color:var(--ink-faint)}
+.vlanes{flex:1; display:flex; gap:2px}
+.vlane{flex:1; background:var(--bg2); border:1px solid var(--line-soft); border-radius:5px;
+  font-family:var(--mono); font-size:11px; text-align:center; padding:8px 2px; overflow:hidden;
+  white-space:nowrap; transition:.15s}
+.vlane.res{background:rgba(79,163,255,.12); border-color:rgba(79,163,255,.5); color:var(--acc)}
+.vlane.sat{background:rgba(255,122,122,.16); border-color:var(--warn); color:var(--warn)}
+.vlane.wrap{background:rgba(245,185,66,.14); border-color:var(--gold); color:var(--gold)}
+.vnote{font-size:12.5px; color:var(--ink-dim); margin-top:12px; padding:11px 13px;
+  background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--vio); border-radius:8px}
+
+/* ---------- latency ladder chart ---------- */
+.chartcard{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px 14px; margin:16px 0}
+.chartcard .ct{font-size:15px; font-weight:600; margin:0}
+.chartcard .cs{font-size:12.5px; color:var(--ink-faint); margin:3px 0 0}
+.chartcard .ctop{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap}
+.viewtog{display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; flex:none}
+.viewtog button{background:var(--bg2); border:none; color:var(--ink-faint); font-family:var(--mono);
+  font-size:11.5px; padding:6px 12px; cursor:pointer}
+.viewtog button.on{background:var(--panel2); color:var(--ink)}
+.plot{margin-top:18px; position:relative}
+.gridline{position:absolute; top:0; bottom:26px; width:1px; background:var(--line-soft)}
+.gridlab{position:absolute; bottom:6px; font-family:var(--mono); font-size:10px; color:var(--ink-faint); transform:translateX(-50%)}
+.brow{display:grid; grid-template-columns:126px 1fr; gap:12px; align-items:center; margin-bottom:2px; position:relative; z-index:2}
+.brow .bl{font-size:12.5px; color:var(--ink-dim); text-align:right; font-family:var(--mono)}
+.btrack{position:relative; height:26px; display:flex; align-items:center}
+.bfill{height:14px; border-radius:0 4px 4px 0; transition:.2s; cursor:pointer}
+.bval{position:absolute; font-family:var(--mono); font-size:12px; color:var(--ink); white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.xband{height:26px; position:relative; margin-left:138px}
+.tip{position:fixed; pointer-events:none; z-index:60; background:#0a0e13; border:1px solid var(--line);
+  border-radius:8px; padding:9px 12px; font-size:12.5px; color:var(--ink-dim); max-width:280px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5); opacity:0; transition:opacity .12s}
+.tip.on{opacity:1}
+.tip .tt{font-family:var(--mono); font-size:12.5px; color:var(--ink); font-weight:600; display:block; margin-bottom:4px}
+.tbl-view{display:none} .tbl-view.on{display:block}
+.plot-view.off{display:none}
+@media(max-width:880px){ .fmagrid{grid-template-columns:1fr} .brow{grid-template-columns:96px 1fr}
+  .xband{margin-left:108px} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">POWER ISA · LESSON 05</div>
+  <h1>Key Features</h1>
+  <a href="#fp">Floating-point</a>
+  <a href="#fma">FMA precision lab</a>
+  <a href="#dfp">Decimal &amp; IEEE-128</a>
+  <a href="#simd">SIMD data model</a>
+  <a href="#vlab">Vector lane lab</a>
+  <a href="#mma">MMA in practice</a>
+  <a href="#hier">Memory hierarchy</a>
+  <a href="#ladder">Latency ladder</a>
+  <a href="#tlb">TLB, ERAT &amp; prefetch</a>
+  <a href="#bandwidth">Bandwidth &amp; OMI</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="powerisa_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Deep Dives · Lesson 5 of 7</div>
+<h2 class="title">Key Features</h2>
+<p class="lede">The three subsystems that give Power its performance character: a floating-point unit built for science, a SIMD stack layered three generations deep, and a memory hierarchy designed around very large shared caches.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Explain exactly why a fused multiply-add is more accurate than a multiply then an add — and demonstrate a case where the answers differ.</li>
+    <li>Lay out a 128-bit vector register in any element width and predict modulo vs saturating results.</li>
+    <li>Say what MMA actually buys over ordinary SIMD FMA, in terms of operand bandwidth.</li>
+    <li>Describe the POWER9/POWER10 cache hierarchy and reason about where a working set lands.</li>
+    <li>Explain the ERAT, the TLB, and what <code>dcbt</code> and <code>dcbz</code> are for.</li>
+  </ul>
+</div>
+
+<section id="fp">
+  <h3><span class="n">1</span>Floating-point: built for numerics</h3>
+  <p>The RS/6000 was a scientific workstation, and Power's floating-point unit has carried that inheritance ever since. Three properties matter most:</p>
+
+  <div class="grid g3">
+    <div class="card"><h6><span class="dot b-gold"></span>Full IEEE 754</h6><p>Binary32 and binary64 from the start; <b>binary128</b> in hardware from v3.0. All five exceptions, all four rounding modes, proper NaN and infinity semantics.</p></div>
+    <div class="card"><h6><span class="dot b-grn"></span>FMA as a primitive</h6><p><code>fmadd</code> has been there since POWER1 — decades before x86 got it. Not an add-on: the multiplier and adder are one pipeline.</p></div>
+    <div class="card"><h6><span class="dot b-cyn"></span>Decimal in hardware</h6><p>IEEE 754-2008 decimal64/128 since v2.05. Financial arithmetic where <code>0.1 + 0.2</code> must be exactly <code>0.3</code>.</p></div>
+  </div>
+
+  <h5>FPSCR: the control surface</h5>
+  <table>
+    <tr><th>Field</th><th>Purpose</th></tr>
+    <tr><td><code>RN</code> (2 bits)</td><td>Rounding mode: to-nearest-even (default), toward zero, toward +∞, toward −∞.</td></tr>
+    <tr><td><code>FX, FEX, VX</code></td><td>Summary bits — exception occurred, enabled exception occurred, invalid operation.</td></tr>
+    <tr><td><code>OX, UX, ZX, XX</code></td><td>Sticky flags: overflow, underflow, zero-divide, inexact. Sticky means they stay set until cleared.</td></tr>
+    <tr><td><code>VE, OE, UE, ZE, XE</code></td><td>Per-exception <i>enable</i> bits. Enabled means trap; disabled means produce the default result and set the flag.</td></tr>
+    <tr><td><code>NI</code></td><td>Non-IEEE mode — permits an implementation to flush denormals to zero for speed.</td></tr>
+  </table>
+  <p>Read it with <code>mffs</code>, write it with <code>mtfsf</code>. The <code>fri*</code> round-to-integer family (v2.02+) exists precisely so you can round a specific way <i>without</i> the expensive round trip of saving FPSCR, changing RN, computing, and restoring it.</p>
+
+  <div class="gotcha"><span class="tag">performance trap</span>
+  <p><b>Changing the rounding mode serialises the FPU.</b> <code>mtfsf</code> is a synchronising operation on most implementations, so a loop that flips rounding mode per iteration can be an order of magnitude slower than the same loop using <code>friz</code>/<code>frin</code>. If you see <code>mtfsf</code> inside a hot loop in a profile, that is your problem.</p></div>
+</section>
+
+<section id="fma">
+  <h3><span class="n">2</span>FMA precision lab</h3>
+  <p>A fused multiply-add computes <code>a×c + b</code> with <b>one</b> rounding, at the end. Doing it as two instructions rounds twice — once after the multiply, once after the add. Usually that difference is invisible. Sometimes it is the entire answer.</p>
+
+  <div class="lab">
+    <div class="row">
+      <label class="lbl" style="font-size:12.5px;color:var(--ink-faint);font-family:var(--mono)">Case:</label>
+      <select id="fmaCase"></select>
+    </div>
+    <div class="row" id="fmaInputs">
+      <span style="font-size:13px;color:var(--ink-dim)">a =</span> <input id="fmaA" spellcheck="false">
+      <span style="font-size:13px;color:var(--ink-dim)">c =</span> <input id="fmaC" spellcheck="false">
+      <span style="font-size:13px;color:var(--ink-dim)">b =</span> <input id="fmaB" spellcheck="false">
+    </div>
+    <div class="fmagrid">
+      <div class="fmabox sep">
+        <div class="h">fmul then fadd — two roundings</div>
+        <div class="v" id="fmaSep">—</div>
+        <div class="steps" id="fmaSepSteps"></div>
+      </div>
+      <div class="fmabox fus">
+        <div class="h">fmadd — one rounding</div>
+        <div class="v" id="fmaFus">—</div>
+        <div class="steps" id="fmaFusSteps"></div>
+      </div>
+    </div>
+    <div class="fmaverdict" id="fmaVerdict"></div>
+  </div>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Multiply make long number. Two-step machine must chop it before adding — information gone forever. Fused machine keep whole long number inside, add, chop once at end. Same speed, better answer. This why Power good at science for 30 years.</p></div>
+
+  <p>Two consequences worth carrying around:</p>
+  <ul class="tight">
+    <li><b>Accuracy.</b> FMA keeps the full-width product, so error accumulation in dot products, matrix multiplies and Newton–Raphson refinement is roughly halved.</li>
+    <li><b>Throughput.</b> One instruction and one pipeline pass rather than two, and the dependency chain is shorter. A dense linear-algebra kernel is essentially a stream of FMAs.</li>
+  </ul>
+  <p class="note">This is also why <code>-ffp-contract</code> exists in compilers: contracting <code>a*b+c</code> into an FMA changes results bit-for-bit, so strict-IEEE builds may need it disabled for reproducibility across architectures.</p>
+</section>
+
+<section id="dfp">
+  <h3><span class="n">3</span>Decimal floating-point and IEEE-128</h3>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-cyn"></span>DFP — why it exists</h6><p>Binary floating-point cannot represent 0.1 exactly, so repeated financial arithmetic drifts. Regulations in banking and insurance often mandate decimal semantics. Software decimal libraries are 100–1000× slower than hardware.</p></div>
+    <div class="card"><h6><span class="dot b-gold"></span>DFP — what Power provides</h6><p>Hardware <b>decimal64</b> and <b>decimal128</b> from v2.05 (POWER6), operating on FPRs and FPR pairs using densely-packed-decimal encoding. <code>dadd</code>, <code>dsub</code>, <code>dmul</code>, <code>ddiv</code>, <code>dqua</code> (quantize/round to a decimal place), plus conversions.</p></div>
+  </div>
+  <p><b>IEEE binary-128</b> arrived in v3.0 as a genuine hardware quad-precision format (<code>xsaddqp</code>, <code>xsmulqp</code>, <code>xsdivqp</code>, <code>xssqrtqp</code>). This replaced the old "double-double" software <code>long double</code>, which had 106 bits of precision but non-IEEE exponent behaviour and awkward edge cases. On ppc64le, <code>long double</code> can now be true IEEE binary128 — a real ABI-visible change that distributions had to migrate through.</p>
+</section>
+
+<section id="simd">
+  <h3><span class="n">4</span>The SIMD data model</h3>
+  <p>Everything vector on Power is a <b>128-bit register</b> reinterpreted as lanes. The register does not know what it holds; the <i>instruction</i> decides.</p>
+
+  <div class="ascii-wrap"><div class="bar">One 128-bit VSR, five interpretations</div>
+<pre class="ascii">  <span class="cmt">bit  0                              64                            127</span>
+  <span class="a">byte</span>   <span class="box">│</span>16 lanes of 8 bits — <code>vaddubm</code>, string and codec work        <span class="box">│</span>
+  <span class="g">half</span>   <span class="box">│</span> 8 lanes of 16 bits — audio, bfloat16 via MMA                 <span class="box">│</span>
+  <span class="s">word</span>   <span class="box">│</span> 4 lanes of 32 bits — int32 or <span class="s">4 × float</span>                    <span class="box">│</span>
+  <span class="v">dword</span>  <span class="box">│</span> 2 lanes of 64 bits — int64 or <span class="v">2 × double</span>                   <span class="box">│</span>
+  <span class="o">quad</span>   <span class="box">│</span> 1 lane of 128 bits — IEEE binary128, 128-bit integer         <span class="box">│</span>
+</pre></div>
+
+  <h5>Modulo vs saturating</h5>
+  <p>VMX integer instructions come in two families, encoded in the mnemonic:</p>
+  <ul class="tight">
+    <li><b><code>m</code> = modulo</b> — <code>vaddubm</code> wraps around, like C unsigned arithmetic. 250 + 10 = 4.</li>
+    <li><b><code>s</code> = saturating</b> — <code>vaddubs</code> clamps at the type maximum. 250 + 10 = 255, and <code>VSCR[SAT]</code> is set.</li>
+  </ul>
+  <p>Saturation is not a curiosity — it is exactly what image and audio processing want, because a bright pixel plus more brightness should be white, not black.</p>
+
+  <h5>The permute network</h5>
+  <p><code>vperm</code> is AltiVec's signature instruction: it takes <b>two</b> source vectors as a 32-byte pool and a third vector of 32 byte-indices, and produces any arbitrary rearrangement in one instruction. Shuffles, byte swaps, table lookups, unaligned assembly, matrix transposes — all become one <code>vperm</code>. VSX's <code>xxpermdi</code> is the doubleword-granular equivalent.</p>
+</section>
+
+<section id="vlab">
+  <h3><span class="n">5</span>Vector lane lab</h3>
+  <p>Choose an element width and an operation. The lanes below are one 128-bit VSR; values are shown in decimal.</p>
+
+  <div class="vlab">
+    <div class="vctl">
+      <span class="lbl">Element width:</span>
+      <span id="vWidths"></span>
+    </div>
+    <div class="vctl" style="margin-top:8px">
+      <span class="lbl">Operation:</span>
+      <span id="vOps"></span>
+    </div>
+    <div class="vreg" id="vReg"></div>
+    <div class="vnote" id="vNote"></div>
+  </div>
+</section>
+
+<section id="mma">
+  <h3><span class="n">6</span>MMA: why eight extra 512-bit registers earn their keep</h3>
+  <p>The argument for MMA is not "more FLOPs per instruction" — it is <b>operand bandwidth</b>. A matrix multiply is arithmetically trivial and bottlenecked almost entirely on feeding the arithmetic units.</p>
+
+  <div class="ascii-wrap"><div class="bar">Ordinary SIMD FMA vs an MMA outer product</div>
+<pre class="ascii">  <span class="o">ORDINARY VSX</span>   <span class="cmt">xvmaddadp — 2 doubles of work</span>
+      read  A vector (128b) + B vector (128b) + accumulator (128b)
+      write accumulator (128b)
+      <span class="cmt">→ 4 register accesses to do 2 multiply-adds.</span>
+
+  <span class="s">MMA</span>            <span class="cmt">xvf64ger — a rank-1 update of a whole tile</span>
+      read  A vector (128b) + B vector (128b)
+      update ACC in place <span class="cmt">(512 bits, stays resident)</span>
+      <span class="cmt">→ 2 register reads produce an entire outer product.</span>
+
+      <span class="box">      B0   B1   B2   B3</span>
+      <span class="box">    ┌────┬────┬────┬────┐</span>
+   A0 <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span>   one instruction updates every cell:
+      <span class="box">├────┼────┼────┼────┤</span>   ACC[i][j] += A[i] × B[j]
+   A1 <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span>
+      <span class="box">├────┼────┼────┼────┤</span>   the accumulator never leaves the register file
+   A2 <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span>   until the whole tile is finished
+      <span class="box">├────┼────┼────┼────┤</span>
+   A3 <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span><span class="s">+=</span>  <span class="box">│</span>
+      <span class="box">└────┴────┴────┴────┘</span>
+</pre></div>
+
+  <table>
+    <tr><th>Instruction</th><th>Data type</th><th>Typical use</th></tr>
+    <tr><td><code>xvf64ger</code></td><td>double (fp64)</td><td>HPC, scientific GEMM</td></tr>
+    <tr><td><code>xvf32ger</code></td><td>float (fp32)</td><td>General dense linear algebra</td></tr>
+    <tr><td><code>xvbf16ger2</code></td><td>bfloat16</td><td>ML training and inference</td></tr>
+    <tr><td><code>xvi8ger4</code></td><td>int8</td><td>Quantised inference</td></tr>
+    <tr><td><code>xxsetaccz</code> / <code>xxmfacc</code></td><td>—</td><td>Zero an accumulator; drain it back to VSRs</td></tr>
+  </table>
+  <p>A POWER10 core carries <b>four MMA engines</b>. You almost never write these by hand — GCC and LLVM expose <code>__builtin_mma_*</code> intrinsics, and OpenBLAS and similar libraries use them under the hood. But knowing <i>why</i> the accumulators are architected state, rather than a hidden buffer, is the interview answer: they have to survive across many instructions, so they must be saveable and restorable on context switch.</p>
+</section>
+
+<section id="hier">
+  <h3><span class="n">7</span>The memory hierarchy</h3>
+  <p>Power's distinguishing choice at the top end is a <b>very large shared L3</b>, historically built from eDRAM, arranged as a non-uniform cache (NUCA): each core has a nearby region but can use the whole array.</p>
+
+  <table>
+    <tr><th></th><th>POWER9</th><th>POWER10</th></tr>
+    <tr><td>L1 instruction</td><td>32 KB per core</td><td><b>48 KB</b> per core</td></tr>
+    <tr><td>L1 data</td><td>32 KB per core</td><td>32 KB per core</td></tr>
+    <tr><td>L2</td><td>512 KB per SMT4 core</td><td><b>2 MB</b> per core</td></tr>
+    <tr><td>L3</td><td>Up to ~120 MB eDRAM, shared NUCA</td><td>Up to ~120 MB, shared NUCA (≈8 MB region per core)</td></tr>
+    <tr><td>Cache line</td><td>128 bytes</td><td>128 bytes</td></tr>
+    <tr><td>SMT</td><td>SMT4 or SMT8 core variants</td><td>SMT8</td></tr>
+    <tr><td>TLB</td><td>Large, radix + HPT capable</td><td><b>4096 entries</b></td></tr>
+    <tr><td>Memory interface</td><td>Direct DDR4, or buffered</td><td><b>OMI</b> — serial, media-agnostic</td></tr>
+    <tr><td>Accelerator attach</td><td>NVLink 2.0, OpenCAPI, PCIe Gen4</td><td>OpenCAPI, PCIe Gen5, PowerAXON</td></tr>
+  </table>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>L1 = pocket, tiny and instant. L2 = backpack. L3 = big shared shed near the camp — Power builds a <i>very</i> big shed. Memory = the warehouse across town. Other socket's memory = warehouse in next town. Every step out costs ~10× more time.</p></div>
+
+  <p><b>128-byte cache lines</b> are worth internalising because they are double the x86/Arm norm. Consequences:</p>
+  <ul class="tight">
+    <li>Sequential streaming is efficient — one miss brings in twice the data.</li>
+    <li><b>False sharing is twice as easy to trigger.</b> Two hot per-thread counters 64 bytes apart share a line on Power but not on x86. Pad to 128 bytes.</li>
+    <li><code>dcbz</code> zeroes a whole 128-byte block without reading it from memory first — a large win for <code>memset</code> and for initialising freshly allocated pages.</li>
+  </ul>
+</section>
+
+<section id="ladder">
+  <h3><span class="n">8</span>Latency ladder</h3>
+  <p>Every step down the hierarchy is roughly an order of magnitude. Hover a bar for what actually happens at that level.</p>
+
+  <div class="chartcard">
+    <div class="ctop">
+      <div>
+        <p class="ct">Approximate access latency by hierarchy level</p>
+        <p class="cs">Core cycles, log scale. Order-of-magnitude figures typical of a modern high-end server core — exact values vary by implementation, frequency and load.</p>
+      </div>
+      <div class="viewtog">
+        <button id="vwChart" class="on">Chart</button>
+        <button id="vwTable">Table</button>
+      </div>
+    </div>
+
+    <div class="plot-view" id="plotView">
+      <div class="plot" id="plot"></div>
+      <div class="xband" id="xband"></div>
+    </div>
+
+    <div class="tbl-view" id="tblView">
+      <table>
+        <tr><th>Level</th><th style="text-align:right">Approx. cycles</th><th>Typical capacity</th><th>What happens</th></tr>
+        <tbody id="tblBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="tip" id="tip"></div>
+
+  <p>The practical reading: an algorithm whose working set fits in L2 runs in a different performance regime from one that spills to L3, and one that misses to a remote socket is in a third. This is why cache blocking (tiling) in matrix code, and NUMA-aware allocation on multi-socket machines, produce speedups that no amount of instruction-level tuning can match.</p>
+</section>
+
+<section id="tlb">
+  <h3><span class="n">9</span>ERAT, TLB and prefetching</h3>
+  <p>Address translation has its own cache hierarchy, and on Power it has a name most other architectures don't use:</p>
+
+  <div class="ascii-wrap"><div class="bar">Translation caching</div>
+<pre class="ascii">   effective address
+        <span class="box">│</span>
+        <span class="box">▼</span>
+   <span class="a">ERAT</span> <span class="cmt">— Effective-to-Real Address Translation cache</span>
+        <span class="cmt">tiny, per-core, split I/D, hit in the address-generation stage.</span>
+        <span class="cmt">This is the structure that actually keeps the pipeline fed.</span>
+        <span class="box">│</span> miss
+        <span class="box">▼</span>
+   <span class="g">TLB</span>  <span class="cmt">— larger, shared, tagged with (LPID, PID). 4096 entries on POWER10.</span>
+        <span class="box">│</span> miss
+        <span class="box">▼</span>
+   <span class="v">page-table walk</span> <span class="cmt">— radix tree (or hashed page table), itself cacheable.</span>
+        <span class="cmt">Under nested virtualisation each guest level needs a host walk too.</span>
+</pre></div>
+
+  <p>Page sizes matter enormously here. Radix on Power supports 4 KB, 64 KB, 2 MB and 1 GB pages; a database with a 100 GB working set on 4 KB pages will thrash any TLB, while the same set on 2 MB pages needs 512× fewer entries.</p>
+
+  <h5>Software prefetch and cache hints</h5>
+  <table>
+    <tr><th>Instruction</th><th>Effect</th><th>When to use it</th></tr>
+    <tr><td><code>dcbt</code></td><td>Touch — hint the line into cache for reading. A hint, never a fault.</td><td>Pointer-chasing where the next address is known early; irregular strides the hardware prefetcher won't catch.</td></tr>
+    <tr><td><code>dcbtst</code></td><td>Touch for store — bring the line in with write intent.</td><td>About to overwrite part of a line, avoiding a read-for-ownership stall.</td></tr>
+    <tr><td><code>dcbz</code></td><td>Zero a whole block without reading memory.</td><td>Overwriting an entire line — <code>memset</code>, page zeroing, buffer init.</td></tr>
+    <tr><td><code>dcbf</code> / <code>dcbst</code></td><td>Flush / store-back a block.</td><td>DMA coherence, persistent memory, code generation.</td></tr>
+    <tr><td><code>icbi</code></td><td>Invalidate an instruction-cache block.</td><td>Mandatory after writing code — see Lesson 3.</td></tr>
+  </table>
+  <p class="note">Power cores also have aggressive hardware stream prefetchers configured through the <code>DSCR</code> (Data Stream Control Register), which is user-accessible. Tuning DSCR is a real technique on POWER for streaming workloads — and one of the few places where user code can meaningfully steer the memory subsystem.</p>
+</section>
+
+<section id="bandwidth">
+  <h3><span class="n">10</span>Bandwidth, OMI and accelerator attach</h3>
+  <p>Power's design point is bandwidth per socket rather than raw core count, which follows from its target workloads: large databases, analytics and HPC.</p>
+
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-acc"></span>OMI — Open Memory Interface</h6><p>POWER10 replaces a wide parallel DDR bus with a <b>narrow serial link</b> to off-chip memory controllers. Fewer pins per unit of bandwidth, and the media becomes pluggable: the same processor can sit behind DDR4, DDR5, or in principle GDDR, HBM or storage-class memory, because only the buffer chip knows the media.</p></div>
+    <div class="card"><h6><span class="dot b-vio"></span>Coherent accelerator attach</h6><p>CAPI, then OpenCAPI, then PowerAXON: interfaces that let an FPGA or accelerator participate in the <b>coherence domain</b> and share virtual addresses with the host, rather than DMAing through a driver. POWER9 also carried NVLink 2.0 for coherent GPU attach — that is precisely what made the Summit and Sierra supercomputers work.</p></div>
+  </div>
+
+  <p>The strategic point: for the workloads Power targets, the bottleneck is rarely the core. It is getting data to the core and getting accelerators into the same coherent view of memory. Most of what looks distinctive about Power at the system level — huge L3, OMI, OpenCAPI, SMT8 — is an answer to that.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">11</span>Self-check</h3>
+  <div class="quiz" data-correct="1" data-fb="An FMA keeps the full-width product internally and rounds only once, after the addition, so intermediate precision is not lost.">
+    <div class="q">1. Why can <code>fmadd</code> give a different result from <code>fmul</code> + <code>fadd</code>?</div>
+    <button class="opt">It uses a different rounding mode.</button>
+    <button class="opt">It rounds once instead of twice, keeping the full product internally.</button>
+    <button class="opt">It operates at single precision.</button>
+    <button class="opt">It flushes denormals to zero.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="The 'm' suffix is modulo (wrapping); 's' is saturating, which clamps at the type limit and sets VSCR[SAT].">
+    <div class="q">2. <code>vaddubm</code> adds two byte lanes holding 250 and 10. Result?</div>
+    <button class="opt">255, and VSCR[SAT] is set</button>
+    <button class="opt">A Program interrupt</button>
+    <button class="opt">4 — it wraps, because <code>m</code> means modulo</button>
+    <button class="opt">260, stored in the next lane</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="A rank-1 outer product updates the whole accumulator tile from just two input vectors, collapsing the operand-fetch-to-arithmetic ratio.">
+    <div class="q">3. The main advantage of an MMA <code>ger</code> instruction over an ordinary vector FMA is…</div>
+    <button class="opt">higher clock frequency.</button>
+    <button class="opt">it avoids rounding entirely.</button>
+    <button class="opt">it works on integers as well as floats.</button>
+    <button class="opt">far fewer operand reads per arithmetic operation.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Power's 128-byte line is double the typical x86/Arm 64-byte line, so structures must be padded to 128 bytes to avoid false sharing.">
+    <div class="q">4. You port a lock-free counter array from x86 and throughput collapses. Likely cause?</div>
+    <button class="opt">False sharing — Power's cache line is 128 bytes, so 64-byte padding is not enough.</button>
+    <button class="opt">Power has no atomic instructions.</button>
+    <button class="opt">The L3 is too large.</button>
+    <button class="opt">Denormals are being flushed.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="The ERAT is a small per-core effective-to-real translation cache that sits in front of the TLB and is what keeps address generation off the critical path.">
+    <div class="q">5. What is the ERAT?</div>
+    <button class="opt">A branch predictor structure.</button>
+    <button class="opt">A small per-core translation cache in front of the TLB.</button>
+    <button class="opt">The hardware prefetcher.</button>
+    <button class="opt">The error-reporting register for machine checks.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="dcbz zeroes an entire cache block without first reading it from memory, eliminating the read-for-ownership traffic.">
+    <div class="q">6. Why is <code>dcbz</code> faster than storing zeros across a cache line?</div>
+    <button class="opt">It runs on the vector unit.</button>
+    <button class="opt">It bypasses the cache entirely.</button>
+    <button class="opt">It skips reading the line from memory before overwriting it.</button>
+    <button class="opt">It is executed by the memory controller.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="OMI uses a narrow serial link to buffer chips, so the processor is decoupled from the memory media — DDR4, DDR5 and others can sit behind the same interface.">
+    <div class="q">7. What does OMI on POWER10 primarily buy?</div>
+    <button class="opt">Lower memory latency than direct DDR.</button>
+    <button class="opt">Cache coherence with GPUs.</button>
+    <button class="opt">Larger cache lines.</button>
+    <button class="opt">More bandwidth per pin and media-agnostic memory attach.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="v3.0 added IEEE binary128 in hardware, replacing the old software double-double long double on ppc64le.">
+    <div class="q">8. Hardware IEEE 128-bit binary floating-point arrived in which version?</div>
+    <button class="opt">v3.0 (POWER9)</button>
+    <button class="opt">v2.05 (POWER6)</button>
+    <button class="opt">v2.07 (POWER8)</button>
+    <button class="opt">v3.1 (POWER10)</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">12</span>Interview Q&amp;A</h3>
+  <details><summary>Why is fused multiply-add a big deal?</summary><div class="ans">Two reasons. Accuracy: the product is kept at full internal width and only one rounding happens, after the addition, so error accumulation in dot products, matrix kernels and iterative refinement is roughly halved — and there are cases where the two-instruction sequence loses the answer entirely to cancellation. Throughput: it's one instruction, one pipeline pass, and a shorter dependency chain, and dense linear algebra is essentially nothing but multiply-accumulate. Power has had it since POWER1, decades before x86.</div></details>
+  <details><summary>Explain modulo versus saturating vector arithmetic.</summary><div class="ans">Modulo instructions (the <code>m</code> suffix, e.g. <code>vaddubm</code>) wrap on overflow like ordinary unsigned C arithmetic — 250 + 10 in a byte lane gives 4. Saturating instructions (<code>s</code>, e.g. <code>vaddubs</code>) clamp at the type's limit and set VSCR[SAT] — 250 + 10 gives 255. Saturation is what media processing wants: brightening an already-bright pixel should give white, not wrap to black. Having both in the ISA means neither case needs a compare-and-branch.</div></details>
+  <details><summary>What does MMA actually do, and why are the accumulators architected state?</summary><div class="ans">An MMA <code>ger</code> instruction performs a rank-1 outer product: from two input vectors it updates every cell of a 512-bit accumulator tile in one instruction. The point isn't peak FLOPs, it's operand bandwidth — a matrix multiply is bottlenecked on feeding the arithmetic units, and keeping the output tile resident in a dedicated register collapses the reads-per-FLOP ratio. The accumulators are architected rather than hidden because they hold live state across many instructions, so they must be saveable and restorable across a context switch. They overlay VSR0–31, which means those registers are unavailable while an accumulator is primed.</div></details>
+  <details><summary>Describe the POWER10 cache hierarchy.</summary><div class="ans">Per core: 48 KB L1 instruction, 32 KB L1 data, and a 2 MB L2 — a big step up from POWER9's 512 KB. Beyond that a shared L3 of up to about 120 MB arranged as a non-uniform cache, roughly 8 MB of region per core but usable as one array, so a core can spill into a neighbour's region at higher latency. Cache lines are 128 bytes throughout, double the x86 norm. Off-chip, POWER10 uses OMI — a serial memory interface to buffer chips — rather than a wide parallel DDR bus.</div></details>
+  <details><summary>What porting bugs does Power's 128-byte cache line cause?</summary><div class="ans">Mainly false sharing. Code tuned for x86 pads hot per-thread structures to 64 bytes; on Power two such structures still share a line, so every write by one thread invalidates the other's copy and throughput collapses under contention. The fix is to pad to 128 bytes, ideally via a cache-line-size constant rather than a literal. The flip side is that streaming code benefits — one miss brings in twice the data — and <code>dcbz</code> can zero a whole 128-byte block without reading it.</div></details>
+  <details><summary>What is the ERAT and why does it exist separately from the TLB?</summary><div class="ans">The ERAT — Effective-to-Real Address Translation cache — is a very small, per-core, split instruction/data structure that can be looked up within the address-generation stage. The TLB is larger and shared, tagged with the (LPID, PID) pair, and a hit there still costs more than an ERAT hit. Splitting them is the same idea as splitting L1 from L2: the tiny fast structure keeps the pipeline fed, the larger one catches what it misses, and only then do you pay for a page-table walk.</div></details>
+  <details><summary>How would you speed up a memory-bound loop on Power?</summary><div class="ans">First, check the working set against the hierarchy — tiling to fit L2 usually beats anything else. Then use large pages to stop TLB thrashing, and on multi-socket machines make sure allocation is NUMA-local. At the instruction level, <code>dcbt</code> can prefetch irregular access patterns the hardware streamer won't predict, <code>dcbz</code> avoids read-for-ownership when you're overwriting whole lines, and the DSCR lets you tune the hardware stream prefetcher from user code. Padding shared structures to 128 bytes eliminates false sharing.</div></details>
+  <details><summary>Why does Power have decimal floating-point in hardware?</summary><div class="ans">Because binary floating-point cannot represent decimal fractions like 0.1 exactly, and financial and regulatory arithmetic often requires exact decimal semantics with specified rounding. Software decimal libraries are orders of magnitude slower. Power added IEEE 754-2008 decimal64 and decimal128 in hardware in v2.05 with POWER6, operating on the FPRs using densely-packed-decimal encoding. It reflects Power's customer base — banking, insurance and ERP workloads on AIX and IBM i.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">13</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li><b>FMA rounds once</b>, keeping the full product — more accurate <i>and</i> faster. Present since POWER1.</li>
+    <li>FPSCR carries the rounding mode and sticky exception flags; <code>mtfsf</code> in a hot loop is a performance bug.</li>
+    <li><b>DFP</b> (v2.05) for exact decimal; <b>IEEE binary128</b> in hardware (v3.0).</li>
+    <li>A 128-bit vector is <b>16/8/4/2/1 lanes</b>; <code>m</code> = modulo, <code>s</code> = saturating; <code>vperm</code> is arbitrary byte shuffle.</li>
+    <li><b>MMA</b> wins on operand bandwidth: a rank-1 outer product updates a resident 512-bit tile.</li>
+    <li>POWER10: <b>48 KB L1I / 32 KB L1D / 2 MB L2 / ~120 MB shared L3</b>, <b>128-byte lines</b>, 4096-entry TLB.</li>
+    <li><b>128-byte lines</b> double the false-sharing risk versus x86 — pad accordingly.</li>
+    <li><b>ERAT &#8594; TLB &#8594; page-table walk</b>; large pages are the main TLB lever.</li>
+    <li><code>dcbt</code> prefetch · <code>dcbz</code> zero-without-read · <code>DSCR</code> steers the hardware prefetcher.</li>
+    <li><b>OMI</b> decouples the processor from the memory media; <b>OpenCAPI/NVLink</b> put accelerators in the coherence domain.</li>
+  </ul>
+  <div class="chips"><span class="chip">fmadd</span><span class="chip">FPSCR[RN]</span><span class="chip">DFP</span><span class="chip">binary128</span><span class="chip">vaddubm vs vaddubs</span><span class="chip">vperm</span><span class="chip">xvf64ger</span><span class="chip">ACC0–7</span><span class="chip">128-byte line</span><span class="chip">NUCA L3</span><span class="chip">ERAT</span><span class="chip">DSCR</span><span class="chip">OMI</span><span class="chip">OpenCAPI</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="powerisa_lesson04_modes.html">&#9668; L4 · Operation modes</a>
+  <a href="powerisa_lesson06_compliance.html">L6 · Compliance &amp; flexibility &#9658;</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L6): you do not have to implement all of this. How compliancy subsets let a core be legitimately Power without the vector unit, the hypervisor, or the decimal FPU.</p>
+</main>
+</div>
+
+<script>
+/* ---------- scroll-spy + quizzes ---------- */
+const links=[...document.querySelectorAll('nav.side a')].filter(a=>a.getAttribute('href').startsWith('#'));
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite — the highlighted option is right. '+fbt);
+  }));
+});
+
+/* ================= FMA precision lab =================
+   Dekker two-product gives the exact error term of a double multiply,
+   which lets us emulate a correctly-rounded fmadd in plain JS.        */
+function twoProduct(a,b){
+  const p=a*b;
+  const SPLIT=134217729;               /* 2^27 + 1 */
+  const ca=SPLIT*a, ah=ca-(ca-a), al=a-ah;
+  const cb=SPLIT*b, bh=cb-(cb-b), bl=b-bh;
+  const e=((ah*bh-p)+ah*bl+al*bh)+al*bl;
+  return [p,e];
+}
+function fmaEmu(a,b,c){ const [p,e]=twoProduct(a,b); return (p+c)+e; }
+function fmt(x){
+  if(Number.isNaN(x)) return 'NaN';
+  if(x===0) return (1/x<0?'-0':'0');
+  if(Number.isInteger(x)&&Math.abs(x)<1e15) return String(x);
+  const s=x.toPrecision(17).replace(/0+$/,'').replace(/\.$/,'');
+  return (Math.abs(x)<1e-4||Math.abs(x)>=1e16) ? x.toExponential(16).replace(/0+e/,'e') : s;
+}
+const CASES=[
+ {n:'Catastrophic cancellation — a·c − 1', a:1+Math.pow(2,-27), c:1-Math.pow(2,-27), b:-1,
+  why:'a·c is exactly 1 − 2⁻⁵⁴, which needs 54 bits of mantissa. A double has 53, so the separate multiply rounds it to exactly 1.0 and the subtraction then yields 0 — the entire result is lost. The FMA keeps the exact product internally, subtracts, and rounds once, recovering −2⁻⁵⁴.'},
+ {n:'Squaring a rounded square root — (√2)² − 2', a:Math.SQRT2, c:Math.SQRT2, b:-2,
+  why:'fl(√2) is not exactly √2, so its exact square is not exactly 2 — there is a real residual, and it is the quantity an error analysis needs. The separate multiply rounds the square to the nearest double <i>before</i> the subtraction, so it reports a residual that is nearly twice the true one. The fused form subtracts from the exact square and gives the correct answer.'},
+ {n:'Newton–Raphson residual — 49 × (1/49) − 1', a:49, c:1/49, b:-1,
+  why:'1/49 is not exactly representable, so the product is not exactly 1 and the residual is what a Newton–Raphson refinement iterates on. Both routes return something non-zero here, but the separate form’s value is wrong by roughly 40% because the product was rounded before the subtraction — enough to slow or destabilise the iteration.'},
+ {n:'Ordinary case — no visible difference', a:2.5, c:4.25, b:1.125,
+  why:'All three values and the exact product fit comfortably in a double, so both routes round to the same number. This is the common case — which is exactly why the difference surprises people when it finally bites.'},
+ {n:'Custom — type your own', a:1.0000000000000002, c:1.0000000000000002, b:-1, why:null}
+];
+const selEl=document.getElementById('fmaCase'), aEl=document.getElementById('fmaA'),
+      cEl=document.getElementById('fmaC'), bEl=document.getElementById('fmaB');
+CASES.forEach((c,i)=>{const o=document.createElement('option'); o.value=i; o.textContent=c.n; selEl.appendChild(o);});
+function loadCase(){
+  const c=CASES[+selEl.value];
+  aEl.value=String(c.a); cEl.value=String(c.c); bEl.value=String(c.b);
+  fmaDraw();
+}
+function fmaDraw(){
+  const a=parseFloat(aEl.value), c=parseFloat(cEl.value), b=parseFloat(bEl.value);
+  if([a,c,b].some(v=>Number.isNaN(v))){
+    document.getElementById('fmaVerdict').textContent='Enter three numbers.'; return;
+  }
+  const prod=a*c;                 /* rounded once, as fmul would */
+  const sep=prod+b;               /* rounded again, as fadd would */
+  const fus=fmaEmu(a,c,b);        /* single rounding */
+  document.getElementById('fmaSep').textContent=fmt(sep);
+  document.getElementById('fmaFus').textContent=fmt(fus);
+  document.getElementById('fmaSepSteps').innerHTML=
+    'fmul&nbsp; a×c &nbsp;→&nbsp; '+fmt(prod)+'&nbsp;&nbsp;<span style="color:var(--warn)">[rounded]</span><br>'+
+    'fadd&nbsp; +b &nbsp;&nbsp;→&nbsp; '+fmt(sep)+'&nbsp;&nbsp;<span style="color:var(--warn)">[rounded again]</span>';
+  document.getElementById('fmaFusSteps').innerHTML=
+    'exact a×c held internally at full width<br>'+
+    'add b, then <span style="color:var(--grn)">round once</span> → '+fmt(fus);
+  const same = (sep===fus) || (Number.isNaN(sep)&&Number.isNaN(fus));
+  const c0=CASES[+selEl.value];
+  const diff = sep-fus;
+  document.getElementById('fmaVerdict').innerHTML = same
+    ? '<b style="color:var(--ink)">Identical.</b> Both routes round to the same double here. '+
+      (c0.why?c0.why:'Try one of the pathological cases to see them diverge.')
+    : '<b style="color:var(--warn)">Different.</b> The two-instruction form is off by '+fmt(diff)+
+      '. '+(c0.why?c0.why:'The separate multiply rounds away information the addition needed.');
+}
+selEl.addEventListener('change',loadCase);
+[aEl,cEl,bEl].forEach(e=>e.addEventListener('input',fmaDraw));
+loadCase();
+
+/* ================= vector lane lab ================= */
+const WIDTHS=[
+ {k:8,  n:'8-bit × 16',  lanes:16, max:255,   label:'byte'},
+ {k:16, n:'16-bit × 8',  lanes:8,  max:65535, label:'halfword'},
+ {k:32, n:'32-bit × 4',  lanes:4,  max:4294967295, label:'word'},
+ {k:64, n:'64-bit × 2',  lanes:2,  max:null,  label:'doubleword'}
+];
+const VOPS=[
+ {k:'addm', n:'add (modulo)'},
+ {k:'adds', n:'add (saturating)'},
+ {k:'perm', n:'vperm (byte shuffle)'},
+ {k:'splat',n:'splat lane 0'}
+];
+let vw=0, vop='addm';
+const vwEl=document.getElementById('vWidths'), voEl=document.getElementById('vOps'),
+      vrEl=document.getElementById('vReg'), vnEl=document.getElementById('vNote');
+WIDTHS.forEach((w,i)=>{const b=document.createElement('button'); b.textContent=w.n;
+  b.addEventListener('click',()=>{vw=i; vpaint(); vdraw();}); vwEl.appendChild(b);});
+VOPS.forEach(o=>{const b=document.createElement('button'); b.textContent=o.n; b.dataset.k=o.k;
+  b.addEventListener('click',()=>{vop=o.k; vpaint(); vdraw();}); voEl.appendChild(b);});
+function vpaint(){
+  [...vwEl.children].forEach((b,i)=>b.classList.toggle('on',i===vw));
+  [...voEl.children].forEach(b=>b.classList.toggle('on',b.dataset.k===vop));
+}
+function vdraw(){
+  const w=WIDTHS[vw], n=w.lanes;
+  const A=[], B=[];
+  for(let i=0;i<n;i++){
+    /* sources always fit the element width; a few lanes overflow on add */
+    if(w.k===8){ A.push(150+i*5); B.push(20+i*4); }
+    else if(w.k===16){ A.push(58000+i*600); B.push(2000+i*500); }
+    else if(w.k===32){ A.push(4100000000+i*20000000); B.push(100000000+i*30000000); }
+    else { A.push(1000000+i); B.push(2500000+i*3); }
+  }
+  let rows='';
+  const lanesHtml=(vals,cls)=>'<div class="vlanes">'+vals.map(v=>
+      '<div class="vlane'+(cls?' '+(typeof cls==='function'?cls(v):cls):'')+'">'+
+      (typeof v==='object'? v.t : v)+'</div>').join('')+'</div>';
+  if(vop==='addm'||vop==='adds'){
+    const sat=(vop==='adds');
+    const R=A.map((a,i)=>{
+      const raw=a+B[i];
+      if(w.max===null) return {t:String(raw), st:'res'};
+      if(raw>w.max) return sat? {t:String(w.max), st:'sat'} : {t:String(raw-w.max-1), st:'wrap'};
+      return {t:String(raw), st:'res'};
+    });
+    rows+='<div class="vrow"><span class="rn">VR2 (A)</span>'+lanesHtml(A)+'</div>';
+    rows+='<div class="vrow"><span class="rn">VR3 (B)</span>'+lanesHtml(B)+'</div>';
+    rows+='<div class="vrow"><span class="rn">VR1 result</span><div class="vlanes">'+
+      R.map(r=>'<div class="vlane '+r.st+'">'+r.t+'</div>').join('')+'</div></div>';
+    const nOver=R.filter(r=>r.st!=='res').length;
+    const mn = w.k===8?'vaddub':(w.k===16?'vadduh':(w.k===32?'vadduw':'vaddud'));
+    vnEl.innerHTML='<b style="color:var(--ink)">'+mn+(sat?'s':'m')+'</b> — '+
+      (w.max===null
+        ? 'Doubleword lanes are wide enough that these operands do not overflow. Saturating forms are defined mainly for the narrower widths, where media data actually saturates.'
+        : (nOver
+            ? nOver+' of '+n+' lanes exceed the '+w.label+' maximum of '+w.max+'. '+
+              (sat? '<span style="color:var(--warn)">Saturating</span>: they clamp to '+w.max+' and <code>VSCR[SAT]</code> is set — what image and audio code wants.'
+                  : '<span style="color:var(--gold)">Modulo</span>: they wrap around, like C unsigned arithmetic. Fast, but a bright pixel just went black.')
+            : 'No lane overflows here, so modulo and saturating give identical results.'));
+  } else if(vop==='perm'){
+    const idx=[]; for(let i=0;i<n;i++) idx.push((n-1-i));
+    rows+='<div class="vrow"><span class="rn">VR2 (A)</span>'+lanesHtml(A)+'</div>';
+    rows+='<div class="vrow"><span class="rn">VR4 (index)</span><div class="vlanes">'+
+      idx.map(v=>'<div class="vlane" style="color:var(--vio);border-color:rgba(180,140,255,.5)">'+v+'</div>').join('')+'</div></div>';
+    rows+='<div class="vrow"><span class="rn">VR1 result</span><div class="vlanes">'+
+      idx.map(v=>'<div class="vlane res">'+A[v]+'</div>').join('')+'</div></div>';
+    vnEl.innerHTML='<b style="color:var(--ink)">vperm</b> — the index vector names, per output lane, which source element to fetch. Here it reverses the register, but <i>any</i> mapping is one instruction: byte swap, table lookup, matrix transpose, or assembling an unaligned load. '+
+      (w.k!==8 ? '<span style="color:var(--ink-faint)">(True <code>vperm</code> indexes bytes across a 32-byte pool of two registers; shown here at '+w.label+' granularity for clarity — <code>xxpermdi</code> is the VSX doubleword-granular cousin.)</span>' : 'The real instruction indexes 32 bytes drawn from <i>two</i> source registers, so it can also merge.');
+  } else {
+    rows+='<div class="vrow"><span class="rn">VR2 (A)</span>'+lanesHtml(A)+'</div>';
+    rows+='<div class="vrow"><span class="rn">VR1 result</span><div class="vlanes">'+
+      A.map(()=>'<div class="vlane res">'+A[0]+'</div>').join('')+'</div></div>';
+    vnEl.innerHTML='<b style="color:var(--ink)">splat</b> — broadcast one element to every lane. The workhorse for turning a scalar into a vector operand, e.g. multiplying a whole vector by a constant. VSX spells it <code>xxspltw</code>; VMX has <code>vspltb</code>/<code>vsplth</code>/<code>vspltw</code>.';
+  }
+  vrEl.innerHTML=rows;
+}
+vpaint(); vdraw();
+
+/* ================= latency ladder ================= */
+/* Ordinal single-hue ramp, validated against the #141c26 surface:
+   monotone lightness, adjacent ΔL >= 0.06, light end >= 2:1 contrast. */
+const RAMP=['#3f6f96','#4d85b1','#5c9bcb','#6cb1e4','#7ec7fa','#9adcff'];
+const LEVELS=[
+ {n:'L1 data',        cyc:4,   cap:'32 KB / core',
+  d:'Hit in the address-generation and load pipeline. The ERAT supplies the translation in the same window, so a hit costs essentially nothing beyond the pipeline latency.'},
+ {n:'L2',             cyc:14,  cap:'2 MB / core (POWER10)',
+  d:'Private to the core. POWER10 quadrupled it over POWER9 precisely so that more working sets stay off the shared fabric.'},
+ {n:'L3 — near region',cyc:35, cap:'~8 MB region',
+  d:'The core’s own slice of the shared NUCA array. Still on-chip and reasonably close, so latency is moderate.'},
+ {n:'L3 — far region', cyc:90, cap:'up to ~120 MB total',
+  d:'A slice belonging to another core. The array is shared, so this is a hit — but the on-chip fabric traversal shows up as latency. This is what "non-uniform cache" means.'},
+ {n:'Local memory',   cyc:230, cap:'DIMMs on this socket',
+  d:'A real miss. Address translation must be resolved, the request crosses the memory controller (OMI on POWER10) and the DRAM row is opened. Roughly two orders of magnitude worse than L1.'},
+ {n:'Remote socket',  cyc:450, cap:'DIMMs on another socket',
+  d:'Crosses the inter-socket interconnect before touching DRAM. This is why NUMA-aware allocation matters — the same access can cost twice what a local one does.'}
+];
+const MAXC=Math.max(...LEVELS.map(l=>l.cyc)), MINC=1;
+const lg=v=>Math.log10(v);
+const TICKS=[1,10,100,1000];
+const pct=v=>((lg(v)-lg(MINC))/(lg(1000)-lg(MINC)))*100;
+const plot=document.getElementById('plot'), xband=document.getElementById('xband'), tip=document.getElementById('tip');
+function drawLadder(){
+  let g='';
+  TICKS.forEach(t=>{ g+='<div class="gridline" style="left:calc(138px + (100% - 138px) * '+(pct(t)/100)+')"></div>'; });
+  let rows='';
+  LEVELS.forEach((l,i)=>{
+    rows+='<div class="brow"><div class="bl">'+l.n+'</div><div class="btrack">'+
+      '<div class="bfill" data-i="'+i+'" style="width:'+pct(l.cyc)+'%;background:'+RAMP[i]+'"></div>'+
+      '<span class="bval" style="left:calc('+pct(l.cyc)+'% + 10px)">'+l.cyc+' cyc</span>'+
+      '</div></div>';
+  });
+  plot.innerHTML=g+rows;
+  xband.innerHTML=TICKS.map(t=>'<span class="gridlab" style="left:'+pct(t)+'%">'+t+'</span>').join('')+
+    '<span class="gridlab" style="left:50%; bottom:-8px; color:var(--ink-faint)">cycles (log scale)</span>';
+  plot.querySelectorAll('.bfill').forEach(el=>{
+    el.addEventListener('mouseenter',ev=>{
+      const l=LEVELS[+el.dataset.i];
+      tip.innerHTML='<span class="tt">'+l.n+' — ~'+l.cyc+' cycles</span>'+l.cap+'<br><br>'+l.d;
+      tip.classList.add('on');
+    });
+    el.addEventListener('mousemove',ev=>{
+      const w=300;
+      tip.style.left=Math.min(ev.clientX+14, window.innerWidth-w-16)+'px';
+      tip.style.top=(ev.clientY+14)+'px';
+    });
+    el.addEventListener('mouseleave',()=>tip.classList.remove('on'));
+  });
+}
+document.getElementById('tblBody').innerHTML=LEVELS.map(l=>
+  '<tr><td>'+l.n+'</td><td style="text-align:right;font-variant-numeric:tabular-nums">'+l.cyc+
+  '</td><td>'+l.cap+'</td><td>'+l.d+'</td></tr>').join('');
+const vwC=document.getElementById('vwChart'), vwT=document.getElementById('vwTable'),
+      pv=document.getElementById('plotView'), tv=document.getElementById('tblView');
+vwC.addEventListener('click',()=>{vwC.classList.add('on'); vwT.classList.remove('on');
+  pv.classList.remove('off'); tv.classList.remove('on');});
+vwT.addEventListener('click',()=>{vwT.classList.add('on'); vwC.classList.remove('on');
+  pv.classList.add('off'); tv.classList.add('on');});
+drawLadder();
+window.addEventListener('resize',drawLadder);
+</script>
+</body>
+</html>

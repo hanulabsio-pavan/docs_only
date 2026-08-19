@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power ISA · Lesson 4 — Operation Modes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="powerisa_shared.css">
+<style>
+/* ---------- privilege ladder ---------- */
+.ladder{display:grid; gap:8px; margin:18px 0}
+.rung{display:grid; grid-template-columns:130px 1fr 150px; gap:14px; align-items:center;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px 16px; cursor:pointer; transition:.16s; text-align:left; color:inherit; font-family:inherit; width:100%}
+.rung:hover{background:var(--panel2)}
+.rung.on{border-color:var(--acc); box-shadow:0 0 0 1px var(--acc) inset}
+.rung .nm{font-family:var(--mono); font-size:14px; font-weight:600}
+.rung .ds{font-size:13px; color:var(--ink-dim)}
+.rung .bits{font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); text-align:right}
+.rung .bits b{color:var(--cyn); font-weight:500}
+.lvl0{border-left:3px solid var(--grn)} .lvl1{border-left:3px solid var(--acc)}
+.lvl2{border-left:3px solid var(--gold)} .lvl3{border-left:3px solid var(--pnk)}
+.rungdetail{background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin-top:4px}
+.rungdetail h6{margin:0 0 8px; font-size:15px}
+.rungdetail ul{margin:6px 0 0; padding-left:18px} .rungdetail li{font-size:13.5px; color:var(--ink-dim); margin:5px 0}
+
+/* ---------- MSR bit explorer ---------- */
+.msr{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:16px 0}
+.msrbits{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 14px}
+.msrbit{font-family:var(--mono); font-size:12px; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink-dim); padding:7px 12px; border-radius:8px; cursor:pointer; transition:.14s}
+.msrbit:hover{border-color:var(--acc); color:var(--ink)}
+.msrbit.on{background:var(--acc); border-color:var(--acc); color:#0b0f14; font-weight:600}
+.msrout{background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--cyn);
+  border-radius:8px; padding:13px 15px}
+.msrout .bn{font-family:var(--mono); font-size:14px; color:var(--cyn); font-weight:600}
+.msrout .bp{font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-left:8px}
+.msrout .bd{font-size:13.5px; color:var(--ink-dim); margin-top:6px}
+
+/* ---------- transition simulator ---------- */
+.sim{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin:16px 0}
+.simtop{display:flex; gap:16px; padding:16px 18px; background:var(--bg2); border-bottom:1px solid var(--line); flex-wrap:wrap; align-items:center}
+.statechip{font-family:var(--mono); font-size:13px; padding:7px 15px; border-radius:20px; font-weight:600}
+.st-user{background:rgba(82,210,115,.16); color:var(--grn); border:1px solid var(--grn)}
+.st-priv{background:rgba(79,163,255,.16); color:var(--acc); border:1px solid var(--acc)}
+.st-hyp{background:rgba(245,185,66,.16); color:var(--gold); border:1px solid var(--gold)}
+.st-ultra{background:rgba(255,122,182,.16); color:var(--pnk); border:1px solid var(--pnk)}
+.simregs{font-family:var(--mono); font-size:12px; color:var(--ink-faint); display:flex; gap:14px; flex-wrap:wrap}
+.simregs b{color:var(--ink-dim); font-weight:500}
+.simbody{display:grid; grid-template-columns:230px 1fr}
+.simacts{border-right:1px solid var(--line); padding:14px}
+.simacts button{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink-dim); font-family:var(--mono); font-size:12.5px; padding:9px 12px;
+  border-radius:8px; margin:5px 0; cursor:pointer; transition:.12s}
+.simacts button:hover:not(:disabled){border-color:var(--acc); color:var(--ink)}
+.simacts button:disabled{opacity:.32; cursor:not-allowed}
+.simacts .hdr{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--ink-faint); margin:4px 0 8px}
+.simlog{padding:14px 16px; max-height:340px; overflow-y:auto; font-family:var(--mono); font-size:12.5px}
+.simlog .ln{padding:5px 0; border-bottom:1px solid var(--line-soft); color:var(--ink-dim)}
+.simlog .ln:last-child{border-bottom:none}
+.simlog .ln .ev{color:var(--acc); font-weight:600}
+.simlog .ln .to{color:var(--gold)}
+.simlog .ln.err{color:var(--warn)}
+.simlog .ln .note{display:block; color:var(--ink-faint); font-size:11.5px; font-style:normal; margin-top:2px}
+.simreset{font-family:var(--mono); font-size:11.5px; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink-faint); padding:6px 12px; border-radius:7px; cursor:pointer; margin-left:auto}
+@media(max-width:880px){ .rung{grid-template-columns:1fr} .rung .bits{text-align:left}
+  .simbody{grid-template-columns:1fr} .simacts{border-right:none; border-bottom:1px solid var(--line)} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">POWER ISA · LESSON 04</div>
+  <h1>Operation Modes</h1>
+  <a href="#why">Why privilege levels</a>
+  <a href="#ladder">The privilege ladder</a>
+  <a href="#msr">MSR bit explorer</a>
+  <a href="#interrupts">Interrupts &amp; the SRR pairs</a>
+  <a href="#syscall">System calls &amp; hcalls</a>
+  <a href="#sim">Transition simulator</a>
+  <a href="#lpar">Partitioning &amp; LPAR</a>
+  <a href="#nested">Nested virtualisation</a>
+  <a href="#ctxsw">Context switching</a>
+  <a href="#pef">Ultravisor &amp; PEF</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="powerisa_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Deep Dives · Lesson 4 of 7</div>
+<h2 class="title">Operation Modes</h2>
+<p class="lede">Who is allowed to do what. Problem, privileged, hypervisor and ultravisor state — how you enter each one, how you get back, and why Power's virtualisation model looks the way it does.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Name every privilege state and give the exact MSR bit combination that selects it.</li>
+    <li>Trace an interrupt from the faulting instruction through SRR0/SRR1 and back via <code>rfid</code>.</li>
+    <li>Explain the difference between a system call, a hypervisor call and an ultracall.</li>
+    <li>Say what LPID and PID are for and how nested paging works on POWER9+.</li>
+    <li>Describe lazy FP/vector context switching and why MSR[FP] exists.</li>
+  </ul>
+</div>
+
+<section id="why">
+  <h3><span class="n">1</span>Why an ISA needs privilege levels at all</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Some instructions dangerous. Turn off memory protection, wipe TLB, take over machine. Cannot let any program do that. So machine has rings: <span style="color:var(--grn)">user</span> can do little, <span style="color:var(--acc)">OS</span> can do more, <span style="color:var(--gold)">hypervisor</span> can do everything. Ring stored in one register bit.</p></div>
+
+  <p>An application must not be able to reprogram the MMU, disable interrupts, or read another process's memory. But an operating system must be able to do all three. And when several operating systems share one machine, something above them must arbitrate — that's the hypervisor. Power encodes this hierarchy in <b>two bits of the MSR</b> (plus a third for secure mode), and enforces it in the decoder: a privileged instruction executed in problem state raises a <b>Privileged Instruction</b> interrupt rather than executing.</p>
+
+  <p>Three things are gated by privilege state:</p>
+  <ul class="tight">
+    <li><b>Instructions</b> — <code>mtmsrd</code>, <code>rfid</code>, <code>tlbie</code>, <code>slbmte</code> and most <code>mtspr</code>/<code>mfspr</code> targets.</li>
+    <li><b>Registers</b> — the SPR number space is partitioned; SPR bit 5 of the encoded number marks a register as privileged.</li>
+    <li><b>Storage</b> — address translation applies different rules, and some real-mode accesses are only possible in hypervisor state.</li>
+  </ul>
+</section>
+
+<section id="ladder">
+  <h3><span class="n">2</span>The privilege ladder</h3>
+  <p>Click a state for detail. Note that Power numbers the ladder <i>downward</i> in the MSR: <code>PR=1</code> means <b>less</b> privilege, <code>HV=1</code> means <b>more</b>.</p>
+
+  <div class="ladder" id="ladder"></div>
+  <div class="rungdetail" id="ladderDetail"></div>
+
+  <div class="ascii-wrap"><div class="bar">The four states and the MSR bits that select them</div>
+<pre class="ascii">   <span class="cmt">MSR[S]   MSR[HV]   MSR[PR]        state                        </span>
+   <span class="box">┌──────┬─────────┬─────────┬───────────────────────────────────┐</span>
+   <span class="box">│</span>  0   <span class="box">│</span>    0    <span class="box">│</span>    1    <span class="box">│</span> <span class="s">Problem (user)</span>                    <span class="box">│</span>
+   <span class="box">│</span>  0   <span class="box">│</span>    0    <span class="box">│</span>    0    <span class="box">│</span> <span class="a">Privileged (OS / supervisor)</span>      <span class="box">│</span>
+   <span class="box">│</span>  0   <span class="box">│</span>    1    <span class="box">│</span>    0    <span class="box">│</span> <span class="g">Hypervisor</span>                        <span class="box">│</span>
+   <span class="box">│</span>  1   <span class="box">│</span>    1    <span class="box">│</span>    0    <span class="box">│</span> <span class="p">Ultravisor</span> <span class="cmt">(PEF, POWER9+)</span>         <span class="box">│</span>
+   <span class="box">└──────┴─────────┴─────────┴───────────────────────────────────┘</span>
+     <span class="cmt">S=1, HV=0 gives a secure OS / secure user inside an SVM.</span>
+     <span class="cmt">S=1, HV=1, PR=1 is reserved.</span>
+     <span class="cmt">Only the ultravisor can set MSR[S] — hrfid cannot.</span>
+</pre></div>
+
+  <div class="gotcha"><span class="tag">naming trap</span>
+  <p><b>"Supervisor" in Power means the OS, not the top of the stack.</b> Coming from x86 you may read "supervisor mode" as ring 0 / most-privileged. On Power the hypervisor sits <i>above</i> the supervisor, and on a PowerVM or KVM machine the OS genuinely runs at a reduced privilege with the hypervisor intercepting. <code>MSR[PR]</code> is literally "problem state", the old IBM term for user mode.</p></div>
+</section>
+
+<section id="msr">
+  <h3><span class="n">3</span>MSR bit explorer</h3>
+  <p>The Machine State Register is the mode register: it says what the processor currently <i>is</i>. Click a bit.</p>
+  <div class="msr">
+    <div class="msrbits" id="msrBits"></div>
+    <div class="msrout" id="msrOut"></div>
+  </div>
+  <p class="note">Remember Power bit numbering: MSR bit 3 is near the most-significant end of the 64-bit register, and MSR bit 63 is the least-significant. That is why <code>HV</code> is "bit 3" and <code>LE</code> is "bit 63".</p>
+</section>
+
+<section id="interrupts">
+  <h3><span class="n">4</span>Interrupts and the save/restore register pairs</h3>
+  <p>Every privilege escalation on Power works the same way, whether it was caused by a page fault, a timer or a deliberate system call. The hardware does four things atomically:</p>
+
+  <div class="ascii-wrap"><div class="bar">What the hardware does on an interrupt</div>
+<pre class="ascii">   <span class="cmt">1.</span> save the return address       <span class="a">SRR0</span>  &#8592; address of the interrupted instruction
+   <span class="cmt">2.</span> save the old mode             <span class="a">SRR1</span>  &#8592; the current MSR
+   <span class="cmt">3.</span> set the new mode              <span class="g">MSR</span>   &#8592; new privilege, translation off, interrupts off
+   <span class="cmt">4.</span> jump to the handler           <span class="v">PC</span>    &#8592; the fixed vector for this interrupt type
+
+                          <span class="cmt">... handler runs ...</span>
+
+   <span class="cmt">5.</span> <span class="o">rfid</span>  restores MSR from SRR1 and jumps to SRR0 — atomically,
+        so you cannot be interrupted between "restore mode" and "jump".
+</pre></div>
+
+  <p>The critical detail is that there are <b>three parallel sets</b> of these registers, one per destination privilege level. That is what lets an OS interrupt be delivered without disturbing hypervisor state that was already saved:</p>
+
+  <table>
+    <tr><th>Destination</th><th>Save registers</th><th>Return instruction</th><th>Delivered to</th></tr>
+    <tr><td>Privileged (OS)</td><td><code>SRR0</code> / <code>SRR1</code></td><td><code>rfid</code></td><td>the operating system</td></tr>
+    <tr><td>Hypervisor</td><td><code>HSRR0</code> / <code>HSRR1</code></td><td><code>hrfid</code></td><td>the hypervisor</td></tr>
+    <tr><td>Ultravisor</td><td><code>USRR0</code> / <code>USRR1</code></td><td><code>urfid</code></td><td>the ultravisor (PEF)</td></tr>
+  </table>
+
+  <h5>Interrupt vectors</h5>
+  <p>Each interrupt type has a fixed offset from a base address. Classic Power puts these at low real addresses (offset <code>0x0</code>…<code>0x1000</code>); modern systems use <code>LPCR[AIL]</code> — <i>Alternate Interrupt Location</i> — to relocate them to a virtual base such as <code>0xC000_0000_0000_4xxx</code>, so the handler can run with translation already on.</p>
+
+  <table>
+    <tr><th>Offset</th><th>Interrupt</th><th>Typical cause</th></tr>
+    <tr><td><code>0x100</code></td><td>System Reset</td><td>Power-on, NMI, wake from nap</td></tr>
+    <tr><td><code>0x200</code></td><td>Machine Check</td><td>Uncorrectable hardware error — the RAS entry point</td></tr>
+    <tr><td><code>0x300</code></td><td>Data Storage (DSI)</td><td>Page fault on a load/store. <code>DAR</code> holds the address, <code>DSISR</code> the reason</td></tr>
+    <tr><td><code>0x400</code></td><td>Instruction Storage (ISI)</td><td>Page fault on instruction fetch</td></tr>
+    <tr><td><code>0x500</code></td><td>External</td><td>A device interrupt arrived (gated by <code>MSR[EE]</code>)</td></tr>
+    <tr><td><code>0x600</code></td><td>Alignment</td><td>An access the implementation cannot perform unaligned</td></tr>
+    <tr><td><code>0x700</code></td><td>Program</td><td>Illegal or privileged instruction, trap, FP exception</td></tr>
+    <tr><td><code>0x800</code></td><td>Floating-Point Unavailable</td><td><code>MSR[FP]=0</code> — the lazy-context-switch hook</td></tr>
+    <tr><td><code>0x900</code></td><td>Decrementer</td><td>The per-CPU timer expired — the scheduler tick</td></tr>
+    <tr><td><code>0xC00</code></td><td>System Call</td><td><code>sc</code> executed</td></tr>
+    <tr><td><code>0xF20</code> / <code>0xF40</code></td><td>Vector / VSX Unavailable</td><td>Same lazy-switch mechanism for VMX and VSX state</td></tr>
+  </table>
+  <p class="note">A useful diagnostic habit: when a Linux-on-Power oops prints a faulting address plus DSISR, you are reading the state the <code>0x300</code> handler was handed.</p>
+</section>
+
+<section id="syscall">
+  <h3><span class="n">5</span>System calls, hypervisor calls and ultracalls</h3>
+  <p>All three are the same instruction with a different level field, and that symmetry is worth internalising.</p>
+
+  <table>
+    <tr><th>Call</th><th>Instruction</th><th>Goes to</th><th>Vector</th><th>Returns with</th></tr>
+    <tr><td>System call</td><td><code>sc 0</code> (usually written <code>sc</code>)</td><td>the OS kernel</td><td><code>0xC00</code></td><td><code>rfid</code></td></tr>
+    <tr><td>Hypervisor call (hcall)</td><td><code>sc 1</code></td><td>the hypervisor</td><td><code>0xC00</code> in hypervisor state</td><td><code>hrfid</code></td></tr>
+    <tr><td>Vectored system call</td><td><code>scv</code> (v3.0)</td><td>the OS kernel</td><td>its own vector, lower overhead</td><td><code>rfscv</code></td></tr>
+    <tr><td>Ultracall</td><td><code>ucall</code> (<code>sc 2</code>)</td><td>the ultravisor</td><td>ultravisor vector</td><td><code>urfid</code></td></tr>
+  </table>
+
+  <p><b>hcalls</b> are how a guest OS asks the hypervisor for things it is no longer allowed to do itself. On a PowerVM or KVM-on-Power partition, a guest cannot write the page table or send an inter-processor interrupt directly, so it calls <code>H_ENTER</code>, <code>H_REMOVE</code>, <code>H_IPI</code> and friends. The hcall number goes in <code>r3</code>, arguments in <code>r4</code>–<code>r10</code>, the return code comes back in <code>r3</code>.</p>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Same door, different knock. <code>sc 0</code> = knock for OS. <code>sc 1</code> = knock for hypervisor. <code>sc 2</code> = knock for ultravisor. Each knock answered by different guard, each guard has own notebook (SRR / HSRR / USRR) so they do not overwrite each other's notes.</p></div>
+</section>
+
+<section id="sim">
+  <h3><span class="n">6</span>Transition simulator</h3>
+  <p>Start in problem state and try to move around. Illegal transitions are refused and explained — that refusal <i>is</i> the security model.</p>
+
+  <div class="sim">
+    <div class="simtop">
+      <span id="simState" class="statechip st-user">PROBLEM</span>
+      <span class="simregs" id="simRegs"></span>
+      <button class="simreset" id="simReset">Reset</button>
+    </div>
+    <div class="simbody">
+      <div class="simacts" id="simActs"></div>
+      <div class="simlog" id="simLog"></div>
+    </div>
+  </div>
+</section>
+
+<section id="lpar">
+  <h3><span class="n">7</span>Partitioning: LPAR, LPID and PID</h3>
+  <p>Power was designed for partitioning long before "virtualisation" was a marketing word — IBM shipped LPARs on mainframes and then on POWER4 in 2001. The architecture therefore treats a partition as a first-class object rather than something emulated on top.</p>
+
+  <div class="ascii-wrap"><div class="bar">Two levels of identity, two levels of translation</div>
+<pre class="ascii">   <span class="g">HYPERVISOR</span> <span class="cmt">(MSR[HV]=1)</span>  owns real memory, assigns partitions
+       <span class="box">│</span>
+       <span class="box">├─</span> <span class="a">LPAR 1</span>  <span class="cmt">LPID=1</span>          <span class="box">├─</span> <span class="a">LPAR 2</span>  <span class="cmt">LPID=2</span>
+       <span class="box">│</span>   <span class="a">guest OS</span> <span class="cmt">(MSR[HV]=0, PR=0)</span> <span class="box">│</span>   <span class="a">guest OS</span>
+       <span class="box">│</span>     <span class="box">├─</span> <span class="s">process A</span> <span class="cmt">PID=7</span>      <span class="box">│</span>     <span class="box">├─</span> <span class="s">process C</span> <span class="cmt">PID=7</span>
+       <span class="box">│</span>     <span class="box">└─</span> <span class="s">process B</span> <span class="cmt">PID=9</span>      <span class="box">│</span>     <span class="box">└─</span> <span class="s">process D</span> <span class="cmt">PID=3</span>
+
+   <span class="cmt">PID=7 in LPAR 1 and PID=7 in LPAR 2 are different address spaces —</span>
+   <span class="cmt">the (LPID, PID) pair is what actually identifies a translation context.</span>
+   <span class="cmt">TLB entries are tagged with both, so a partition switch needs no full flush.</span>
+</pre></div>
+
+  <table>
+    <tr><th>Register</th><th>Holds</th><th>Written by</th></tr>
+    <tr><td><code>LPIDR</code></td><td>Logical partition ID — which guest is running</td><td>hypervisor only</td></tr>
+    <tr><td><code>PIDR</code></td><td>Process ID — which address space within the guest</td><td>the guest OS</td></tr>
+    <tr><td><code>LPCR</code></td><td>Logical Partition Control Register — the big policy register: interrupt routing, AIL, HV interrupt behaviour, translation mode</td><td>hypervisor only</td></tr>
+    <tr><td><code>PTCR</code></td><td>Partition Table Control Register — points at the partition table that maps LPID to a page-table root</td><td>hypervisor only</td></tr>
+  </table>
+
+  <p>PowerVM (IBM's firmware hypervisor) and KVM-on-Power both sit at <code>MSR[HV]=1</code>. The difference is packaging, not architecture: PowerVM is a proprietary type-1 hypervisor in firmware, KVM is Linux running in hypervisor state.</p>
+</section>
+
+<section id="nested">
+  <h3><span class="n">8</span>Nested virtualisation and the radix advantage</h3>
+  <p>Lesson 2 introduced the radix MMU. Its real payoff shows up here.</p>
+
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-gold"></span>With the hashed page table</h6><p>A guest OS manages a page table the hardware cannot walk directly on its behalf, so the hypervisor must intercept every guest page-table update via hcalls (<code>H_ENTER</code>, <code>H_REMOVE</code>) and maintain a shadow. Correct, but chatty.</p></div>
+    <div class="card"><h6><span class="dot b-grn"></span>With radix (v3.0, POWER9+)</h6><p>Two levels of radix tree, both walked in hardware: guest virtual &#8594; guest real via the guest's tree, then guest real &#8594; host real via the partition's tree. The hypervisor is out of the fast path entirely.</p></div>
+  </div>
+
+  <div class="ascii-wrap"><div class="bar">Nested (two-level) radix translation</div>
+<pre class="ascii">   guest EA
+      <span class="box">│</span>  <span class="a">guest process page table</span> <span class="cmt">(selected by PID)</span>
+      <span class="box">▼</span>
+   guest real address
+      <span class="box">│</span>  <span class="g">partition page table</span> <span class="cmt">(selected by LPID, owned by the hypervisor)</span>
+      <span class="box">▼</span>
+   host real address
+      <span class="cmt">Each level of the guest walk itself needs a partition-level walk, so a</span>
+      <span class="cmt">full nested miss is expensive — which is why POWER10 grew its TLB to</span>
+      <span class="cmt">4096 entries and why huge pages matter so much under virtualisation.</span>
+</pre></div>
+  <p>POWER9 also added an explicitly <b>nested KVM</b> mode where an L1 guest hypervisor can run its own L2 guests, with the L0 hypervisor providing the partition-table plumbing through hcalls.</p>
+</section>
+
+<section id="ctxsw">
+  <h3><span class="n">9</span>Context switching and the "unavailable" interrupts</h3>
+  <p>Saving and restoring every register on every context switch would be expensive: 32 GPRs is cheap, but 64 × 128-bit VSRs plus 8 × 512-bit MMA accumulators is over a kilobyte of state. Power's answer is <b>lazy switching</b>, and the architecture supports it directly.</p>
+
+  <div class="ascii-wrap"><div class="bar">Lazy floating-point / vector context switch</div>
+<pre class="ascii">   <span class="cmt">on context switch, the OS simply does:</span>
+       MSR[<span class="a">FP</span>] &#8592; 0 ; MSR[<span class="a">VEC</span>] &#8592; 0 ; MSR[<span class="a">VSX</span>] &#8592; 0
+       <span class="cmt">(it does NOT save or restore the FP/vector registers)</span>
+
+   <span class="cmt">if the new task never touches floating point  &#8594;  zero cost, done.</span>
+
+   <span class="cmt">if it executes an FP instruction:</span>
+       hardware raises <span class="g">FP Unavailable (0x800)</span>
+           <span class="box">│</span>
+           <span class="box">▼</span>
+       OS saves the previous owner's FP state, restores this task's,
+       sets MSR[<span class="a">FP</span>]=1, and <span class="o">rfid</span>s back to <span class="v">re-execute</span> the instruction.
+       <span class="cmt">The program never knows it happened.</span>
+</pre></div>
+
+  <p>The same mechanism uses <code>0xF20</code> for VMX and <code>0xF40</code> for VSX, so a task using only scalar FP never pays for vector state. This is a good example of the ISA deliberately exposing a hook that exists purely to let software be efficient.</p>
+
+  <p>Two related pieces of state are worth knowing:</p>
+  <ul class="tight">
+    <li><b><code>MSR[EE]</code></b> — external interrupt enable. Clearing it is how a kernel enters a critical section. Note that it does <i>not</i> mask machine checks or system reset.</li>
+    <li><b><code>MSR[IR]</code> / <code>MSR[DR]</code></b> — instruction and data relocation, i.e. "translation on". An interrupt clears both, so the first instructions of every handler run in <b>real mode</b> at a physical address — which is why early handler code is written so carefully.</li>
+  </ul>
+</section>
+
+<section id="pef">
+  <h3><span class="n">10</span>Ultravisor state and the Protected Execution Facility</h3>
+  <p>POWER9 added a fourth privilege state to solve a modern problem: <b>the hypervisor is part of the threat model</b>. In a cloud deployment the tenant may not want to trust the operator's hypervisor with the contents of guest memory.</p>
+
+  <p>PEF introduces a small, auditable <b>ultravisor</b> running above the hypervisor, selected by <code>MSR[S]=1, MSR[HV]=1, MSR[PR]=0</code>. Memory is split into <i>secure</i> and <i>normal</i> regions; a Secure Virtual Machine's pages live in secure memory that the hypervisor cannot read.</p>
+
+  <ul class="tight">
+    <li>Only the ultravisor can set <code>MSR[S]</code>. Critically, <b><code>hrfid</code> cannot set it</b> — so a compromised hypervisor cannot forge entry into secure mode; it must go through an ultracall.</li>
+    <li>The hypervisor still schedules and manages the SVM; it simply cannot see inside it. Most hcalls from an SVM are reflected through the ultravisor.</li>
+    <li>The ultravisor is intentionally tiny — a small trusted computing base is the whole point.</li>
+  </ul>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Landlord (hypervisor) owns building, decides who gets which room, but new rule: landlord cannot open your door. Small trusted guard (ultravisor) holds only key. Landlord still collects rent, still evicts you — just cannot read your papers.</p></div>
+  <p class="note">This is Power's answer to the same problem AMD SEV and Intel TDX address, with a different structure: a new architectural privilege level rather than a memory-encryption engine bolted to the side.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">11</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="Hypervisor state is MSR[HV]=1, MSR[PR]=0 (with S=0). PR=1 always means problem state regardless of HV.">
+    <div class="q">1. Which MSR combination selects hypervisor state?</div>
+    <button class="opt">HV=0, PR=0</button>
+    <button class="opt">HV=1, PR=1</button>
+    <button class="opt">HV=1, PR=0</button>
+    <button class="opt">HV=0, PR=1</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="rfid atomically restores the MSR from SRR1 and jumps to SRR0 — you cannot be interrupted between changing mode and changing PC.">
+    <div class="q">2. What does <code>rfid</code> do?</div>
+    <button class="opt">Flushes the TLB and returns.</button>
+    <button class="opt">Atomically restores MSR from SRR1 and jumps to SRR0.</button>
+    <button class="opt">Raises a system call interrupt.</button>
+    <button class="opt">Switches the partition ID.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="Separate SRR/HSRR/USRR pairs mean an OS-level interrupt cannot clobber state a hypervisor already saved, so nesting works without software juggling.">
+    <div class="q">3. Why does Power have both SRR0/1 and HSRR0/1?</div>
+    <button class="opt">One is for reads, the other for writes.</button>
+    <button class="opt">HSRR is a faster copy used on POWER10 only.</button>
+    <button class="opt">SRR is 32-bit and HSRR is 64-bit.</button>
+    <button class="opt">So an OS-bound interrupt cannot overwrite state already saved for a hypervisor-bound one.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="sc 1 is the hypervisor call. sc (level 0) goes to the OS; the level field selects the destination.">
+    <div class="q">4. A guest OS needs the hypervisor to install a page-table entry. What does it execute?</div>
+    <button class="opt"><code>sc 1</code> — a hypervisor call</button>
+    <button class="opt"><code>tlbie</code> directly</button>
+    <button class="opt"><code>mtspr PTCR</code></button>
+    <button class="opt"><code>hrfid</code></button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="The OS clears MSR[FP] on context switch and only saves/restores FP state when the 0x800 FP Unavailable interrupt fires — tasks that never use FP pay nothing.">
+    <div class="q">5. What is <code>MSR[FP]</code> used for in practice?</div>
+    <button class="opt">Selecting single vs double precision.</button>
+    <button class="opt">Enabling denormal handling.</button>
+    <button class="opt">Lazy context switching — clearing it makes the next FP instruction trap.</button>
+    <button class="opt">Choosing the FPSCR rounding mode.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="Radix supports two hardware-walked levels — guest tree then partition tree — so the hypervisor no longer has to shadow or intercept guest page-table updates.">
+    <div class="q">6. Why does the radix MMU help virtualisation specifically?</div>
+    <button class="opt">It removes the need for a TLB.</button>
+    <button class="opt">Nested translation is walked in hardware, so the hypervisor leaves the fast path.</button>
+    <button class="opt">It encrypts guest memory.</button>
+    <button class="opt">It lets guests run in hypervisor state.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="Only an ultracall can enter secure mode; hrfid is architecturally unable to set MSR[S], which is what stops a compromised hypervisor forging entry.">
+    <div class="q">7. Under PEF, how does control enter secure (ultravisor) mode?</div>
+    <button class="opt">Any <code>mtmsrd</code> from hypervisor state.</button>
+    <button class="opt"><code>hrfid</code> with S set in HSRR1.</button>
+    <button class="opt">Automatically on any interrupt.</button>
+    <button class="opt">Only via an ultracall — <code>hrfid</code> cannot set MSR[S].</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="An interrupt clears MSR[IR] and MSR[DR], so the handler begins executing in real (untranslated) mode.">
+    <div class="q">8. Immediately after an interrupt is taken, address translation is…</div>
+    <button class="opt">off — MSR[IR] and MSR[DR] are cleared, so the handler starts in real mode.</button>
+    <button class="opt">unchanged from the interrupted context.</button>
+    <button class="opt">always on, using the hypervisor's page table.</button>
+    <button class="opt">off for data but on for instructions.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">12</span>Interview Q&amp;A</h3>
+  <details><summary>Describe Power's privilege model.</summary><div class="ans">Four states selected by MSR bits. Problem (user) state is MSR[PR]=1. Privileged or supervisor state — the OS — is PR=0, HV=0. Hypervisor state is HV=1, PR=0. POWER9 added ultravisor state at S=1, HV=1, PR=0 for the Protected Execution Facility. Each level has its own interrupt save/restore register pair (SRR, HSRR, USRR) and its own return instruction (<code>rfid</code>, <code>hrfid</code>, <code>urfid</code>), and privileged instructions executed from a lower state raise a Program interrupt rather than executing.</div></details>
+  <details><summary>Walk me through what happens on a page fault.</summary><div class="ans">The load or store fails translation, so the hardware takes a Data Storage Interrupt at offset 0x300. It writes the faulting instruction's address into SRR0, the current MSR into SRR1, puts the faulting effective address in DAR and the reason bits in DSISR, then sets a new MSR — privileged state, translation off, interrupts off — and jumps to the vector. The kernel handler reads DAR/DSISR, fixes up the mapping, and executes <code>rfid</code>, which atomically restores MSR from SRR1 and returns to SRR0 so the instruction re-executes.</div></details>
+  <details><summary>What is an hcall and when is one needed?</summary><div class="ans">A hypervisor call: <code>sc 1</code>, with the call number in r3 and arguments in r4 onward. A guest OS uses it for operations it is no longer privileged to perform itself — installing or removing page-table entries under the hashed MMU (<code>H_ENTER</code>, <code>H_REMOVE</code>), sending IPIs, managing virtual I/O. It's dispatched to the hypervisor, which returns via <code>hrfid</code>. With the radix MMU on POWER9+, far fewer hcalls are needed because nested translation is walked in hardware.</div></details>
+  <details><summary>How does Power do lazy FP context switching?</summary><div class="ans">On a context switch the OS just clears MSR[FP] (and MSR[VEC]/MSR[VSX]) instead of saving and restoring the register file. If the incoming task never touches floating point, nothing is saved or restored at all. If it does execute an FP instruction, the hardware raises the Floating-Point Unavailable interrupt at 0x800; the kernel then saves the previous owner's state, restores the new task's, sets MSR[FP]=1, and returns so the instruction re-executes. It matters because the full VSX plus MMA state is well over a kilobyte per thread.</div></details>
+  <details><summary>What are LPID and PID?</summary><div class="ans">LPID is the logical partition identifier — which guest is currently running — and is writable only by the hypervisor. PID is the process identifier within that guest, written by the guest OS. Translations and TLB entries are tagged with the pair, so the same PID in two different partitions is two different address spaces and a partition switch doesn't require a full TLB flush. LPCR and PTCR are the hypervisor-owned control registers that go with them.</div></details>
+  <details><summary>Why did IBM add an ultravisor?</summary><div class="ans">To take the hypervisor out of the trust boundary. In a cloud setting the tenant may not want the operator's hypervisor able to read guest memory. PEF splits memory into secure and normal regions and puts a small, auditable ultravisor above the hypervisor at MSR[S]=1. The hypervisor still schedules the secure VM and manages resources but cannot read its pages, and because <code>hrfid</code> architecturally cannot set MSR[S], a compromised hypervisor cannot forge its way into secure mode — it has to go through an ultracall.</div></details>
+  <details><summary>Why do interrupt handlers start with translation disabled?</summary><div class="ans">Taking an interrupt clears MSR[IR] and MSR[DR], so the first instructions run in real mode at a physical address. That's deliberate: the interrupt might have been <i>caused</i> by a translation failure, so the handler cannot depend on translation working. The consequence is that early handler code is position- and address-sensitive and must get itself into virtual mode carefully. Modern systems use LPCR[AIL] to relocate the vectors so handlers can start with translation already enabled, which simplifies this considerably.</div></details>
+  <details><summary>How does PowerVM differ from KVM on Power, architecturally?</summary><div class="ans">Architecturally they don't — both run in hypervisor state with MSR[HV]=1 and use the same LPID/LPCR/PTCR machinery and the same hcall interface to guests. The difference is packaging and trust: PowerVM is IBM's proprietary type-1 hypervisor living in firmware, presenting partitions to AIX, IBM i and Linux; KVM-on-Power is Linux itself running in hypervisor state on a PowerNV (bare-metal OpenPOWER) machine. POWER9 additionally supports nested KVM so an L1 guest can host its own L2 guests.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">13</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>Four states: <b>problem</b> (PR=1) · <b>privileged</b> (HV=0,PR=0) · <b>hypervisor</b> (HV=1,PR=0) · <b>ultravisor</b> (S=1,HV=1,PR=0).</li>
+    <li>Escalation is always: save <b>SRR0/SRR1</b>, set new MSR, jump to a fixed vector. Return with <b><code>rfid</code></b>.</li>
+    <li>Three parallel pairs — <b>SRR / HSRR / USRR</b> with <code>rfid</code> / <code>hrfid</code> / <code>urfid</code> — so nesting never clobbers.</li>
+    <li>Key vectors: <b>0x300</b> DSI · <b>0x500</b> external · <b>0x700</b> program · <b>0x800</b> FP unavailable · <b>0x900</b> decrementer · <b>0xC00</b> system call.</li>
+    <li><code>sc 0</code> = OS · <code>sc 1</code> = <b>hcall</b> · <code>sc 2</code> = <b>ultracall</b> · <code>scv</code> = fast syscall (v3.0).</li>
+    <li><b>(LPID, PID)</b> identifies a translation context; TLB entries are tagged with both.</li>
+    <li><b>Radix nested translation</b> removes the hypervisor from the page-fault fast path.</li>
+    <li><b>Lazy switching</b>: clear MSR[FP]/[VEC]/[VSX], let 0x800/0xF20/0xF40 pull state in on demand.</li>
+  </ul>
+  <div class="chips"><span class="chip">MSR[PR] / [HV] / [S]</span><span class="chip">SRR0 / SRR1</span><span class="chip">HSRR / hrfid</span><span class="chip">DAR / DSISR</span><span class="chip">LPCR / AIL</span><span class="chip">LPID / PID</span><span class="chip">PTCR</span><span class="chip">hcall</span><span class="chip">ultracall</span><span class="chip">PEF / SVM</span><span class="chip">MSR[EE] / [IR] / [DR]</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="powerisa_lesson03_instructions.html">&#9668; L3 · Instruction categories</a>
+  <a href="powerisa_lesson05_features.html">L5 · Key features &#9658;</a>
+</div>
+<p class="note" style="margin-top:18px">Next up (L5): the three subsystems that define Power's performance character — floating-point, SIMD, and the cache and memory hierarchy.</p>
+</main>
+</div>
+
+<script>
+/* ---------- scroll-spy + quizzes (shared pattern) ---------- */
+const links=[...document.querySelectorAll('nav.side a')].filter(a=>a.getAttribute('href').startsWith('#'));
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite — the highlighted option is right. '+fbt);
+  }));
+});
+
+/* ---------- privilege ladder ---------- */
+const RUNGS=[
+ {cls:'lvl3', nm:'Ultravisor', bits:'S=<b>1</b> HV=<b>1</b> PR=<b>0</b>',
+  ds:'Protected Execution Facility. Above the hypervisor; owns secure memory.',
+  detail:['Introduced with POWER9 as part of PEF, for Secure Virtual Machines.',
+    'Only the ultravisor can set MSR[S]; <code>hrfid</code> is architecturally unable to, so a compromised hypervisor cannot forge entry.',
+    'Owns the split between secure and normal memory. SVM pages live in secure memory the hypervisor cannot read.',
+    'Entered by an ultracall (<code>sc 2</code>) or an ultravisor-bound interrupt; returns with <code>urfid</code> using USRR0/USRR1.',
+    'Deliberately small — the trusted computing base is the product.']},
+ {cls:'lvl2', nm:'Hypervisor', bits:'S=0 HV=<b>1</b> PR=<b>0</b>',
+  ds:'Owns real memory and partitions. PowerVM and KVM-on-Power live here.',
+  detail:['Full control of the machine: real memory, partition table (PTCR), LPIDR, LPCR.',
+    'Receives hypervisor-bound interrupts through HSRR0/HSRR1 and returns with <code>hrfid</code>.',
+    'Services hcalls (<code>sc 1</code>) from guest operating systems.',
+    'Can execute every instruction, including <code>tlbie</code> across the whole machine.',
+    'On a bare-metal OpenPOWER box with no hypervisor, Linux itself runs here (PowerNV).']},
+ {cls:'lvl1', nm:'Privileged', bits:'S=0 HV=0 PR=<b>0</b>',
+  ds:'The operating system. Called "supervisor" state — but below the hypervisor.',
+  detail:['Where AIX, IBM i and Linux kernels normally run inside a partition.',
+    'May execute privileged instructions such as <code>mtmsrd</code> and access privileged SPRs, but many operations are intercepted by the hypervisor.',
+    'Receives OS-bound interrupts via SRR0/SRR1 and returns with <code>rfid</code>.',
+    'Writes PIDR to switch process address space; cannot write LPIDR.',
+    'Uses hcalls to ask the hypervisor for anything it is not permitted to do directly.']},
+ {cls:'lvl0', nm:'Problem', bits:'S=0 HV=0 PR=<b>1</b>',
+  ds:'User mode. Book I and Book II only — no privileged instructions or SPRs.',
+  detail:['"Problem state" is the historical IBM term for user mode.',
+    'Can execute the whole Book I instruction set and Book II storage operations, including barriers and atomics.',
+    'A privileged instruction here raises a Program interrupt (0x700) with the privileged-instruction cause bit set.',
+    'Reads a small set of user-visible SPRs — the time base, for instance — but not the machine-control ones.',
+    'Enters the OS through <code>sc</code> or by taking an interrupt.']}
+];
+const ld=document.getElementById('ladder'), ldD=document.getElementById('ladderDetail');
+RUNGS.forEach((r,i)=>{
+  const b=document.createElement('button'); b.className='rung '+r.cls;
+  b.innerHTML='<div class="nm">'+r.nm+'</div><div class="ds">'+r.ds+'</div><div class="bits">'+r.bits+'</div>';
+  b.addEventListener('click',()=>showRung(i)); ld.appendChild(b);
+});
+function showRung(i){
+  [...ld.children].forEach((n,k)=>n.classList.toggle('on',k===i));
+  const r=RUNGS[i];
+  ldD.innerHTML='<h6>'+r.nm+' state</h6><ul>'+r.detail.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+}
+showRung(3);
+
+/* ---------- MSR bit explorer ---------- */
+const MSRBITS=[
+ {n:'SF',  p:'bit 0',  d:'Sixty-Four bit mode. When 1 the processor computes 64-bit effective addresses; when 0 it runs in 32-bit mode and truncates EAs. Set on virtually all modern systems.'},
+ {n:'HV',  p:'bit 3',  d:'Hypervisor state. With PR=0 this selects hypervisor privilege. Only settable by the hypervisor or by taking a hypervisor-bound interrupt.'},
+ {n:'S',   p:'bit 41', d:'Secure mode (PEF). With HV=1, PR=0 this selects ultravisor state. Settable only by the ultravisor — hrfid cannot set it.'},
+ {n:'VEC', p:'bit 38', d:'Vector (VMX) available. Cleared by the OS for lazy context switching; a VMX instruction then raises Vector Unavailable at 0xF20.'},
+ {n:'VSX', p:'bit 40', d:'VSX available. Same lazy-switch role, raising VSX Unavailable at 0xF40.'},
+ {n:'EE',  p:'bit 48', d:'External interrupt enable. Clearing it is how a kernel enters a critical section. It does not mask machine check or system reset.'},
+ {n:'PR',  p:'bit 49', d:'Problem state. 1 = user mode. Privileged instructions executed with PR=1 raise a Program interrupt instead of executing.'},
+ {n:'FP',  p:'bit 50', d:'Floating-point available. The classic lazy-switch bit: clear it, and the next FP instruction traps to 0x800 so the OS can swap FP state in on demand.'},
+ {n:'ME',  p:'bit 51', d:'Machine check enable. When 0, a machine check causes a checkstop rather than an interrupt.'},
+ {n:'IR',  p:'bit 58', d:'Instruction relocate — instruction-fetch address translation on. Cleared automatically when an interrupt is taken.'},
+ {n:'DR',  p:'bit 59', d:'Data relocate — data-access address translation on. Also cleared on interrupt, so handlers begin in real mode.'},
+ {n:'RI',  p:'bit 62', d:'Recoverable interrupt. Indicates SRR0/SRR1 hold valid state; if a second interrupt arrives while RI=0 the machine state is unrecoverable.'},
+ {n:'LE',  p:'bit 63', d:'Little-endian mode. Selects the byte order used for storage accesses. ppc64le Linux runs with LE=1; AIX and IBM i with LE=0.'}
+];
+const mb=document.getElementById('msrBits'), mo=document.getElementById('msrOut');
+MSRBITS.forEach((b,i)=>{
+  const el=document.createElement('button'); el.className='msrbit'; el.textContent=b.n;
+  el.addEventListener('click',()=>showMsr(i)); mb.appendChild(el);
+});
+function showMsr(i){
+  [...mb.children].forEach((n,k)=>n.classList.toggle('on',k===i));
+  const b=MSRBITS[i];
+  mo.innerHTML='<span class="bn">MSR['+b.n+']</span><span class="bp">'+b.p+'</span><div class="bd">'+b.d+'</div>';
+}
+showMsr(6);
+
+/* ---------- transition simulator ---------- */
+const STATES={
+ user :{label:'PROBLEM',    cls:'st-user',  msr:'S=0 HV=0 PR=1'},
+ priv :{label:'PRIVILEGED', cls:'st-priv',  msr:'S=0 HV=0 PR=0'},
+ hyp  :{label:'HYPERVISOR', cls:'st-hyp',   msr:'S=0 HV=1 PR=0'},
+ ultra:{label:'ULTRAVISOR', cls:'st-ultra', msr:'S=1 HV=1 PR=0'}
+};
+const ACTIONS=[
+ {id:'sc',    grp:'Raise', lbl:'sc          — system call',       from:['user'],
+  to:'priv', srr:'SRR', note:'Vector 0xC00. SRR0 ← address after sc, SRR1 ← old MSR.'},
+ {id:'hcall', grp:'Raise', lbl:'sc 1        — hypervisor call',   from:['user','priv'],
+  to:'hyp',  srr:'HSRR', note:'Dispatched to the hypervisor. HSRR0/HSRR1 saved; the guest OS is not involved.'},
+ {id:'ucall', grp:'Raise', lbl:'sc 2        — ultracall',         from:['priv','hyp'],
+  to:'ultra',srr:'USRR', note:'The only architected way to set MSR[S]. USRR0/USRR1 saved.'},
+ {id:'dsi',   grp:'Raise', lbl:'page fault  — DSI 0x300',         from:['user','priv'],
+  to:'priv', srr:'SRR', note:'DAR ← faulting address, DSISR ← cause. MSR[IR]/[DR] cleared: the handler starts in real mode.'},
+ {id:'dec',   grp:'Raise', lbl:'decrementer — 0x900',             from:['user','priv'],
+  to:'priv', srr:'SRR', note:'The scheduler tick. Only delivered while MSR[EE]=1.'},
+ {id:'mchk',  grp:'Raise', lbl:'machine chk — 0x200',             from:['user','priv','hyp'],
+  to:'hyp',  srr:'HSRR', note:'Hardware error. Goes to the hypervisor — it owns the machine, so it owns RAS.'},
+ {id:'rfid',  grp:'Return',lbl:'rfid        — return',            from:['priv'],
+  to:'user', srr:null, note:'MSR restored from SRR1, PC from SRR0, atomically.'},
+ {id:'hrfid', grp:'Return',lbl:'hrfid       — hyp return',        from:['hyp'],
+  to:'priv', srr:null, note:'Restores from HSRR1/HSRR0. Cannot set MSR[S] — that restriction is the PEF security boundary.'},
+ {id:'urfid', grp:'Return',lbl:'urfid       — ultra return',      from:['ultra'],
+  to:'hyp',  srr:null, note:'Restores from USRR1/USRR0.'},
+ {id:'mtmsr', grp:'Direct',lbl:'mtmsrd      — write MSR',         from:['priv','hyp','ultra'],
+  to:'same', srr:null, note:'Privileged. Adjusts EE/IR/DR and similar; cannot escalate privilege.'},
+ {id:'tlbie', grp:'Direct',lbl:'tlbie       — invalidate TLB',    from:['hyp','ultra'],
+  to:'same', srr:null, note:'Hypervisor-only in a partitioned machine — it affects translations across the whole system.'}
+];
+let cur='user', log=[], saved=[];
+const stEl=document.getElementById('simState'), rgEl=document.getElementById('simRegs'),
+      acEl=document.getElementById('simActs'), lgEl=document.getElementById('simLog');
+['Raise','Return','Direct'].forEach(g=>{
+  const h=document.createElement('div'); h.className='hdr'; h.textContent=g==='Raise'?'Raise privilege':g==='Return'?'Return':'Privileged ops';
+  acEl.appendChild(h);
+  ACTIONS.filter(a=>a.grp===g).forEach(a=>{
+    const b=document.createElement('button'); b.dataset.id=a.id; b.textContent=a.lbl;
+    b.addEventListener('click',()=>act(a)); acEl.appendChild(b);
+  });
+});
+function act(a){
+  if(!a.from.includes(cur)){
+    let why;
+    if(a.grp==='Return') why='There is nothing to return from at this level — '+a.id+' is only valid in '+a.from.map(f=>STATES[f].label).join(' or ')+' state.';
+    else if(a.grp==='Direct') why='Privileged instruction. Executing '+a.id.replace('mtmsr','mtmsrd')+' in '+STATES[cur].label+' state raises a Program interrupt (0x700), it does not execute.';
+    else why='Not available from '+STATES[cur].label+' state.';
+    log.unshift({err:true, txt:'✗ '+a.lbl.split('—')[0].trim()+' refused', note:why});
+    render(); return;
+  }
+  if(a.to==='same'){
+    log.unshift({txt:'• '+a.lbl.split('—')[0].trim()+' executed in <span class="to">'+STATES[cur].label+'</span>', note:a.note});
+  } else {
+    const from=cur; cur=a.to;
+    if(a.srr){ saved.unshift(a.srr); saved=saved.slice(0,3); }
+    else { saved.shift(); }
+    log.unshift({txt:'<span class="ev">'+a.lbl.split('—')[0].trim()+'</span> &nbsp;'+STATES[from].label+
+      ' &rarr; <span class="to">'+STATES[cur].label+'</span>'+(a.srr?' &nbsp;<span style="color:var(--cyn)">['+a.srr+'0/'+a.srr+'1 saved]</span>':''),
+      note:a.note});
+  }
+  render();
+}
+function render(){
+  const s=STATES[cur];
+  stEl.className='statechip '+s.cls; stEl.textContent=s.label;
+  rgEl.innerHTML='<span><b>MSR:</b> '+s.msr+'</span><span><b>saved frames:</b> '+(saved.length?saved.join(' → '):'none')+'</span>';
+  [...acEl.querySelectorAll('button')].forEach(b=>{
+    const a=ACTIONS.find(x=>x.id===b.dataset.id);
+    b.disabled=false;
+    b.style.opacity = a.from.includes(cur) ? '1' : '.42';
+  });
+  lgEl.innerHTML = log.length
+    ? log.slice(0,14).map(l=>'<div class="ln'+(l.err?' err':'')+'">'+l.txt+'<span class="note">'+l.note+'</span></div>').join('')
+    : '<div class="ln" style="color:var(--ink-faint)">Pick an action on the left. Greyed-out actions are not legal from the current state — try one anyway to see why.</div>';
+}
+document.getElementById('simReset').addEventListener('click',()=>{cur='user'; log=[]; saved=[]; render();});
+render();
+</script>
+</body>
+</html>

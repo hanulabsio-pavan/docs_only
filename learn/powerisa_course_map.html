@@ -93,9 +93,9 @@ footer{margin-top:64px; padding-top:22px; border-top:1px solid var(--line-soft);
     <span>OPEN ISA · OPENPOWER FOUNDATION · LINUX FOUNDATION</span>
   </div>
 
-  <div class="kick">Foundational Knowledge Track</div>
+  <div class="kick">Foundational Knowledge &amp; Deep Dives</div>
   <h1>IBM <span class="hl">Power ISA</span><br>from first principles</h1>
-  <p class="lede">Three interactive lessons covering the history, the architecture and the instruction set of the open, royalty-free RISC architecture behind IBM POWER — with live decoders, explorers and self-checks throughout.</p>
+  <p class="lede">Seven interactive lessons covering the history, architecture, instruction set, privilege model, key subsystems, compliance model and competitive position of the open, royalty-free RISC architecture behind IBM POWER — with live decoders, simulators, labs and self-checks throughout.</p>
 
   <div class="badges">
     <span class="badge">Open-sourced Aug 2019</span>
@@ -106,13 +106,13 @@ footer{margin-top:64px; padding-top:22px; border-top:1px solid var(--line-soft);
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="v">3</div><div class="l">Interactive lessons</div></div>
-    <div class="stat"><div class="v">22</div><div class="l">Self-check questions</div></div>
-    <div class="stat"><div class="v">24</div><div class="l">Interview Q&amp;A</div></div>
-    <div class="stat"><div class="v">8</div><div class="l">Live interactive tools</div></div>
+    <div class="stat"><div class="v">7</div><div class="l">Interactive lessons</div></div>
+    <div class="stat"><div class="v">54</div><div class="l">Self-check questions</div></div>
+    <div class="stat"><div class="v">56</div><div class="l">Interview Q&amp;A</div></div>
+    <div class="stat"><div class="v">15</div><div class="l">Live interactive tools</div></div>
   </div>
 
-  <h2 class="sec">The lessons</h2>
+  <h2 class="sec">Part 1 — Foundational knowledge</h2>
   <div class="lessons">
 
     <a class="lesson" href="powerisa_lesson01_fundamentals.html">
@@ -156,6 +156,63 @@ footer{margin-top:64px; padding-top:22px; border-top:1px solid var(--line-soft);
 
   </div>
 
+  <h2 class="sec">Part 2 — Deep dives</h2>
+  <div class="lessons">
+
+    <a class="lesson" href="powerisa_lesson04_modes.html">
+      <div class="num">04</div>
+      <div>
+        <h3>Operation Modes</h3>
+        <p class="sub">Problem, privileged, hypervisor and ultravisor state · the MSR bits that select each · interrupts and the SRR/HSRR/USRR pairs · system calls, hcalls and ultracalls · LPID/PID partitioning · nested radix translation · lazy FP context switching · PEF and secure VMs.</p>
+        <div class="covers">
+          <span>MSR[PR]/[HV]/[S]</span><span>SRR0/SRR1</span><span>rfid · hrfid · urfid</span>
+          <span>0x300 · 0x800 · 0xC00</span><span>sc 0 / sc 1 / sc 2</span><span>LPCR · PTCR</span><span>PEF</span>
+        </div>
+        <div class="interactive">Interactive: privilege ladder · MSR bit explorer · mode-transition simulator that refuses illegal transitions and explains why · 8 self-check questions</div>
+      </div>
+    </a>
+
+    <a class="lesson" href="powerisa_lesson05_features.html">
+      <div class="num">05</div>
+      <div>
+        <h3>Key Features</h3>
+        <p class="sub">IEEE 754 and the FPSCR · why FMA rounds once · decimal and IEEE-128 floating point · vector lane layouts, modulo vs saturating, vperm · what MMA buys in operand bandwidth · POWER9/POWER10 caches · ERAT, TLB and prefetch · OMI and coherent accelerator attach.</p>
+        <div class="covers">
+          <span>fmadd</span><span>FPSCR[RN]</span><span>DFP · binary128</span><span>vaddubm vs vaddubs</span>
+          <span>vperm</span><span>xvf64ger</span><span>128-byte lines</span><span>ERAT</span><span>DSCR</span><span>OMI</span>
+        </div>
+        <div class="interactive">Interactive: live FMA precision lab computing both roundings in real doubles · vector lane visualiser · hoverable latency ladder with table view · 8 self-check questions</div>
+      </div>
+    </a>
+
+    <a class="lesson" href="powerisa_lesson06_compliance.html">
+      <div class="num">06</div>
+      <div>
+        <h3>Compliance &amp; Design Flexibility</h3>
+        <p class="sub">Why "implement everything" blocked open hardware · Base + one subset + optional facilities · SFS, SFFS, LCS and ACS · how software discovers facilities · categories vs subsets · Microwatt as the proof case · the TWG RFC process and the encoding-space constraint · the honest trade-off.</p>
+        <div class="covers">
+          <span>Base architecture</span><span>SFS ⊂ SFFS ⊂ LCS ⊂ ACS</span><span>optional facilities</span>
+          <span>AT_HWCAP2 · IFUNC</span><span>PVR</span><span>Microwatt</span><span>ISA TWG · RFC</span>
+        </div>
+        <div class="interactive">Interactive: subset builder — tick facilities, see which subset you satisfy and what software it unlocks, with real-design presets · 8 self-check questions</div>
+      </div>
+    </a>
+
+    <a class="lesson" href="powerisa_lesson07_comparison.html">
+      <div class="num">07</div>
+      <div>
+        <h3>Power vs x86 vs Arm</h3>
+        <p class="sub">Architectural vs microarchitectural vs commercial differences · the same function in three assembly languages · memory ordering and multi-copy atomicity · privilege and virtualisation origins · code density and decode · licensing and ecosystem · where Power wins, where it doesn't, and a porting checklist.</p>
+        <div class="covers">
+          <span>TSO vs weak</span><span>multi-copy atomicity</span><span>SB · MP · LB · IRIW</span>
+          <span>sync vs lwsync</span><span>VT-x retrofit</span><span>EL0–EL3</span><span>RAS</span><span>char signedness</span>
+        </div>
+        <div class="interactive">Interactive: filterable 18-row comparison matrix with expandable detail · three-column code viewer with cross-highlighting annotations · litmus test lab covering SB, MP, LB and IRIW · 8 self-check questions</div>
+      </div>
+    </a>
+
+  </div>
+
   <h2 class="sec">How the lessons build on each other</h2>
   <div class="path">
 <pre class="ascii">   <span class="cmt">no prerequisites beyond "you have seen assembly before"</span>
@@ -174,7 +231,21 @@ footer{margin-top:64px; padding-top:22px; border-top:1px solid var(--line-soft);
    <span class="v">│  L3  Instruction Categories        │</span>  <span class="cmt">the vocabulary:</span>
    <span class="v">│      what each instruction does    │</span>  <span class="cmt">every family, plus real code walkthrough</span>
    <span class="v">└─────────────────┬──────────────────┘</span>
-                     <span class="box">│</span>
+                     <span class="box">│</span>  <span class="cmt">─── foundations complete; deep dives can be taken in any order ───</span>
+      <span class="box">┌──────────────┼──────────────┬──────────────┐</span>
+      <span class="box">▼</span>              <span class="box">▼</span>              <span class="box">▼</span>              <span class="box">▼</span>
+   <span class="g">┌────────┐</span>    <span class="g">┌────────┐</span>    <span class="g">┌────────┐</span>    <span class="g">┌────────┐</span>
+   <span class="g">│   L4   │</span>    <span class="g">│   L5   │</span>    <span class="g">│   L6   │</span>    <span class="g">│   L7   │</span>
+   <span class="g">│ modes  │</span>    <span class="g">│features│</span>    <span class="g">│complnce│</span>    <span class="g">│ vs x86 │</span>
+   <span class="g">└────────┘</span>    <span class="g">└────────┘</span>    <span class="g">└────────┘</span>    <span class="g">└────────┘</span>
+    <span class="cmt">privilege</span>     <span class="cmt">FP · SIMD</span>     <span class="cmt">subsets &amp;</span>     <span class="cmt">memory models</span>
+    <span class="cmt">interrupts</span>    <span class="cmt">memory</span>        <span class="cmt">extending</span>      <span class="cmt">&amp; ecosystem</span>
+    <span class="cmt">virtualis.</span>    <span class="cmt">hierarchy</span>     <span class="cmt">the ISA</span>        <span class="cmt">porting</span>
+
+     <span class="cmt">L4 leans on L2's MSR and interrupt material.</span>
+     <span class="cmt">L5 leans on L3's FP and vector instructions.</span>
+     <span class="cmt">L7 leans on L2's memory-ordering section — read that first if rusty.</span>
+
    <span class="s">natural next steps ▼</span>
      <span class="cmt">· Book II in depth — the memory model and lock-free programming</span>
      <span class="cmt">· the ELFv2 ABI (ppc64le) — calling convention, TOC, PLT</span>
@@ -278,7 +349,24 @@ const GLOSS=[
  ['VSR','Vector-Scalar Register: 64 × 128-bit unified registers introduced by VSX in v2.06.'],
  ['VSX','Vector-Scalar eXtension (v2.06): unified the FP and vector register files and added double-precision vectors.'],
  ['XER','Fixed-point exception register: carry (CA), overflow (OV) and sticky summary overflow (SO).'],
- ['XO-form','Instruction format for three-register arithmetic with an OE bit and 9-bit extended opcode — add, subf, mulld.']
+ ['XO-form','Instruction format for three-register arithmetic with an OE bit and 9-bit extended opcode — add, subf, mulld.'],
+ ['AT_HWCAP2','ELF auxiliary-vector bitmask through which Linux tells userspace which optional Power facilities are present. Libraries bind once via IFUNC.'],
+ ['DSCR','Data Stream Control Register — user-accessible register that steers the hardware prefetcher. A real tuning lever for streaming workloads.'],
+ ['ERAT','Effective-to-Real Address Translation cache: a tiny per-core structure in front of the TLB that keeps address generation off the critical path.'],
+ ['hcall','A hypervisor call, <code>sc 1</code>. How a guest OS requests operations it is no longer privileged to perform itself.'],
+ ['HSRR0 / HSRR1','The hypervisor’s interrupt save/restore pair, returned from with <code>hrfid</code>. Parallel to SRR0/SRR1 so nesting never clobbers.'],
+ ['IRIW','Independent Reads of Independent Writes — the litmus test that isolates multi-copy atomicity. Allowed on Power, forbidden on x86.'],
+ ['LPCR','Logical Partition Control Register — hypervisor-owned policy register covering interrupt routing, AIL and translation mode.'],
+ ['LPID','Logical Partition ID: identifies which guest is running. Paired with PID, it tags every TLB entry.'],
+ ['MP litmus test','Message passing: write data then set a flag. Forbidden on x86 by TSO, allowed on Power and Arm — the most common porting break.'],
+ ['MSR','Machine State Register: the mode register. SF, HV, S, PR, EE, IR, DR, LE, FP/VEC/VSX.'],
+ ['Multi-copy atomicity','The property that a store becomes visible to all other cores at once. x86 and modern Arm have it; Power does not.'],
+ ['OMI','Open Memory Interface — POWER10’s serial link to off-chip memory buffers, decoupling the processor from the memory media.'],
+ ['PEF','Protected Execution Facility: the ultravisor privilege level and secure memory that let a Secure VM run without trusting the hypervisor.'],
+ ['rfid','Return From Interrupt Doubleword — atomically restores MSR from SRR1 and jumps to SRR0.'],
+ ['SB litmus test','Store buffering: store then load the other thread’s variable. Allowed on all three architectures; needs a full <code>sync</code> on Power.'],
+ ['TSO','Total Store Order — x86’s memory model, in which only store→load may be reordered.'],
+ ['Ultracall','<code>sc 2</code> — the only architected way to enter secure mode. <code>hrfid</code> cannot set MSR[S].']
 ];
 const glEl=document.getElementById('glossary'), glS=document.getElementById('glSearch');
 function esc(s){return s.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}

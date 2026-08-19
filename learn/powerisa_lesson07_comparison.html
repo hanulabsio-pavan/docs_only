@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power ISA · Lesson 7 — Power vs x86 vs Arm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="powerisa_shared.css">
+<style>
+/* ---------- comparison matrix ---------- */
+.matrix{border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin:16px 0; background:var(--panel)}
+.mfilter{display:flex; gap:6px; flex-wrap:wrap; padding:13px 16px; background:var(--bg2); border-bottom:1px solid var(--line)}
+.mfilter button{font-family:var(--mono); font-size:11.5px; background:var(--panel); border:1px solid var(--line);
+  color:var(--ink-dim); padding:6px 12px; border-radius:16px; cursor:pointer; transition:.12s}
+.mfilter button:hover{color:var(--ink); border-color:var(--acc)}
+.mfilter button.on{background:var(--acc); border-color:var(--acc); color:#0b0f14; font-weight:600}
+.mhead{display:grid; grid-template-columns:190px 1fr 1fr 1fr; gap:0; background:var(--bg2);
+  border-bottom:1px solid var(--line); font-family:var(--mono); font-size:11px;
+  letter-spacing:1.2px; text-transform:uppercase; color:var(--ink-faint)}
+.mhead div{padding:10px 14px}
+.mhead .pw{color:var(--acc)} .mhead .x8{color:var(--org)} .mhead .ar{color:var(--vio)}
+.mrow{display:grid; grid-template-columns:190px 1fr 1fr 1fr; border-bottom:1px solid var(--line-soft);
+  cursor:pointer; transition:.12s}
+.mrow:hover{background:var(--panel2)}
+.mrow>div{padding:11px 14px; font-size:13px; color:var(--ink-dim)}
+.mrow .dim{font-family:var(--mono); font-size:12.5px; color:var(--ink); border-right:1px solid var(--line-soft)}
+.mrow .cat{display:block; font-size:10px; color:var(--ink-faint); letter-spacing:.8px; text-transform:uppercase; margin-top:3px}
+.mdetail{grid-column:1/-1; padding:0 14px 14px 14px; font-size:13px; color:var(--ink-dim);
+  border-top:1px dashed var(--line-soft); display:none}
+.mrow.open .mdetail{display:block; padding-top:12px}
+.mdetail b{color:var(--ink)}
+.mempty{padding:26px; text-align:center; color:var(--ink-faint); font-size:14px}
+
+/* ---------- litmus lab ---------- */
+.litmus{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin:16px 0}
+.ltabs{display:flex; background:var(--bg2); border-bottom:1px solid var(--line); flex-wrap:wrap}
+.ltabs button{flex:1 0 auto; background:none; border:none; border-bottom:2px solid transparent;
+  color:var(--ink-faint); font-family:var(--mono); font-size:12.5px; padding:11px 14px; cursor:pointer; transition:.15s}
+.ltabs button:hover{color:var(--ink); background:var(--panel)}
+.ltabs button.on{color:var(--acc); border-bottom-color:var(--acc); background:var(--panel)}
+.lbody{padding:16px 18px}
+.lbody h6{margin:0 0 4px; font-size:16px}
+.lbody .sub{font-size:13px; color:var(--ink-dim); margin:0 0 14px}
+.lcode{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px}
+.lthread{background:#0a0e13; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.lthread .th{font-family:var(--mono); font-size:10.5px; letter-spacing:1.2px; text-transform:uppercase;
+  color:var(--ink-faint); padding:7px 12px; border-bottom:1px solid var(--line-soft)}
+.lthread pre{margin:0; padding:12px; font-family:var(--mono); font-size:12.5px; color:#bcd; line-height:1.6}
+.lquestion{font-family:var(--mono); font-size:13px; color:var(--gold); background:var(--bg2);
+  border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:8px; padding:11px 13px; margin-bottom:14px}
+.lverdicts{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px}
+.lv{border:1px solid var(--line); border-radius:8px; padding:12px 14px; background:var(--bg2)}
+.lv .a{font-family:var(--mono); font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink-faint)}
+.lv .r{font-family:var(--mono); font-size:15px; font-weight:600; margin-top:6px}
+.lv.allow{border-left:3px solid var(--warn)} .lv.allow .r{color:var(--warn)}
+.lv.forbid{border-left:3px solid var(--grn)} .lv.forbid .r{color:var(--grn)}
+.lv .w{font-size:12px; color:var(--ink-faint); margin-top:6px}
+.lfix{background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--acc);
+  border-radius:8px; padding:12px 14px; font-size:13px; color:var(--ink-dim)}
+.lfix code{color:var(--cyn)}
+
+/* ---------- three-ISA code viewer ---------- */
+.tri{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin:16px 0}
+.tricols{display:grid; grid-template-columns:repeat(3,1fr)}
+.tricol{border-right:1px solid var(--line)}
+.tricol:last-child{border-right:none}
+.tricol .th{font-family:var(--mono); font-size:11px; letter-spacing:1.3px; text-transform:uppercase;
+  padding:10px 14px; background:var(--bg2); border-bottom:1px solid var(--line)}
+.tricol.pw .th{color:var(--acc)} .tricol.x8 .th{color:var(--org)} .tricol.ar .th{color:var(--vio)}
+.tricol pre{margin:0; padding:14px; font-family:var(--mono); font-size:12px; line-height:1.75; color:#a8bdd0; overflow-x:auto}
+.tricol .ln{display:block; border-radius:3px; padding:0 4px; margin:0 -4px; transition:.15s}
+.tricol .ln.hl{background:rgba(79,163,255,.18); color:var(--ink)}
+.tricol .ln.dim{opacity:.3}
+.tricol .cm{color:#5a6b7a}
+.triann{padding:13px 16px; background:var(--bg2); border-top:1px solid var(--line)}
+.triann .chips2{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px}
+.triann .chips2 button{font-family:var(--mono); font-size:11.5px; background:var(--panel);
+  border:1px solid var(--line); color:var(--ink-dim); padding:6px 12px; border-radius:16px; cursor:pointer; transition:.12s}
+.triann .chips2 button:hover{color:var(--ink); border-color:var(--acc)}
+.triann .chips2 button.on{background:var(--acc); border-color:var(--acc); color:#0b0f14; font-weight:600}
+.triann .txt{font-size:13px; color:var(--ink-dim); min-height:40px}
+.triann .txt b{color:var(--ink)}
+@media(max-width:880px){ .mhead,.mrow{grid-template-columns:1fr} .mrow .dim{border-right:none}
+  .lcode,.lverdicts,.tricols{grid-template-columns:1fr} .tricol{border-right:none; border-bottom:1px solid var(--line)} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">POWER ISA · LESSON 07</div>
+  <h1>Power vs x86 vs Arm</h1>
+  <a href="#frame">How to compare fairly</a>
+  <a href="#matrix">Comparison matrix</a>
+  <a href="#code">The same function, three ways</a>
+  <a href="#memory">Memory ordering</a>
+  <a href="#litmus">Litmus test lab</a>
+  <a href="#virt">Privilege &amp; virtualisation</a>
+  <a href="#density">Code density &amp; decode</a>
+  <a href="#business">Licensing &amp; ecosystem</a>
+  <a href="#wins">Where Power actually wins</a>
+  <a href="#loses">Where it does not</a>
+  <a href="#porting">Porting checklist</a>
+  <a href="#check">Self-check</a>
+  <a href="#interview">Interview Q&amp;A</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="powerisa_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Deep Dives · Lesson 7 of 7</div>
+<h2 class="title">Advantages &amp; Comparison with x86 and Arm</h2>
+<p class="lede">The comparison everyone asks for, done honestly: where the three architectures genuinely differ, where the differences are folklore, and which ones will actually break your code when you port.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Separate real architectural differences from microarchitectural and business ones.</li>
+    <li>Rank the three memory models and name the litmus test that distinguishes each pair.</li>
+    <li>Explain why Power is <i>non-multi-copy-atomic</i> and why that is the sharpest difference of all.</li>
+    <li>Read the same function in three assembly languages and name what each ISA is optimising for.</li>
+    <li>State honestly where Power wins, where it loses, and what to check when porting.</li>
+  </ul>
+</div>
+
+<section id="frame">
+  <h3><span class="n">1</span>How to compare fairly</h3>
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>People argue "RISC beats CISC". Argument is 30 years stale. Modern x86 chip translates its complicated instructions into simple ones inside anyway. Real differences left: how many registers, how strict is memory ordering, who owns the spec, who ships the chips.</p></div>
+
+  <p>Three categories of difference, and only one of them is architecture:</p>
+  <table>
+    <tr><th>Category</th><th>Examples</th><th>Does it affect your code?</th></tr>
+    <tr><td><b>Architectural</b></td><td>Register count, encoding, memory ordering model, addressing modes, privilege structure</td><td><b>Yes.</b> Correctness and portability live here.</td></tr>
+    <tr><td><b>Microarchitectural</b></td><td>Pipeline width, cache sizes, branch predictors, SMT degree, clock</td><td>Performance only, and it varies more <i>within</i> an architecture than between them.</td></tr>
+    <tr><td><b>Commercial</b></td><td>Licensing, who ships silicon, toolchain maturity, distro support, price</td><td>Often decisive in practice — and nothing to do with the ISA's technical merit.</td></tr>
+  </table>
+
+  <p>The "RISC vs CISC" framing belongs to the second and third categories more than the first. Every modern high-performance x86 core decodes into internal micro-operations that look RISC-like; every modern Arm and Power core is a wide out-of-order machine with the same structural ingredients. What is left of the original argument is <b>decode complexity</b> — real, but a fixed overhead rather than a per-instruction one.</p>
+</section>
+
+<section id="matrix">
+  <h3><span class="n">2</span>Comparison matrix</h3>
+  <p>Click any row for the detail behind it. Filter by what you care about.</p>
+
+  <div class="matrix">
+    <div class="mfilter" id="mFilter"></div>
+    <div class="mhead">
+      <div>Dimension</div><div class="pw">Power ISA</div><div class="x8">x86-64</div><div class="ar">Arm (AArch64)</div>
+    </div>
+    <div id="mRows"></div>
+  </div>
+  <p class="note">Figures describe the architectures as commonly deployed. Both x86-64 and AArch64 have optional extensions that shift individual rows — Intel's APX adds 16 more GPRs, SVE replaces fixed-width NEON vectors, and so on.</p>
+</section>
+
+<section id="code">
+  <h3><span class="n">3</span>The same function, three ways</h3>
+  <p>A trivial loop, and what each architecture's idioms do to it. Click an annotation to highlight the relevant lines.</p>
+
+  <div class="ascii-wrap"><div class="bar">The source</div>
+<pre class="ascii"><span class="cmt">long sum(const long *a, int n) {</span>
+<span class="cmt">    long s = 0;</span>
+<span class="cmt">    for (int i = 0; i &lt; n; i++) s += a[i];</span>
+<span class="cmt">    return s;</span>
+<span class="cmt">}</span>
+</pre></div>
+
+  <div class="tri">
+    <div class="tricols">
+      <div class="tricol pw"><div class="th">Power (ppc64le)</div><pre id="codePW"></pre></div>
+      <div class="tricol x8"><div class="th">x86-64 (System V)</div><pre id="codeX8"></pre></div>
+      <div class="tricol ar"><div class="th">AArch64</div><pre id="codeAR"></pre></div>
+    </div>
+    <div class="triann">
+      <div class="chips2" id="annChips"></div>
+      <div class="txt" id="annTxt"></div>
+    </div>
+  </div>
+  <p class="note">Representative idiomatic output, lightly cleaned for readability — not verbatim compiler output, which would be unrolled and vectorised at <code>-O2</code>. The point is the idiom, not the exact schedule.</p>
+</section>
+
+<section id="memory">
+  <h3><span class="n">4</span>Memory ordering — the difference that actually breaks code</h3>
+  <p>If you remember one thing from this lesson, make it this. Register counts and encoding are aesthetics; the memory model is the thing that silently corrupts data on one architecture and not another.</p>
+
+  <div class="ascii-wrap"><div class="bar">The three models, strongest to weakest</div>
+<pre class="ascii">  <span class="o">x86-64  —  TSO</span> <span class="cmt">(Total Store Order)</span>
+     Only store&#8594;load may be reordered. Everything else is in order.
+     Multi-copy atomic: a store becomes visible to <i>all</i> cores at once.
+     <span class="cmt">→ sloppy code often works by accident.</span>
+
+  <span class="v">AArch64  —  weak, but multi-copy atomic</span> <span class="cmt">(revised in 2018)</span>
+     Loads and stores reorder freely without barriers or dependencies.
+     BUT a store still becomes visible to all other cores together.
+     <span class="cmt">→ catches most missing barriers; still one global store order.</span>
+
+  <span class="a">Power  —  weak AND non-multi-copy atomic</span>
+     Loads and stores reorder freely, <b>and</b> two stores by different
+     threads can be observed in <b>different orders by different cores</b>.
+     <span class="cmt">→ there is no single global order of stores to reason about.</span>
+</pre></div>
+
+  <p>That last property is the sharpest architectural difference between Power and both of its rivals, and it is worth stating precisely:</p>
+
+  <div class="gotcha"><span class="tag">the deep difference</span>
+  <p><b>Power is non-multi-copy-atomic.</b> On x86 and on modern Arm, if two threads each write to a different variable, every other thread agrees on which write happened first — there is one global order. On Power there need not be: core A may observe X before Y while core B observes Y before X, even though neither reordered anything locally. This is not fixable with dependencies or with <code>lwsync</code>; it needs the full <code>sync</code>. Arm was <i>also</i> like this before its 2018 revision to a multicopy-atomic model — Power is now one of the few mainstream architectures that still isn't.</p></div>
+
+  <table>
+    <tr><th>Barrier</th><th>Power</th><th>x86-64</th><th>AArch64</th></tr>
+    <tr><td>Full barrier</td><td><code>sync</code> / <code>hwsync</code></td><td><code>mfence</code> (or any <code>lock</code>-prefixed op)</td><td><code>dmb sy</code></td></tr>
+    <tr><td>Acquire / release class</td><td><code>lwsync</code></td><td>free — TSO gives it</td><td><code>dmb ld</code> / <code>dmb st</code>, or <code>ldar</code>/<code>stlr</code></td></tr>
+    <tr><td>Instruction-fetch sync</td><td><code>isync</code></td><td>serialising instruction / <code>cpuid</code></td><td><code>isb</code></td></tr>
+    <tr><td>Atomic RMW</td><td><code>lwarx</code>/<code>stwcx.</code> loop</td><td><code>lock cmpxchg</code>, <code>lock xadd</code></td><td><code>ldxr</code>/<code>stxr</code>, or LSE <code>casal</code>/<code>ldadd</code></td></tr>
+  </table>
+  <p class="note">Note the asymmetry in effort: x86 gets acquire/release semantics for free from TSO, Arm has dedicated load-acquire and store-release instructions, and Power composes them from a general-purpose barrier. Three different answers to the same problem.</p>
+</section>
+
+<section id="litmus">
+  <h3><span class="n">5</span>Litmus test lab</h3>
+  <p>Each test isolates one reordering. Pick one and see which architectures permit the surprising outcome.</p>
+
+  <div class="litmus">
+    <div class="ltabs" id="lTabs"></div>
+    <div class="lbody" id="lBody"></div>
+  </div>
+  <p class="note">"Allowed" means the architecture permits the outcome, not that you will observe it — most of these are rare and appear only under load on real multi-socket hardware, which is exactly what makes them dangerous.</p>
+</section>
+
+<section id="virt">
+  <h3><span class="n">6</span>Privilege and virtualisation</h3>
+  <p>All three converged on the same shape — a hypervisor level above the OS, two-stage translation, and a confidential-computing tier — but arrived by different routes.</p>
+
+  <table>
+    <tr><th></th><th>Power</th><th>x86-64</th><th>AArch64</th></tr>
+    <tr><td>Privilege levels</td><td>Problem / privileged / hypervisor / ultravisor, from <b>MSR bits</b></td><td>Rings 0–3 (only 0 and 3 used) + VMX root/non-root + SMM</td><td>EL0 / EL1 / EL2 / EL3 exception levels</td></tr>
+    <tr><td>Virtualisation</td><td><b>Architected from the start</b> — LPARs since POWER4 (2001)</td><td><b>Retrofitted</b> — VT-x / AMD-V added in 2005 because x86 was not classically virtualisable</td><td>EL2 designed in from ARMv7/v8</td></tr>
+    <tr><td>Second-stage translation</td><td>Partition table via LPID (radix, v3.0)</td><td>EPT / NPT</td><td>Stage-2 translation at EL2</td></tr>
+    <tr><td>Confidential computing</td><td>PEF / ultravisor (a new privilege level)</td><td>SEV-SNP, TDX (memory encryption + attestation)</td><td>CCA Realms (ARMv9)</td></tr>
+    <tr><td>Secure-world model</td><td>Secure vs normal memory under the ultravisor</td><td>SMM, plus SGX historically</td><td>TrustZone secure / non-secure worlds</td></tr>
+  </table>
+
+  <p>The historical point worth carrying: <b>x86 was not classically virtualisable</b> — a set of instructions behaved differently in ring 3 without trapping, which is why early VMware had to do binary translation and why VT-x exists. Power and Arm both put a real hypervisor level in the architecture, so the same problem never arose. That is a genuine architectural advantage for Power, and one of the older ones.</p>
+</section>
+
+<section id="density">
+  <h3><span class="n">7</span>Code density, decode, and what "RISC" costs</h3>
+  <div class="grid g3">
+    <div class="card"><h6><span class="dot b-org"></span>x86-64</h6><p>Variable length, 1–15 bytes. <b>Best code density</b> — a common operation can be two bytes. The cost is a serial decode problem: you cannot find instruction <i>n+1</i> until you have decoded <i>n</i>, so wide decode needs expensive predecode and length-marking hardware, and micro-op caches exist partly to skip decode entirely.</p></div>
+    <div class="card"><h6><span class="dot b-acc"></span>Power</h6><p>Fixed 32-bit (plus optional 64-bit prefixed in v3.1). Decode is trivially parallel — every 4-byte boundary is an instruction. Density is worse than x86; building a 64-bit constant historically took several instructions, which is exactly what prefixed instructions address.</p></div>
+    <div class="card"><h6><span class="dot b-vio"></span>AArch64</h6><p>Fixed 32-bit, same decode advantage. Somewhat better density than Power in practice thanks to richer immediate encodings and addressing modes — but it dropped the Thumb-style compressed encoding that made AArch32 dense.</p></div>
+  </div>
+
+  <p>Where the fixed-width choice really pays is not decode speed in isolation but <b>everything downstream</b>: branch target alignment, instruction cache utilisation predictability, trace and debug hardware, and the ability to scale decode width without a quadratic cost. Where it costs is I-cache footprint — and with a 48 KB L1I on POWER10, IBM clearly decided to spend area rather than density.</p>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>x86 words different lengths — book smaller, but reader must read each word to know where next starts. Power and Arm words all same length — book bigger, but ten readers can start at ten places at once. Modern chips want many readers.</p></div>
+</section>
+
+<section id="business">
+  <h3><span class="n">8</span>Licensing and ecosystem — the part that usually decides</h3>
+  <table>
+    <tr><th></th><th>Power</th><th>x86-64</th><th>Arm</th></tr>
+    <tr><td>Can you implement it?</td><td><b>Yes</b> — open, royalty-free since 2019, with a patent grant</td><td><b>Effectively no</b> — the Intel/AMD cross-licence makes new entrants impractical</td><td><b>Yes, for a fee</b> — an architecture licence, or licence a core design</td></tr>
+    <tr><td>Governance</td><td>OpenPOWER Foundation, under the Linux Foundation; IBM-led</td><td>Intel and AMD, bilaterally</td><td>Arm Holdings</td></tr>
+    <tr><td>Who ships silicon</td><td>IBM, plus open cores and a small third-party ecosystem</td><td>Intel, AMD</td><td>Apple, Qualcomm, Ampere, AWS, NVIDIA, and dozens more</td></tr>
+    <tr><td>Desktop / laptop presence</td><td>Essentially none since 2006</td><td>Dominant</td><td>Growing fast (Apple silicon, Windows on Arm)</td></tr>
+    <tr><td>Server presence</td><td>Niche but entrenched — AIX, IBM i, SAP HANA, large databases</td><td>Dominant</td><td>Growing fast in cloud</td></tr>
+    <tr><td>Toolchain</td><td>GCC, LLVM, glibc, mainline Linux — mature</td><td>Everything, everywhere</td><td>Mature and broad</td></tr>
+    <tr><td>Prebuilt binaries</td><td>The weak point — many projects ship x86-64 and aarch64 only</td><td>Universal</td><td>Near-universal now</td></tr>
+  </table>
+
+  <p>This is the honest core of it: Power's technical position is strong and its licensing is the most permissive of the three, but <b>ecosystem gravity is a real force</b> and it is not currently pulling toward Power. The architecture's openness arrived after the desktop battle was lost and while Arm was already winning the mobile-to-cloud transition.</p>
+</section>
+
+<section id="wins">
+  <h3><span class="n">9</span>Where Power actually wins</h3>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-grn"></span>Per-socket throughput</h6><p><b>SMT8</b>, very large shared L3, and high memory bandwidth. For a large database or analytics workload that is bottlenecked on memory and thread count rather than single-thread latency, one Power socket does a lot of work.</p></div>
+    <div class="card"><h6><span class="dot b-grn"></span>RAS</h6><p>Reliability, availability, serviceability inherited from mainframe practice: extensive error detection and correction, predictive failure analysis, spare cores that can be substituted at manufacture, and processor recovery. This is a genuine and under-discussed differentiator for the systems Power targets.</p></div>
+    <div class="card"><h6><span class="dot b-grn"></span>Virtualisation maturity</h6><p>Partitioning has been architected since 2001, not retrofitted. PowerVM's live partition mobility and fine-grained resource allocation reflect twenty years of the hypervisor being part of the machine rather than a layer on top.</p></div>
+    <div class="card"><h6><span class="dot b-grn"></span>Coherent accelerator attach</h6><p>CAPI, OpenCAPI, PowerAXON and (on POWER9) NVLink 2.0 let accelerators share virtual addresses and participate in coherence. Summit and Sierra were built on exactly that.</p></div>
+    <div class="card"><h6><span class="dot b-grn"></span>Numerics heritage</h6><p>FMA since 1990, hardware decimal floating-point, hardware IEEE binary-128, and MMA. For financial and scientific arithmetic the FPU is a genuine strength rather than a checkbox.</p></div>
+    <div class="card"><h6><span class="dot b-grn"></span>Licensing</h6><p>The only one of the three you can implement, extend and ship with no fee and no architecture licence — while still getting a thirty-year-hardened server ISA rather than a young one.</p></div>
+  </div>
+</section>
+
+<section id="loses">
+  <h3><span class="n">10</span>Where it does not</h3>
+  <div class="grid g2">
+    <div class="card"><h6><span class="dot b-gold"></span>Ecosystem breadth</h6><p>Many projects ship x86-64 and aarch64 binaries and nothing else. Container images, proprietary tools, game engines, ML frameworks with vendor kernels — the long tail is thin, and building from source is a tax that compounds.</p></div>
+    <div class="card"><h6><span class="dot b-gold"></span>Silicon availability</h6><p>Practically, IBM is the source for high-end parts, and machines are expensive. There is no equivalent of the dozens of Arm licensees producing parts at every price point.</p></div>
+    <div class="card"><h6><span class="dot b-gold"></span>The memory model is a porting hazard</h6><p>Being weaker <i>and</i> non-multi-copy-atomic means concurrency bugs latent on x86 become real failures on Power. That is technically defensible — the bugs were always there — but it costs engineering time and it feels like the platform's fault.</p></div>
+    <div class="card"><h6><span class="dot b-gold"></span>Encoding space is largely spent</h6><p>Thirty years of allocation left little room for extension, and there is no reserved custom opcode region the way RISC-V has. Prefixed instructions relieve this but do not reset it.</p></div>
+    <div class="card"><h6><span class="dot b-gold"></span>Power and thermals at the low end</h6><p>The architecture is fine, but the implementations are aimed at high-throughput servers. There is no mature low-power Power core competing with Cortex-M or Cortex-A class parts.</p></div>
+    <div class="card"><h6><span class="dot b-gold"></span>Mindshare</h6><p>Fewer engineers have written Power assembly than x86 or Arm, which shows up in library tuning, in how quickly bugs are found, and in hiring.</p></div>
+  </div>
+
+  <p class="note">A fair summary: Power is technically competitive and commercially niche. Choosing it is usually driven by an existing AIX or IBM i estate, by a specific need for RAS or coherent accelerator attach, or by wanting an open server-class ISA — rarely by raw price-performance against a commodity x86 or Arm server.</p>
+</section>
+
+<section id="porting">
+  <h3><span class="n">11</span>Porting checklist: x86 or Arm → Power</h3>
+  <p>In rough order of how often each one actually bites:</p>
+  <table>
+    <tr><th>#</th><th>Check</th><th>Why</th></tr>
+    <tr><td>1</td><td><b>Memory barriers in lock-free code</b></td><td>Anything relying on x86's TSO will break. Use C11/C++11 atomics or the kernel's primitives rather than hand-rolled barriers; if you must hand-roll, remember <code>lwsync</code> does not order store&#8594;load and does not fix multi-copy-atomicity issues.</td></tr>
+    <tr><td>2</td><td><b>Endianness assumptions</b></td><td>ppc64le is little-endian, so most code is fine — but code carrying a legacy big-endian Power path, or reading binary formats with hand-rolled byte handling, needs review.</td></tr>
+    <tr><td>3</td><td><b>Cache line size</b></td><td>128 bytes, not 64. Padding constants and false-sharing avoidance must use a cache-line constant, not a literal.</td></tr>
+    <tr><td>4</td><td><b>Intrinsics and inline assembly</b></td><td>SSE/AVX and NEON intrinsics have no automatic equivalent. Either use a portable wrapper layer or write VSX paths; <code>x86intrin</code>-compat shims exist but are partial.</td></tr>
+    <tr><td>5</td><td><b><code>char</code> signedness</b></td><td>Plain <code>char</code> is unsigned on Power by default and signed on x86 — a classic source of quiet behavioural differences.</td></tr>
+    <tr><td>6</td><td><b><code>long double</code></b></td><td>On ppc64le this may be IBM double-double or IEEE binary128 depending on the toolchain and distribution. It is an ABI-visible choice.</td></tr>
+    <tr><td>7</td><td><b>Self-modifying or generated code</b></td><td>JITs need <code>dcbst</code> / <code>sync</code> / <code>icbi</code> / <code>isync</code>. x86 keeps I- and D-caches coherent for you; Power does not.</td></tr>
+    <tr><td>8</td><td><b>Unaligned access</b></td><td>Generally works, but performance varies and some instructions require alignment. Do not assume it is free.</td></tr>
+    <tr><td>9</td><td><b>Timing and RNG assumptions</b></td><td><code>rdtsc</code> has no direct equivalent — use the time base. Anything reading a cycle counter needs a portability layer.</td></tr>
+    <tr><td>10</td><td><b>Build baseline</b></td><td>Decide the target ISA version and subset explicitly (<code>-mcpu=power9</code> vs <code>power10</code>). Building for POWER10 and deploying to POWER9 gives illegal-instruction traps.</td></tr>
+  </table>
+
+  <div class="caveman"><span class="tag">caveman mode</span>
+  <p>Number one is always memory barriers. Bug was there on x86 too, x86 just hid it. Power does not hide it. Blame the code, not the chip — but budget the week anyway.</p></div>
+</section>
+
+<section id="check">
+  <h3><span class="n">12</span>Self-check</h3>
+  <div class="quiz" data-correct="2" data-fb="Power is non-multi-copy-atomic: two stores by different threads can be observed in different orders by different cores, independent of any local reordering.">
+    <div class="q">1. What is the sharpest memory-model difference between Power and modern Arm?</div>
+    <button class="opt">Power has no barrier instructions.</button>
+    <button class="opt">Arm is weaker than Power.</button>
+    <button class="opt">Power is non-multi-copy-atomic; ARMv8 was revised to be multicopy-atomic.</button>
+    <button class="opt">Power orders store→load; Arm does not.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="MP (message passing) is forbidden on x86 by TSO but allowed on both Power and Arm — it is the classic publish pattern that breaks on porting.">
+    <div class="q">2. Which litmus test is forbidden on x86 but allowed on Power?</div>
+    <button class="opt">SB — store buffering</button>
+    <button class="opt">MP — message passing</button>
+    <button class="opt">None; x86 and Power allow the same outcomes.</button>
+    <button class="opt">All of them are allowed everywhere.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="lwsync orders load→load, load→store and store→store but not store→load, so SB needs the full sync.">
+    <div class="q">3. To forbid the SB outcome on Power you need…</div>
+    <button class="opt"><code>sync</code> — <code>lwsync</code> does not order store→load.</button>
+    <button class="opt"><code>lwsync</code>.</button>
+    <button class="opt">an address dependency.</button>
+    <button class="opt"><code>isync</code>.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="x86 was not classically virtualisable — some instructions behaved differently in user mode without trapping — so VT-x/AMD-V had to be added in 2005. Power architected partitioning from the start.">
+    <div class="q">4. Why did x86 need VT-x while Power did not need an equivalent retrofit?</div>
+    <button class="opt">x86 has too few registers.</button>
+    <button class="opt">Power has no hypervisor.</button>
+    <button class="opt">x86 lacked an MMU until 2005.</button>
+    <button class="opt">x86 was not classically virtualisable; Power architected a hypervisor level from the start.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="2" data-fb="Fixed-width encoding means every 4-byte boundary starts an instruction, so decoders can fan out in parallel without predecode length-marking.">
+    <div class="q">5. The main architectural advantage of fixed 32-bit encoding is…</div>
+    <button class="opt">smaller binaries.</button>
+    <button class="opt">faster memory access.</button>
+    <button class="opt">trivially parallel instruction decode.</button>
+    <button class="opt">larger immediate values.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="1" data-fb="Plain char is unsigned by default on Power and signed on x86 — a quiet source of behavioural differences in ported C code.">
+    <div class="q">6. A ported C program behaves differently on Power. Which subtle default should you check?</div>
+    <button class="opt">Integer size — <code>int</code> is 64-bit on Power.</button>
+    <button class="opt">Plain <code>char</code> signedness.</button>
+    <button class="opt">Pointer size — pointers are 32-bit.</button>
+    <button class="opt">Struct field order.</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="0" data-fb="Power is the only one of the three you can implement royalty-free; x86 is effectively closed to new entrants and Arm requires a paid architecture licence.">
+    <div class="q">7. Which of the three can you implement in your own silicon without paying a licence fee?</div>
+    <button class="opt">Power ISA only</button>
+    <button class="opt">Power and Arm</button>
+    <button class="opt">All three</button>
+    <button class="opt">None — all require a licence</button>
+    <div class="fb"></div>
+  </div>
+  <div class="quiz" data-correct="3" data-fb="x86 keeps instruction and data caches coherent for instruction fetch; Power does not, so generated code needs dcbst/sync/icbi/isync.">
+    <div class="q">8. Your JIT works on x86 and crashes intermittently on Power. Most likely cause?</div>
+    <button class="opt">Endianness of the generated code.</button>
+    <button class="opt">Register allocation.</button>
+    <button class="opt">Missing memory barriers in the runtime.</button>
+    <button class="opt">Missing I-cache synchronisation after writing code.</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="interview">
+  <h3><span class="n">13</span>Interview Q&amp;A</h3>
+  <details><summary>Compare Power, x86-64 and AArch64 in a minute.</summary><div class="ans">All three are 64-bit, out-of-order in their high-performance implementations, and much more alike than the RISC-versus-CISC framing suggests. Encoding: x86 is variable 1–15 bytes and denser; Power and AArch64 are fixed 32-bit and decode in parallel. Registers: 16 GPRs on x86-64, 31 on AArch64, 32 on Power plus 64 128-bit VSRs. Memory model: x86 is TSO, AArch64 is weak but multicopy-atomic, Power is weak and non-multi-copy-atomic — the weakest of the three. Privilege: rings plus VMX on x86, four exception levels on Arm, four MSR-selected states on Power. Commercially: x86 is closed, Arm is licensed, Power is open and royalty-free.</div></details>
+  <details><summary>What does non-multi-copy-atomic mean and why does it matter?</summary><div class="ans">It means there is no single global order in which stores become visible. Two threads writing to different variables can be observed in one order by one core and the opposite order by another, even though neither core reordered anything locally. On x86 and on ARMv8 since its 2018 revision, a store becomes visible to all other cores together, so there is one global store order to reason about. On Power there isn't. Practically it means some scenarios cannot be fixed with dependencies or with <code>lwsync</code> — they need the full <code>sync</code> — and it makes Power the hardest of the three to reason about in lock-free code.</div></details>
+  <details><summary>Walk me through the SB and MP litmus tests.</summary><div class="ans">SB — store buffering: two threads each store to their own variable then load the other's. The outcome where both loads return 0 is allowed on all three architectures, because even TSO permits store→load reordering. It's the one case x86 doesn't protect you from, and on Power you need a full <code>sync</code> between the store and the load because <code>lwsync</code> doesn't order store→load. MP — message passing: one thread writes data then sets a flag; the other reads the flag then the data. Seeing the flag set but stale data is forbidden on x86 by TSO but allowed on Power and Arm. It's the classic publish pattern and the single most common thing that breaks when porting from x86.</div></details>
+  <details><summary>Is RISC still meaningfully different from CISC?</summary><div class="ans">Not in the way the term implies. Modern x86 cores decode into internal micro-ops and run a wide out-of-order machine that looks structurally like a Power or Arm core, and all three have accumulated complex SIMD and crypto instructions. What survives is decode: variable-length encoding forces serial length determination, so wide decode needs predecode hardware and micro-op caches, which is a real fixed cost in area and power. Fixed-width encoding makes decode trivially parallel at the price of code density. That's a genuine engineering trade-off, but it's a much narrower claim than the original argument.</div></details>
+  <details><summary>You're leading a port of a large C++ service from x86 to Power. What's your plan?</summary><div class="ans">Memory ordering first — audit every hand-rolled lock-free structure and push it onto C++11 atomics with explicit orderings, because x86's TSO has been hiding real bugs. Then the mechanical items: cache-line padding constants from 64 to 128 bytes, plain <code>char</code> signedness, <code>long double</code> representation, and any SSE or AVX intrinsics that need VSX equivalents or a portable wrapper. Then anything generating code at runtime, which needs I-cache synchronisation. Then decide and pin the build baseline — POWER9 versus POWER10 — so you don't ship illegal instructions to older machines. Throughout, run with thread sanitisers and stress on real multi-socket hardware, because the ordering failures are load-dependent and won't show up on a laptop.</div></details>
+  <details><summary>Where would you genuinely choose Power today?</summary><div class="ans">Three cases. An existing AIX or IBM i estate, where the migration cost dominates any architectural comparison. Workloads that are memory-bandwidth and thread-count bound rather than single-thread bound — large databases and analytics — where SMT8, the very large shared L3 and the memory subsystem pay off per socket. And situations needing either serious RAS or coherent accelerator attach, which is exactly the combination that made Summit and Sierra work. What I wouldn't choose it for is general commodity compute on price-performance, or anything needing a broad supply of prebuilt binaries.</div></details>
+  <details><summary>What does Power's openness actually get you that RISC-V doesn't?</summary><div class="ans">Maturity. You inherit a thirty-year-old server architecture with a hypervisor model that has been in production since 2001, a hardened memory model with a full formal specification, decimal and quad floating-point, and mainline support in GCC, LLVM, glibc and Linux. RISC-V gives you a cleaner slate, reserved custom opcode space, and a much larger and faster-moving open ecosystem, but you're building on a younger foundation. The flip side is Power's encoding space is largely spent and governance is still IBM-led, so it's "mature architecture made free" versus "free architecture growing up".</div></details>
+  <details><summary>Why does Power have 8 condition register fields when x86 and Arm each have one flags register?</summary><div class="ans">To avoid a single serialising resource. With one flags register every comparison clobbers the previous one, which forces branches to sit close to their compares and creates false dependencies in an out-of-order machine. Power's eight independent CR fields let a compiler evaluate several conditions early, combine them with <code>crand</code>/<code>cror</code>, and branch once — and because flag writing is opt-in via the Rc bit, ordinary arithmetic creates no dependency at all. Arm made a partial version of the same choice with conditional-compare instructions and <code>csel</code>; x86 mitigated it in hardware with flags renaming instead.</div></details>
+</section>
+
+<section id="recap">
+  <h3><span class="n">14</span>Recap &amp; key terms</h3>
+  <ul class="tight">
+    <li>Separate <b>architectural</b> from <b>microarchitectural</b> from <b>commercial</b> differences — only the first affects correctness.</li>
+    <li>Memory models, strongest to weakest: <b>x86 TSO &#8594; AArch64 weak but multicopy-atomic &#8594; Power weak and non-multi-copy-atomic</b>.</li>
+    <li><b>MP</b> is forbidden on x86, allowed on Power and Arm — the classic porting break. <b>SB</b> is allowed everywhere and needs a full <code>sync</code> on Power.</li>
+    <li>Registers: <b>16</b> (x86-64) · <b>31</b> (AArch64) · <b>32 GPRs + 64 VSRs</b> (Power).</li>
+    <li>Encoding: variable 1–15 bytes (x86, denser) vs fixed 32-bit (Power and Arm, parallel decode).</li>
+    <li>x86 <b>retrofitted</b> virtualisation in 2005; Power architected partitioning from <b>2001</b>.</li>
+    <li>Power wins on <b>per-socket throughput, RAS, virtualisation maturity, coherent accelerators, numerics, licensing</b>.</li>
+    <li>Power loses on <b>ecosystem breadth, silicon availability, low-power parts, mindshare, encoding headroom</b>.</li>
+    <li>Porting: barriers first, then <b>128-byte lines</b>, <code>char</code> signedness, <code>long double</code>, intrinsics, I-cache sync, build baseline.</li>
+  </ul>
+  <div class="chips"><span class="chip">TSO</span><span class="chip">multicopy atomicity</span><span class="chip">SB / MP / LB / IRIW</span><span class="chip">sync vs lwsync</span><span class="chip">mfence / dmb sy</span><span class="chip">VT-x</span><span class="chip">EL0–EL3</span><span class="chip">LPAR</span><span class="chip">RAS</span><span class="chip">OpenCAPI</span><span class="chip">128-byte line</span><span class="chip">char signedness</span></div>
+</section>
+
+<div class="navfoot">
+  <a href="powerisa_lesson06_compliance.html">&#9668; L6 · Compliance &amp; flexibility</a>
+  <a href="powerisa_course_map.html">Course map &#9658;</a>
+</div>
+<p class="note" style="margin-top:18px">That completes the Deep Dives. From here: Book II in depth for the memory model, the ELFv2 ABI, and reading Microwatt's VHDL to see a whole core end to end.</p>
+</main>
+</div>
+
+<script>
+/* ---------- scroll-spy + quizzes ---------- */
+const links=[...document.querySelectorAll('nav.side a')].filter(a=>a.getAttribute('href').startsWith('#'));
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  links.forEach(l=>l.classList.remove('active'));
+  const i=secs.indexOf(e.target); if(i>-1)links[i].classList.add('active');}});},
+  {rootMargin:'-12% 0px -78% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+document.querySelectorAll('.quiz').forEach(q=>{
+  const correct=+q.dataset.correct, fbt=q.dataset.fb||'';
+  const opts=[...q.querySelectorAll('.opt')], fb=q.querySelector('.fb');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    if(q.dataset.done)return; q.dataset.done=1;
+    opts[correct].classList.add('correct'); if(i!==correct)o.classList.add('wrong');
+    fb.classList.add('show');
+    fb.textContent=(i===correct?'Correct. '+fbt:'Not quite — the highlighted option is right. '+fbt);
+  }));
+});
+
+/* ---------- comparison matrix ---------- */
+const MCATS=['encoding','registers','memory','privilege','ecosystem'];
+const MCATNAME={encoding:'Encoding & decode', registers:'Registers & operands', memory:'Memory model',
+                privilege:'Privilege & virtualisation', ecosystem:'Ecosystem & licensing'};
+const ROWS=[
+ {c:'encoding', d:'Instruction length', p:'Fixed 32-bit; optional 64-bit prefixed (v3.1)',
+  x:'Variable, 1–15 bytes', a:'Fixed 32-bit (A64)',
+  det:'<b>Consequence:</b> Power and AArch64 decoders can fan out to every 4-byte boundary in parallel. x86 must determine each instruction’s length before it can find the next, so wide decode requires predecode length-marking and, in practice, a micro-op cache to skip decode entirely on hot loops. The price Power pays is code density — which is exactly what v3.1’s prefixed instructions push back on.'},
+ {c:'encoding', d:'Code density', p:'Lower — a 64-bit constant historically took 4–5 instructions',
+  x:'Highest of the three', a:'Slightly better than Power',
+  det:'AArch64 gets an edge over Power from richer immediate encodings (bitmask immediates, wide MOV variants) and more expressive addressing modes. Power’s <code>pli</code>/<code>paddi</code> in v3.1 close much of the constant-materialisation gap. Note AArch64 dropped the Thumb-style compressed encoding, so it gave up AArch32’s density advantage deliberately.'},
+ {c:'registers', d:'General-purpose registers', p:'<b>32</b> × 64-bit', x:'16 × 64-bit (Intel APX adds 16 more)', a:'31 × 64-bit + SP/ZR',
+  det:'More architected registers means fewer spills and less register pressure, which matters most in software-pipelined loops and inlined code. x86-64’s 16 is a legacy of extending an 8-register 32-bit ISA; hardware register renaming hides much but not all of the cost. Power’s 32 has been constant since 1990.'},
+ {c:'registers', d:'Vector / FP registers', p:'<b>64</b> × 128-bit VSRs (FPRs and VRs are views)',
+  x:'16 XMM/YMM; 32 ZMM with AVX-512', a:'32 × 128-bit NEON; SVE is length-agnostic',
+  det:'Power unified scalar FP and vector state into one 64-entry file with VSX in v2.06 — twice the vector registers of NEON and, unlike AVX-512, present on every implementation that has VSX at all rather than segmented by product tier. SVE takes a different approach entirely: vector-length-agnostic code that runs unchanged on 128- to 2048-bit implementations.'},
+ {c:'registers', d:'Condition / flags', p:'<b>8 × 4-bit CR fields</b>; flag writing is opt-in via the Rc bit',
+  x:'One EFLAGS register, written implicitly by most ALU ops', a:'One NZCV, plus <code>ccmp</code> and <code>csel</code>',
+  det:'A single flags register is a serialising resource: every compare clobbers the last, creating false dependencies. Power’s eight independent fields let a compiler keep several conditions live, combine them with <code>crand</code>/<code>cror</code>, and branch once. x86 mitigates the same problem in hardware with flags renaming; Arm took a middle path with conditional compare and conditional select.'},
+ {c:'registers', d:'Addressing modes', p:'base+displacement, base+index — each with update',
+  x:'base + index×scale + displacement, and memory operands folded into ALU ops',
+  a:'base+offset, base+register (with extend/shift), pre/post-index',
+  det:'x86’s scaled-index mode and memory-operand ALU instructions genuinely reduce instruction count for array code. Power’s answer is the update forms — <code>lwzu</code> loads and advances the pointer in one instruction — which suits pointer-walking loops but not random indexed access as neatly. Arm sits between, with a scaled/extended index but a strict load/store separation.'},
+ {c:'memory', d:'Ordering model', p:'<b>Weak</b> — loads and stores reorder freely',
+  x:'<b>TSO</b> — only store→load reorders', a:'<b>Weak</b>, but multicopy-atomic since 2018',
+  det:'This is the difference that breaks code rather than merely slowing it. Code written and tested only on x86 frequently contains missing-barrier bugs that TSO hides; both Power and Arm expose them. Power is the weakest of the three, so it is the harshest test of a concurrent codebase — and, viewed positively, the best place to find latent bugs.'},
+ {c:'memory', d:'Multi-copy atomicity', p:'<b>No</b> — different cores can observe different store orders',
+  x:'Yes', a:'Yes (ARMv8 was revised to a multicopy-atomic model)',
+  det:'The deepest architectural difference on this page. Without multi-copy atomicity there is no single global order of stores to reason about, so some interleavings cannot be excluded by dependencies or by a lightweight barrier — they need the full <code>sync</code>. Arm was in the same position before its 2018 revision; Power remains one of the few mainstream architectures that is not multicopy-atomic.'},
+ {c:'memory', d:'Atomic primitives', p:'<code>lwarx</code>/<code>stwcx.</code> reservation loop — no CAS instruction',
+  x:'<code>lock cmpxchg</code>, <code>lock xadd</code>, and friends',
+  a:'<code>ldxr</code>/<code>stxr</code>, plus LSE single-instruction atomics (<code>casal</code>, <code>ldadd</code>)',
+  det:'LL/SC is strictly more general than CAS — you can build any read-modify-write from it, and it does not suffer the ABA problem in the same way — but it can live-lock under heavy contention and needs a retry loop. Arm added LSE precisely because single-instruction atomics scale better at high core counts. x86’s <code>lock</code> prefix is the oldest and simplest of the three.'},
+ {c:'memory', d:'Cache line size', p:'<b>128 bytes</b>', x:'64 bytes', a:'64 bytes (typical)',
+  det:'A practical porting hazard: structures padded to 64 bytes to avoid false sharing on x86 still share a line on Power, and contended per-thread counters can lose most of their throughput. The upside is streaming efficiency and <code>dcbz</code> zeroing twice as much per instruction. Always derive padding from a cache-line constant.'},
+ {c:'memory', d:'I-cache coherence with D-cache', p:'<b>Not coherent</b> — needs <code>dcbst</code>/<code>sync</code>/<code>icbi</code>/<code>isync</code>',
+  x:'Coherent — writing code and jumping to it just works', a:'Not coherent — needs explicit maintenance',
+  det:'x86 maintains coherence between the instruction and data caches in hardware, which is why x86 JITs can be careless here. Power and Arm both require explicit cache maintenance after generating code. This produces intermittent, cache-state-dependent failures that are miserable to debug — one of the most common real bugs found when porting a JIT or a hot-patching runtime.'},
+ {c:'privilege', d:'Privilege levels', p:'Problem / privileged / hypervisor / ultravisor, from MSR bits',
+  x:'Rings 0–3 (0 and 3 used) + VMX root/non-root + SMM', a:'EL0 / EL1 / EL2 / EL3',
+  det:'Arm’s exception levels are the cleanest model of the three — a simple numbered ladder. Power encodes the ladder in MSR bits with the slightly counter-intuitive property that PR=1 means <i>less</i> privilege. x86’s is the most historically layered, with rings, an orthogonal VMX root/non-root axis, and SMM sitting outside the whole scheme.'},
+ {c:'privilege', d:'Virtualisation origin', p:'Architected — LPARs since POWER4 (2001)',
+  x:'Retrofitted — VT-x / AMD-V in 2005', a:'Architected — EL2 from ARMv7/v8',
+  det:'x86 was not classically virtualisable: certain instructions behaved differently in user mode without trapping, so a hypervisor could not simply trap-and-emulate. Early VMware solved it with binary translation; VT-x/AMD-V added a proper root/non-root mode. Power never had that problem because IBM brought mainframe partitioning practice with it.'},
+ {c:'privilege', d:'Confidential computing', p:'PEF — a new ultravisor privilege level (POWER9)',
+  x:'AMD SEV-SNP, Intel TDX — memory encryption plus attestation', a:'Arm CCA Realms (ARMv9)',
+  det:'Three answers to the same problem: take the hypervisor out of the trust boundary. Power adds an architectural privilege level above the hypervisor and splits memory into secure and normal. x86 relies on hardware memory encryption keyed per guest. Arm introduces a Realm world alongside the existing secure/non-secure split. Power’s is arguably the conceptually simplest.'},
+ {c:'ecosystem', d:'Can you implement it?', p:'<b>Yes</b> — open and royalty-free since 2019, with a patent grant',
+  x:'Effectively no — the Intel/AMD cross-licence blocks new entrants',
+  a:'Yes, with a paid architecture licence',
+  det:'This is Power’s strongest non-technical claim and the whole point of the 2019 announcement. You can design, fabricate and ship a Power ISA core with no fee and no licence negotiation, while inheriting a thirty-year-hardened server architecture. RISC-V offers the same freedom on a younger and less battle-tested base.'},
+ {c:'ecosystem', d:'Silicon supply', p:'IBM, plus open cores and a small third-party ecosystem',
+  x:'Intel and AMD', a:'Dozens of licensees at every price point',
+  det:'Practically the most limiting factor for Power. Arm’s breadth of suppliers is its defining commercial advantage; x86 has two suppliers but enormous volume. High-end Power silicon comes from IBM, and there is no equivalent of an off-the-shelf Power SoC for general embedded use.'},
+ {c:'ecosystem', d:'Prebuilt binary availability', p:'The weak point — many projects ship x86-64 and aarch64 only',
+  x:'Universal', a:'Near-universal now',
+  det:'Container images, proprietary tools, ML frameworks with vendor-tuned kernels, and game engines frequently have no ppc64le build. Everything is buildable from source, but that is a recurring tax on every dependency and every upgrade — and it compounds across a large dependency tree.'},
+ {c:'ecosystem', d:'Toolchain maturity', p:'GCC, LLVM, glibc, mainline Linux — mature',
+  x:'Everything', a:'Mature and broad',
+  det:'Power’s toolchain story is genuinely good and is not the bottleneck: the compilers are mature, the ABI is well specified (ELFv2), and Linux support is mainline and actively maintained. The gap is in the long tail of third-party software and in hand-tuned library paths, where x86 and increasingly aarch64 get attention first.'}
+];
+let mCat=null;
+const mfEl=document.getElementById('mFilter'), mrEl=document.getElementById('mRows');
+MCATS.forEach(c=>{
+  const b=document.createElement('button'); b.textContent=MCATNAME[c]; b.dataset.c=c;
+  b.addEventListener('click',()=>{mCat=(mCat===c?null:c); mPaint(); mDraw();});
+  mfEl.appendChild(b);
+});
+function mPaint(){ [...mfEl.children].forEach(b=>b.classList.toggle('on', b.dataset.c===mCat)); }
+function mDraw(){
+  const rows=ROWS.filter(r=>!mCat||r.c===mCat);
+  mrEl.innerHTML=rows.length? rows.map((r,i)=>
+    '<div class="mrow" data-i="'+ROWS.indexOf(r)+'">'+
+    '<div class="dim">'+r.d+'<span class="cat">'+MCATNAME[r.c]+'</span></div>'+
+    '<div>'+r.p+'</div><div>'+r.x+'</div><div>'+r.a+'</div>'+
+    '<div class="mdetail">'+r.det+'</div></div>').join('')
+    : '<div class="mempty">No rows in that category.</div>';
+  mrEl.querySelectorAll('.mrow').forEach(el=>{
+    el.addEventListener('click',()=>el.classList.toggle('open'));
+  });
+}
+mPaint(); mDraw();
+
+/* ---------- three-ISA code viewer ---------- */
+const CODE={
+ pw:[['sum:',[]],
+     ['    cmpwi   r4, 0            <span class="cm"># n &lt;= 0 ?</span>',['flags']],
+     ['    ble     .Lzero',['flags']],
+     ['    mtctr   r4               <span class="cm"># trip count into CTR</span>',['loop']],
+     ['    li      r9, 0            <span class="cm"># s = 0  (addi r9,0,0)</span>',['imm']],
+     ['.Lloop:',[]],
+     ['    ld      r10, 0(r3)       <span class="cm"># load a[i]</span>',['mem']],
+     ['    addi    r3, r3, 8        <span class="cm"># advance pointer</span>',['mem']],
+     ['    add     r9, r9, r10',[]],
+     ['    bdnz    .Lloop           <span class="cm"># dec CTR, branch if != 0</span>',['loop']],
+     ['    mr      r3, r9           <span class="cm"># or r3,r9,r9</span>',['imm']],
+     ['    blr',[]],
+     ['.Lzero:',[]],
+     ['    li      r3, 0',['imm']],
+     ['    blr',[]]],
+ x8:[['sum:',[]],
+     ['    xor     eax, eax         <span class="cm"># s = 0</span>',['imm']],
+     ['    test    esi, esi         <span class="cm"># sets EFLAGS</span>',['flags']],
+     ['    jle     .Lret',['flags']],
+     ['    mov     ecx, esi',[]],
+     ['    xor     edx, edx         <span class="cm"># i = 0</span>',['imm']],
+     ['.Lloop:',[]],
+     ['    add     rax, [rdi+rdx*8] <span class="cm"># load AND add, one insn</span>',['mem']],
+     ['    inc     rdx',['loop']],
+     ['    cmp     rdx, rcx         <span class="cm"># explicit compare</span>',['loop','flags']],
+     ['    jb      .Lloop',['loop','flags']],
+     ['.Lret:',[]],
+     ['    ret',[]]],
+ ar:[['sum:',[]],
+     ['    cmp     w1, #0           <span class="cm"># sets NZCV</span>',['flags']],
+     ['    b.le    .Lzero',['flags']],
+     ['    mov     x8, #0           <span class="cm"># s = 0</span>',['imm']],
+     ['.Lloop:',[]],
+     ['    ldr     x9, [x0], #8     <span class="cm"># load, post-increment x0</span>',['mem']],
+     ['    subs    w1, w1, #1       <span class="cm"># decrement AND set flags</span>',['loop','flags']],
+     ['    add     x8, x8, x9',[]],
+     ['    b.ne    .Lloop',['loop','flags']],
+     ['    mov     x0, x8',['imm']],
+     ['    ret',[]],
+     ['.Lzero:',[]],
+     ['    mov     x0, #0',['imm']],
+     ['    ret',[]]]
+};
+const ANNS=[
+ {k:'loop', n:'Loop control',
+  t:'<b>Power</b> puts the trip count in the Count Register and ends with <code>bdnz</code> — decrement, test and branch in a single instruction, with no compare and no flags dependency. <b>x86</b> needs an increment, an explicit <code>cmp</code>, and a conditional jump. <b>AArch64</b> splits the difference: <code>subs</code> decrements and sets flags in one instruction, then branches. Power’s is the only one where the loop counter never touches the condition registers at all.'},
+ {k:'mem', n:'Memory access',
+  t:'<b>x86</b> folds the load into the arithmetic instruction — <code>add rax,[rdi+rdx*8]</code> is one instruction doing a scaled-index load and an add. That is the CISC advantage in its purest form. <b>Power</b> and <b>AArch64</b> are load/store: the value must land in a register first. Both compensate with auto-update addressing — Power’s <code>addi</code>-after-load here, or <code>ldu</code>; AArch64’s post-increment <code>[x0], #8</code> — so pointer walking still costs little.'},
+ {k:'flags', n:'Condition flags',
+  t:'<b>x86</b> writes EFLAGS implicitly from almost every ALU instruction, so <code>test</code> and <code>cmp</code> exist purely for their side effect. <b>AArch64</b> makes it explicit with an <code>s</code> suffix — <code>subs</code> sets NZCV, <code>sub</code> does not. <b>Power</b> goes furthest: flag writing is opt-in via the Rc bit (the trailing dot), and there are <i>eight</i> independent CR fields, so several live conditions can coexist without clobbering each other.'},
+ {k:'imm', n:'Constants and moves',
+  t:'All three spell "load a small constant" differently, and on Power it is a simplified mnemonic hiding a general instruction: <code>li r9,0</code> is really <code>addi r9,0,0</code>, exploiting the <code>RA|0</code> convention, and <code>mr r3,r9</code> is really <code>or r3,r9,r9</code>. x86 idiomatically zeroes with <code>xor eax,eax</code> because it is shorter and recognised by the renamer as a dependency-breaker. AArch64 has a straightforward <code>mov</code> with wide immediate support.'}
+];
+let ann=null;
+const acEl=document.getElementById('annChips'), atEl=document.getElementById('annTxt');
+ANNS.forEach(a=>{
+  const b=document.createElement('button'); b.textContent=a.n; b.dataset.k=a.k;
+  b.addEventListener('click',()=>{ann=(ann===a.k?null:a.k); cDraw();});
+  acEl.appendChild(b);
+});
+function cDraw(){
+  [...acEl.children].forEach(b=>b.classList.toggle('on', b.dataset.k===ann));
+  ['pw','x8','ar'].forEach(k=>{
+    document.getElementById('code'+k.toUpperCase()).innerHTML=CODE[k].map(l=>{
+      let cls='ln';
+      if(ann){ cls += l[1].includes(ann) ? ' hl' : ' dim'; }
+      return '<span class="'+cls+'">'+l[0]+'</span>';
+    }).join('\n');
+  });
+  const a=ANNS.find(x=>x.k===ann);
+  atEl.innerHTML = a ? a.t : 'Pick an annotation above to highlight the corresponding lines in all three columns.';
+}
+cDraw();
+
+/* ---------- litmus lab ---------- */
+const LITMUS=[
+ {k:'SB', n:'SB — store buffering',
+  sub:'Each thread stores to its own variable, then reads the other’s. Can both reads miss?',
+  t0:'    x = 1\n    r1 = y', t1:'    y = 1\n    r2 = x',
+  q:'Can r1 == 0 AND r2 == 0 ?',
+  v:{p:'ALLOWED', x:'ALLOWED', a:'ALLOWED'},
+  w:{p:'store→load reorders', x:'even TSO permits store→load', a:'store→load reorders'},
+  fix:'This is the one case x86 does <b>not</b> protect you from — store buffering is exactly what "Total Store Order" still allows. On Power you need a full <code>sync</code> between the store and the load in each thread; <code>lwsync</code> is <b>not</b> sufficient because it does not order store→load. x86 uses <code>mfence</code> (or any <code>lock</code>-prefixed operation), AArch64 uses <code>dmb sy</code>. In C++ terms this is why <code>seq_cst</code> costs a real fence on every architecture.'},
+ {k:'MP', n:'MP — message passing',
+  sub:'The classic publish pattern: write data, then set a flag. Can the reader see the flag but stale data?',
+  t0:'    data = 42\n    flag = 1', t1:'    r1 = flag\n    r2 = data',
+  q:'Can r1 == 1 AND r2 == 0 ?',
+  v:{p:'ALLOWED', x:'FORBIDDEN', a:'ALLOWED'},
+  w:{p:'stores and loads both reorder', x:'TSO keeps store→store and load→load in order', a:'stores and loads both reorder'},
+  fix:'<b>The single most common thing that breaks when porting from x86.</b> TSO keeps both the writer’s two stores and the reader’s two loads in order, so the pattern works by accident on x86. On Power the writer needs an <code>lwsync</code> between the two stores and the reader needs either an address dependency or an <code>lwsync</code> between the two loads. AArch64 uses <code>stlr</code>/<code>ldar</code> or <code>dmb</code>. Note <code>lwsync</code> <i>is</i> enough here — unlike SB — because only store→store and load→load ordering is required.'},
+ {k:'LB', n:'LB — load buffering',
+  sub:'Each thread reads one variable then writes the other. Can both reads see the future?',
+  t0:'    r1 = x\n    y = 1', t1:'    r2 = y\n    x = 1',
+  q:'Can r1 == 1 AND r2 == 1 ?',
+  v:{p:'ALLOWED', x:'FORBIDDEN', a:'ALLOWED'},
+  w:{p:'load→store reorders', x:'TSO forbids load→store reordering', a:'load→store reorders'},
+  fix:'Reads appearing to see values written "later" is deeply counter-intuitive, but it follows directly from allowing a store to be reordered ahead of an earlier load. On Power and Arm any dependency — data, address or control plus <code>isync</code> — or a barrier between the load and the store forbids it. x86 never allows it because TSO only reorders store→load. This test is a good illustration that "weak" is not one thing: architectures differ in exactly which of the four reorderings they permit.'},
+ {k:'IRIW', n:'IRIW — independent reads of independent writes',
+  sub:'Two writers, two readers. Can the readers disagree about which write happened first?',
+  t0:'  P0:  x = 1        P1:  y = 1', t1:'  P2:  r1 = x        P3:  r3 = y\n       r2 = y             r4 = x',
+  q:'Can P2 see x-then-not-y while P3 sees y-then-not-x ?',
+  v:{p:'ALLOWED', x:'FORBIDDEN', a:'ALLOWED'},
+  w:{p:'non-multi-copy-atomic', x:'multi-copy atomic', a:'load→load reorders, but stores are multi-copy atomic'},
+  fix:'<b>The test that isolates multi-copy atomicity.</b> On x86 there is one global order of stores, so no two observers can disagree. Modern AArch64 is also multicopy-atomic — its outcome here comes from local load→load reordering, and adding <code>dmb ld</code> in the readers forbids it. Power is different in kind: it is <b>non-multi-copy-atomic</b>, so the disagreement can arise even without local reordering, and only a full <code>sync</code> in each reader forbids it. This is the deepest architectural gap between Power and both rivals.'}
+];
+let lCur=0;
+const ltEl=document.getElementById('lTabs'), lbEl=document.getElementById('lBody');
+LITMUS.forEach((t,i)=>{
+  const b=document.createElement('button'); b.textContent=t.k;
+  b.addEventListener('click',()=>{lCur=i; lDraw();}); ltEl.appendChild(b);
+});
+function lDraw(){
+  [...ltEl.children].forEach((b,i)=>b.classList.toggle('on',i===lCur));
+  const t=LITMUS[lCur];
+  const vbox=(name,val,why)=>'<div class="lv '+(val==='ALLOWED'?'allow':'forbid')+'">'+
+    '<div class="a">'+name+'</div><div class="r">'+val+'</div><div class="w">'+why+'</div></div>';
+  lbEl.innerHTML=
+    '<h6>'+t.n+'</h6><p class="sub">'+t.sub+'</p>'+
+    '<div class="lcode">'+
+      '<div class="lthread"><div class="th">'+(t.k==='IRIW'?'writers':'thread 0')+'</div><pre>'+t.t0+'</pre></div>'+
+      '<div class="lthread"><div class="th">'+(t.k==='IRIW'?'readers':'thread 1')+'</div><pre>'+t.t1+'</pre></div>'+
+    '</div>'+
+    '<div class="lquestion">'+t.q+'&nbsp;&nbsp;<span style="color:var(--ink-faint)">(all variables start at 0)</span></div>'+
+    '<div class="lverdicts">'+vbox('Power',t.v.p,t.w.p)+vbox('x86-64',t.v.x,t.w.x)+vbox('AArch64',t.v.a,t.w.a)+'</div>'+
+    '<div class="lfix">'+t.fix+'</div>';
+}
+lDraw();
+</script>
+</body>
+</html>
