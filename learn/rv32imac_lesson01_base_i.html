@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RV32IMAC · Lesson 1 — Base RV32I Encoding &amp; Datapath</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="rv32imac_shared.css">
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">RV32IMAC · LESSON 01</div>
+  <h1>Base RV32I</h1>
+  <a href="#frame">The interview frame</a>
+  <a href="#formats">Six instruction formats</a>
+  <a href="#imm">Immediate scrambling</a>
+  <a href="#opmap">Opcode map</a>
+  <a href="#altbit">The inst[30] trap</a>
+  <a href="#datapath">Datapath walk</a>
+  <a href="#regfile">Register file &amp; x0</a>
+  <a href="#branch">Branch comparison</a>
+  <a href="#memops">Loads, stores, misalignment</a>
+  <a href="#scope">What is NOT in I</a>
+  <a href="#check">Self-check</a>
+  <a href="#qa">Interview Q&amp;A</a>
+  <a href="#defend">Defend your claim</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="rv32imac_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Interview Defence Track · Lesson 1 of 7</div>
+<h2 class="title">Base RV32I — encoding, decode and datapath</h2>
+<p class="lede">The base is not the easy part. It is the part you are expected to explain without hesitation. Every encoding choice in RV32I was made to shrink a specific piece of hardware. Name the hardware and you have answered the question.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Draw all six instruction formats from memory, field by field.</li>
+    <li>Explain immediate scrambling as a hardware optimisation, not an oddity.</li>
+    <li>State exactly which instruction bits are needed before decode completes.</li>
+    <li>Describe the <code>inst[30]</code> alternate-operation bit and where it does not apply.</li>
+    <li>Justify a 2-read 1-write register file for a single-issue core.</li>
+    <li>Say what RV32I excludes after the Zicsr and Zifencei split.</li>
+  </ul>
+</div>
+
+<section id="frame">
+  <h3><span class="n">1</span>The interview frame</h3>
+  <p>Panels probe the base to test whether you designed a core or merely used one. The tell is causality. A user says "immediates are split across the word". A designer says "immediates are split so the sign-extension network is a single wire fanout and the immediate mux stays 2:1".</p>
+  <div class="crux"><span class="tag">crux</span>
+  <p>RV32I optimises for one thing above all: starting work before decode finishes. Register indices, the sign bit and most immediate bits sit at fixed positions. The regfile read and the immediate generator therefore run in parallel with opcode decode, not after it.</p></div>
+  <p>Hold that sentence. It answers at least five different questions.</p>
+</section>
+
+<section id="formats">
+  <h3><span class="n">2</span>Six instruction formats</h3>
+  <p>Four base formats: R, I, S, U. Two immediate variants: B (from S) and J (from U). All are 32 bits with <code>inst[1:0] = 11</code>.</p>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="f-r">R-type</button>
+      <button data-t="f-i">I-type</button>
+      <button data-t="f-s">S-type</button>
+      <button data-t="f-b">B-type</button>
+      <button data-t="f-u">U-type</button>
+      <button data-t="f-j">J-type</button>
+    </div>
+
+    <div class="tabpane" id="f-r">
+      <h5>R-type — register-register ALU</h5>
+      <div class="bits">
+        <div class="f f-f7" style="flex:7"><b>funct7</b><i>31:25</i></div>
+        <div class="f f-r2" style="flex:5"><b>rs2</b><i>24:20</i></div>
+        <div class="f f-r1" style="flex:5"><b>rs1</b><i>19:15</i></div>
+        <div class="f f-f3" style="flex:3"><b>funct3</b><i>14:12</i></div>
+        <div class="f f-rd" style="flex:5"><b>rd</b><i>11:7</i></div>
+        <div class="f f-op" style="flex:7"><b>opcode</b><i>6:0</i></div>
+      </div>
+      <p>Covers <code>ADD SUB SLL SLT SLTU XOR SRL SRA OR AND</code>. Also the whole M extension and, with a different opcode, the A extension.</p>
+      <p>funct7 is a 7-bit wide field but almost entirely unused. Only bit 30 and bit 25 carry meaning in the base. The rest is reserved encoding space — deliberately left for extensions.</p>
+    </div>
+
+    <div class="tabpane" id="f-i">
+      <h5>I-type — 12-bit signed immediate</h5>
+      <div class="bits">
+        <div class="f f-imm" style="flex:12"><b>imm[11:0]</b><i>31:20</i></div>
+        <div class="f f-r1" style="flex:5"><b>rs1</b><i>19:15</i></div>
+        <div class="f f-f3" style="flex:3"><b>funct3</b><i>14:12</i></div>
+        <div class="f f-rd" style="flex:5"><b>rd</b><i>11:7</i></div>
+        <div class="f f-op" style="flex:7"><b>opcode</b><i>6:0</i></div>
+      </div>
+      <p>Three distinct opcodes use it: <code>OP-IMM</code> (ADDI, SLTI, ANDI …), <code>LOAD</code> (LB, LH, LW, LBU, LHU) and <code>JALR</code>. <code>SYSTEM</code> reuses the shape for ECALL and EBREAK with a 12-bit constant function field.</p>
+      <p>Range is &minus;2048 to +2047. This is why <code>LI</code> of a large constant expands to <code>LUI</code> plus <code>ADDI</code>.</p>
+      <div class="trap"><span class="tag">trap</span>
+      <p>Shifts are I-type but are <b>not</b> 12-bit immediates. <code>SLLI/SRLI/SRAI</code> use only <code>inst[24:20]</code> as a 5-bit shift amount in RV32. Bits 31:25 become a function field. A shift with <code>inst[25]=1</code> is an illegal instruction in RV32, not a shift by 33.</p></div>
+    </div>
+
+    <div class="tabpane" id="f-s">
+      <h5>S-type — stores</h5>
+      <div class="bits">
+        <div class="f f-imm" style="flex:7"><b>imm[11:5]</b><i>31:25</i></div>
+        <div class="f f-r2" style="flex:5"><b>rs2</b><i>24:20</i></div>
+        <div class="f f-r1" style="flex:5"><b>rs1</b><i>19:15</i></div>
+        <div class="f f-f3" style="flex:3"><b>funct3</b><i>14:12</i></div>
+        <div class="f f-imm" style="flex:5"><b>imm[4:0]</b><i>11:7</i></div>
+        <div class="f f-op" style="flex:7"><b>opcode</b><i>6:0</i></div>
+      </div>
+      <p>The immediate is split because <code>rs2</code> must stay at 24:20. Store data comes from rs2. Keeping rs2 fixed lets the second regfile read port be driven straight off the fetched word.</p>
+      <p>Address is <code>rs1 + sext(imm)</code>. Identical adder to the load path, so one address adder serves both.</p>
+    </div>
+
+    <div class="tabpane" id="f-b">
+      <h5>B-type — conditional branches</h5>
+      <div class="bits">
+        <div class="f f-imm" style="flex:1"><b>12</b><i>31</i></div>
+        <div class="f f-imm" style="flex:6"><b>10:5</b><i>30:25</i></div>
+        <div class="f f-r2" style="flex:5"><b>rs2</b><i>24:20</i></div>
+        <div class="f f-r1" style="flex:5"><b>rs1</b><i>19:15</i></div>
+        <div class="f f-f3" style="flex:3"><b>funct3</b><i>14:12</i></div>
+        <div class="f f-imm" style="flex:4"><b>4:1</b><i>11:8</i></div>
+        <div class="f f-imm" style="flex:1"><b>11</b><i>7</i></div>
+        <div class="f f-op" style="flex:7"><b>opcode</b><i>6:0</i></div>
+      </div>
+      <p>Offset is 13 bits signed, but bit 0 is not encoded. Branch targets are always even. Range is &plusmn;4 KiB.</p>
+      <p>Note where bit 11 sits: <code>inst[7]</code>, the slot S-type uses for <code>imm[0]</code>. B-type is S-type with two immediate bits swapped. That swap costs one 2:1 mux and buys a doubled branch range.</p>
+    </div>
+
+    <div class="tabpane" id="f-u">
+      <h5>U-type — upper immediate</h5>
+      <div class="bits">
+        <div class="f f-imm" style="flex:20"><b>imm[31:12]</b><i>31:12</i></div>
+        <div class="f f-rd" style="flex:5"><b>rd</b><i>11:7</i></div>
+        <div class="f f-op" style="flex:7"><b>opcode</b><i>6:0</i></div>
+      </div>
+      <p><code>LUI</code> writes <code>imm &lt;&lt; 12</code>. <code>AUIPC</code> writes <code>PC + (imm &lt;&lt; 12)</code>. AUIPC is what makes position-independent code cheap — no GOT indirection for nearby symbols.</p>
+      <div class="trap"><span class="tag">trap</span>
+      <p><code>LUI</code> + <code>ADDI</code> does not simply concatenate. ADDI sign-extends its 12-bit immediate. If <code>imm[11]</code> is set, the assembler must add 1 to the LUI immediate to compensate. Interviewers love this because it shows you have actually written the expansion.</p></div>
+    </div>
+
+    <div class="tabpane" id="f-j">
+      <h5>J-type — JAL</h5>
+      <div class="bits">
+        <div class="f f-imm" style="flex:1"><b>20</b><i>31</i></div>
+        <div class="f f-imm" style="flex:10"><b>10:1</b><i>30:21</i></div>
+        <div class="f f-imm" style="flex:1"><b>11</b><i>20</i></div>
+        <div class="f f-imm" style="flex:8"><b>19:12</b><i>19:12</i></div>
+        <div class="f f-rd" style="flex:5"><b>rd</b><i>11:7</i></div>
+        <div class="f f-op" style="flex:7"><b>opcode</b><i>6:0</i></div>
+      </div>
+      <p>21-bit signed offset, bit 0 implied zero. Range &plusmn;1 MiB. J-type is U-type with the immediate rearranged so that bits 10:1 land in the same place they occupy in I-type and B-type.</p>
+      <p><code>JAL x0, offset</code> is the canonical unconditional jump. <code>JAL x1, offset</code> is a call. There is no separate CALL opcode.</p>
+    </div>
+  </div>
+</section>
+
+<section id="imm">
+  <h3><span class="n">3</span>Immediate scrambling — the real answer</h3>
+  <p>This is the single most asked RV32I question. Answer it with hardware.</p>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="im-rule">The invariants</button>
+      <button data-t="im-cost">Mux cost</button>
+      <button data-t="im-rtl">RTL sketch</button>
+      <button data-t="im-arm">Versus ARM</button>
+    </div>
+
+    <div class="tabpane" id="im-rule">
+      <h5>Four invariants that never break</h5>
+      <ul class="tight">
+        <li><b>Sign bit.</b> Every immediate takes its sign from <code>inst[31]</code>. Always. So sign-extension is a fanout of one wire, not a mux tree.</li>
+        <li><b>Bits 10:5.</b> Always from <code>inst[30:25]</code>, in every format that has them.</li>
+        <li><b>Bits 4:1.</b> From <code>inst[24:21]</code> in I and J. From <code>inst[11:8]</code> in S and B. Exactly two sources.</li>
+        <li><b>Bit 0.</b> From <code>inst[20]</code> in I, <code>inst[7]</code> in S. Absent in B, J and U.</li>
+      </ul>
+      <div class="crux"><span class="tag">crux</span>
+      <p>Only bit 11 and bits 19:12 genuinely vary across formats. Everything else is fixed or a 2:1 choice.</p></div>
+    </div>
+
+    <div class="tabpane" id="im-cost">
+      <h5>What it actually saves</h5>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Immediate bit</th><th>Sources</th><th>Mux width</th></tr>
+        <tr><td class="mono">31:20</td><td class="mono">inst[31] only</td><td class="ok">none — wire</td></tr>
+        <tr><td class="mono">19:12</td><td class="mono">inst[31] or inst[19:12]</td><td class="mid">2:1</td></tr>
+        <tr><td class="mono">11</td><td class="mono">inst[31] / inst[7] / inst[20]</td><td class="no">3:1 or 4:1</td></tr>
+        <tr><td class="mono">10:5</td><td class="mono">inst[30:25] or zero</td><td class="mid">2:1</td></tr>
+        <tr><td class="mono">4:1</td><td class="mono">inst[24:21] or inst[11:8]</td><td class="mid">2:1</td></tr>
+        <tr><td class="mono">0</td><td class="mono">inst[20] / inst[7] / zero</td><td class="mid">3:1</td></tr>
+      </table>
+      </div>
+      <p>A naive encoding would need a 6:1 mux on all 32 bits plus a variable-width sign extender. The scrambled encoding reduces that to mostly wires and a handful of narrow muxes. In a tight core that difference is real timing slack on the ID stage.</p>
+    </div>
+
+    <div class="tabpane" id="im-rtl">
+      <h5>Immediate generator, RV32I</h5>
+      <div class="ascii-wrap"><div class="bar">Verilog — immediate generation</div>
+<pre class="code"><span class="kw">wire</span> sgn = inst[<span class="num">31</span>];   <span class="cmt">// one wire feeds bits 31:11 of every format</span>
+
+<span class="kw">wire</span> [<span class="num">31</span>:<span class="num">0</span>] imm_i = {{<span class="num">21</span>{sgn}}, inst[<span class="num">30</span>:<span class="num">20</span>]};
+<span class="kw">wire</span> [<span class="num">31</span>:<span class="num">0</span>] imm_s = {{<span class="num">21</span>{sgn}}, inst[<span class="num">30</span>:<span class="num">25</span>], inst[<span class="num">11</span>:<span class="num">7</span>]};
+<span class="kw">wire</span> [<span class="num">31</span>:<span class="num">0</span>] imm_b = {{<span class="num">20</span>{sgn}}, inst[<span class="num">7</span>], inst[<span class="num">30</span>:<span class="num">25</span>], inst[<span class="num">11</span>:<span class="num">8</span>], <span class="num">1'b0</span>};
+<span class="kw">wire</span> [<span class="num">31</span>:<span class="num">0</span>] imm_u = {inst[<span class="num">31</span>:<span class="num">12</span>], <span class="num">12'b0</span>};
+<span class="kw">wire</span> [<span class="num">31</span>:<span class="num">0</span>] imm_j = {{<span class="num">12</span>{sgn}}, inst[<span class="num">19</span>:<span class="num">12</span>], inst[<span class="num">20</span>], inst[<span class="num">30</span>:<span class="num">21</span>], <span class="num">1'b0</span>};
+
+<span class="cmt">// Notice: zero logic gates. Pure bit selection and replication.</span>
+<span class="cmt">// The only real hardware is the final select, driven by opcode[6:2].</span></pre>
+      </div>
+      <p>Every one of those five expressions is wiring. The synthesiser emits no gates for them. Only the 5:1 select at the end costs area, and that select is off the critical path if you compute all five in parallel.</p>
+    </div>
+
+    <div class="tabpane" id="im-arm">
+      <h5>Contrast: why ARM did it differently</h5>
+      <p>ARM's classic 12-bit data-processing immediate is an 8-bit value with a 4-bit rotate. That trades decode logic — a barrel rotator in the immediate path — for encoding density on common constants.</p>
+      <p>RISC-V takes the opposite view. Immediate generation must be free; the compiler can emit two instructions for an awkward constant. That is the whole philosophy in one comparison.</p>
+      <div class="defend"><span class="tag">use this line</span>
+      <ul><li>"RISC-V pushes complexity out of the decoder into the compiler. ARM historically pushed it the other way. Neither is wrong — it depends on whether your bottleneck is the decode critical path or I-cache pressure."</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section id="opmap">
+  <h3><span class="n">4</span>Opcode map you should have memorised</h3>
+  <p>For 32-bit instructions <code>inst[1:0] = 11</code>. The real opcode is <code>inst[6:2]</code>, five bits.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>inst[6:2]</th><th>Name</th><th>Format</th><th>Instructions</th></tr>
+    <tr><td class="mono">00000</td><td class="mono">LOAD</td><td>I</td><td>LB LH LW LBU LHU</td></tr>
+    <tr><td class="mono">00011</td><td class="mono">MISC-MEM</td><td>I</td><td>FENCE (FENCE.I is Zifencei)</td></tr>
+    <tr><td class="mono">00100</td><td class="mono">OP-IMM</td><td>I</td><td>ADDI SLTI SLTIU XORI ORI ANDI SLLI SRLI SRAI</td></tr>
+    <tr><td class="mono">00101</td><td class="mono">AUIPC</td><td>U</td><td>AUIPC</td></tr>
+    <tr><td class="mono">01000</td><td class="mono">STORE</td><td>S</td><td>SB SH SW</td></tr>
+    <tr><td class="mono">01011</td><td class="mono">AMO</td><td>R</td><td>LR.W SC.W AMO*.W &nbsp;<span class="ok">(A ext)</span></td></tr>
+    <tr><td class="mono">01100</td><td class="mono">OP</td><td>R</td><td>ADD SUB SLL SLT SLTU XOR SRL SRA OR AND + <span class="mid">M ext</span></td></tr>
+    <tr><td class="mono">01101</td><td class="mono">LUI</td><td>U</td><td>LUI</td></tr>
+    <tr><td class="mono">11000</td><td class="mono">BRANCH</td><td>B</td><td>BEQ BNE BLT BGE BLTU BGEU</td></tr>
+    <tr><td class="mono">11001</td><td class="mono">JALR</td><td>I</td><td>JALR</td></tr>
+    <tr><td class="mono">11011</td><td class="mono">JAL</td><td>J</td><td>JAL</td></tr>
+    <tr><td class="mono">11100</td><td class="mono">SYSTEM</td><td>I</td><td>ECALL EBREAK (CSR* is Zicsr)</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">crux</span>
+  <p>Format is a pure function of <code>inst[6:2]</code>. Five bits into a small lookup gives you the format select. That is why the immediate generator can be flat combinational logic with no dependency on funct3 or funct7.</p></div>
+</section>
+
+<section id="altbit">
+  <h3><span class="n">5</span>The inst[30] trap</h3>
+  <p><code>inst[30]</code> is the "alternate operation" bit. It distinguishes SUB from ADD and SRA from SRL. Candidates then over-generalise.</p>
+  <div class="trap"><span class="tag">the trap</span>
+  <p>Ask: "So <code>ADDI</code> with <code>inst[30]=1</code> is <code>SUBI</code>?" No. For <code>OP-IMM</code>, bit 30 is part of the 12-bit immediate. Setting it just changes the constant. RISC-V has no SUBI because <code>ADDI</code> with a negative immediate covers it.</p></div>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Opcode</th><th>funct3</th><th>Is inst[30] a function bit?</th></tr>
+    <tr><td class="mono">OP</td><td class="mono">000 (ADD/SUB)</td><td class="ok">Yes — selects SUB</td></tr>
+    <tr><td class="mono">OP</td><td class="mono">101 (SRL/SRA)</td><td class="ok">Yes — selects SRA</td></tr>
+    <tr><td class="mono">OP</td><td>all others</td><td class="no">No — must be 0, else illegal</td></tr>
+    <tr><td class="mono">OP-IMM</td><td class="mono">001, 101 (shifts)</td><td class="ok">Yes — selects SRAI</td></tr>
+    <tr><td class="mono">OP-IMM</td><td>all others</td><td class="no">No — it is imm[10]</td></tr>
+  </table>
+  </div>
+  <p>So the decoder cannot blindly wire <code>inst[30]</code> into the ALU function. It must be qualified by opcode and funct3. Getting this wrong is a classic RTL bug, and describing the qualification is exactly the level of detail a panel wants.</p>
+  <div class="delta"><span class="tag">RV64 delta</span>
+  <p>In RV64 the shift amount grows to 6 bits, <code>inst[25:20]</code>. So <code>inst[25]</code> stops being a reserved-must-be-zero bit and becomes shamt[5]. A decoder written for RV32 that checks <code>inst[25]==0</code> will reject legal RV64 shifts. Mention this if asked about portable decoder design.</p></div>
+</section>
+
+<section id="datapath">
+  <h3><span class="n">6</span>Datapath walk — single-issue in-order</h3>
+  <p>Reference pipeline for this whole track. Five stages, classical.</p>
+  <div class="ascii-wrap"><div class="bar">RV32I reference pipeline</div>
+<pre class="ascii">   <span class="a">IF</span>            <span class="g">ID</span>              <span class="s">EX</span>              <span class="v">MEM</span>            <span class="o">WB</span>
+<span class="box">┌──────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐  ┌────────┐</span>
+<span class="box">│</span> PC       <span class="box">│  │</span> decode     <span class="box">│  │</span> ALU        <span class="box">│  │</span> D-cache  <span class="box">│  │</span> regfile<span class="box">│</span>
+<span class="box">│</span> I-cache  <span class="box">│→ │</span> regfile rd <span class="box">│→ │</span> branch cmp <span class="box">│→ │</span> access   <span class="box">│→ │</span> write  <span class="box">│</span>
+<span class="box">│</span> +4       <span class="box">│  │</span> imm gen    <span class="box">│  │</span> addr add   <span class="box">│  │</span>          <span class="box">│  │</span>        <span class="box">│</span>
+<span class="box">└──────────┘  └────────────┘  └────────────┘  └──────────┘  └────────┘</span>
+                     <span class="cmt">↑</span>              <span class="cmt">│</span>               <span class="cmt">│</span>             <span class="cmt">│</span>
+                     <span class="cmt">└── forward ───┴───────────────┴─────────────┘</span>
+                         <span class="cmt">EX→EX, MEM→EX, WB→ID paths</span></pre>
+  </div>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="dp-if">IF</button>
+      <button data-t="dp-id">ID</button>
+      <button data-t="dp-ex">EX</button>
+      <button data-t="dp-mem">MEM</button>
+      <button data-t="dp-wb">WB</button>
+    </div>
+    <div class="tabpane" id="dp-if">
+      <h5>Instruction fetch</h5>
+      <p>PC drives the I-cache. Next PC is <code>PC+4</code> in the base. With C implemented it becomes <code>PC+2</code> or <code>PC+4</code>, which Lesson 04 covers.</p>
+      <p>Redirect sources in priority order: trap vector, branch mispredict from EX, JALR target from EX, JAL target from ID, sequential.</p>
+      <p>The base has no architectural branch delay slot. That is a deliberate break from MIPS and it means the hardware must interlock or predict.</p>
+    </div>
+    <div class="tabpane" id="dp-id">
+      <h5>Decode</h5>
+      <p>Three things happen in parallel, not in sequence:</p>
+      <ol class="tight">
+        <li>Regfile read using <code>inst[19:15]</code> and <code>inst[24:20]</code> — issued with no decode dependency at all.</li>
+        <li>All five immediate forms computed as wires; one selected by <code>inst[6:2]</code>.</li>
+        <li>Control decode: ALU op, operand selects, memory command, writeback enable.</li>
+      </ol>
+      <p>Hazard comparators also live here. They compare the two source indices against in-flight destination indices. Because those indices are at fixed bit positions, the comparators do not wait for decode either.</p>
+    </div>
+    <div class="tabpane" id="dp-ex">
+      <h5>Execute</h5>
+      <p>One adder does a lot of work: ALU add/sub, load and store address, branch comparison via subtraction, and AUIPC. Careful RTL shares it. Careless RTL instantiates four adders.</p>
+      <p>Branch target is a second adder on <code>PC + imm_b</code>. That one usually cannot be shared, because the branch comparison needs the main adder in the same cycle.</p>
+      <p>Shifts need a barrel shifter. A single shifter handling left, logical right and arithmetic right is built by reversing the input for left shifts and reversing the output again.</p>
+    </div>
+    <div class="tabpane" id="dp-mem">
+      <h5>Memory</h5>
+      <p>Byte and halfword accesses need a shifter and a sign/zero extender on the load return path, driven by <code>funct3</code>. <code>funct3[2]</code> is the unsigned flag; <code>funct3[1:0]</code> is the size.</p>
+      <p>Stores need byte-enable generation from the low address bits and the size. For <code>SB</code> at address ending in <code>10</code>, byte enable is <code>4'b0100</code> and the data must be replicated across the lane.</p>
+    </div>
+    <div class="tabpane" id="dp-wb">
+      <h5>Writeback</h5>
+      <p>One write port. Source mux: ALU result, load data, <code>PC+4</code> for JAL and JALR, CSR read data if Zicsr is present.</p>
+      <p>Write is suppressed when <code>rd == 0</code>, or when the instruction has no destination (stores, branches), or when a trap is taken.</p>
+    </div>
+  </div>
+</section>
+
+<section id="regfile">
+  <h3><span class="n">7</span>Register file and the x0 question</h3>
+  <p>32 registers, 32 bits each. For a single-issue in-order core, <b>2 read ports and 1 write port</b> is sufficient and that is the answer expected.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Instruction class</th><th>Reads</th><th>Writes</th></tr>
+    <tr><td>R-type ALU, M extension</td><td class="mono">rs1, rs2</td><td class="mono">rd</td></tr>
+    <tr><td>I-type ALU, load</td><td class="mono">rs1</td><td class="mono">rd</td></tr>
+    <tr><td>Store</td><td class="mono">rs1 (addr), rs2 (data)</td><td>&mdash;</td></tr>
+    <tr><td>Branch</td><td class="mono">rs1, rs2</td><td>&mdash;</td></tr>
+    <tr><td>AMO (A ext)</td><td class="mono">rs1 (addr), rs2 (data)</td><td class="mono">rd (old value)</td></tr>
+  </table>
+  </div>
+  <p>No base or IMAC instruction reads three registers. That is why RISC-V has no fused multiply-add in the integer set — it would force a third read port.</p>
+  <div class="gotcha"><span class="tag">design note</span>
+  <p>On FPGA, a 2R1W register file maps to two dual-port block RAMs written in lockstep, or to distributed LUT RAM. On ASIC it is usually a custom multi-port cell or a flop array with read muxes. The answer to "how did you build it" should name the technology.</p></div>
+
+  <h5>x0 — three correct implementations</h5>
+  <ol class="tight">
+    <li><b>Read mux.</b> Store 32 real registers; force read data to zero when the index is 0. Costs a mux on the read path.</li>
+    <li><b>Write suppress.</b> Never write entry 0; initialise it to zero. Costs a gate on write enable. Entry 0 storage is wasted.</li>
+    <li><b>No entry 0.</b> 31 physical registers, decode index 0 as "return zero". Saves a register, complicates indexing.</li>
+  </ol>
+  <div class="trap"><span class="tag">the x0 forwarding trap</span>
+  <p>Suppressing the regfile write is not enough. If an in-flight instruction has <code>rd = x0</code> and a younger instruction reads x0, the forwarding comparator matches and forwards a non-zero result. The register file is correct but the bypass is wrong. Every forwarding match must be qualified with <code>rd != 0</code>. Lesson 06 returns to this.</p></div>
+</section>
+
+<section id="branch">
+  <h3><span class="n">8</span>Branch comparison without flags</h3>
+  <p>RISC-V has no condition-code register. Comparison happens in the branch itself. This removes a serialising architectural resource and makes out-of-order renaming easier — worth saying aloud.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>funct3</th><th>Instr</th><th>Condition</th><th>Derived from</th></tr>
+    <tr><td class="mono">000</td><td>BEQ</td><td>rs1 == rs2</td><td>zero flag of subtract</td></tr>
+    <tr><td class="mono">001</td><td>BNE</td><td>rs1 != rs2</td><td>inverted zero</td></tr>
+    <tr><td class="mono">100</td><td>BLT</td><td>rs1 &lt; rs2 signed</td><td>SLT result</td></tr>
+    <tr><td class="mono">101</td><td>BGE</td><td>rs1 &ge; rs2 signed</td><td>inverted SLT</td></tr>
+    <tr><td class="mono">110</td><td>BLTU</td><td>rs1 &lt; rs2 unsigned</td><td>SLTU result</td></tr>
+    <tr><td class="mono">111</td><td>BGEU</td><td>rs1 &ge; rs2 unsigned</td><td>inverted SLTU</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">crux</span>
+  <p><code>funct3[0]</code> is a pure invert bit. <code>funct3[1]</code> selects unsigned. <code>funct3[2]</code> selects magnitude compare over equality. So branch control is three bits straight into a tiny mux — no lookup table needed.</p></div>
+  <p>Encodings <code>010</code> and <code>011</code> are unused in BRANCH. They are reserved, and a conforming decoder must raise illegal instruction on them.</p>
+</section>
+
+<section id="memops">
+  <h3><span class="n">9</span>Loads, stores and misalignment</h3>
+  <p>Base RV32I addresses bytes. Loads sign-extend or zero-extend to XLEN.</p>
+  <h5>Misaligned access — the honest answer</h5>
+  <p>The specification permits two behaviours and requires you to pick one:</p>
+  <ul class="tight">
+    <li>Handle it in hardware, possibly with a performance penalty.</li>
+    <li>Raise an address-misaligned exception and let software emulate it.</li>
+  </ul>
+  <p>Trap causes worth knowing: <span class="mono">0</span> instruction address misaligned, <span class="mono">4</span> load address misaligned, <span class="mono">6</span> store/AMO address misaligned.</p>
+  <div class="trap"><span class="tag">trap</span>
+  <p>A misaligned access to a region that does not support it may raise an <b>access fault</b> rather than a misaligned exception. The two are different causes and different recovery paths. Saying "it always traps as misaligned" is wrong.</p></div>
+  <div class="gotcha"><span class="tag">defensible design choice</span>
+  <p>For an embedded RV32IMAC core, trapping is the normal choice. Hardware misalignment support costs a second cache access, a merge network and a much harder precise-exception story, for a case that compiled code rarely produces. Say that, and say you measured it.</p></div>
+</section>
+
+<section id="scope">
+  <h3><span class="n">10</span>What RV32I does not contain</h3>
+  <p>This is a high-value trap because the 2019 specification split moved things out of the base.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Feature</th><th>Where it actually lives</th><th>In "RV32IMAC"?</th></tr>
+    <tr><td>CSR instructions (CSRRW, CSRRS …)</td><td class="mono">Zicsr</td><td class="no">No, strictly</td></tr>
+    <tr><td><code>FENCE.I</code></td><td class="mono">Zifencei</td><td class="no">No, strictly</td></tr>
+    <tr><td><code>RDCYCLE</code>, <code>RDTIME</code>, <code>RDINSTRET</code></td><td class="mono">Zicntr</td><td class="no">No, strictly</td></tr>
+    <tr><td>Multiply without divide</td><td class="mono">Zmmul</td><td class="mid">Subset of M</td></tr>
+    <tr><td>LR/SC only, no AMO</td><td class="mono">Zalrsc</td><td class="mid">Subset of A</td></tr>
+    <tr><td>AMO only, no LR/SC</td><td class="mono">Zaamo</td><td class="mid">Subset of A</td></tr>
+    <tr><td>Machine/supervisor modes, MMU</td><td>Privileged spec</td><td class="no">Separate volume</td></tr>
+  </table>
+  </div>
+  <div class="defend"><span class="tag">how to use this</span>
+  <ul>
+    <li>If asked "does your core have CSRs", answer: "Yes — Zicsr. Strictly the IMAC string does not imply it, but no usable core ships without it."</li>
+    <li>That single sentence signals you read the specification rather than a tutorial.</li>
+  </ul></div>
+</section>
+
+<section id="check">
+  <h3><span class="n">11</span>Self-check</h3>
+
+  <div class="quiz" data-a="1">
+    <div class="q">Which instruction bit feeds the sign extension of every RV32I immediate?</div>
+    <button class="opt" data-fb="">inst[11]</button>
+    <button class="opt" data-fb="inst[31] is the sign bit for I, S, B, U and J. That invariant is why sign extension is a wire fanout instead of a variable-width extender.">inst[31]</button>
+    <button class="opt" data-fb="">inst[20]</button>
+    <button class="opt" data-fb="">It varies by format</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="2">
+    <div class="q">In <code>ADDI x5, x6, imm</code>, what is <code>inst[30]</code>?</div>
+    <button class="opt" data-fb="">The SUB select bit</button>
+    <button class="opt" data-fb="">A reserved bit that must be zero</button>
+    <button class="opt" data-fb="For OP-IMM other than shifts, inst[30] is simply imm[10]. The alternate-operation meaning applies only to OP, and to the two shift encodings of OP-IMM.">imm[10], an ordinary immediate bit</button>
+    <button class="opt" data-fb="">The arithmetic-shift select</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="0">
+    <div class="q">Why does RV32I have no integer multiply-accumulate instruction?</div>
+    <button class="opt" data-fb="It would need three source registers, forcing a third register file read port. RISC-V caps base instructions at two reads and one write to keep the regfile cheap.">It would require a third register read port</button>
+    <button class="opt" data-fb="">The opcode space is exhausted</button>
+    <button class="opt" data-fb="">Multiply-accumulate cannot be encoded in 32 bits</button>
+    <button class="opt" data-fb="">Compilers never generate it</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="3">
+    <div class="q">A branch has <code>funct3 = 011</code>. What must a conforming decoder do?</div>
+    <button class="opt" data-fb="">Treat it as BGEU</button>
+    <button class="opt" data-fb="">Treat it as BNE</button>
+    <button class="opt" data-fb="">Ignore the branch and fall through</button>
+    <button class="opt" data-fb="BRANCH funct3 values 010 and 011 are reserved. A conforming implementation must raise an illegal-instruction exception rather than silently aliasing them to a defined branch.">Raise an illegal-instruction exception</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="qa">
+  <h3><span class="n">12</span>Interview Q&amp;A</h3>
+
+  <details>
+    <summary>Why are register specifiers always at bits 19:15, 24:20 and 11:7?</summary>
+    <div class="ans">
+      <p>So the register file read can be launched from the raw fetched word, before any decode logic resolves. Decode then only has to decide whether the read values are used, not where to read from.</p>
+      <p>The second-order benefit: hazard comparators and the rename table in an out-of-order design see stable indices at the same instant. It removes decode from the critical loop.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>What determines the instruction format — and how early can you know it?</summary>
+    <div class="ans">
+      <p>Only <code>inst[6:2]</code>, once <code>inst[1:0] = 11</code> confirms a 32-bit instruction. Five bits into a small decode gives the format. No funct3 or funct7 involvement.</p>
+      <p>Practically this means the immediate select resolves in one level of logic after fetch, which is why the imm generator is never the ID critical path.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>Your ID stage is failing timing. Where do you look first, and what do you not touch?</summary>
+    <div class="ans">
+      <p>Look at the control decode and hazard resolution, not the immediate generator. The imm path is wires. The usual offenders are the ALU-operation decode feeding an operand mux, and the forwarding priority network which is a wide comparator tree followed by a mux chain.</p>
+      <p>Standard fixes: precompute forwarding selects one stage early; flatten the priority mux into a one-hot select; move illegal-instruction detection off the fast path into a parallel cone that only affects the trap signal.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Why is there no SUBI, and no NOT, and no MOV?</summary>
+    <div class="ans">
+      <p>Each is covered by an existing encoding. <code>SUBI</code> is <code>ADDI</code> with a negated immediate. <code>NOT rd, rs</code> is <code>XORI rd, rs, -1</code>. <code>MV rd, rs</code> is <code>ADDI rd, rs, 0</code>. <code>NOP</code> is <code>ADDI x0, x0, 0</code>.</p>
+      <p>These are assembler pseudo-instructions. The point is decoder area: every real opcode costs decode logic forever, so the ISA only spends one where no existing encoding covers the case.</p>
+      <p>Careful with the asymmetry: the immediate range is &minus;2048 to +2047. So <code>ADDI</code> can subtract 2048 but cannot add it. Minor, but a panel may probe it.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>Does removing condition codes help or hurt?</summary>
+    <div class="ans">
+      <p>Helps for implementation, costs a little in code density. No flags register means no implicit serialising dependency between a compare and a branch, nothing to rename in an out-of-order machine, and no partial-flag-update hazards of the kind x86 suffers.</p>
+      <p>The cost: predicated execution becomes impossible, and <code>ADD</code>-then-branch-on-overflow patterns need explicit comparison instructions. Compilers handle it; the overflow-check sequence is a known two-instruction idiom.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>How do you detect an illegal instruction cheaply?</summary>
+    <div class="ans">
+      <p>Build it as the complement of a legal-instruction one-hot. Decode produces a set of match signals; illegal is the NOR of all matches, qualified by the reserved-field checks — <code>inst[25]</code> zero for RV32 shifts, funct7 zero where required, branch funct3 not in the reserved set.</p>
+      <p>Keep it out of the main control path. It only needs to be valid by the stage where the trap is taken, so it can have an extra pipeline stage of slack.</p>
+    </div>
+  </details>
+</section>
+
+<section id="defend">
+  <h3><span class="n">13</span>Defend your claim — Hanu 1.0</h3>
+  <div class="defend"><span class="tag">write your answers down</span>
+  <ul>
+    <li>How many register file read and write ports did you build, and in what technology — LUT RAM, block RAM, flop array?</li>
+    <li>Which x0 implementation did you choose, and did you gate your forwarding comparators on <code>rd != 0</code>?</li>
+    <li>Did you share one adder between ALU, address generation and branch comparison, or instantiate separate ones? What did that cost in LUTs or gates?</li>
+    <li>Misaligned loads: hardware or trap? What drove the decision?</li>
+    <li>Did you implement Zicsr and Zifencei? If not, how does your core take a trap at all?</li>
+    <li>What was your ID-stage critical path, and what was the achieved frequency?</li>
+  </ul></div>
+</section>
+
+<section id="recap">
+  <h3><span class="n">14</span>Recap</h3>
+  <ul class="tight">
+    <li>Six formats: R, I, S, B, U, J. Format is a function of <code>inst[6:2]</code> alone.</li>
+    <li>Fixed positions for rs1, rs2, rd and the sign bit let regfile read and immediate generation start before decode resolves.</li>
+    <li>Immediate generation is wires plus one select. That is the whole answer to the scrambling question.</li>
+    <li><code>inst[30]</code> is a function bit only for OP and for the two OP-IMM shift encodings.</li>
+    <li>2R1W register file. No three-source instruction exists in IMAC.</li>
+    <li>Branch condition decode is three bits: invert, unsigned, magnitude.</li>
+    <li>Zicsr, Zifencei and Zicntr are outside the base. Know it, say it.</li>
+  </ul>
+</section>
+
+<div class="navfoot">
+  <a href="rv32imac_course_map.html">&#8592; Course map</a>
+  <a href="rv32imac_lesson02_m_extension.html">Lesson 02 · M extension &#8594;</a>
+</div>
+</main>
+</div>
+<script src="rv32imac_shared.js"></script>
+</body>
+</html>

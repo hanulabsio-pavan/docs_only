@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RV32IMAC · Lesson 3 — A Extension, Atomics &amp; Ordering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="rv32imac_shared.css">
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">RV32IMAC · LESSON 03</div>
+  <h1>A Extension</h1>
+  <a href="#frame">The interview frame</a>
+  <a href="#enc">Encoding and the funct5 map</a>
+  <a href="#lrsc">LR/SC semantics</a>
+  <a href="#resv">The reservation set</a>
+  <a href="#kill">What kills a reservation</a>
+  <a href="#constrained">Constrained sequences</a>
+  <a href="#livelock">Livelock and forward progress</a>
+  <a href="#amo">AMO semantics</a>
+  <a href="#nearfar">Near versus far atomics</a>
+  <a href="#order">aq, rl and RVWMO</a>
+  <a href="#pipe">Pipeline implications</a>
+  <a href="#subsets">Zalrsc, Zaamo, Zacas</a>
+  <a href="#check">Self-check</a>
+  <a href="#qa">Interview Q&amp;A</a>
+  <a href="#defend">Defend your claim</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="rv32imac_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Interview Defence Track · Lesson 3 of 7</div>
+<h2 class="title">A extension — LR/SC, AMO and memory ordering</h2>
+<p class="lede">A is the extension that reaches outside your core. Everything here lands in the cache controller, the coherency protocol and the interconnect. If you have done coherent fabric work, this is the lesson where you can outclass the room.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>State the exact SC success and failure conditions, including spurious failure.</li>
+    <li>Define a reservation set and list everything that invalidates one.</li>
+    <li>Recite the constrained LR/SC rules and explain why the bound is 16 instructions.</li>
+    <li>Argue near-atomic versus far-atomic placement with a contention model.</li>
+    <li>Explain aq and rl precisely, and name the pattern software is told not to use.</li>
+    <li>Describe why an AMO must be non-speculative and where the page fault is taken.</li>
+  </ul>
+</div>
+
+<section id="frame">
+  <h3><span class="n">1</span>The interview frame</h3>
+  <div class="crux"><span class="tag">crux</span>
+  <p>M breaks fixed latency. A breaks two other assumptions: that an instruction can be executed speculatively and undone, and that your core's memory behaviour is your core's business. An AMO is a read-modify-write that some other agent must not be able to interleave with.</p></div>
+  <p>Panels probing A are usually probing whether you understand coherency. Answer in protocol terms — line states, invalidations, points of serialisation — not in software terms.</p>
+</section>
+
+<section id="enc">
+  <h3><span class="n">2</span>Encoding and the funct5 map</h3>
+  <p>All A instructions are R-type with opcode <code>AMO = 0101111</code>. The top five bits select the operation. Two bits carry ordering annotations.</p>
+  <div class="bits">
+    <div class="f f-f7" style="flex:5"><b>funct5</b><i>31:27</i></div>
+    <div class="f f-imm" style="flex:1"><b>aq</b><i>26</i></div>
+    <div class="f f-imm" style="flex:1"><b>rl</b><i>25</i></div>
+    <div class="f f-r2" style="flex:5"><b>rs2</b><i>24:20</i></div>
+    <div class="f f-r1" style="flex:5"><b>rs1</b><i>19:15</i></div>
+    <div class="f f-f3" style="flex:3"><b>funct3</b><i>14:12 — width</i></div>
+    <div class="f f-rd" style="flex:5"><b>rd</b><i>11:7</i></div>
+    <div class="f f-op" style="flex:7"><b>0101111</b><i>6:0 — AMO</i></div>
+  </div>
+  <div class="bitsleg">funct3 = 010 for .W, 011 for .D. RV32A has only .W. rs1 is always the address — never an offset form, so there is no immediate.</div>
+  <div class="tblwrap">
+  <table>
+    <tr><th>funct5</th><th>Instruction</th><th>Operation on memory word</th><th>rd gets</th></tr>
+    <tr><td class="mono">00000</td><td>AMOADD.W</td><td class="mono">mem += rs2</td><td>old value</td></tr>
+    <tr><td class="mono">00001</td><td>AMOSWAP.W</td><td class="mono">mem = rs2</td><td>old value</td></tr>
+    <tr><td class="mono">00010</td><td>LR.W</td><td>read + reserve <span class="note">(rs2 must be 0)</span></td><td>loaded value</td></tr>
+    <tr><td class="mono">00011</td><td>SC.W</td><td>store if reservation valid</td><td class="ok">0 = success</td></tr>
+    <tr><td class="mono">00100</td><td>AMOXOR.W</td><td class="mono">mem ^= rs2</td><td>old value</td></tr>
+    <tr><td class="mono">01000</td><td>AMOOR.W</td><td class="mono">mem |= rs2</td><td>old value</td></tr>
+    <tr><td class="mono">01100</td><td>AMOAND.W</td><td class="mono">mem &amp;= rs2</td><td>old value</td></tr>
+    <tr><td class="mono">10000</td><td>AMOMIN.W</td><td class="mono">mem = min(mem, rs2)</td><td>old value</td></tr>
+    <tr><td class="mono">10100</td><td>AMOMAX.W</td><td class="mono">mem = max(mem, rs2)</td><td>old value</td></tr>
+    <tr><td class="mono">11000</td><td>AMOMINU.W</td><td>unsigned min</td><td>old value</td></tr>
+    <tr><td class="mono">11100</td><td>AMOMAXU.W</td><td>unsigned max</td><td>old value</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">decode shortcut</span>
+  <p><code>funct5[4]</code> selects the min/max family. <code>funct5[3:2]</code> then picks the logical operation within the lower family. The ALU inside the atomic unit only needs add, the three logicals, a pass-through for swap, and a comparator. It can be a stripped-down copy of the main ALU.</p></div>
+  <div class="gotcha"><span class="tag">note</span>
+  <p>AMOs always return the <b>original</b> memory value, never the new one. So <code>AMOADD</code> is fetch-and-add, not add-and-fetch. Getting this backwards in an interview is an instant correction.</p></div>
+</section>
+
+<section id="lrsc">
+  <h3><span class="n">3</span>LR/SC semantics</h3>
+  <div class="ascii-wrap"><div class="bar">Canonical atomic increment with LR/SC</div>
+<pre class="code"><span class="lbl">retry:</span>
+    <span class="ins">lr.w</span>    <span class="reg">t0</span>, (<span class="reg">a0</span>)        <span class="cmt"># load and reserve the address in a0</span>
+    <span class="ins">addi</span>    <span class="reg">t1</span>, <span class="reg">t0</span>, <span class="num">1</span>        <span class="cmt"># compute new value</span>
+    <span class="ins">sc.w</span>    <span class="reg">t2</span>, <span class="reg">t1</span>, (<span class="reg">a0</span>)   <span class="cmt"># t2 = 0 on success, nonzero on failure</span>
+    <span class="ins">bnez</span>    <span class="reg">t2</span>, retry         <span class="cmt"># backward branch is OUTSIDE the constrained body</span></pre>
+  </div>
+  <h5>SC succeeds only if all of these hold</h5>
+  <ol class="tight">
+    <li>A reservation is currently valid for this hart.</li>
+    <li>The reservation set still contains the SC's address.</li>
+    <li>No store from another hart to the reservation set has been observed since the LR.</li>
+    <li>Nothing has cleared the reservation for an implementation-specific reason.</li>
+  </ol>
+  <div class="trap"><span class="tag">the big one</span>
+  <p>SC is permitted to fail <b>spuriously</b>. No contention is required. A cache eviction, a context switch, an interrupt, or a conservative implementation policy can all cause failure. Software must always loop. A candidate who says "SC only fails if another hart wrote" has missed the entire point of the retry loop.</p></div>
+  <p>rd is written with zero on success and a nonzero implementation-defined code on failure. Both outcomes write rd — SC is never a no-op from the register file's point of view. Note that <code>SC</code> with <code>rd = x0</code> is legal and simply discards the status, which is almost always a bug in software.</p>
+  <div class="gotcha"><span class="tag">alignment</span>
+  <p>LR and SC must be naturally aligned. A misaligned LR or SC raises a misaligned-address exception or an access fault. There is no hardware fixup path — an atomic that spans two cache lines cannot be made atomic cheaply, which is exactly why the requirement exists.</p></div>
+</section>
+
+<section id="resv">
+  <h3><span class="n">4</span>The reservation set</h3>
+  <div class="crux"><span class="tag">definition</span>
+  <p>A reservation set is an implementation-defined set of bytes that always contains the bytes the LR accessed. Granularity is your choice. The choice trades hardware cost against spurious failure rate.</p></div>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Granule</th><th>Comparator width</th><th>Spurious failures</th><th>Typical use</th></tr>
+    <tr><td>Exact word (4 bytes)</td><td class="no">Full address compare</td><td class="ok">Minimal</td><td>Single-core, simple L1</td></tr>
+    <tr><td>Cache line (32&ndash;64 bytes)</td><td class="ok">Tag compare, reuses coherence</td><td class="mid">False sharing possible</td><td>Most real cores</td></tr>
+    <tr><td>Whole hart — any store clears</td><td class="ok">One valid bit</td><td class="no">Very high</td><td>Tiny cores, no cache</td></tr>
+  </table>
+  </div>
+  <p>The cache-line granule is the usual answer, because the coherence protocol already delivers an invalidation at exactly that granularity. You get the monitoring for free — a snoop or invalidate that hits the reserved line clears the reservation valid bit.</p>
+  <div class="ascii-wrap"><div class="bar">Reservation monitor — minimal RTL shape</div>
+<pre class="code"><span class="kw">logic</span>        resv_valid;
+<span class="kw">logic</span> [<span class="num">31</span>:<span class="num">6</span>] resv_line;   <span class="cmt">// 64B granule → tag is addr[31:6]</span>
+
+<span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span>
+  <span class="kw">if</span> (rst | trap_taken | sc_executed)      resv_valid &lt;= <span class="num">1'b0</span>;
+  <span class="kw">else</span> <span class="kw">if</span> (lr_commit)                       <span class="kw">begin</span> resv_valid &lt;= <span class="num">1'b1</span>;
+                                             resv_line  &lt;= addr[<span class="num">31</span>:<span class="num">6</span>]; <span class="kw">end</span>
+  <span class="kw">else</span> <span class="kw">if</span> (snoop_inval &amp; (snoop_line == resv_line)) resv_valid &lt;= <span class="num">1'b0</span>;
+  <span class="kw">else</span> <span class="kw">if</span> (line_evicted &amp; (evict_line == resv_line)) resv_valid &lt;= <span class="num">1'b0</span>;
+<span class="kw">end</span>
+
+<span class="kw">wire</span> sc_success = resv_valid &amp; (addr[<span class="num">31</span>:<span class="num">6</span>] == resv_line) &amp; ...;</pre>
+  </div>
+  <p>One valid bit and a tag register per hart. That is the whole cost of LR/SC in the core — everything expensive lives in the coherency protocol you already had.</p>
+</section>
+
+<section id="kill">
+  <h3><span class="n">5</span>What kills a reservation</h3>
+  <p>Be able to list these without hesitating. It is a standard question.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Event</th><th>Required or optional?</th><th>Why</th></tr>
+    <tr><td>Another hart stores to the reservation set</td><td class="no">Required</td><td>This is the whole mechanism</td></tr>
+    <tr><td>Any SC by this hart, success or failure</td><td class="no">Required</td><td>One reservation per hart; SC consumes it</td></tr>
+    <tr><td>A second LR by this hart</td><td class="no">Required</td><td>Replaces the reservation; only one exists</td></tr>
+    <tr><td>Reserved line evicted from the cache</td><td class="mid">Implementation</td><td>Monitor loses visibility of invalidations</td></tr>
+    <tr><td>Trap, interrupt or context switch</td><td class="mid">Implementation, near-universal</td><td>Prevents a reservation surviving into another context</td></tr>
+    <tr><td>This hart stores to the reservation set</td><td class="mid">Implementation</td><td>Conservative monitors do not distinguish local from remote</td></tr>
+    <tr><td>Watchdog timeout</td><td class="mid">Implementation</td><td>Bounds how long a reservation can be held</td></tr>
+    <tr><td>DMA or accelerator write to the line</td><td class="no">Required if coherent</td><td>It is a store from another agent</td></tr>
+  </table>
+  </div>
+  <div class="trap"><span class="tag">trap</span>
+  <p>"Does a context switch clear the reservation?" The specification does not mandate it in those words, but every practical implementation clears on trap entry — otherwise a reservation taken by thread A could be consumed by an SC in thread B after a switch, and the atomicity guarantee collapses. Say "implementations clear it on trap, and must, for context-switch safety".</p></div>
+</section>
+
+<section id="constrained">
+  <h3><span class="n">6</span>Constrained LR/SC sequences</h3>
+  <p>The specification makes a forward-progress guarantee, but only for sequences that obey strict rules. Know the rules, and know why each one exists.</p>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="cs-rules">The rules</button>
+      <button data-t="cs-why">Why each rule</button>
+      <button data-t="cs-bad">Sequences that break it</button>
+    </div>
+
+    <div class="tabpane" id="cs-rules">
+      <h5>A sequence is constrained when</h5>
+      <ol class="tight">
+        <li>The LR and SC address the <b>same naturally aligned</b> word (or doubleword for .D).</li>
+        <li>At most <b>16 instructions</b> execute dynamically between the LR and the SC.</li>
+        <li>The intervening instructions come only from the base integer set, and its compressed forms when C is present.</li>
+        <li>No loads or stores in between.</li>
+        <li>No backward jumps and no taken backward branches in between.</li>
+        <li>No <code>JALR</code>, no <code>FENCE</code>, no SYSTEM instructions in between.</li>
+      </ol>
+      <div class="crux"><span class="tag">crux</span>
+      <p>The retry branch that jumps back to the LR is outside the constrained body. Looping to retry is fine. Looping <i>inside</i> the LR-to-SC window is not.</p></div>
+    </div>
+
+    <div class="tabpane" id="cs-why">
+      <h5>Each rule exists for a hardware reason</h5>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Rule</th><th>Hardware reason</th></tr>
+        <tr><td>Same aligned address</td><td>A single reservation register holds one tag. No second monitor exists.</td></tr>
+        <tr><td>16-instruction bound</td><td>Bounds the window during which the implementation must protect the reservation against remote invalidation. Longer windows would make the progress guarantee unimplementable.</td></tr>
+        <tr><td>No loads or stores</td><td>An intervening memory access can evict the reserved line, or alias into the same set, destroying the reservation through pure capacity pressure.</td></tr>
+        <tr><td>No backward branches</td><td>Backward branches make the dynamic instruction count unbounded, defeating rule 2.</td></tr>
+        <tr><td>No FENCE or SYSTEM</td><td>Both can have arbitrary latency and side effects, including taking a trap, which clears the reservation.</td></tr>
+        <tr><td>No JALR</td><td>An indirect jump can leave the sequence entirely. The hardware cannot bound what runs next.</td></tr>
+      </table>
+      </div>
+    </div>
+
+    <div class="tabpane" id="cs-bad">
+      <h5>Non-constrained examples — no progress guarantee</h5>
+      <div class="ascii-wrap"><div class="bar">Broken: a load inside the window</div>
+<pre class="code"><span class="lbl">retry:</span>
+    <span class="ins">lr.w</span>  <span class="reg">t0</span>, (<span class="reg">a0</span>)
+    <span class="ins">lw</span>    <span class="reg">t1</span>, <span class="num">0</span>(<span class="reg">a1</span>)      <span class="cmt"># ← load may evict the reserved line</span>
+    <span class="ins">add</span>   <span class="reg">t0</span>, <span class="reg">t0</span>, <span class="reg">t1</span>
+    <span class="ins">sc.w</span>  <span class="reg">t2</span>, <span class="reg">t0</span>, (<span class="reg">a0</span>)
+    <span class="ins">bnez</span>  <span class="reg">t2</span>, retry     <span class="cmt"># may never terminate on some implementations</span></pre>
+      </div>
+      <div class="ascii-wrap"><div class="bar">Broken: a loop inside the window</div>
+<pre class="code"><span class="lbl">retry:</span>
+    <span class="ins">lr.w</span>  <span class="reg">t0</span>, (<span class="reg">a0</span>)
+<span class="lbl">inner:</span>
+    <span class="ins">addi</span>  <span class="reg">t1</span>, <span class="reg">t1</span>, <span class="num">-1</span>
+    <span class="ins">bnez</span>  <span class="reg">t1</span>, inner     <span class="cmt"># ← taken backward branch, count unbounded</span>
+    <span class="ins">sc.w</span>  <span class="reg">t2</span>, <span class="reg">t0</span>, (<span class="reg">a0</span>)</pre>
+      </div>
+      <p>Both assemble. Both may run correctly on your test silicon. Neither is guaranteed to terminate. This is the kind of bug that only appears under load on a different implementation.</p>
+    </div>
+  </div>
+</section>
+
+<section id="livelock">
+  <h3><span class="n">7</span>Livelock and forward progress</h3>
+  <p>Two harts, same address, both in a constrained loop. Each LR-SC pair can invalidate the other's reservation. Without help, neither ever completes.</p>
+  <div class="ascii-wrap"><div class="bar">The livelock pattern</div>
+<pre class="ascii">  <span class="a">hart 0</span>            <span class="s">hart 1</span>
+  <span class="a">LR   (reserve)</span>
+                    <span class="s">LR   (reserve, invalidates hart 0? no — LR does not store)</span>
+  <span class="a">SC   ───────────→</span> <span class="cmt">invalidates hart 1's reservation</span>
+                    <span class="s">SC   fails, retry</span>
+                    <span class="s">LR   (reserve)</span>
+  <span class="a">LR   (reserve)</span>
+                    <span class="s">SC   ───────────→</span> <span class="cmt">invalidates hart 0's reservation</span>
+  <span class="a">SC   fails, retry</span>
+  <span class="cmt">... and so on, forever, if the timing stays symmetric</span></pre>
+  </div>
+  <p>The specification requires that a constrained sequence <b>eventually succeeds</b>. So the implementation must break the symmetry. Mechanisms, roughly in order of how often they appear in real designs:</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Mechanism</th><th>Where it lives</th><th>Note</th></tr>
+    <tr><td>Reservation hold window</td><td>L1 / reservation monitor</td><td>After an LR, delay or retry incoming invalidations to that line for a bounded number of cycles, giving the SC a chance to land.</td></tr>
+    <tr><td>Hardware backoff</td><td>Core</td><td>On repeated SC failure, insert a randomised delay before allowing the next LR to reserve.</td></tr>
+    <tr><td>Home-node arbitration</td><td>Interconnect / point of coherency</td><td>Fair ordering of ownership requests so no requester is starved. Natural fit if the fabric already has QoS and anti-starvation logic.</td></tr>
+    <tr><td>Nack with priority escalation</td><td>Snoop path</td><td>A requester repeatedly denied raises its priority until it wins.</td></tr>
+  </table>
+  </div>
+  <div class="defend"><span class="tag">your fabric background is an advantage here</span>
+  <ul>
+    <li>Anti-starvation and fair arbitration at a shared point of serialisation are exactly the mechanisms you have built in interconnect work.</li>
+    <li>"The forward-progress guarantee for constrained LR/SC ultimately reduces to a starvation-freedom property at the point of coherency. That is the same problem as ensuring no requester is indefinitely nacked in a mesh."</li>
+    <li>Say it in those terms. It reframes a RISC-V question as a fabric question you already know cold.</li>
+  </ul></div>
+</section>
+
+<section id="amo">
+  <h3><span class="n">8</span>AMO semantics</h3>
+  <p>An AMO does four things indivisibly: read the memory word, apply the operation with rs2, write the result back, return the original value in rd.</p>
+  <div class="ascii-wrap"><div class="bar">Atomic increment — AMO versus LR/SC</div>
+<pre class="code"><span class="cmt"># With AMO: one instruction, no retry loop</span>
+    <span class="ins">li</span>      <span class="reg">t0</span>, <span class="num">1</span>
+    <span class="ins">amoadd.w</span> <span class="reg">t1</span>, <span class="reg">t0</span>, (<span class="reg">a0</span>)    <span class="cmt"># t1 = old value, mem = old + 1</span>
+
+<span class="cmt"># With LR/SC: four instructions, unbounded retries</span>
+<span class="lbl">1:</span>  <span class="ins">lr.w</span>    <span class="reg">t1</span>, (<span class="reg">a0</span>)
+    <span class="ins">addi</span>    <span class="reg">t2</span>, <span class="reg">t1</span>, <span class="num">1</span>
+    <span class="ins">sc.w</span>    <span class="reg">t3</span>, <span class="reg">t2</span>, (<span class="reg">a0</span>)
+    <span class="ins">bnez</span>    <span class="reg">t3</span>, 1b</pre>
+  </div>
+  <div class="crux"><span class="tag">when to use which</span>
+  <p>AMO when the operation is one of the eleven provided. LR/SC when it is not — compare-and-swap, conditional update, or any read-modify-write whose function is data-dependent. AMO is always faster when it applies, because there is no retry loop and no reservation to lose.</p></div>
+  <div class="gotcha"><span class="tag">the rd = x0 optimisation</span>
+  <p>If <code>rd</code> is x0 the old value is discarded. The implementation can then issue a non-returning atomic — no read data has to come back across the interconnect. In a CHI-style fabric this is exactly the AtomicStore versus AtomicLoad distinction. Worth mentioning: it saves a data flit and a whole return path in the common "atomic increment, do not care about the old value" case.</p></div>
+</section>
+
+<section id="nearfar">
+  <h3><span class="n">9</span>Near versus far atomics</h3>
+  <p>The highest-value question in this lesson, and the one where fabric experience shows.</p>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="nf-near">Near atomic</button>
+      <button data-t="nf-far">Far atomic</button>
+      <button data-t="nf-cmp">Choosing</button>
+      <button data-t="nf-chi">Protocol mapping</button>
+    </div>
+
+    <div class="tabpane" id="nf-near">
+      <h5>Near atomic — perform it in your own L1</h5>
+      <ol class="tight">
+        <li>Request the line in a writable state. Coherency invalidates all other copies.</li>
+        <li>Once the line is exclusive or modified locally, read it, apply the operation, write it back.</li>
+        <li>The line stays in your cache.</li>
+      </ol>
+      <p><b>Good:</b> the next atomic to the same address by the same hart is a local hit. Lock acquisition by a thread that already owns the line is nearly free.</p>
+      <p><b>Bad under contention:</b> N harts hammering one counter means the line migrates N times per round. Every migration is a full coherency transaction with snoop latency. Throughput collapses.</p>
+    </div>
+
+    <div class="tabpane" id="nf-far">
+      <h5>Far atomic — perform it at the point of coherency</h5>
+      <ol class="tight">
+        <li>Send the operation and the operand to the shared point — home node, last-level cache, or memory controller.</li>
+        <li>That agent performs the read-modify-write locally, where the line already lives.</li>
+        <li>Only the old value comes back, and only if <code>rd</code> is not x0.</li>
+      </ol>
+      <p><b>Good under contention:</b> the line never moves. N atomics from N harts serialise at the home node at roughly one per pipeline slot. No ping-pong.</p>
+      <p><b>Bad for private data:</b> every atomic is a full round trip to the shared point even if nobody else is touching the line.</p>
+      <div class="crux"><span class="tag">crux</span>
+      <p>Far atomics turn a data-movement problem into a message-passing problem. The operation travels to the data instead of the data travelling to the operation. That is the entire argument.</p></div>
+    </div>
+
+    <div class="tabpane" id="nf-cmp">
+      <h5>Choosing</h5>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Scenario</th><th>Better choice</th><th>Why</th></tr>
+        <tr><td>Uncontended lock, same thread reacquires</td><td class="ok">Near</td><td>Local cache hit, no fabric traffic</td></tr>
+        <tr><td>Shared counter, many harts</td><td class="ok">Far</td><td>No line migration, serialises at one point</td></tr>
+        <tr><td>Producer-consumer queue head</td><td class="ok">Far</td><td>Ownership alternates constantly otherwise</td></tr>
+        <tr><td>Thread-local reference count</td><td class="ok">Near</td><td>Line is already exclusive</td></tr>
+        <tr><td>Atomic on uncacheable or device memory</td><td class="ok">Far</td><td>No cacheable state exists to own</td></tr>
+      </table>
+      </div>
+      <p>Sophisticated implementations do both and choose dynamically — near if the line is already owned locally, far otherwise, sometimes with a contention counter that promotes a hot line to far-only. Saying "I would make it adaptive based on whether the line is already in a writable state" is a strong answer.</p>
+    </div>
+
+    <div class="tabpane" id="nf-chi">
+      <h5>Mapping onto a coherent protocol</h5>
+      <p>A CHI-style interconnect carries far atomics natively as distinct transaction types, broadly:</p>
+      <ul class="tight">
+        <li><b>Non-returning atomic</b> — apply the operation, return no data. Matches an AMO with <code>rd = x0</code>.</li>
+        <li><b>Returning atomic</b> — apply the operation, return the original value. Matches a normal AMO.</li>
+        <li><b>Swap</b> — unconditional exchange. Matches AMOSWAP.</li>
+        <li><b>Compare</b> — conditional exchange on a match. This is what a compare-and-swap extension would use; base RV32A has no CAS instruction to map onto it.</li>
+      </ul>
+      <p>The home node or a dedicated atomic unit at the point of serialisation executes the operation. Note that the arithmetic unit now lives in the fabric, not the core — so the fabric must implement add, the logicals and signed and unsigned min/max.</p>
+      <div class="defend"><span class="tag">a very strong line to have ready</span>
+      <ul><li>"RV32A's AMO set maps cleanly onto far-atomic transactions at the home node. The interesting design decision is not the instruction, it is where you put the ALU — in the requester's L1 or at the point of coherency — and that decision is driven entirely by the expected contention profile."</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section id="order">
+  <h3><span class="n">10</span>aq, rl and RVWMO</h3>
+  <p>RISC-V uses a weak memory model, RVWMO. Ordering is not free; you request it.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Annotation</th><th>Meaning</th></tr>
+    <tr><td class="mono">aq = 1</td><td>Acquire. No memory operation <b>later</b> in program order may be observed by another hart before this one.</td></tr>
+    <tr><td class="mono">rl = 1</td><td>Release. No memory operation <b>earlier</b> in program order may be observed by another hart after this one.</td></tr>
+    <tr><td class="mono">aq = rl = 1</td><td>Both directions. The operation becomes sequentially consistent with respect to other similarly annotated operations.</td></tr>
+    <tr><td class="mono">aq = rl = 0</td><td>Relaxed. Ordered only by RVWMO's preserved program order rules.</td></tr>
+  </table>
+  </div>
+  <div class="ascii-wrap"><div class="bar">The standard lock idiom</div>
+<pre class="code"><span class="cmt"># Acquire: LR carries .aq — nothing in the critical section escapes upward</span>
+<span class="lbl">1:</span>  <span class="ins">lr.w.aq</span>  <span class="reg">t0</span>, (<span class="reg">a0</span>)
+    <span class="ins">bnez</span>     <span class="reg">t0</span>, 1b
+    <span class="ins">li</span>       <span class="reg">t0</span>, <span class="num">1</span>
+    <span class="ins">sc.w</span>     <span class="reg">t1</span>, <span class="reg">t0</span>, (<span class="reg">a0</span>)
+    <span class="ins">bnez</span>     <span class="reg">t1</span>, 1b
+
+    <span class="cmt"># ... critical section ...</span>
+
+<span class="cmt"># Release: the unlocking store carries .rl — the section completes first</span>
+    <span class="ins">amoswap.w.rl</span> <span class="reg">x0</span>, <span class="reg">x0</span>, (<span class="reg">a0</span>)</pre>
+  </div>
+  <div class="trap"><span class="tag">the annotation trap</span>
+  <p>Software should <b>not</b> set <code>rl</code> on an LR unless <code>aq</code> is also set, and should not set <code>aq</code> on an SC unless <code>rl</code> is also set. A lone <code>sc.w.aq</code> is the wrong pattern. Interviewers ask "what does <code>lr.w.rl</code> mean" to see whether you know it is a discouraged combination rather than a clever optimisation.</p></div>
+  <h5>FENCE, for when annotations are not enough</h5>
+  <p><code>FENCE pred, succ</code> orders the predecessor set against the successor set. Each set is drawn from device input, device output, memory read, memory write — written <code>i o r w</code>.</p>
+  <ul class="tight">
+    <li><code>fence rw, rw</code> — full memory barrier. The common one.</li>
+    <li><code>fence r, rw</code> — acquire-style barrier after a plain load.</li>
+    <li><code>fence rw, w</code> — release-style barrier before a plain store.</li>
+    <li><code>fence.tso</code> — a distinct encoding giving total-store-order semantics, ordering everything except store-to-load.</li>
+    <li><code>fence.i</code> — instruction fetch fence, part of Zifencei. Different purpose entirely: it makes prior stores visible to instruction fetch. Do not conflate the two.</li>
+  </ul>
+  <div class="gotcha"><span class="tag">preserved program order — the short version</span>
+  <p>RVWMO orders two accesses when there is a syntactic address, data or control dependency; when they are to overlapping addresses under specific rules; when a FENCE separates them; or when acquire and release annotations require it. Everything else may be reordered. If asked to prove a litmus test, reason from those rules, not from intuition.</p></div>
+</section>
+
+<section id="pipe">
+  <h3><span class="n">11</span>Pipeline implications</h3>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="pp-spec">Non-speculative</button>
+      <button data-t="pp-fault">Faults before modify</button>
+      <button data-t="pp-dcache">D-cache port pressure</button>
+      <button data-t="pp-stall">Where it stalls</button>
+    </div>
+
+    <div class="tabpane" id="pp-spec">
+      <h5>An AMO must not be performed speculatively</h5>
+      <p>Once memory is modified, it cannot be un-modified. So the AMO may only be issued to the memory system when it is guaranteed to commit.</p>
+      <ul class="tight">
+        <li><b>In-order five-stage:</b> by the time an instruction reaches MEM, all older instructions have passed their exception points and branches resolved in EX. So MEM is already non-speculative. No extra logic is needed, which is a nice property to point out.</li>
+        <li><b>Out-of-order:</b> the AMO must wait until it is the oldest uncommitted instruction, or at least until no older instruction can fault or mispredict. It issues from the head of the reorder buffer.</li>
+        <li><b>Deeper in-order with a store buffer:</b> the AMO must drain past any older store that could alias, or be forwarded correctly from the buffer, and it cannot itself sit in a write-combining buffer.</li>
+      </ul>
+    </div>
+
+    <div class="tabpane" id="pp-fault">
+      <h5>Faults must be taken before memory changes</h5>
+      <p>An AMO touches a page for both reading and writing. Therefore:</p>
+      <ol class="tight">
+        <li>Translate the address and check permissions <b>first</b>.</li>
+        <li>An AMO to a page without write permission must raise a <b>store/AMO page fault</b>, not a load page fault — even though the operation reads.</li>
+        <li>A misaligned AMO raises store/AMO address misaligned, cause 6.</li>
+        <li>Only after all checks pass may the read-modify-write be issued.</li>
+      </ol>
+      <div class="trap"><span class="tag">trap</span>
+      <p>"An AMO hits a read-only page. Which fault?" Store/AMO page fault. Candidates who answer "load page fault, because it reads first" are testing the wrong half of the operation. The architectural rule is that an AMO is a store for permission purposes.</p></div>
+    </div>
+
+    <div class="tabpane" id="pp-dcache">
+      <h5>D-cache port pressure</h5>
+      <p>An AMO is a read and a write to the same location. Three ways to build it:</p>
+      <ul class="tight">
+        <li><b>Two MEM cycles.</b> Read in the first, write in the second, with the line locked in between so no snoop can intervene. Simple. Costs a bubble on every AMO.</li>
+        <li><b>Read-modify-write in one access.</b> Needs a cache design that can read and write in one cycle, plus an ALU in the cache datapath. Faster, more area.</li>
+        <li><b>Send it out as a far atomic.</b> The L1 does not perform it at all; the fabric does. No local port pressure, higher latency.</li>
+      </ul>
+      <p>Whichever you choose, the line must be protected between the read and the write. Locking one line for two cycles is the usual answer, and it must not deadlock against an incoming snoop — so the snoop path needs a retry or a defined ordering.</p>
+    </div>
+
+    <div class="tabpane" id="pp-stall">
+      <h5>Where the pipeline actually stalls</h5>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Case</th><th>Stall cause</th><th>Typical cost</th></tr>
+        <tr><td>AMO hits in L1, near-atomic, line already writable</td><td>Extra MEM cycle</td><td class="ok">1 cycle</td></tr>
+        <tr><td>AMO hits, line shared — needs upgrade</td><td>Coherency upgrade transaction</td><td class="mid">Snoop round trip</td></tr>
+        <tr><td>AMO misses</td><td>Line fill plus ownership</td><td class="no">Full miss latency</td></tr>
+        <tr><td>Far atomic</td><td>Round trip to point of coherency</td><td class="mid">Fabric latency, no line move</td></tr>
+        <tr><td>AMO with aq or rl set</td><td>Ordering drain</td><td class="no">Depends on store buffer depth</td></tr>
+      </table>
+      </div>
+      <p>The <code>aq</code>/<code>rl</code> row matters. An ordering annotation can cost far more than the atomic itself, because it may require draining a store buffer or waiting for outstanding transactions to be globally observed. Mention that the annotation, not the atomic, is often the expensive part.</p>
+    </div>
+  </div>
+</section>
+
+<section id="subsets">
+  <h3><span class="n">12</span>Zalrsc, Zaamo and Zacas</h3>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Name</th><th>Contents</th><th>Why it exists</th></tr>
+    <tr><td class="mono">Zalrsc</td><td>LR and SC only</td><td>Cheapest path to atomicity. One reservation register. Everything else is software loops.</td></tr>
+    <tr><td class="mono">Zaamo</td><td>The eleven AMOs, no LR/SC</td><td>Fits systems where a far-atomic unit exists but no reservation monitor does — some accelerator and device contexts.</td></tr>
+    <tr><td class="mono">A</td><td>Zalrsc + Zaamo</td><td>The full extension, which is what the "A" in RV32IMAC means.</td></tr>
+    <tr><td class="mono">Zacas</td><td>Compare-and-swap atomics</td><td>Adds a true CAS, which base A does not have. Lock-free algorithms written against CAS otherwise need an LR/SC loop.</td></tr>
+  </table>
+  </div>
+  <div class="trap"><span class="tag">trap</span>
+  <p>"Does RISC-V have compare-and-swap?" Not in the A extension. CAS is emulated with an LR/SC loop. A separate extension, Zacas, adds native compare-and-swap. Saying "yes, AMOCAS is part of A" is wrong and easy to check.</p></div>
+  <div class="delta"><span class="tag">RV64 delta</span>
+  <p>RV64A adds the <code>.D</code> forms — <code>LR.D</code>, <code>SC.D</code> and all eleven <code>AMO*.D</code> — selected by <code>funct3 = 011</code>. The <code>.W</code> forms remain, and on RV64 they sign-extend the returned 32-bit value to 64 bits. Reservation granularity and every ordering rule are unchanged.</p></div>
+</section>
+
+<section id="check">
+  <h3><span class="n">13</span>Self-check</h3>
+
+  <div class="quiz" data-a="3">
+    <div class="q">Under what conditions may an SC fail?</div>
+    <button class="opt" data-fb="">Only if another hart wrote to the address</button>
+    <button class="opt" data-fb="">Only if the address differs from the LR's</button>
+    <button class="opt" data-fb="">Only if an interrupt occurred</button>
+    <button class="opt" data-fb="SC may fail spuriously. Cache eviction, context switch, interrupt, or simply a conservative implementation policy are all permitted causes. This is why every LR/SC use must be inside a retry loop.">Any of those, and also spuriously for implementation reasons</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="1">
+    <div class="q">An AMOADD targets a page that is mapped read-only. Which exception is raised?</div>
+    <button class="opt" data-fb="">Load page fault, because the AMO reads first</button>
+    <button class="opt" data-fb="An AMO counts as a store for permission checking. It raises a store/AMO page fault, and the check happens before memory is modified.">Store/AMO page fault</button>
+    <button class="opt" data-fb="">Illegal instruction</button>
+    <button class="opt" data-fb="">None — the AMO silently degrades to a load</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="2">
+    <div class="q">Sixteen harts increment one shared counter in a tight loop. Near or far atomics?</div>
+    <button class="opt" data-fb="">Near — the line stays in L1 after the first access</button>
+    <button class="opt" data-fb="">Near — fabric latency always dominates</button>
+    <button class="opt" data-fb="Far. Under high contention the near-atomic scheme migrates the line between all sixteen caches, paying a full coherency transaction per increment. A far atomic keeps the line at the point of coherency and serialises the operations there.">Far — the line never migrates, operations serialise at one point</button>
+    <button class="opt" data-fb="">It makes no difference to throughput</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="0">
+    <div class="q">Why does the constrained-sequence rule forbid loads and stores between LR and SC?</div>
+    <button class="opt" data-fb="An intervening memory access can evict the reserved line or conflict in the same cache set, destroying the reservation through pure capacity or conflict pressure rather than through contention. That would make the eventual-success guarantee unimplementable.">Because they can evict or conflict with the reserved line</button>
+    <button class="opt" data-fb="">Because they would make the sequence longer than 16 instructions</button>
+    <button class="opt" data-fb="">Because loads and stores cannot be encoded in compressed form</button>
+    <button class="opt" data-fb="">Because they would change the aq/rl annotations</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="qa">
+  <h3><span class="n">14</span>Interview Q&amp;A</h3>
+
+  <details>
+    <summary>Why does RISC-V provide both LR/SC and AMOs? Is one not enough?</summary>
+    <div class="ans">
+      <p>They solve different problems. AMOs cover a fixed set of operations and are optimal for them — one instruction, no retry, and they can be shipped to a remote point of coherency. LR/SC is general: any read-modify-write whose function is arbitrary or data-dependent, including compare-and-swap, which base A does not provide as an instruction.</p>
+      <p>Implementation cost also differs. Zalrsc alone needs one reservation register. Zaamo alone needs an atomic ALU somewhere in the memory path but no reservation monitor. A minimal system can pick either.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>Your reservation granule is a 64-byte cache line. What goes wrong, and do you care?</summary>
+    <div class="ans">
+      <p>False sharing. Two unrelated lock words in the same line mean an SC on one can fail because another hart wrote the other. Correctness is preserved — SC is allowed to fail spuriously — but throughput suffers and, in the worst case, the eventual-success guarantee becomes harder to meet.</p>
+      <p>Do I care? Usually not enough to change the design, because the coherency protocol already delivers invalidations at line granularity and a narrower monitor would need its own address comparator and its own snoop filtering. The fix belongs in software: pad lock words to a line. That is why concurrent data structures align hot atomics to a cache line.</p>
+      <p>What I would add is a reservation hold window, so a burst of remote invalidations cannot starve a constrained sequence on an adjacent word.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Where exactly does the AMO's arithmetic happen?</summary>
+    <div class="ans">
+      <p>It depends on the placement policy, and that is the real answer. In a near-atomic design it happens in the core's load-store unit or in an ALU attached to the L1 datapath, after the line has been brought to a writable state. In a far-atomic design it happens at the point of coherency — the home node, the last-level cache slice, or the memory controller — and the core never owns the line.</p>
+      <p>Systems that support both need the atomic ALU replicated at each site, which means add, XOR, OR, AND, swap, and signed and unsigned min/max have to exist in the fabric as well as in the core. That replication is a real cost and it is the usual reason a small design picks one placement and stays with it.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Does a single-hart core need the A extension at all?</summary>
+    <div class="ans">
+      <p>Yes, for two reasons beyond multi-hart coherence. First, interrupt handlers and the main thread share data, and an atomic read-modify-write is the clean way to update a shared counter or flag without disabling interrupts. Second, DMA engines and other bus masters write memory concurrently; if they are coherent, the reservation mechanism must see their writes.</p>
+      <p>On a genuinely single-agent system with no coherent DMA, the atomics degenerate — the reservation is never invalidated by anyone else and an AMO is just a locked read-modify-write — but the instructions still need to exist because compiled libraries and the ABI assume them.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>Prove that your LR/SC implementation cannot livelock.</summary>
+    <div class="ans">
+      <p>You cannot prove it from the core alone; it is a system property. The argument has three parts.</p>
+      <p>One: bound the window. The constrained-sequence rules cap the dynamic instruction count between LR and SC at 16 and forbid anything of unbounded latency, so the reservation only needs to survive a bounded number of cycles.</p>
+      <p>Two: protect the window. After an LR, the reservation monitor holds off or retries incoming invalidations to that line for at least that bounded period, so a remote store cannot destroy the reservation arbitrarily often.</p>
+      <p>Three: guarantee fairness at the serialisation point. Ownership requests to the line must be served under a starvation-free arbitration policy, so no hart is indefinitely denied. Without part three, parts one and two only shift the livelock into the fabric.</p>
+      <p>Verification is by bounded model checking of the two-hart symmetric case plus directed stress with adversarial timing, not by random testing — random testing almost never hits the symmetric phase.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>What does aq actually cost in hardware?</summary>
+    <div class="ans">
+      <p>In a simple in-order core with no store buffer and blocking memory accesses, almost nothing — the pipeline is already effectively ordered, so the annotation is decoded and then satisfied for free. That is worth saying, because it explains why small cores implement A cheaply.</p>
+      <p>The cost appears as soon as you have a store buffer, non-blocking misses or any reordering in the memory system. Then a release requires that every earlier access be globally observable before the annotated one is, which means draining or at least fencing the store buffer, and an acquire requires blocking later accesses from being observed early, which means holding them at issue.</p>
+      <p>So the honest answer is that <code>aq</code> and <code>rl</code> cost exactly as much as your memory system reorders. Design the reordering first; the annotations then price themselves.</p>
+    </div>
+  </details>
+</section>
+
+<section id="defend">
+  <h3><span class="n">15</span>Defend your claim — Hanu 1.0</h3>
+  <div class="defend"><span class="tag">write your answers down</span>
+  <ul>
+    <li>Did you implement full A, or only Zalrsc, or only Zaamo? Be precise about what is in the RTL today.</li>
+    <li>What is your reservation granule, and why that size?</li>
+    <li>List every condition in your design that clears the reservation valid bit.</li>
+    <li>Near-atomic or far-atomic? If near, where is the atomic ALU? If far, which agent performs it?</li>
+    <li>Is your core multi-hart? If single-hart, what invalidates a reservation at all — coherent DMA, or nothing?</li>
+    <li>How did you implement aq and rl? If your memory system does not reorder, say so plainly.</li>
+    <li>Did you test the constrained-sequence forward-progress property? How?</li>
+    <li>Where is the AMO's read-modify-write performed, and how do you keep a snoop out in between?</li>
+  </ul></div>
+</section>
+
+<section id="recap">
+  <h3><span class="n">16</span>Recap</h3>
+  <ul class="tight">
+    <li>One opcode, <code>0101111</code>. funct5 selects the operation, aq and rl carry ordering, funct3 selects width.</li>
+    <li>SC writes 0 on success, nonzero on failure, and may fail spuriously. Always loop.</li>
+    <li>A reservation set is implementation-defined but always contains the LR's bytes. Cache-line granularity is the usual choice.</li>
+    <li>Constrained sequences: same aligned address, at most 16 instructions, no loads, stores, backward branches, JALR, FENCE or SYSTEM in between.</li>
+    <li>Forward progress is guaranteed only for constrained sequences, and requires a hold window plus fair arbitration at the point of coherency.</li>
+    <li>AMOs return the <b>original</b> value. <code>rd = x0</code> enables a non-returning atomic.</li>
+    <li>Near atomics win uncontended; far atomics win under contention. The decision is where you put the ALU.</li>
+    <li>aq blocks later operations from being observed early; rl blocks earlier ones from being observed late. Do not set rl alone on LR or aq alone on SC.</li>
+    <li>An AMO must be non-speculative, and faults as a store for permission purposes.</li>
+    <li>Base A has no compare-and-swap. Zacas adds it.</li>
+  </ul>
+</section>
+
+<div class="navfoot">
+  <a href="rv32imac_lesson02_m_extension.html">&#8592; Lesson 02 · M extension</a>
+  <a href="rv32imac_lesson04_c_extension.html">Lesson 04 · C extension &#8594;</a>
+</div>
+</main>
+</div>
+<script src="rv32imac_shared.js"></script>
+</body>
+</html>

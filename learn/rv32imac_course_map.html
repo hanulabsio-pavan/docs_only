@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RV32IMAC · Course Map — Interview Defence Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="rv32imac_shared.css">
+<style>
+.lesson{display:grid; grid-template-columns:54px 1fr 132px; gap:16px; align-items:center;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:15px 17px; margin:9px 0; transition:.16s; text-decoration:none; color:inherit}
+.lesson:hover{background:var(--panel2); border-color:var(--acc); text-decoration:none; transform:translateX(3px)}
+.lesson .num{font-family:var(--mono); font-size:22px; font-weight:700; color:var(--acc); text-align:center}
+.lesson .nm{font-size:16px; font-weight:600; margin-bottom:3px}
+.lesson .ds{font-size:13.5px; color:var(--ink-dim)}
+.lesson .mt{font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-align:right; line-height:1.7}
+.lesson .mt b{display:block; color:var(--cyn); font-weight:500}
+.L-i{border-left:3px solid var(--acc)} .L-m{border-left:3px solid var(--gold)}
+.L-a{border-left:3px solid var(--grn)} .L-c{border-left:3px solid var(--pnk)}
+.L-x{border-left:3px solid var(--vio)}
+.letterbar{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin:22px 0}
+.letter{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 14px; text-align:center}
+.letter .L{font-family:var(--mono); font-size:34px; font-weight:700; line-height:1}
+.letter .nm{font-size:13px; margin-top:8px; color:var(--ink)}
+.letter .ds{font-size:11.5px; color:var(--ink-faint); margin-top:4px; font-family:var(--mono)}
+@media(max-width:880px){ .lesson{grid-template-columns:44px 1fr} .lesson .mt{display:none}
+  .letterbar{grid-template-columns:repeat(2,1fr)} }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">RV32IMAC · COURSE MAP</div>
+  <h1>Defending RV32IMAC</h1>
+  <a href="#why">Why this track exists</a>
+  <a href="#decode">What the string means</a>
+  <a href="#path">The seven lessons</a>
+  <a href="#matrix">Question-to-lesson map</a>
+  <a href="#sources">Primary sources</a>
+  <a href="#howto">How to revise</a>
+  <div class="home"><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Interview Defence Track · Course Map</div>
+<h2 class="title">RV32IMAC, defended</h2>
+<p class="lede">Seven lessons. One purpose. You wrote RV32IMAC on your resume because of Hanu 1.0. An interviewer will now probe it. This track gives you the microarchitecture behind each letter, the hazards each one creates, and the traps panels actually set.</p>
+
+<div class="obj">
+  <h4>Ground rules for this track</h4>
+  <ul>
+    <li>Basic digital design is assumed. No revision of muxes, FSMs or setup-hold.</li>
+    <li>RV32 is the anchor. RV64 differences appear as marked delta notes.</li>
+    <li>Every lesson closes with <b>Defend your claim</b> prompts. You supply the Hanu 1.0 answers.</li>
+    <li>Reference microarchitecture is a single-issue in-order pipeline, unless stated otherwise.</li>
+  </ul>
+</div>
+
+<section id="why">
+  <h3><span class="n">1</span>Why this track exists</h3>
+  <p>A resume line is a contract. RV32IMAC promises you understand four orthogonal things. Each letter changes a different part of the pipeline.</p>
+  <div class="crux"><span class="tag">crux</span>
+  <p>I sets the decode shape. M breaks fixed latency. A breaks speculation and memory ordering. C breaks instruction alignment. Four letters, four distinct microarchitectural problems.</p></div>
+  <p>Interviewers rarely ask "what is RV32I". They ask what breaks. The strong candidate answers in terms of the pipeline, not the mnemonic list.</p>
+</section>
+
+<section id="decode">
+  <h3><span class="n">2</span>Decoding the string itself</h3>
+  <div class="letterbar">
+    <div class="letter"><div class="L" style="color:var(--acc)">RV32</div><div class="nm">Base width</div><div class="ds">XLEN = 32</div></div>
+    <div class="letter"><div class="L" style="color:var(--acc)">I</div><div class="nm">Base integer</div><div class="ds">32 regs, 40 instr</div></div>
+    <div class="letter"><div class="L" style="color:var(--gold)">M</div><div class="nm">Mul / Div</div><div class="ds">8 instr</div></div>
+    <div class="letter"><div class="L" style="color:var(--grn)">A</div><div class="nm">Atomics</div><div class="ds">11 instr</div></div>
+    <div class="letter"><div class="L" style="color:var(--pnk)">C</div><div class="nm">Compressed</div><div class="ds">16-bit forms</div></div>
+  </div>
+  <p>RV32I is the base. M, A and C are standard extensions layered on it. The base is frozen. Extensions are ratified independently.</p>
+  <div class="gotcha"><span class="tag">say it correctly</span>
+  <p>Do not call RV32IMAC a profile. It is an ISA string. RVA and RVB profiles are separate, later constructs targeted at application-class hardware. RV32IMAC is closer in intent to what an embedded or control-plane core ships.</p></div>
+  <div class="delta"><span class="tag">context</span>
+  <p>Your portal targets RV64GC for the Hanuma SoC. G expands to IMAFD_Zicsr_Zifencei. So RV64GC is a strict superset of what this track covers, minus the 32-bit width. Everything here transfers.</p></div>
+</section>
+
+<section id="path">
+  <h3><span class="n">3</span>The seven lessons</h3>
+
+  <a class="lesson L-i" href="rv32imac_lesson01_base_i.html">
+    <div class="num">01</div>
+    <div><div class="nm">Base RV32I — encoding, decode and datapath</div>
+      <div class="ds">Six formats. Immediate scrambling and why it is deliberate. Zero-cost decode. Register file port pressure.</div></div>
+    <div class="mt"><b>I</b>Encoding<br>Decode</div>
+  </a>
+
+  <a class="lesson L-m" href="rv32imac_lesson02_m_extension.html">
+    <div class="num">02</div>
+    <div><div class="nm">M extension — multiply, divide and variable latency</div>
+      <div class="ds">Array vs iterative. Fusion of MULH+MUL. Divide-by-zero semantics. Scoreboarding a long-latency unit.</div></div>
+    <div class="mt"><b>M</b>Latency<br>WAW</div>
+  </a>
+
+  <a class="lesson L-a" href="rv32imac_lesson03_a_extension.html">
+    <div class="num">03</div>
+    <div><div class="nm">A extension — LR/SC, AMO and memory ordering</div>
+      <div class="ds">Reservation sets. Forward-progress rules. Near vs far atomics. RVWMO, aq and rl bits.</div></div>
+    <div class="mt"><b>A</b>Coherency<br>Ordering</div>
+  </a>
+
+  <a class="lesson L-c" href="rv32imac_lesson04_c_extension.html">
+    <div class="num">04</div>
+    <div><div class="nm">C extension — compression and the fetch path</div>
+      <div class="ds">IALIGN drops to 16. Straddling instructions. Predecode bits. What a BTB must now do.</div></div>
+    <div class="mt"><b>C</b>Fetch<br>Align</div>
+  </a>
+
+  <a class="lesson L-x" href="rv32imac_lesson05_decode_pipeline.html">
+    <div class="num">05</div>
+    <div><div class="nm">Unified decoder and pipeline integration</div>
+      <div class="ds">One decoder for four extensions. Expander placement. Illegal-instruction detection. Critical path budgeting.</div></div>
+    <div class="mt"><b>IMAC</b>Integration</div>
+  </a>
+
+  <a class="lesson L-x" href="rv32imac_lesson06_hazards_exceptions.html">
+    <div class="num">06</div>
+    <div><div class="nm">Hazard resolution and precise exceptions</div>
+      <div class="ds">Forwarding network. The x0 forwarding bug. Replay vs stall for AMO. Trap priority order.</div></div>
+    <div class="mt"><b>IMAC</b>Hazards</div>
+  </a>
+
+  <a class="lesson L-x" href="rv32imac_lesson07_interview_drill.html">
+    <div class="num">07</div>
+    <div><div class="nm">Interview drill — traps and trade-offs</div>
+      <div class="ds">Forty rapid-fire questions with model answers. Area, timing and power arguments you must be able to make.</div></div>
+    <div class="mt"><b>Drill</b>Rapid-fire</div>
+  </a>
+</section>
+
+<section id="matrix">
+  <h3><span class="n">4</span>Question-to-lesson map</h3>
+  <p>If a panel asks this, revise that lesson.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Interviewer asks</th><th>Go to</th></tr>
+    <tr><td>"Why are RISC-V immediates scrambled across the word?"</td><td class="mono">L01</td></tr>
+    <tr><td>"How many read ports does your register file need, and why?"</td><td class="mono">L01, L05</td></tr>
+    <tr><td>"What does <code>DIV x5, x6, x0</code> put in x5?"</td><td class="mono">L02</td></tr>
+    <tr><td>"How do you stop a 34-cycle divider from blocking the pipe?"</td><td class="mono">L02, L06</td></tr>
+    <tr><td>"What exactly invalidates an LR reservation?"</td><td class="mono">L03</td></tr>
+    <tr><td>"Where does the AMO actually execute — L1 or the home node?"</td><td class="mono">L03</td></tr>
+    <tr><td>"A 32-bit instruction spans two pages. Which page faults?"</td><td class="mono">L04, L06</td></tr>
+    <tr><td>"How do you fetch two instructions per cycle with C enabled?"</td><td class="mono">L04</td></tr>
+    <tr><td>"Show me your decoder's critical path."</td><td class="mono">L05</td></tr>
+    <tr><td>"Why can't you forward when rd is x0?"</td><td class="mono">L06</td></tr>
+    <tr><td>"Justify dropping C. Justify keeping it."</td><td class="mono">L07</td></tr>
+  </table>
+  </div>
+</section>
+
+<section id="sources">
+  <h3><span class="n">5</span>Primary sources</h3>
+  <p>Quote the document, not a blog. Panels respect specification literacy.</p>
+  <ul class="tight">
+    <li><b>RISC-V Unprivileged ISA specification</b> — the volume that defines RV32I, M, A and C. Chapters on Zmmul, Zalrsc and Zaamo matter for the modern decomposition.</li>
+    <li><b>RISC-V Privileged specification</b> — trap causes, <code>mstatus</code>, <code>mtval</code>, misaligned-access behaviour.</li>
+    <li><b>RVWMO appendix</b> — preserved program order rules. This is where the aq/rl semantics are formally defined.</li>
+    <li><b>Zc* specification</b> — the modern re-cut of C into Zca, Zcb, Zcf, Zcd, Zcmp, Zcmt.</li>
+  </ul>
+  <div class="note">Spec versions move. Before an interview, confirm the current ratified version numbers on riscv.org rather than quoting a number from memory.</div>
+</section>
+
+<section id="howto">
+  <h3><span class="n">6</span>How to revise this track</h3>
+  <ol class="tight">
+    <li>Read L01 to L04 once, in order. Do not skip the tabs.</li>
+    <li>Answer every <b>Defend your claim</b> prompt in writing, using real Hanu 1.0 decisions.</li>
+    <li>Read L05 and L06. These are where most candidates get caught.</li>
+    <li>Drill L07 cold, out loud, without reading the answer first.</li>
+    <li>Return to any lesson whose self-check you failed.</li>
+  </ol>
+  <div class="trap"><span class="tag">the meta-trap</span>
+  <p>Never claim more than Hanu 1.0 actually implemented. If you built I and M but stubbed A, say so plainly and describe what you designed for A. Panels forgive scope. They do not forgive bluffing.</p></div>
+</section>
+
+<div class="navfoot">
+  <a href="index.html">&#8592; Portal</a>
+  <a href="rv32imac_lesson01_base_i.html">Lesson 01 · Base RV32I &#8594;</a>
+</div>
+</main>
+</div>
+<script src="rv32imac_shared.js"></script>
+</body>
+</html>

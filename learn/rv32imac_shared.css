@@ -1,0 +1,182 @@
+/* ===================================================================
+   RV32IMAC interview track — shared lesson chrome
+   Used by rv32imac_course_map.html and rv32imac_lesson01..07.
+   Palette and layout deliberately track powerisa_shared.css so the
+   two learning tracks feel like one portal.
+   =================================================================== */
+:root{
+  --bg:#0b0f14; --bg2:#10161e; --panel:#141c26; --panel2:#1a2430;
+  --ink:#e6edf3; --ink-dim:#9fb0c0; --ink-faint:#6b7c8c;
+  --line:#243140; --line-soft:#1c2733;
+  --acc:#4fa3ff; --gold:#f5b942; --grn:#52d273; --vio:#b48cff; --cyn:#39d4e6;
+  --org:#ff9b42; --pnk:#ff7ab6; --warn:#ff7a7a;
+  --radius:10px; --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #16202c 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #131b24 0%, transparent 55%), var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.6; font-size:15.5px}
+a{color:var(--acc); text-decoration:none}
+a:hover{text-decoration:underline}
+img{max-width:100%}
+
+/* ---------- shell + side nav ---------- */
+.shell{display:grid; grid-template-columns:252px 1fr; min-height:100vh}
+nav.side{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg)); border-right:1px solid var(--line); padding:22px 16px}
+nav.side .crumb{font-family:var(--mono); font-size:11px; color:var(--vio); letter-spacing:1px}
+nav.side h1{font-family:var(--mono); font-size:15px; margin:4px 0 18px; line-height:1.35}
+nav.side a{display:block; color:var(--ink-dim); font-size:13px; padding:5px 10px; margin:1px 0;
+  border-radius:7px; border-left:2px solid transparent; transition:.15s; text-decoration:none}
+nav.side a:hover{background:var(--panel); color:var(--ink); text-decoration:none}
+nav.side a.active{background:var(--panel2); color:var(--ink); border-left-color:var(--acc)}
+nav.side .home{margin-top:20px; padding-top:14px; border-top:1px solid var(--line-soft); font-size:12px; color:var(--ink-faint)}
+main{padding:38px 52px 120px; max-width:1000px; min-width:0}
+
+/* ---------- headings ---------- */
+.kick{font-family:var(--mono); color:var(--vio); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+h2.title{font-size:32px; margin:6px 0 6px; letter-spacing:-.5px}
+.lede{color:var(--ink-dim); font-size:16px; max-width:760px}
+section{margin:42px 0; scroll-margin-top:18px}
+section>h3{font-size:13px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;
+  color:var(--vio); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:6px}
+section>h3 .n{color:var(--ink-faint); margin-right:10px}
+h4{font-size:21px; margin:14px 0 10px} h5{font-size:16px; margin:20px 0 6px; color:var(--ink)}
+p{margin:10px 0}
+
+/* ---------- objectives ---------- */
+.obj{background:linear-gradient(180deg,#0e1822,#0b141d); border:1px solid var(--line);
+  border-left:3px solid var(--acc); border-radius:var(--radius); padding:16px 18px; margin:24px 0}
+.obj h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--acc)}
+.obj ul{margin:0; padding-left:18px} .obj li{margin:4px 0; color:var(--ink-dim); font-size:14px}
+
+/* ---------- callouts ---------- */
+.crux{background:linear-gradient(180deg,#0d1a16,#0a1512); border:1px solid #1d3a30;
+  border-left:3px solid var(--grn); border-radius:var(--radius); padding:13px 16px; margin:14px 0}
+.crux .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--grn)}
+.crux p{margin:4px 0 0; color:#d7ecdf; font-size:14.5px}
+
+.trap{background:linear-gradient(180deg,#1d1113,#170d0f); border:1px solid #45222a;
+  border-left:3px solid var(--warn); border-radius:var(--radius); padding:14px 16px; margin:14px 0}
+.trap .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--warn)}
+.trap p{margin:4px 0 0; color:#f0d9dc; font-size:14.5px}
+
+.gotcha{background:linear-gradient(180deg,#1a160d,#15120a); border:1px solid #3a2f15;
+  border-left:3px solid var(--gold); border-radius:var(--radius); padding:14px 16px; margin:14px 0}
+.gotcha .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold)}
+.gotcha p{margin:4px 0 0; color:#efe3c6; font-size:14.5px}
+
+.defend{background:linear-gradient(180deg,#151024,#110d1d); border:1px solid #2e2450;
+  border-left:3px solid var(--vio); border-radius:var(--radius); padding:14px 16px; margin:18px 0}
+.defend .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--vio)}
+.defend ul{margin:8px 0 0; padding-left:18px}
+.defend li{margin:5px 0; color:#ddd4f0; font-size:14px}
+
+/* ---------- tabs ---------- */
+.tabs{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin:18px 0}
+.tabbar{display:flex; flex-wrap:wrap; gap:0; background:var(--bg2); border-bottom:1px solid var(--line)}
+.tabbar button{font-family:var(--mono); font-size:12.5px; letter-spacing:.4px; background:transparent;
+  border:none; border-bottom:2px solid transparent; color:var(--ink-faint);
+  padding:12px 17px; cursor:pointer; transition:.14s; white-space:nowrap}
+.tabbar button:hover{color:var(--ink); background:var(--panel)}
+.tabbar button.on{color:var(--acc); border-bottom-color:var(--acc); background:var(--panel)}
+.tabpane{display:none; padding:18px 20px 20px}
+.tabpane.on{display:block}
+.tabpane>h5:first-child{margin-top:0}
+.tabpane p:first-child{margin-top:0}
+
+/* ---------- cards / grids ---------- */
+.grid{display:grid; gap:14px; margin:16px 0}
+.g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px}
+.card h6{margin:0 0 6px; font-size:14px; font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.card p{margin:0; font-size:13.5px; color:var(--ink-dim)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.b-acc{background:var(--acc)} .b-gold{background:var(--gold)} .b-grn{background:var(--grn)}
+.b-vio{background:var(--vio)} .b-org{background:var(--org)} .b-cyn{background:var(--cyn)}
+.b-pnk{background:var(--pnk)} .b-warn{background:var(--warn)}
+
+/* ---------- tables ---------- */
+.tblwrap{overflow-x:auto; margin:14px 0}
+table{width:100%; border-collapse:collapse; margin:0; font-size:13.5px}
+th,td{text-align:left; padding:8px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{font-family:var(--mono); font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-faint)}
+td code,p code,li code,h5 code,td b{font-family:var(--mono)}
+td code,p code,li code,h5 code{color:var(--cyn); font-size:12.5px}
+tr:hover td{background:var(--panel)}
+td.mono{font-family:var(--mono); font-size:12.5px}
+.ok{color:var(--grn)} .no{color:var(--warn)} .mid{color:var(--gold)}
+
+/* ---------- code + ascii ---------- */
+.ascii-wrap{background:#0a0e13; border:1px solid var(--line); border-radius:var(--radius); overflow:auto; margin:16px 0}
+.ascii-wrap .bar{font-family:var(--mono); font-size:10.5px; letter-spacing:1px; color:var(--ink-faint);
+  padding:6px 12px; border-bottom:1px solid var(--line-soft); text-transform:uppercase}
+pre.ascii,pre.code{white-space:pre; font-family:var(--mono); font-size:12.5px; line-height:1.5; padding:16px; margin:0; color:#bcd; overflow-x:auto}
+.ascii .box{color:#3f5468} .ascii .a{color:var(--acc);font-weight:600} .ascii .g{color:var(--gold);font-weight:600}
+.ascii .s{color:var(--grn);font-weight:600} .ascii .v{color:var(--vio);font-weight:600}
+.ascii .o{color:var(--org);font-weight:600} .ascii .p{color:var(--pnk);font-weight:600}
+.ascii .cmt,.code .cmt{color:#5a6b7a;font-style:italic}
+.code .kw{color:var(--vio);font-weight:600} .code .ins{color:var(--acc);font-weight:600}
+.code .reg{color:var(--gold)} .code .num{color:var(--grn)} .code .lbl{color:var(--pnk)}
+.code .str{color:var(--cyn)}
+
+/* ---------- bit field strip ---------- */
+.bits{display:flex; margin:14px 0 4px; border:1px solid var(--line); border-radius:8px; overflow:hidden; font-family:var(--mono)}
+.bits .f{padding:9px 6px; text-align:center; font-size:11.5px; border-right:1px solid var(--line);
+  background:var(--panel); color:var(--ink-dim); min-width:0; overflow:hidden; text-overflow:ellipsis}
+.bits .f:last-child{border-right:none}
+.bits .f b{display:block; color:var(--ink); font-size:12.5px; font-weight:600}
+.bits .f i{display:block; font-style:normal; color:var(--ink-faint); font-size:10px; letter-spacing:.3px}
+.bits .f-op{background:rgba(79,163,255,.20)} .bits .f-rd{background:rgba(245,185,66,.20)}
+.bits .f-f3{background:rgba(180,140,255,.20)} .bits .f-r1{background:rgba(82,210,115,.20)}
+.bits .f-r2{background:rgba(57,212,230,.20)} .bits .f-f7{background:rgba(255,155,66,.20)}
+.bits .f-imm{background:rgba(255,122,182,.20)}
+.bitsleg{font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-bottom:14px}
+
+/* ---------- lists / chips ---------- */
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+ol.tight{margin:8px 0;padding-left:22px} ol.tight li{margin:5px 0;color:var(--ink-dim);font-size:14px}
+.note{font-size:12.5px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim)}
+.chip.on{border-color:var(--acc);color:var(--acc)}
+
+/* ---------- quiz ---------- */
+.quiz{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:14px 0}
+.quiz .q{font-weight:500; margin-bottom:10px}
+.quiz .opt{display:block; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line);
+  color:var(--ink); padding:9px 13px; border-radius:8px; margin:6px 0; cursor:pointer; font-size:14px; transition:.12s; font-family:inherit}
+.quiz .opt:hover{background:var(--panel2)}
+.quiz .opt.correct{border-color:var(--grn); background:rgba(82,210,115,.12)}
+.quiz .opt.wrong{border-color:var(--warn); background:rgba(255,122,122,.1)}
+.quiz .fb{margin-top:8px; font-size:13px; color:var(--ink-dim); min-height:18px}
+.quiz .fb.show{padding:9px 12px; background:var(--bg2); border-radius:8px; border:1px solid var(--line-soft)}
+
+/* ---------- details / Q&A ---------- */
+details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin:9px 0; overflow:hidden}
+details summary{cursor:pointer; padding:13px 16px; font-weight:500; list-style:none; display:flex; gap:10px; align-items:flex-start}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B8"; color:var(--vio); transition:.2s; font-family:var(--mono); flex:none}
+details[open] summary::before{transform:rotate(90deg)}
+details .ans{padding:0 16px 15px 38px; color:var(--ink-dim); font-size:14px}
+details .ans p:first-child{margin-top:0}
+details.hard summary::before{color:var(--warn)}
+
+/* ---------- RV64 delta strip ---------- */
+.delta{background:var(--bg2); border:1px dashed var(--line); border-radius:8px; padding:11px 14px; margin:12px 0}
+.delta .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--cyn)}
+.delta p{margin:4px 0 0; font-size:13.5px; color:var(--ink-dim)}
+
+/* ---------- footer nav ---------- */
+.navfoot{display:flex; justify-content:space-between; gap:16px; margin-top:44px; border-top:1px solid var(--line-soft); padding-top:18px}
+.navfoot a{font-family:var(--mono); font-size:13px}
+
+@media(max-width:880px){
+  .shell{grid-template-columns:1fr} nav.side{display:none}
+  main{padding:24px 18px 80px}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .bits{flex-wrap:wrap} .bits .f{min-width:64px; flex:1 1 64px}
+}

@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RV32IMAC · Lesson 2 — M Extension &amp; Variable Latency</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="rv32imac_shared.css">
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">RV32IMAC · LESSON 02</div>
+  <h1>M Extension</h1>
+  <a href="#frame">The interview frame</a>
+  <a href="#set">The eight instructions</a>
+  <a href="#edge">Zero and overflow — no traps</a>
+  <a href="#mulhsu">Why MULHSU exists</a>
+  <a href="#fusion">The fusion idiom</a>
+  <a href="#mularch">Multiplier microarchitecture</a>
+  <a href="#divarch">Divider microarchitecture</a>
+  <a href="#pipe">Pipeline integration</a>
+  <a href="#waw">WAW and write-port conflict</a>
+  <a href="#intr">Interrupting a long divide</a>
+  <a href="#zmmul">Zmmul and the area argument</a>
+  <a href="#check">Self-check</a>
+  <a href="#qa">Interview Q&amp;A</a>
+  <a href="#defend">Defend your claim</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="rv32imac_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Interview Defence Track · Lesson 2 of 7</div>
+<h2 class="title">M extension — multiply, divide and variable latency</h2>
+<p class="lede">M adds eight instructions and one enormous microarchitectural problem: an instruction that does not finish in one cycle. Everything difficult about M follows from that single fact.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>State the exact result of divide-by-zero and signed overflow, and why there is no trap.</li>
+    <li>Explain MULHSU's purpose in one sentence.</li>
+    <li>Describe the recommended fusion sequences and what hardware does with them.</li>
+    <li>Compare array, Booth-encoded and iterative multipliers on area, latency and timing.</li>
+    <li>Compare restoring, non-restoring, SRT and Newton-Raphson division.</li>
+    <li>Design the scoreboard and write-port arbitration for a decoupled multi-cycle unit.</li>
+  </ul>
+</div>
+
+<section id="frame">
+  <h3><span class="n">1</span>The interview frame</h3>
+  <div class="crux"><span class="tag">crux</span>
+  <p>M is the extension that breaks the "every instruction takes one EX cycle" assumption. Once latency varies, you need a busy indication, a RAW interlock, a WAW interlock and write-port arbitration. Describe those four and you have described M's real cost.</p></div>
+  <p>Candidates who only list the mnemonics get marked down. Candidates who say "a 34-cycle divider and a 3-cycle multiplier sharing one write port" get a follow-up conversation.</p>
+</section>
+
+<section id="set">
+  <h3><span class="n">2</span>The eight instructions</h3>
+  <p>All R-type, opcode <code>OP</code> (<code>0110011</code>), <code>funct7 = 0000001</code>. That funct7 value is the entire encoding cost of M — it reuses the base ALU opcode.</p>
+  <div class="bits">
+    <div class="f f-f7" style="flex:7"><b>0000001</b><i>31:25 — M select</i></div>
+    <div class="f f-r2" style="flex:5"><b>rs2</b><i>24:20</i></div>
+    <div class="f f-r1" style="flex:5"><b>rs1</b><i>19:15</i></div>
+    <div class="f f-f3" style="flex:3"><b>funct3</b><i>14:12 — op</i></div>
+    <div class="f f-rd" style="flex:5"><b>rd</b><i>11:7</i></div>
+    <div class="f f-op" style="flex:7"><b>0110011</b><i>6:0 — OP</i></div>
+  </div>
+  <div class="tblwrap">
+  <table>
+    <tr><th>funct3</th><th>Instr</th><th>Result in rd</th><th>Operand treatment</th></tr>
+    <tr><td class="mono">000</td><td>MUL</td><td>Lower XLEN bits of rs1&times;rs2</td><td>Signedness irrelevant</td></tr>
+    <tr><td class="mono">001</td><td>MULH</td><td>Upper XLEN bits</td><td>signed &times; signed</td></tr>
+    <tr><td class="mono">010</td><td>MULHSU</td><td>Upper XLEN bits</td><td>signed &times; <b>unsigned</b></td></tr>
+    <tr><td class="mono">011</td><td>MULHU</td><td>Upper XLEN bits</td><td>unsigned &times; unsigned</td></tr>
+    <tr><td class="mono">100</td><td>DIV</td><td>Quotient</td><td>signed, truncated toward zero</td></tr>
+    <tr><td class="mono">101</td><td>DIVU</td><td>Quotient</td><td>unsigned</td></tr>
+    <tr><td class="mono">110</td><td>REM</td><td>Remainder</td><td>signed, sign follows dividend</td></tr>
+    <tr><td class="mono">111</td><td>REMU</td><td>Remainder</td><td>unsigned</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">crux</span>
+  <p><code>funct3[2]</code> splits multiply from divide. Within each half the low two bits select the variant. A clean two-level decode, no lookup table.</p></div>
+  <div class="gotcha"><span class="tag">rounding convention</span>
+  <p>RISC-V uses <b>truncated</b> division — quotient rounds toward zero, remainder takes the sign of the dividend. Same as C99. So <code>-7 / 2 = -3</code> and <code>-7 % 2 = -1</code>. Not floored division. Panels sometimes probe this because Python and some ISAs floor instead.</p></div>
+</section>
+
+<section id="edge">
+  <h3><span class="n">3</span>Divide by zero and overflow — memorise this table</h3>
+  <p>This is the highest-frequency M question in interviews. There is <b>no</b> divide-by-zero exception in RISC-V. None. The results are architecturally defined.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Condition</th><th>Instr</th><th>Result</th><th>Bit pattern (RV32)</th></tr>
+    <tr><td rowspan="4">Divisor = 0</td><td>DIV</td><td class="mono">&minus;1</td><td class="mono">0xFFFFFFFF</td></tr>
+    <tr><td>DIVU</td><td class="mono">2<sup>XLEN</sup>&minus;1</td><td class="mono">0xFFFFFFFF</td></tr>
+    <tr><td>REM</td><td class="mono">rs1 (the dividend)</td><td class="mono">unchanged</td></tr>
+    <tr><td>REMU</td><td class="mono">rs1 (the dividend)</td><td class="mono">unchanged</td></tr>
+    <tr><td rowspan="2">Signed overflow<br><span class="mono">&minus;2<sup>31</sup> &divide; &minus;1</span></td><td>DIV</td><td class="mono">&minus;2<sup>31</sup></td><td class="mono">0x80000000</td></tr>
+    <tr><td>REM</td><td class="mono">0</td><td class="mono">0x00000000</td></tr>
+  </table>
+  </div>
+  <div class="trap"><span class="tag">the classic trap</span>
+  <p>"What exception does <code>DIV x5, x6, x0</code> raise?" The answer is <b>none</b>. x5 becomes all ones. Any candidate who says "divide-by-zero trap" has not read the specification. Any candidate who says "undefined" is also wrong — it is precisely defined.</p></div>
+  <h5>Why no trap?</h5>
+  <ul class="tight">
+    <li>A trap on a common arithmetic operation forces every implementation to build a precise-exception path through a long-latency, decoupled unit. Expensive for a rare case.</li>
+    <li>It keeps the ALU exception-free, which in turn keeps out-of-order writeback of M results safe.</li>
+    <li>Software that cares can branch on the divisor in two instructions. Software that does not care pays nothing.</li>
+  </ul>
+  <div class="ascii-wrap"><div class="bar">Checking for divide by zero in software</div>
+<pre class="code">    <span class="ins">beqz</span>  <span class="reg">a1</span>, div_by_zero      <span class="cmt"># explicit test, 1 instruction</span>
+    <span class="ins">div</span>   <span class="reg">a0</span>, <span class="reg">a0</span>, <span class="reg">a1</span>
+    ...
+<span class="lbl">div_by_zero:</span>
+    <span class="cmt"># language-defined behaviour goes here</span></pre>
+  </div>
+  <div class="gotcha"><span class="tag">hardware consequence</span>
+  <p>Because DIV cannot trap, your divider does not need to be squashable mid-flight for exception reasons. It only needs to be squashable for branch mispredicts and interrupts. That simplifies the control significantly — say this if asked why M is easier than a floating-point unit.</p></div>
+</section>
+
+<section id="mulhsu">
+  <h3><span class="n">4</span>Why MULHSU exists</h3>
+  <p>It looks arbitrary. It is not.</p>
+  <div class="crux"><span class="tag">crux</span>
+  <p>MULHSU is for multi-word arithmetic. When you multiply two large signed numbers held as arrays of words, the most significant word is signed but every lower word is unsigned. The cross-product of the signed top word with an unsigned lower word needs exactly signed&times;unsigned.</p></div>
+  <p>Without MULHSU, bignum and cryptographic libraries would need a correction sequence on every such partial product. With it, the inner loop is clean. The hardware cost is near zero — the multiplier already builds a signed array; MULHSU just changes how the sign-extension of one operand is driven.</p>
+  <div class="ascii-wrap"><div class="bar">Signed 64×64 via 32-bit ops — where MULHSU lands</div>
+<pre class="ascii">   A = {<span class="a">a1</span>(signed), <span class="s">a0</span>(unsigned)}     B = {<span class="a">b1</span>(signed), <span class="s">b0</span>(unsigned)}
+
+   <span class="s">a0</span>&times;<span class="s">b0</span>  <span class="cmt">→ MULHU  / MUL     unsigned × unsigned</span>
+   <span class="a">a1</span>&times;<span class="s">b0</span>  <span class="cmt">→ MULHSU / MUL     signed   × unsigned  ◄── this one</span>
+   <span class="s">a0</span>&times;<span class="a">b1</span>  <span class="cmt">→ MULHSU / MUL     signed   × unsigned  ◄── and this</span>
+   <span class="a">a1</span>&times;<span class="a">b1</span>  <span class="cmt">→ MULH   / MUL     signed   × signed</span></pre>
+  </div>
+  <p>Two of the four cross-products are signed&times;unsigned. That is half the inner loop. Hence the instruction.</p>
+</section>
+
+<section id="fusion">
+  <h3><span class="n">5</span>The fusion idiom</h3>
+  <p>The specification recommends specific instruction orderings so implementations can fuse a pair into one operation.</p>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="fu-mul">Multiply pair</button>
+      <button data-t="fu-div">Divide pair</button>
+      <button data-t="fu-hw">What hardware does</button>
+    </div>
+    <div class="tabpane" id="fu-mul">
+      <h5>High and low halves of one product</h5>
+      <div class="ascii-wrap"><div class="bar">Recommended sequence</div>
+<pre class="code">    <span class="ins">mulh</span>  <span class="reg">a2</span>, <span class="reg">a0</span>, <span class="reg">a1</span>     <span class="cmt"># high half FIRST</span>
+    <span class="ins">mul</span>   <span class="reg">a3</span>, <span class="reg">a0</span>, <span class="reg">a1</span>     <span class="cmt"># low half, same operands, same order</span></pre>
+      </div>
+      <ul class="tight">
+        <li>High-half instruction must come first.</li>
+        <li>Source registers must be in the same order in both.</li>
+        <li>The high-half destination must not be rs1 or rs2, otherwise it clobbers an operand the second instruction still needs.</li>
+      </ul>
+    </div>
+    <div class="tabpane" id="fu-div">
+      <h5>Quotient and remainder from one division</h5>
+      <div class="ascii-wrap"><div class="bar">Recommended sequence</div>
+<pre class="code">    <span class="ins">div</span>   <span class="reg">a2</span>, <span class="reg">a0</span>, <span class="reg">a1</span>     <span class="cmt"># quotient FIRST</span>
+    <span class="ins">rem</span>   <span class="reg">a3</span>, <span class="reg">a0</span>, <span class="reg">a1</span>     <span class="cmt"># remainder, same operands</span></pre>
+      </div>
+      <p>Same constraint: the quotient destination must not be rs1 or rs2.</p>
+      <p>This matters far more than the multiply case. A divider produces quotient and remainder in the same iteration loop. Fusing saves roughly 32 cycles — a real speedup, not a micro-optimisation.</p>
+    </div>
+    <div class="tabpane" id="fu-hw">
+      <h5>Implementing the fusion</h5>
+      <p>The detection is a small comparator block in ID looking at the instruction pair in the decode buffer:</p>
+      <ol class="tight">
+        <li>First is MULH/MULHU/MULHSU, second is MUL (or first DIV[U], second REM[U]).</li>
+        <li><code>rs1</code> and <code>rs2</code> match, in the same order.</li>
+        <li>First instruction's <code>rd</code> is not <code>rs1</code> or <code>rs2</code>.</li>
+      </ol>
+      <p>On a match, issue one operation to the M unit, retain both result halves in the unit's output registers, and write back over two cycles using a two-entry result queue. The second instruction becomes a writeback-only micro-op.</p>
+      <div class="gotcha"><span class="tag">honest scoping</span>
+      <p>Fusion is optional. A simple core may execute both separately and still be correct. If Hanu 1.0 does not fuse, say so and say what it would have cost — a pair comparator in ID plus a second result register. That is a better answer than pretending.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="mularch">
+  <h3><span class="n">6</span>Multiplier microarchitecture</h3>
+  <p>You must be able to pick one and defend it. The axes are area, latency, and whether it fits your clock period.</p>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="mu-it">Iterative shift-add</button>
+      <button data-t="mu-booth">Booth radix-4</button>
+      <button data-t="mu-tree">Wallace / Dadda tree</button>
+      <button data-t="mu-dsp">FPGA DSP blocks</button>
+      <button data-t="mu-cmp">Comparison</button>
+    </div>
+
+    <div class="tabpane" id="mu-it">
+      <h5>Iterative shift-add</h5>
+      <p>One partial product per cycle. A 33-bit adder, two shift registers, a counter. Roughly XLEN cycles.</p>
+      <div class="ascii-wrap"><div class="bar">Radix-2 iteration</div>
+<pre class="code"><span class="kw">always_ff</span> @(<span class="kw">posedge</span> clk) <span class="kw">if</span> (busy) <span class="kw">begin</span>
+  <span class="kw">if</span> (mplier[<span class="num">0</span>]) acc &lt;= acc + mcand;
+  mcand  &lt;= mcand  &lt;&lt; <span class="num">1</span>;
+  mplier &lt;= mplier &gt;&gt; <span class="num">1</span>;
+  cnt    &lt;= cnt - <span class="num">1</span>;
+<span class="kw">end</span></pre>
+      </div>
+      <p><b>Use when:</b> area is the binding constraint and multiply is rare. Deeply embedded control cores, area-limited FPGA fabric.</p>
+      <p><b>Cost:</b> ~32 cycles. In a loop with a multiply in it, this dominates.</p>
+    </div>
+
+    <div class="tabpane" id="mu-booth">
+      <h5>Booth radix-4 encoding</h5>
+      <p>Encode the multiplier three bits at a time with one bit of overlap. Each group selects one of <code>{0, &plusmn;M, &plusmn;2M}</code>. That halves the number of partial products: 32 becomes 17 for a 32-bit operand.</p>
+      <div class="tblwrap">
+      <table>
+        <tr><th>b<sub>i+1</sub> b<sub>i</sub> b<sub>i&minus;1</sub></th><th>Selection</th></tr>
+        <tr><td class="mono">000 / 111</td><td class="mono">0</td></tr>
+        <tr><td class="mono">001 / 010</td><td class="mono">+M</td></tr>
+        <tr><td class="mono">011</td><td class="mono">+2M</td></tr>
+        <tr><td class="mono">100</td><td class="mono">&minus;2M</td></tr>
+        <tr><td class="mono">101 / 110</td><td class="mono">&minus;M</td></tr>
+      </table>
+      </div>
+      <p><b>&plusmn;2M</b> is a shift, free. <b>&minus;M</b> is a two's complement, done as invert plus a hot-one folded into the reduction tree. So the encoding costs a small mux per partial product row.</p>
+      <p>Booth also handles signed operands naturally, which is why signed and unsigned multiply can share one array with only sign-extension control differing.</p>
+      <p><b>Use when:</b> you want either an iterative radix-4 multiplier at ~16 cycles, or fewer rows to feed a tree.</p>
+    </div>
+
+    <div class="tabpane" id="mu-tree">
+      <h5>Carry-save reduction tree</h5>
+      <p>Generate all partial products, then reduce them to two vectors with carry-save adders, then do one carry-propagate add.</p>
+      <ul class="tight">
+        <li><b>Wallace tree</b> — reduce as aggressively as possible at each level. Minimum depth, irregular layout.</li>
+        <li><b>Dadda tree</b> — reduce only as much as needed to stay on the reduction schedule. Fewer full adders, slightly more irregular, usually smaller.</li>
+        <li>Reduction depth grows as log<sub>1.5</sub> of the row count, so 17 Booth rows reduce in about 6 CSA levels.</li>
+        <li>The final CPA is a fast adder — carry-lookahead, carry-select or a parallel-prefix Kogge-Stone.</li>
+      </ul>
+      <p><b>Timing reality:</b> a full 32&times;32 tree plus final adder is a long path. In most processes you pipeline it into 2 or 3 stages. Partial product generation and first reduction levels in stage 1, remaining reduction in stage 2, final CPA in stage 3.</p>
+      <div class="crux"><span class="tag">crux</span>
+      <p>Pipelining the multiplier is what turns M from "variable latency" into "fixed but longer latency". A 3-cycle pipelined multiplier is far easier to schedule than a 16-cycle iterative one — it is just a deeper forwarding problem.</p></div>
+    </div>
+
+    <div class="tabpane" id="mu-dsp">
+      <h5>FPGA: hard DSP blocks</h5>
+      <p>If Hanu 1.0 targets FPGA, do not build an array. Use the DSP slices.</p>
+      <ul class="tight">
+        <li>Typical hard multipliers are asymmetric, around 25&times;18 signed. A 32&times;32 product therefore needs several of them plus an adder tree.</li>
+        <li>Straightforward decomposition uses four blocks. Karatsuba reduces it to three at the cost of extra adds.</li>
+        <li>The blocks have internal pipeline registers. Use them — an unregistered DSP inference will wreck your F<sub>max</sub>.</li>
+        <li>Signed versus unsigned matters: hard blocks are signed, so unsigned operands need a zero-extension to 33 bits and careful partitioning.</li>
+      </ul>
+      <div class="defend"><span class="tag">strong answer</span>
+      <ul><li>"On FPGA I inferred DSP slices with two levels of internal pipelining, giving a 3-cycle multiply. On ASIC I would have used Booth radix-4 into a Dadda tree with a Kogge-Stone final adder, pipelined to match the target period."</li></ul></div>
+    </div>
+
+    <div class="tabpane" id="mu-cmp">
+      <h5>Picking one</h5>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Scheme</th><th>Latency</th><th>Relative area</th><th>Fits when</th></tr>
+        <tr><td>Shift-add radix-2</td><td class="mono">~32 cyc</td><td class="ok">smallest</td><td>Area critical, multiply rare</td></tr>
+        <tr><td>Booth radix-4 iterative</td><td class="mono">~16 cyc</td><td class="ok">small</td><td>Balanced embedded core</td></tr>
+        <tr><td>Booth + tree, pipelined</td><td class="mono">2&ndash;4 cyc</td><td class="no">largest</td><td>Throughput matters, area available</td></tr>
+        <tr><td>Hard DSP blocks</td><td class="mono">2&ndash;4 cyc</td><td class="ok">free-ish</td><td>FPGA target</td></tr>
+      </table>
+      </div>
+      <p class="note">Area figures are deliberately relative. Absolute gate counts depend entirely on process, library and target period — quoting a specific number in an interview invites a challenge you cannot win.</p>
+    </div>
+  </div>
+</section>
+
+<section id="divarch">
+  <h3><span class="n">7</span>Divider microarchitecture</h3>
+  <p>Division is the slowest thing in an integer core. There is no cheap fast divider.</p>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="dv-rest">Restoring</button>
+      <button data-t="dv-non">Non-restoring</button>
+      <button data-t="dv-srt">SRT radix-4</button>
+      <button data-t="dv-nr">Newton-Raphson</button>
+      <button data-t="dv-sign">Sign handling</button>
+    </div>
+
+    <div class="tabpane" id="dv-rest">
+      <h5>Restoring division</h5>
+      <p>Shift the partial remainder left, subtract the divisor. If the result is negative, restore by adding the divisor back and emit quotient bit 0. Otherwise keep it and emit 1.</p>
+      <p>One bit per cycle, so XLEN cycles plus setup. The restore step costs an extra add in the worst case, or a mux if you compute both and select.</p>
+      <p>Simplest to verify. Reasonable default for a first core.</p>
+    </div>
+
+    <div class="tabpane" id="dv-non">
+      <h5>Non-restoring division</h5>
+      <p>Never restore. If the partial remainder went negative, add the divisor on the next iteration instead of subtracting. Quotient digits come out in <code>{&minus;1, +1}</code> and are converted to binary at the end.</p>
+      <p>Same one-bit-per-cycle rate but a shorter cycle — one add/subtract, no conditional restore. A final correction step fixes a negative remainder.</p>
+      <p>This is the sensible baseline for an RV32 core. Same iteration count as restoring, better timing.</p>
+    </div>
+
+    <div class="tabpane" id="dv-srt">
+      <h5>SRT radix-4</h5>
+      <p>Two quotient bits per cycle using a redundant digit set, typically <code>{&minus;2, &minus;1, 0, +1, +2}</code>. Redundancy means the quotient digit can be chosen from a <b>truncated</b> partial remainder and a truncated divisor — so no full-width comparison is needed in the loop.</p>
+      <ul class="tight">
+        <li>Partial remainder kept in carry-save form. No carry propagation inside the loop.</li>
+        <li>Quotient digit selected by a small lookup driven by a few high bits of each operand.</li>
+        <li>On-the-fly conversion turns redundant digits into binary without a final wide add.</li>
+        <li>Roughly 16 iterations for RV32, plus normalisation and correction.</li>
+      </ul>
+      <div class="trap"><span class="tag">historical trap</span>
+      <p>The Pentium FDIV bug was a handful of missing entries in exactly this quotient-digit selection table. If you claim SRT, expect the question "how did you verify the selection table". The answer is exhaustive or formal checking of the P-D plot region boundaries, not directed tests.</p></div>
+    </div>
+
+    <div class="tabpane" id="dv-nr">
+      <h5>Newton-Raphson and Goldschmidt</h5>
+      <p>Multiplicative division. Compute an approximate reciprocal from a small seed table, refine it with iterations that double the accurate bits each time, then multiply by the dividend.</p>
+      <ul class="tight">
+        <li>Quadratic convergence: a 8-bit seed reaches 32 bits in two iterations.</li>
+        <li>Each iteration is two multiplies. So it only makes sense if you already have a fast pipelined multiplier.</li>
+        <li>Getting the last bit exactly right for integer division needs a correction step — the approximation can be off by one.</li>
+      </ul>
+      <p><b>Verdict for RV32IMAC:</b> usually not worth it. Integer division is rare, and the seed ROM plus correction logic costs more than a non-restoring loop. It earns its place in floating-point units where division and square root share the datapath.</p>
+    </div>
+
+    <div class="tabpane" id="dv-sign">
+      <h5>Sign handling for DIV and REM</h5>
+      <p>Signed dividers are almost always built as unsigned cores with sign wrappers.</p>
+      <ol class="tight">
+        <li>Take absolute values of dividend and divisor, remembering both signs.</li>
+        <li>Run the unsigned division.</li>
+        <li>Negate the quotient if the operand signs differ.</li>
+        <li>Negate the remainder if the <b>dividend</b> was negative.</li>
+      </ol>
+      <div class="gotcha"><span class="tag">two special cases bypass the loop</span>
+      <p>Divisor zero and the <code>&minus;2<sup>31</sup> &divide; &minus;1</code> overflow case are detected up front and force the defined results directly. Never let them enter the iteration — taking the absolute value of &minus;2<sup>31</sup> overflows in 32 bits.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="pipe">
+  <h3><span class="n">8</span>Pipeline integration — the real question</h3>
+  <p>Two architectures. Know both, and know why you chose yours.</p>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="pi-stall">A: stall in place</button>
+      <button data-t="pi-decouple">B: decoupled unit</button>
+      <button data-t="pi-pick">Choosing</button>
+    </div>
+
+    <div class="tabpane" id="pi-stall">
+      <h5>Stall in place</h5>
+      <p>The M instruction occupies EX. A busy signal freezes IF, ID and EX. MEM and WB drain naturally. When the unit asserts done, the result enters the normal EX/MEM register and the pipeline resumes.</p>
+      <div class="ascii-wrap"><div class="bar">DIV with 34-cycle stall</div>
+<pre class="ascii">cyc   1    2    3    4   ...  36   37   38
+<span class="a">div</span>   IF   ID   <span class="g">EX</span>───────────<span class="g">EX</span>   MEM  WB
+<span class="s">add</span>        IF   <span class="o">ID</span>───────────<span class="o">ID</span>   EX   MEM  WB
+<span class="v">xor</span>             <span class="o">IF</span>─────────<span class="o">IF</span>   ID   EX   MEM
+              <span class="cmt">└── stalled 34 cycles, independent or not ──┘</span></pre>
+      </div>
+      <ul class="tight">
+        <li><b>Pro:</b> trivially correct. No scoreboard. Writeback stays in order. Exceptions stay precise for free.</li>
+        <li><b>Con:</b> every instruction behind the divide stalls, including ones that do not use the result.</li>
+      </ul>
+    </div>
+
+    <div class="tabpane" id="pi-decouple">
+      <h5>Decoupled unit with a scoreboard</h5>
+      <p>The M instruction is issued to a side unit and leaves the main pipe. Younger independent instructions continue.</p>
+      <div class="ascii-wrap"><div class="bar">Decoupled — independent work continues</div>
+<pre class="ascii">cyc   1    2    3    4    5   ...  36   37
+<span class="a">div</span>   IF   ID   <span class="g">issue</span> ───── M unit busy ─────→ <span class="g">WB</span>
+<span class="s">add</span>        IF   ID   EX   MEM  WB        <span class="cmt">← independent, proceeds</span>
+<span class="v">xor</span>             IF   ID   EX   MEM  WB
+<span class="o">sub</span> rd=div_rd      IF   <span class="o">ID</span>──── stalled on scoreboard ──→ EX</pre>
+      </div>
+      <h5>What the scoreboard must hold</h5>
+      <div class="tblwrap">
+      <table>
+        <tr><th>State</th><th>Purpose</th></tr>
+        <tr><td class="mono">busy</td><td>Unit occupied — a second M instruction must stall in ID</td></tr>
+        <tr><td class="mono">dest[4:0]</td><td>Pending destination register</td></tr>
+        <tr><td class="mono">pending</td><td>Set at issue, cleared at writeback</td></tr>
+      </table>
+      </div>
+      <h5>Three interlocks in ID</h5>
+      <ol class="tight">
+        <li><b>RAW:</b> stall if <code>rs1</code> or <code>rs2</code> equals the pending destination. Cannot be forwarded — the value does not exist yet.</li>
+        <li><b>WAW:</b> stall if <code>rd</code> equals the pending destination. Otherwise a short instruction writes first and the late divide overwrites it.</li>
+        <li><b>Structural:</b> stall if the unit is busy and another M instruction arrives.</li>
+      </ol>
+      <p>WAR is not a hazard here. Operands are read at issue, so a later write to rs1 or rs2 cannot disturb an in-flight divide.</p>
+    </div>
+
+    <div class="tabpane" id="pi-pick">
+      <h5>Which one to choose</h5>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Factor</th><th>Stall</th><th>Decoupled</th></tr>
+        <tr><td>Control complexity</td><td class="ok">Minimal</td><td class="no">Scoreboard + arbitration</td></tr>
+        <tr><td>Verification effort</td><td class="ok">Low</td><td class="no">WAW and port-conflict corners</td></tr>
+        <tr><td>IPC with divide-heavy code</td><td class="no">Poor</td><td class="ok">Good</td></tr>
+        <tr><td>Precise exceptions</td><td class="ok">Free</td><td class="mid">Needs thought</td></tr>
+        <tr><td>Interrupt latency</td><td class="no">Up to full divide latency</td><td class="mid">Same, unless restartable</td></tr>
+      </table>
+      </div>
+      <div class="defend"><span class="tag">a defensible position</span>
+      <ul>
+        <li>"I stalled for divide and decoupled for the pipelined multiplier. Divides are rare enough in my workload that the scoreboard was not worth the verification cost; multiplies are frequent enough that a 3-cycle bubble was."</li>
+        <li>That answer shows you weighed it. A panel accepts either choice if the reasoning is real.</li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+
+<section id="waw">
+  <h3><span class="n">9</span>WAW and the write-port conflict</h3>
+  <p>The specific failure a decoupled unit creates. Be ready to draw it.</p>
+  <div class="ascii-wrap"><div class="bar">The WAW bug</div>
+<pre class="code">    <span class="ins">div</span>   <span class="reg">x5</span>, <span class="reg">x6</span>, <span class="reg">x7</span>      <span class="cmt"># issued to M unit, ~34 cycles</span>
+    <span class="ins">addi</span>  <span class="reg">x5</span>, <span class="reg">x0</span>, <span class="num">1</span>       <span class="cmt"># writes x5 at cycle 5</span>
+    ...
+                          <span class="cmt"># cycle 38: divide writes x5 — WRONG, x5 must be 1</span></pre>
+  </div>
+  <p>Three correct fixes:</p>
+  <ol class="tight">
+    <li><b>Stall the younger writer</b> in ID until the divide retires. Simplest, small IPC loss.</li>
+    <li><b>Cancel the divide's writeback.</b> Legal only because DIV has no other architectural side effect. Mark the pending entry as dead when a younger instruction with the same rd issues.</li>
+    <li><b>Enforce in-order writeback</b> with a write-port reservation table — the classic approach where each instruction reserves its WB cycle at issue and stalls if the slot is taken.</li>
+  </ol>
+  <h5>The write-port conflict</h5>
+  <p>Separately from WAW, two units may want the single regfile write port in the same cycle — a load returning from MEM and the divider completing. Options:</p>
+  <ul class="tight">
+    <li>Priority to the main pipe, with the M unit holding its result in an output register until a free slot appears. Needs the unit to stay occupied, so a following M instruction stalls.</li>
+    <li>Priority to the M unit, stalling the main pipe for one cycle. Simpler but injects bubbles into the common path.</li>
+    <li>Add a second write port. Real area cost, and it is rarely justified in a single-issue core.</li>
+  </ul>
+  <div class="trap"><span class="tag">the exception subtlety</span>
+  <p>Out-of-order writeback of the divide is safe for the divide, since DIV cannot trap. It is not automatically safe for the program. If a younger load takes a page fault <i>after</i> the divide has already written back, the architectural state now contains a result from an instruction that, in program order, sits before the faulting one — which is fine — but if the divide were still pending and you restarted it, you must ensure it is not executed twice. Define your restart point explicitly.</p></div>
+</section>
+
+<section id="intr">
+  <h3><span class="n">10</span>Interrupting a long divide</h3>
+  <p>An interrupt arrives at cycle 10 of a 34-cycle divide. What do you do?</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Policy</th><th>Interrupt latency</th><th>Complication</th></tr>
+    <tr><td>Let it complete, then take the interrupt</td><td class="no">+24 cycles worst case</td><td class="ok">None</td></tr>
+    <tr><td>Abort and restart on return</td><td class="ok">Immediate</td><td class="mid">Must not have written rd; <code>mepc</code> points at the DIV</td></tr>
+    <tr><td>Abort and re-execute is forbidden</td><td>&mdash;</td><td class="no">Only if the unit has committed state</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">why restart is safe</span>
+  <p>An integer divide is idempotent. It reads two registers and writes one, at the end. Nothing is written until completion, so aborting mid-flight leaves no partial architectural state. Set <code>mepc</code> to the DIV's own PC and it simply re-executes.</p></div>
+  <p>The one requirement: rs1 and rs2 must still hold the same values on return. They will, because the trap handler saves and restores the register file. If <code>rd</code> happens to equal <code>rs1</code>, restart is still safe precisely because rd was never written.</p>
+  <div class="defend"><span class="tag">real-time argument</span>
+  <ul><li>"For a control core with hard interrupt-latency requirements, I made the divider abortable. A 34-cycle non-interruptible window was more than my latency budget allowed."</li></ul></div>
+</section>
+
+<section id="zmmul">
+  <h3><span class="n">11</span>Zmmul — the area escape hatch</h3>
+  <p>Zmmul is the multiply-only subset: MUL, MULH, MULHSU, MULHU. No divide.</p>
+  <ul class="tight">
+    <li>The divider is often comparable in area to the multiplier while being used far less.</li>
+    <li>Many embedded workloads multiply constantly and divide almost never — and compilers turn division by a constant into a multiply-and-shift anyway.</li>
+    <li>Zmmul lets you keep hardware multiply and let libgcc emulate division in software.</li>
+  </ul>
+  <div class="gotcha"><span class="tag">say this if asked to cut area</span>
+  <p>"First thing I would drop is the divider, moving from M to Zmmul. Division by a constant is already strength-reduced by the compiler, so the dynamic divide count in my workload was negligible."</p></div>
+  <div class="delta"><span class="tag">RV64 delta</span>
+  <p>RV64M adds <code>MULW, DIVW, DIVUW, REMW, REMUW</code> — 32-bit operations whose results are <b>sign-extended</b> to 64 bits. Note that <code>DIVUW</code> and <code>REMUW</code> sign-extend too, despite being unsigned operations. There is deliberately no <code>MULHW</code>: the high half of a 32-bit product is just the upper bits of the 64-bit <code>MUL</code>, obtained with a shift.</p></div>
+</section>
+
+<section id="check">
+  <h3><span class="n">12</span>Self-check</h3>
+
+  <div class="quiz" data-a="2">
+    <div class="q">After <code>DIV x5, x6, x0</code> with x6 = 100, what is in x5?</div>
+    <button class="opt" data-fb="">0</button>
+    <button class="opt" data-fb="">100, and a divide-by-zero trap is taken</button>
+    <button class="opt" data-fb="DIV by zero returns -1, all ones, 0xFFFFFFFF in RV32. No exception is raised. DIVU returns 2^XLEN-1, which is the same bit pattern. REM and REMU would return the dividend instead.">0xFFFFFFFF</button>
+    <button class="opt" data-fb="">Undefined — implementation choice</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="1">
+    <div class="q">Why does the specification ask for MULH before MUL rather than the other way round?</div>
+    <button class="opt" data-fb="">Because MULH takes longer</button>
+    <button class="opt" data-fb="So an implementation can detect the pair and fuse it into a single multiply, producing both halves. The ordering plus matching operands plus the rd-not-equal-to-source rule are what make the pattern recognisable and safe.">So hardware can recognise and fuse the pair into one operation</button>
+    <button class="opt" data-fb="">To avoid a WAW hazard</button>
+    <button class="opt" data-fb="">It is an assembler convention with no hardware meaning</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="0">
+    <div class="q">A 34-cycle divider writes back out of order. Which hazard must you explicitly interlock that a normal in-order pipeline never sees?</div>
+    <button class="opt" data-fb="WAW. A younger single-cycle instruction targeting the same rd would write first, then be overwritten by the late divide result. RAW still needs an interlock too, but RAW exists in every pipeline; WAW is the one that only appears once writeback goes out of order.">WAW — write after write</button>
+    <button class="opt" data-fb="">WAR — write after read</button>
+    <button class="opt" data-fb="">Control hazard on the following branch</button>
+    <button class="opt" data-fb="">Structural hazard on the ALU</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="3">
+    <div class="q">Why is aborting a divide on an interrupt and restarting it safe?</div>
+    <button class="opt" data-fb="">Because dividers are always single-cycle</button>
+    <button class="opt" data-fb="">Because the trap handler saves the divider's internal state</button>
+    <button class="opt" data-fb="">Because RISC-V forbids interrupts during division</button>
+    <button class="opt" data-fb="The operation is idempotent. It writes rd only at completion, so an abort leaves no partial architectural state. Setting mepc to the DIV's own PC makes it simply re-execute on return.">Because rd is written only at completion, so no partial state exists</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="qa">
+  <h3><span class="n">13</span>Interview Q&amp;A</h3>
+
+  <details>
+    <summary>Your multiplier is the critical path. Give me three fixes in order of preference.</summary>
+    <div class="ans">
+      <p>One: pipeline it. Split partial-product generation, tree reduction and the final carry-propagate adder across two or three stages. The core sees a fixed 2 or 3-cycle latency instead of a timing violation. This is almost always the right answer.</p>
+      <p>Two: reduce the row count with Booth radix-4, cutting reduction depth.</p>
+      <p>Three: replace the tree with an iterative radix-4 loop. Trades a lot of throughput for timing closure and area. Only if the first two are not enough.</p>
+      <p>What I would not do is retime blindly across the array — the carry-save structure does not retime cleanly and you end up with a register wall.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>Does the M extension need a separate result bus to the register file?</summary>
+    <div class="ans">
+      <p>Not necessarily, and usually not in a single-issue core. The M unit can arbitrate for the existing write port, holding its result in an output register until a free writeback slot appears.</p>
+      <p>The cost of sharing is that the M unit stays occupied while it waits, so a following M instruction stalls even though the datapath is free. If M instructions are back-to-back and frequent, a small result queue fixes that far more cheaply than a second write port.</p>
+      <p>A second write port is justified only when you go superscalar, where you need multiple writes per cycle anyway.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Compilers strength-reduce division by constants. Does that change your divider design?</summary>
+    <div class="ans">
+      <p>Yes, materially. Division by a compile-time constant becomes a multiply-high by a magic reciprocal plus a shift and a correction. So the divides that survive to hardware are the ones with a runtime divisor — genuinely rare in most embedded and control code.</p>
+      <p>That is the whole argument for a slow, small, non-restoring divider, or for Zmmul with software emulation. Profile the dynamic divide count before spending area on SRT.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>How would you verify the M unit?</summary>
+    <div class="ans">
+      <p>Constrained random against a reference model, with directed corners: zero divisor for all four divide forms, the &minus;2<sup>31</sup>&divide;&minus;1 overflow pair, operands at &plusmn;maximum, sign combinations for MULHSU specifically, and the fusion pairs if implemented.</p>
+      <p>For a tree multiplier, a full 32&times;32 exhaustive sweep is 2<sup>64</sup> and impossible, so either formally prove the reduction against a behavioural <code>*</code>, or exhaustively verify a parameterised narrow instance and rely on structural induction over the array.</p>
+      <p>For an SRT divider, the quotient-digit selection table needs exhaustive or formal coverage of the P-D plot boundaries. That is the Pentium lesson.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>Signed and unsigned multiply in one array — how?</summary>
+    <div class="ans">
+      <p>Extend both operands to XLEN+1 bits. For a signed operand, replicate the sign bit into the extra position; for unsigned, insert zero. Then run a single signed multiplier over the widened operands and take the appropriate slice.</p>
+      <p>This handles all four cases uniformly. MULHSU falls out naturally: sign-extend rs1, zero-extend rs2. The control is two bits — one per operand — driven from <code>funct3[1:0]</code>.</p>
+      <p>The cost is one extra Booth row, which is cheaper than a second array or a correction adder.</p>
+    </div>
+  </details>
+</section>
+
+<section id="defend">
+  <h3><span class="n">14</span>Defend your claim — Hanu 1.0</h3>
+  <div class="defend"><span class="tag">write your answers down</span>
+  <ul>
+    <li>Multiplier: iterative, Booth, tree or DSP inference? How many cycles, and what limited it?</li>
+    <li>Divider: restoring, non-restoring or SRT? Exact cycle count including setup and correction?</li>
+    <li>Stall-in-place or decoupled? If decoupled, show your scoreboard fields.</li>
+    <li>Did you handle the WAW case? How — stall, cancel, or in-order writeback reservation?</li>
+    <li>Is your divider abortable on interrupt? What is your worst-case interrupt latency?</li>
+    <li>Did you implement fusion? If not, what would it have cost?</li>
+    <li>Did you verify the zero-divisor and overflow cases explicitly? Show the test.</li>
+  </ul></div>
+</section>
+
+<section id="recap">
+  <h3><span class="n">15</span>Recap</h3>
+  <ul class="tight">
+    <li>Eight instructions, one funct7 value, same opcode as the base ALU.</li>
+    <li>No divide-by-zero trap. DIV gives &minus;1, DIVU gives all ones, REM and REMU give the dividend.</li>
+    <li>Signed overflow: DIV gives &minus;2<sup>31</sup>, REM gives 0.</li>
+    <li>Truncated division. Remainder takes the dividend's sign.</li>
+    <li>MULHSU exists for the signed&times;unsigned cross-products of multi-word arithmetic.</li>
+    <li>Fusion pairs: MULH then MUL, DIV then REM, same operands, rd not a source.</li>
+    <li>Variable latency creates RAW, WAW and write-port hazards. WAW is the one that is new.</li>
+    <li>Divide is idempotent, therefore abortable and restartable on interrupt.</li>
+    <li>Zmmul drops the divider when area is tight.</li>
+  </ul>
+</section>
+
+<div class="navfoot">
+  <a href="rv32imac_lesson01_base_i.html">&#8592; Lesson 01 · Base RV32I</a>
+  <a href="rv32imac_lesson03_a_extension.html">Lesson 03 · A extension &#8594;</a>
+</div>
+</main>
+</div>
+<script src="rv32imac_shared.js"></script>
+</body>
+</html>

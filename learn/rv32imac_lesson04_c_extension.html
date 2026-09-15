@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RV32IMAC · Lesson 4 — C Extension &amp; the Fetch Path</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="rv32imac_shared.css">
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">RV32IMAC · LESSON 04</div>
+  <h1>C Extension</h1>
+  <a href="#frame">The interview frame</a>
+  <a href="#quad">Three quadrants</a>
+  <a href="#regs">The x8&ndash;x15 register set</a>
+  <a href="#expand">Decompression</a>
+  <a href="#reuse">Encoding reuse across XLEN</a>
+  <a href="#ialign">IALIGN drops to 16</a>
+  <a href="#straddle">Straddling instructions</a>
+  <a href="#fetchhw">Fetch hardware</a>
+  <a href="#super">Superscalar fetch</a>
+  <a href="#bpred">Branch prediction impact</a>
+  <a href="#illegal">Illegal and reserved encodings</a>
+  <a href="#zc">The Zc* re-cut</a>
+  <a href="#tradeoff">Is C worth it?</a>
+  <a href="#check">Self-check</a>
+  <a href="#qa">Interview Q&amp;A</a>
+  <a href="#defend">Defend your claim</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="rv32imac_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Interview Defence Track · Lesson 4 of 7</div>
+<h2 class="title">C extension — compression and the fetch path</h2>
+<p class="lede">C adds no new operations and no new architectural state. Every compressed instruction is an existing one, written shorter. And yet it is the extension that causes the most microarchitectural damage — because it destroys the assumption that instructions are 4-byte aligned.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Name the three quadrants and how <code>inst[1:0]</code> selects them.</li>
+    <li>Explain why the compressed register fields cover x8&ndash;x15 specifically.</li>
+    <li>Place the decompressor and defend the placement on timing grounds.</li>
+    <li>Say which RV32 compressed encodings mean something else entirely in RV64.</li>
+    <li>Walk through a 32-bit instruction spanning two pages and name mepc and mtval.</li>
+    <li>Describe how a fetch unit finds instruction boundaries in parallel.</li>
+    <li>State what a BTB must change when IALIGN becomes 16.</li>
+  </ul>
+</div>
+
+<section id="frame">
+  <h3><span class="n">1</span>The interview frame</h3>
+  <div class="crux"><span class="tag">crux</span>
+  <p>The decompressor is trivial. The fetch unit is not. Candidates talk about the expander because it is easy; interviewers ask about alignment because it is hard. Lead with alignment and you have already separated yourself.</p></div>
+  <p>Two sentences to have ready: "C costs a few hundred gates of expander and roughly a quarter of the instruction memory. It costs a fetch buffer, a boundary scanner, predecode bits and a finer-grained BTB. The second list is where the real design effort goes."</p>
+</section>
+
+<section id="quad">
+  <h3><span class="n">2</span>Three quadrants</h3>
+  <p>A 16-bit instruction has <code>inst[1:0] &ne; 11</code>. Those two bits select a quadrant. <code>inst[15:13]</code> — funct3 — selects within it.</p>
+  <div class="bits">
+    <div class="f f-f3" style="flex:3"><b>funct3</b><i>15:13</i></div>
+    <div class="f f-imm" style="flex:11"><b>operands / immediate — format varies by quadrant</b><i>12:2</i></div>
+    <div class="f f-op" style="flex:2"><b>op</b><i>1:0</i></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="q0">C0 — 00</button>
+      <button data-t="q1">C1 — 01</button>
+      <button data-t="q2">C2 — 10</button>
+      <button data-t="q3">11 — not compressed</button>
+    </div>
+
+    <div class="tabpane" id="q0">
+      <h5>Quadrant 0 — memory with a compressed base register</h5>
+      <p>Loads and stores whose base register comes from the restricted 3-bit field. Offsets are small, zero-extended and scaled by the access size.</p>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Instruction</th><th>Expands to</th><th>Note</th></tr>
+        <tr><td class="mono">C.ADDI4SPN rd', nzuimm</td><td class="mono">ADDI rd', sp, nzuimm</td><td>Stack-frame slot addressing</td></tr>
+        <tr><td class="mono">C.LW rd', off(rs1')</td><td class="mono">LW rd', off(rs1')</td><td>off is 5-bit, scaled &times;4</td></tr>
+        <tr><td class="mono">C.SW rs2', off(rs1')</td><td class="mono">SW rs2', off(rs1')</td><td>Same offset shape</td></tr>
+        <tr><td class="mono">C.FLD / C.FSD</td><td class="mono">FLD / FSD</td><td>Needs D extension — not in IMAC</td></tr>
+      </table>
+      </div>
+      <p>Note that offsets are <b>zero-extended</b>, not sign-extended. Compressed loads and stores reach forward from the base only. That is fine — compilers lay out structures and stack frames upward.</p>
+    </div>
+
+    <div class="tabpane" id="q1">
+      <h5>Quadrant 1 — immediate ALU, branches and jumps</h5>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Instruction</th><th>Expands to</th><th>Note</th></tr>
+        <tr><td class="mono">C.NOP</td><td class="mono">ADDI x0, x0, 0</td><td>The canonical 16-bit nop</td></tr>
+        <tr><td class="mono">C.ADDI rd, nzimm</td><td class="mono">ADDI rd, rd, nzimm</td><td>Two-operand form — rd is also the source</td></tr>
+        <tr><td class="mono">C.LI rd, imm</td><td class="mono">ADDI rd, x0, imm</td><td>6-bit signed</td></tr>
+        <tr><td class="mono">C.LUI rd, nzimm</td><td class="mono">LUI rd, nzimm</td><td>rd must not be x0 or x2</td></tr>
+        <tr><td class="mono">C.ADDI16SP nzimm</td><td class="mono">ADDI sp, sp, nzimm</td><td>Shares C.LUI's funct3; selected by rd == x2</td></tr>
+        <tr><td class="mono">C.SRLI / C.SRAI / C.ANDI</td><td class="mono">SRLI / SRAI / ANDI</td><td>Compressed register field</td></tr>
+        <tr><td class="mono">C.SUB / C.XOR / C.OR / C.AND</td><td class="mono">SUB / XOR / OR / AND</td><td>Both operands compressed, rd = rs1</td></tr>
+        <tr><td class="mono">C.J offset</td><td class="mono">JAL x0, offset</td><td>11-bit offset</td></tr>
+        <tr><td class="mono">C.BEQZ / C.BNEZ rs1', off</td><td class="mono">BEQ / BNE rs1', x0, off</td><td>8-bit offset, compare against x0 only</td></tr>
+        <tr><td class="mono">C.JAL offset</td><td class="mono">JAL x1, offset</td><td class="no">RV32 only — see encoding reuse</td></tr>
+      </table>
+      </div>
+      <div class="gotcha"><span class="tag">the two-operand constraint</span>
+      <p>Most compressed ALU forms are destructive: <code>rd</code> is also <code>rs1</code>. That is how they fit in 16 bits. So the compiler can only emit them when the source is dead after the operation. This is why compression ratio depends heavily on register allocation quality.</p></div>
+    </div>
+
+    <div class="tabpane" id="q2">
+      <h5>Quadrant 2 — stack-pointer forms and full-width registers</h5>
+      <p>This quadrant keeps <b>5-bit</b> register fields, so it can name any of the 32 registers. It pays for that with sp-relative-only addressing.</p>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Instruction</th><th>Expands to</th><th>Constraint</th></tr>
+        <tr><td class="mono">C.SLLI rd, shamt</td><td class="mono">SLLI rd, rd, shamt</td><td>rd &ne; x0</td></tr>
+        <tr><td class="mono">C.LWSP rd, off(sp)</td><td class="mono">LW rd, off(sp)</td><td>rd &ne; x0</td></tr>
+        <tr><td class="mono">C.SWSP rs2, off(sp)</td><td class="mono">SW rs2, off(sp)</td><td>Any rs2, x0 included</td></tr>
+        <tr><td class="mono">C.JR rs1</td><td class="mono">JALR x0, 0(rs1)</td><td>rs1 &ne; x0</td></tr>
+        <tr><td class="mono">C.JALR rs1</td><td class="mono">JALR x1, 0(rs1)</td><td>rs1 &ne; x0</td></tr>
+        <tr><td class="mono">C.MV rd, rs2</td><td class="mono">ADD rd, x0, rs2</td><td>rd &ne; x0, rs2 &ne; x0</td></tr>
+        <tr><td class="mono">C.ADD rd, rs2</td><td class="mono">ADD rd, rd, rs2</td><td>rd &ne; x0, rs2 &ne; x0</td></tr>
+        <tr><td class="mono">C.EBREAK</td><td class="mono">EBREAK</td><td>The rs1 = rs2 = 0 case of C.JALR/C.ADD space</td></tr>
+      </table>
+      </div>
+      <p>The sp-relative forms exist because function prologues and epilogues are overwhelmingly stack traffic. <code>C.LWSP</code> and <code>C.SWSP</code> alone recover a large share of the compression in real code.</p>
+    </div>
+
+    <div class="tabpane" id="q3">
+      <h5>Why 11 is excluded</h5>
+      <p><code>inst[1:0] = 11</code> marks a 32-bit instruction. The encoding scheme extends further: <code>inst[4:2] = 111</code> with <code>inst[6:5] = 11</code> and more low bits set indicates 48-bit, 64-bit and longer instructions.</p>
+      <div class="ascii-wrap"><div class="bar">Instruction length encoding</div>
+<pre class="ascii">  xxxxxxxxxxxxxxx<span class="a">aa</span>     <span class="a">aa</span> &ne; 11        <span class="cmt">→ 16-bit</span>
+  xxxxxxxxxxx<span class="g">bbb</span><span class="a">11</span>     <span class="g">bbb</span> &ne; 111      <span class="cmt">→ 32-bit</span>
+  ...<span class="v">011111</span>          reserved pattern  <span class="cmt">→ 48-bit</span>
+  ...<span class="v">0111111</span>         reserved pattern  <span class="cmt">→ 64-bit</span></pre>
+      </div>
+      <div class="crux"><span class="tag">crux</span>
+      <p>Length is determined entirely by the <b>first</b> halfword. That is the property that makes parallel length decoding possible. A variable-length ISA where length depended on later bytes — as with x86 prefixes — would make parallel boundary discovery far harder.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="regs">
+  <h3><span class="n">3</span>Why x8&ndash;x15</h3>
+  <p>The 3-bit compressed register fields <code>rs1'</code>, <code>rs2'</code>, <code>rd'</code> encode exactly eight registers: <b>x8 to x15</b>. The mapping is simply <code>x(8 + field)</code> — an OR of a constant, not a lookup table.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Field</th><th>Register</th><th>ABI name</th><th>Role</th></tr>
+    <tr><td class="mono">000</td><td class="mono">x8</td><td class="mono">s0 / fp</td><td>Saved / frame pointer</td></tr>
+    <tr><td class="mono">001</td><td class="mono">x9</td><td class="mono">s1</td><td>Saved</td></tr>
+    <tr><td class="mono">010&ndash;111</td><td class="mono">x10&ndash;x15</td><td class="mono">a0&ndash;a5</td><td>Argument and return registers</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">crux</span>
+  <p>These eight are the highest-frequency registers in compiled code — the first six arguments plus the two most-used callee-saved registers. The ABI and the compressed encoding were designed together. That is why the mapping is a constant offset and not an arbitrary permutation.</p></div>
+  <div class="gotcha"><span class="tag">hardware consequence</span>
+  <p>The register index expansion is <code>{1'b1, field}</code> — one constant bit concatenated with three. Zero gates. The decompressor's register handling is free; all its real logic is in the immediates.</p></div>
+</section>
+
+<section id="expand">
+  <h3><span class="n">4</span>Decompression — where and how</h3>
+  <p>Every compressed instruction maps to exactly one 32-bit instruction. So the expander is a pure combinational function, 16 bits in, 32 bits out, with no state.</p>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="ex-a">A: expand before decode</button>
+      <button data-t="ex-b">B: parallel 16-bit decoder</button>
+      <button data-t="ex-c">C: expand on cache fill</button>
+      <button data-t="ex-rtl">Expander shape</button>
+    </div>
+
+    <div class="tabpane" id="ex-a">
+      <h5>Option A — expand between fetch and decode</h5>
+      <p>The standard choice. The instruction buffer presents 32 bits; if <code>inst[1:0] &ne; 11</code>, route the low halfword through the expander and feed the result to the single 32-bit decoder.</p>
+      <ul class="tight">
+        <li><b>Pro:</b> one decoder for the whole ISA. Nothing downstream of the expander knows C exists.</li>
+        <li><b>Pro:</b> smallest area. The expander is a permutation network plus sign extension.</li>
+        <li><b>Con:</b> serial. Expand delay adds directly to the decode path.</li>
+      </ul>
+      <p>If timing bites, move the expander into its own pipeline stage, or duplicate the decode for the two cases and mux the control outputs at the end rather than muxing the instruction at the start.</p>
+    </div>
+
+    <div class="tabpane" id="ex-b">
+      <h5>Option B — a native 16-bit decoder in parallel</h5>
+      <p>Decode the compressed form directly into control signals, alongside the 32-bit decoder, and mux the control outputs.</p>
+      <ul class="tight">
+        <li><b>Pro:</b> removes the serial expand-then-decode dependency. Better timing.</li>
+        <li><b>Con:</b> two decoders to build, verify and keep consistent. Every base-ISA change must be mirrored.</li>
+        <li><b>Con:</b> larger. Control decode is duplicated for operations that overlap.</li>
+      </ul>
+      <p>Justifiable in a high-frequency design where the decode path is the critical path. Rarely worth it in an embedded core.</p>
+    </div>
+
+    <div class="tabpane" id="ex-c">
+      <h5>Option C — expand on cache fill</h5>
+      <p>Store already-expanded 32-bit instructions in the I-cache.</p>
+      <div class="trap"><span class="tag">this is a trap answer</span>
+      <p>It defeats the entire purpose. The point of C is that the instruction cache holds more instructions per byte. Expanding on fill means the cache holds exactly as many instructions as an uncompressed ISA, and you have paid the expander cost for nothing. Only the off-chip instruction memory benefits.</p></div>
+      <p>The legitimate variant is <b>predecode</b> on fill: store a few derived bits — instruction start markers, branch-present flags, instruction class — alongside the compressed bytes, without expanding them. That is covered under fetch hardware below.</p>
+    </div>
+
+    <div class="tabpane" id="ex-rtl">
+      <h5>What the expander actually contains</h5>
+      <p>Three parts:</p>
+      <ol class="tight">
+        <li><b>Opcode synthesis.</b> Emit the 7-bit base opcode, funct3 and funct7 as constants selected by the compressed funct3 and quadrant. Pure decode into constants.</li>
+        <li><b>Register field placement.</b> Either <code>{1'b1, rs1'}</code> for compressed fields or a straight copy for the 5-bit fields, into bit positions 19:15, 24:20 and 11:7.</li>
+        <li><b>Immediate reassembly.</b> The real work. RVC immediate bits are scattered to maximise density, and they do <b>not</b> line up with the base formats the way base immediates line up with each other.</li>
+      </ol>
+      <div class="ascii-wrap"><div class="bar">C.LW immediate reassembly — illustrative</div>
+<pre class="code"><span class="cmt">// C.LW  rd', offset(rs1')   offset is 5 bits, scaled by 4, zero-extended</span>
+<span class="cmt">//   inst[12:10] = offset[5:3]   inst[6] = offset[2]   inst[5] = offset[6]</span>
+<span class="kw">wire</span> [<span class="num">11</span>:<span class="num">0</span>] off = {<span class="num">5'b0</span>, inst[<span class="num">5</span>], inst[<span class="num">12</span>:<span class="num">10</span>], inst[<span class="num">6</span>], <span class="num">2'b00</span>};
+
+<span class="kw">wire</span> [<span class="num">31</span>:<span class="num">0</span>] expanded = { off,                 <span class="cmt">// 31:20  I-type immediate</span>
+                       <span class="num">2'b01</span>, inst[<span class="num">9</span>:<span class="num">7</span>],  <span class="cmt">// 19:15  rs1' → x8+field</span>
+                       <span class="num">3'b010</span>,             <span class="cmt">// 14:12  funct3 = LW</span>
+                       <span class="num">2'b01</span>, inst[<span class="num">4</span>:<span class="num">2</span>],  <span class="cmt">// 11:7   rd'  → x8+field</span>
+                       <span class="num">7'b0000011</span> };       <span class="cmt">// 6:0    LOAD</span></pre>
+      </div>
+      <p>Still no gates — it is all bit selection and constants. Across every compressed instruction the expander comes to a modest block of muxes driven by the quadrant and funct3. A few hundred gate equivalents is the usual ballpark.</p>
+    </div>
+  </div>
+</section>
+
+<section id="reuse">
+  <h3><span class="n">5</span>Encoding reuse across XLEN — high-value trap</h3>
+  <p>The compressed opcode space is dense. Some encodings mean one thing in RV32 and something completely different in RV64.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Encoding slot</th><th>RV32 meaning</th><th>RV64 meaning</th></tr>
+    <tr><td class="mono">C1, funct3 = 001</td><td class="ok">C.JAL</td><td class="mid">C.ADDIW</td></tr>
+    <tr><td class="mono">C0, funct3 = 011</td><td class="ok">C.FLW <span class="note">(needs F)</span></td><td class="mid">C.LD</td></tr>
+    <tr><td class="mono">C0, funct3 = 111</td><td class="ok">C.FSW <span class="note">(needs F)</span></td><td class="mid">C.SD</td></tr>
+    <tr><td class="mono">C2, funct3 = 011</td><td class="ok">C.FLWSP <span class="note">(needs F)</span></td><td class="mid">C.LDSP</td></tr>
+    <tr><td class="mono">C2, funct3 = 111</td><td class="ok">C.FSWSP <span class="note">(needs F)</span></td><td class="mid">C.FSDSP / C.SDSP</td></tr>
+  </table>
+  </div>
+  <div class="trap"><span class="tag">the trap question</span>
+  <p>"Is <code>C.JAL</code> available in RV64?" No. RV64 needs <code>C.ADDIW</code> — a 64-bit ISA generates far more 32-bit-result arithmetic than it generates short calls — so that slot was reallocated. The same halfword pattern decodes to a different instruction depending on XLEN. A decoder is therefore <b>not</b> XLEN-portable for the compressed quadrants, even though the base decoder largely is.</p></div>
+  <div class="defend"><span class="tag">strong follow-up</span>
+  <ul>
+    <li>"This is why a parameterised RV32/RV64 core cannot share one compressed decoder by simply widening the datapath. The compressed decode tables differ structurally, not just in width."</li>
+    <li>If you built a parameterised core in Hanu 1.0, say how you handled it — separate tables selected by a parameter, or RV32-only by design.</li>
+  </ul></div>
+  <div class="gotcha"><span class="tag">note for RV32IMAC specifically</span>
+  <p>C.FLW, C.FSW, C.FLWSP and C.FSWSP all require the F extension. RV32IMAC has no F. So in your ISA those slots are simply not implemented, and instructions using them must raise illegal-instruction. Do not claim to decode them.</p></div>
+</section>
+
+<section id="ialign">
+  <h3><span class="n">6</span>IALIGN drops to 16</h3>
+  <div class="crux"><span class="tag">the single most important consequence</span>
+  <p>Without C, <b>IALIGN = 32</b>: every instruction address is a multiple of 4. With C, <b>IALIGN = 16</b>: instruction addresses need only be even. A 32-bit instruction may therefore begin at an address that is 2 mod 4.</p></div>
+  <p>Everything painful about C follows from that one sentence. Consequences, in order of severity:</p>
+  <ol class="tight">
+    <li>A 32-bit instruction can span two 32-bit fetch words.</li>
+    <li>It can span two cache lines.</li>
+    <li>It can span two pages, and therefore two TLB entries and two permission checks.</li>
+    <li>The next PC is <code>PC+2</code> or <code>PC+4</code>, resolved from <code>inst[1:0]</code>.</li>
+    <li>Any structure indexed by PC now needs 2-byte granularity.</li>
+  </ol>
+  <div class="gotcha"><span class="tag">a consequence in your favour</span>
+  <p>Instruction-address-misaligned exceptions effectively disappear. Branch and jump immediates encode bit 0 as implicitly zero, and <code>JALR</code> explicitly clears bit 0 of its computed target. With IALIGN = 16, every achievable target is already legally aligned. So the cause-0 exception cannot arise. Worth saying — it shows you thought about which exceptions remain reachable.</p></div>
+</section>
+
+<section id="straddle">
+  <h3><span class="n">7</span>Straddling instructions — walk this carefully</h3>
+  <p>This is the question that separates people who have built a fetch unit from people who have read about one.</p>
+  <div class="ascii-wrap"><div class="bar">A 32-bit instruction spanning a page boundary</div>
+<pre class="ascii">          page N                          │  page N+1
+  ... <span class="s">c.addi</span> │ <span class="a">lw  (low half)</span>                │ <span class="a">lw  (high half)</span> │ ...
+      0x0FFA   0x0FFC                      │  0x1000
+                └──────── one instruction ─┴───────┘
+                     starts at 0x0FFC, ends at 0x1001
+
+  <span class="cmt">Fetch 1: 0x0FFC → page N   translation, permission check</span>
+  <span class="cmt">Fetch 2: 0x1000 → page N+1 SEPARATE translation, SEPARATE check</span>
+
+  <span class="o">If page N+1 is not mapped:</span>
+     <span class="v">mepc</span>  = <span class="a">0x0FFC</span>   <span class="cmt">← the instruction's own address</span>
+     <span class="v">mtval</span> = <span class="a">0x1000</span>   <span class="cmt">← the portion that actually faulted</span></pre>
+  </div>
+  <div class="crux"><span class="tag">memorise this pair</span>
+  <p>On an instruction access fault or instruction page fault for a straddling instruction, <b>mepc points to the beginning of the instruction</b> while <b>mtval points to the portion that caused the fault</b>. They are different values. That asymmetry exists precisely because variable-length instructions can span a boundary.</p></div>
+
+  <h5>What the fetch unit must therefore do</h5>
+  <ol class="tight">
+    <li>Issue two fetch requests and hold the first halfword until the second arrives.</li>
+    <li>Track two sets of fault status, one per halfword.</li>
+    <li>Report the fault with the instruction's start address in mepc, not the faulting halfword's address.</li>
+    <li>Not commit a fault from the second half until the instruction is actually going to execute — otherwise speculative fetch-ahead across a page boundary raises spurious faults for code you never run.</li>
+  </ol>
+  <div class="trap"><span class="tag">the spurious-fault trap</span>
+  <p>A fetch unit that prefetches past the end of a basic block will routinely read into the next page. If it raises the page fault eagerly, a program that never executes past the branch takes a fault it should never have seen. Faults from fetch must be <b>carried as attributes</b> with the instruction and raised only at the point of execution. This is a genuine bug class, not a theoretical one.</p></div>
+</section>
+
+<section id="fetchhw">
+  <h3><span class="n">8</span>Fetch hardware</h3>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="fh-buf">Fetch buffer</button>
+      <button data-t="fh-scan">Boundary scanning</button>
+      <button data-t="fh-pre">Predecode bits</button>
+      <button data-t="fh-npc">Next-PC logic</button>
+    </div>
+
+    <div class="tabpane" id="fh-buf">
+      <h5>The instruction fetch buffer</h5>
+      <p>The I-cache returns naturally aligned words or lines. Instructions do not align to them. So you need a buffer that decouples the two.</p>
+      <div class="ascii-wrap"><div class="bar">Aligner behaviour</div>
+<pre class="ascii">  I-cache word  <span class="box">│</span> <span class="a">h3</span> <span class="a">h2</span> <span class="box">│</span> <span class="s">h1</span> <span class="s">h0</span> <span class="box">│</span>    <span class="cmt">32-bit fetch = 2 halfwords</span>
+
+  PC = word-aligned:   instruction starts at <span class="s">h0</span>
+       if <span class="s">h0</span>[1:0] == 11 → 32-bit, uses <span class="s">h0</span>+<span class="s">h1</span>, next PC = +4
+       else            → 16-bit, uses <span class="s">h0</span>,    next PC = +2
+                          <span class="s">h1</span> is <span class="g">retained</span> for next cycle
+
+  PC = 2 mod 4:        instruction starts at <span class="s">h1</span>
+       if <span class="s">h1</span>[1:0] == 11 → 32-bit, needs <span class="s">h1</span> + <span class="a">h2</span> from the NEXT fetch
+                          <span class="o">→ one extra cycle unless the buffer is pre-filled</span></pre>
+      </div>
+      <p>Minimum viable buffer is two halfwords. Practical designs use a wider buffer — four to eight halfwords — so that the aligner rarely runs dry and a straddling instruction does not cost a bubble.</p>
+    </div>
+
+    <div class="tabpane" id="fh-scan">
+      <h5>Finding boundaries in parallel</h5>
+      <p>Naively, boundaries are serial: you cannot know where instruction 2 starts until you know how long instruction 1 is. That would cap fetch at one instruction per cycle.</p>
+      <p>The escape is that length depends only on the first halfword. So:</p>
+      <ol class="tight">
+        <li>For every halfword position <i>i</i> in the buffer, compute <code>len16[i] = (h[i][1:0] != 2'b11)</code>. All in parallel, one gate each.</li>
+        <li>Given that position <i>k</i> is a known instruction start, the next start is <code>k + 1</code> if <code>len16[k]</code>, else <code>k + 2</code>.</li>
+        <li>Chain this as a prefix computation. A serial chain is O(N) in depth; a parallel-prefix formulation is O(log N).</li>
+      </ol>
+      <div class="crux"><span class="tag">crux</span>
+      <p>The length bits are parallel. Only the <i>start-position</i> chain is sequential, and that chain is a prefix problem, which parallel-prefix logic solves in logarithmic depth. That is the whole trick, and it is the answer to "how do you decode boundaries fast".</p></div>
+    </div>
+
+    <div class="tabpane" id="fh-pre">
+      <h5>Predecode bits in the I-cache</h5>
+      <p>Move the boundary scan off the critical fetch path by doing it once, on cache fill, and storing the result.</p>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Stored bit</th><th>Width</th><th>Use</th></tr>
+        <tr><td>Instruction start marker</td><td>1 per halfword</td><td>Aligner knows boundaries without scanning</td></tr>
+        <tr><td>Branch / jump present</td><td>1 per halfword</td><td>Predictor lookup gating, early redirect</td></tr>
+        <tr><td>Is-compressed</td><td>1 per halfword</td><td>Next-PC increment select</td></tr>
+      </table>
+      </div>
+      <ul class="tight">
+        <li><b>Cost:</b> a few bits per halfword of cache data — a real but modest area and power overhead on every line.</li>
+        <li><b>Benefit:</b> fetch-stage timing improves and the scan happens once per fill rather than once per fetch.</li>
+        <li><b>Caveat:</b> the scan assumes entry at the line start. Code that is entered mid-line at a position the scan marked as a continuation must still work — so the aligner has to be able to treat any branch target as a valid start and re-derive from there.</li>
+      </ul>
+      <p>For a modest embedded core, parallel scan at fetch is usually sufficient and predecode bits are not worth the storage. For a high-frequency or superscalar core, predecode is standard.</p>
+    </div>
+
+    <div class="tabpane" id="fh-npc">
+      <h5>Next-PC logic</h5>
+      <div class="ascii-wrap"><div class="bar">PC increment with C</div>
+<pre class="code"><span class="cmt">// Without C: pc_next = pc + 4. One constant.</span>
+<span class="cmt">// With C:    the increment depends on the CURRENT instruction's length.</span>
+
+<span class="kw">wire</span> is_compressed = (inst[<span class="num">1</span>:<span class="num">0</span>] != <span class="num">2'b11</span>);
+<span class="kw">wire</span> [<span class="num">31</span>:<span class="num">0</span>] pc_seq = pc + (is_compressed ? <span class="num">32'd2</span> : <span class="num">32'd4</span>);
+
+<span class="cmt">// And the return address for JAL / JALR follows the same rule:</span>
+<span class="cmt">// C.JALR must write pc+2, not pc+4. Getting this wrong breaks every</span>
+<span class="cmt">// compressed function call and is a classic first-silicon bug.</span></pre>
+      </div>
+      <div class="trap"><span class="tag">trap</span>
+      <p>The link value for a compressed call is <code>PC + 2</code>. If your expander turns <code>C.JALR</code> into <code>JALR x1, 0(rs1)</code> and the writeback path hard-codes <code>PC + 4</code>, every compressed call returns two bytes past where it should. The expander must carry the original length forward, or the writeback must recompute it from <code>inst[1:0]</code> of the pre-expansion halfword.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="super">
+  <h3><span class="n">9</span>Superscalar fetch with C</h3>
+  <p>If Hanu 1.0 is single-issue this is a "what would you do" question rather than a "what did you do" one. Answer it anyway — it is commonly asked.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Problem</th><th>Effect</th><th>Mitigation</th></tr>
+    <tr><td>Instruction count per fetch varies</td><td>8 bytes may hold 2, 3 or 4 instructions</td><td>Fetch a fixed byte width, decouple with a queue, issue a variable number</td></tr>
+    <tr><td>Boundary chain depth</td><td>Serial dependency limits width</td><td>Parallel-prefix scan, or predecode markers in the cache</td></tr>
+    <tr><td>Instruction straddles the fetch group</td><td>Last instruction incomplete</td><td>Carry the trailing halfword into the next cycle's group</td></tr>
+    <tr><td>Multiple branches per group</td><td>Predictor must handle &gt;1 branch per fetch</td><td>Predict the first taken branch only, truncate the group there</td></tr>
+    <tr><td>Alignment of the group itself</td><td>Group may start at 2 mod 4</td><td>A rotator on the cache output, sized to the fetch width</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">crux</span>
+  <p>With a fixed-length ISA, fetch width in bytes equals issue width times four. With C, they decouple completely. The standard architectural answer is an instruction queue between fetch and decode, so the fetch unit delivers bytes at a steady rate and the decoder consumes instructions at a variable rate.</p></div>
+</section>
+
+<section id="bpred">
+  <h3><span class="n">10</span>Branch prediction impact</h3>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Structure</th><th>Without C</th><th>With C</th></tr>
+    <tr><td>BTB index</td><td class="mono">PC[k:2]</td><td class="mono">PC[k:1]</td></tr>
+    <tr><td>Entries for equal coverage</td><td class="ok">N</td><td class="no">2N, or accept aliasing</td></tr>
+    <tr><td>Branches per fetch group</td><td>At most width/4</td><td class="no">Up to width/2</td></tr>
+    <tr><td>Target alignment</td><td>4-byte</td><td>2-byte</td></tr>
+    <tr><td>Return address stack</td><td>Push PC+4</td><td class="mid">Push PC+2 or PC+4</td></tr>
+  </table>
+  </div>
+  <p>Three practical points to raise:</p>
+  <ul class="tight">
+    <li><b>Doubling the BTB is expensive.</b> The usual compromise is to keep the index at 4-byte granularity and store a small offset field identifying which halfword within the aligned word holds the branch. Cheaper than doubling entries.</li>
+    <li><b>Branch density rises.</b> Compressed code packs more branches into the same bytes, so predictor pressure increases even at constant instruction count per byte fetched.</li>
+    <li><b>The RAS needs the right link value.</b> <code>C.JALR</code> pushes <code>PC + 2</code>. A RAS that assumes <code>PC + 4</code> mispredicts every return from a compressed call site — and that mispredict is systematic, not random, so it shows up as a flat IPC loss.</li>
+  </ul>
+  <div class="gotcha"><span class="tag">RAS hint rules</span>
+  <p>RISC-V defines return-address-stack behaviour for <code>JALR</code> from whether <code>rd</code> and <code>rs1</code> are link registers — x1 or x5. <code>C.JR rs1</code> expands to <code>JALR x0, 0(rs1)</code>, so it pops when rs1 is a link register. <code>C.JALR rs1</code> expands to <code>JALR x1, 0(rs1)</code>, so it pushes. Your predictor must apply the hint rules to the <b>expanded</b> form, not the compressed one.</p></div>
+</section>
+
+<section id="illegal">
+  <h3><span class="n">11</span>Illegal and reserved encodings</h3>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Encoding</th><th>Status</th><th>Why it matters</th></tr>
+    <tr><td class="mono">16'h0000</td><td class="no">Defined illegal</td><td>A jump into zeroed or erased memory traps immediately instead of executing garbage. Deliberate safety property.</td></tr>
+    <tr><td class="mono">C.ADDI4SPN, nzuimm = 0</td><td class="no">Reserved</td><td>This is the all-zeros encoding above</td></tr>
+    <tr><td class="mono">C.ADDI16SP, nzimm = 0</td><td class="no">Reserved</td><td>A zero-immediate stack adjust is meaningless</td></tr>
+    <tr><td class="mono">C.LUI, nzimm = 0</td><td class="no">Reserved</td><td>Would load zero, which C.LI does</td></tr>
+    <tr><td class="mono">C.LUI, rd = x0 or x2</td><td class="no">Reserved / reallocated</td><td>rd = x2 is C.ADDI16SP</td></tr>
+    <tr><td class="mono">C.LWSP, rd = x0</td><td class="no">Reserved</td><td>Load to x0 is a pointless encoding, so the slot is reserved</td></tr>
+    <tr><td class="mono">C.JR / C.JALR, rs1 = x0</td><td class="no">Reserved / C.EBREAK</td><td>The C.JALR rs1 = 0 pattern is C.EBREAK</td></tr>
+    <tr><td class="mono">C.MV / C.ADD with x0 operands</td><td class="no">Reserved</td><td>Frees encodings for C.JR, C.JALR and C.EBREAK</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">design rule</span>
+  <p>The RVC encoding recovers space by forbidding the degenerate cases — writing x0, adding zero, moving from x0 — and reusing those slots for genuinely useful instructions. Your decoder must actively check these constraints and raise illegal-instruction. Silently aliasing a reserved encoding onto a nearby instruction is a conformance failure.</p></div>
+</section>
+
+<section id="zc">
+  <h3><span class="n">12</span>The Zc* re-cut</h3>
+  <p>C was later decomposed into finer extensions. Mentioning this signals you follow the specification, not just a textbook.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Extension</th><th>Contents</th><th>Relevance to RV32IMAC</th></tr>
+    <tr><td class="mono">Zca</td><td>The base compressed set, excluding the floating-point loads and stores</td><td class="ok">This is effectively what your C means, since IMAC has no F or D</td></tr>
+    <tr><td class="mono">Zcf</td><td>RV32 compressed single-precision FP loads and stores</td><td class="no">Needs F. Not applicable.</td></tr>
+    <tr><td class="mono">Zcd</td><td>Compressed double-precision FP loads and stores</td><td class="no">Needs D. Not applicable.</td></tr>
+    <tr><td class="mono">Zcb</td><td>Extra simple compressed ops: byte and halfword loads and stores, sign and zero extension, and a compressed multiply</td><td class="mid">Useful addition for embedded code density</td></tr>
+    <tr><td class="mono">Zcmp</td><td>Push and pop of multiple registers, and combined pop-and-return</td><td class="mid">Big prologue/epilogue savings</td></tr>
+    <tr><td class="mono">Zcmt</td><td>Table jump — an index into a jump-vector table</td><td class="mid">Large code-size win for call-heavy code</td></tr>
+  </table>
+  </div>
+  <div class="trap"><span class="tag">the important structural point</span>
+  <p><b>Zcmp and Zcmt break the one-to-one rule.</b> A push or pop instruction expands to <i>multiple</i> base instructions, not one. That means the decompressor is no longer a combinational 16-to-32 function — it becomes a small sequencer emitting a series of micro-operations, with all the exception and interrupt complications that implies mid-sequence. If asked "is decompression always combinational", the correct answer is "for C and Zca yes, for Zcmp and Zcmt no".</p></div>
+  <p>Zcmp and Zcmt also reuse the encoding space that Zcd occupies, so they are mutually exclusive with compressed double-precision loads and stores. A design must choose.</p>
+</section>
+
+<section id="tradeoff">
+  <h3><span class="n">13</span>Is C worth it?</h3>
+  <p>Have both arguments ready. You may be asked to argue either side.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h6><span class="dot b-grn"></span>Keep C</h6>
+      <p>Roughly 25 to 30 percent smaller static code, because typically 50 to 60 percent of instructions in ordinary integer code have a compressed form.</p>
+      <p>Smaller code means a higher effective I-cache hit rate for the same cache area, less instruction fetch traffic, less fetch energy, and less ROM or flash on a cost-sensitive part.</p>
+      <p>The expander itself is small — a permutation network. The gate cost is not the reason to drop it.</p>
+    </div>
+    <div class="card">
+      <h6><span class="dot b-warn"></span>Drop C</h6>
+      <p>The fetch unit gets materially harder: aligner, wider buffer, boundary scan or predecode bits, dual fault tracking, finer BTB granularity.</p>
+      <p>Straddling instructions add fetch bubbles and a two-page fault path that is easy to get wrong and hard to verify.</p>
+      <p>Verification cost is real. Every reserved encoding must be checked, and the RV32-versus-RV64 slot reuse is a portability hazard.</p>
+      <p>If the core runs from tightly-coupled SRAM with no cache and code size is not a constraint, none of the benefits apply.</p>
+    </div>
+  </div>
+  <div class="defend"><span class="tag">a balanced answer that lands well</span>
+  <ul>
+    <li>"C is worth it whenever instruction memory is a cost or a bottleneck — which is almost always in embedded. It is not worth it if you are fetch-bandwidth limited at high frequency and have plenty of instruction memory, because then you pay all the alignment complexity for a benefit you do not need."</li>
+    <li>Then give your own number: what did compression actually do to your binary size in Hanu 1.0?</li>
+  </ul></div>
+  <p class="note">The 25&ndash;30 percent and 50&ndash;60 percent figures are the commonly quoted ranges from the specification's own commentary. Present them as ranges, and better still, quote your own measurement.</p>
+</section>
+
+<section id="check">
+  <h3><span class="n">14</span>Self-check</h3>
+
+  <div class="quiz" data-a="2">
+    <div class="q">A 32-bit instruction starts at 0x0FFC and page 0x1000 is unmapped. What are mepc and mtval?</div>
+    <button class="opt" data-fb="">mepc = 0x1000, mtval = 0x1000</button>
+    <button class="opt" data-fb="">mepc = 0x0FFC, mtval = 0x0FFC</button>
+    <button class="opt" data-fb="mepc points to the beginning of the instruction; mtval points to the portion of the instruction that actually faulted. For a straddling instruction these differ, which is exactly why the rule is spelled out.">mepc = 0x0FFC, mtval = 0x1000</button>
+    <button class="opt" data-fb="">The instruction cannot span a page — the assembler prevents it</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="1">
+    <div class="q">Which registers do the 3-bit compressed register fields address?</div>
+    <button class="opt" data-fb="">x0 to x7</button>
+    <button class="opt" data-fb="x8 to x15 — s0, s1 and a0 through a5. These are the highest-frequency registers in compiled code, and the index expansion is a constant bit concatenation, costing nothing.">x8 to x15</button>
+    <button class="opt" data-fb="">x1, x2 and the six argument registers</button>
+    <button class="opt" data-fb="">Any eight, selected by a configuration register</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="0">
+    <div class="q">Why can boundary detection for RVC be done in parallel, unlike x86?</div>
+    <button class="opt" data-fb="Instruction length in RISC-V depends only on the first halfword — specifically the low bits. So every halfword's length bit is computed independently and in parallel; only the start-position chain is sequential, and that is a prefix problem solvable in logarithmic depth.">Because length depends only on the first halfword</button>
+    <button class="opt" data-fb="">Because all RVC instructions are the same length</button>
+    <button class="opt" data-fb="">Because the compiler inserts alignment padding</button>
+    <button class="opt" data-fb="">Because the I-cache always stores expanded instructions</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="3">
+    <div class="q">What does the RV32 encoding of <code>C.JAL</code> decode to in RV64?</div>
+    <button class="opt" data-fb="">C.JAL — it is identical in both</button>
+    <button class="opt" data-fb="">An illegal instruction</button>
+    <button class="opt" data-fb="">C.JALR</button>
+    <button class="opt" data-fb="C.ADDIW. RV64 reallocated that slot because 32-bit-result arithmetic is far more common in 64-bit code than short calls. This is why compressed decode tables are not XLEN-portable.">C.ADDIW</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="1">
+    <div class="q">What must <code>C.JALR</code> write to the link register?</div>
+    <button class="opt" data-fb="">PC + 4, since it expands to a 32-bit JALR</button>
+    <button class="opt" data-fb="PC + 2. The link value follows the length of the instruction as actually encoded, not the length of its expansion. Hard-coding PC+4 in the writeback path breaks every compressed call — a classic first-silicon bug.">PC + 2</button>
+    <button class="opt" data-fb="">The target address</button>
+    <button class="opt" data-fb="">Nothing — C.JALR does not link</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="qa">
+  <h3><span class="n">15</span>Interview Q&amp;A</h3>
+
+  <details>
+    <summary>Where did you put the decompressor, and why there?</summary>
+    <div class="ans">
+      <p>Between the fetch buffer and the decoder, so one 32-bit decoder serves the whole ISA and nothing downstream knows C exists. That is the smallest option and the easiest to verify.</p>
+      <p>The cost is that expansion delay sits in series with decode. If that path had failed timing, the next step would be to compute both the compressed and uncompressed control decodes in parallel and mux the control signals at the end, rather than muxing the instruction at the start — same area penalty as a second decoder but only on the paths that matter.</p>
+      <p>What I would not do is expand on cache fill. That stores 32-bit instructions in the I-cache and throws away the entire density benefit.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>Your fetch unit prefetches ahead. How do you avoid spurious page faults?</summary>
+    <div class="ans">
+      <p>Faults from fetch are carried as attributes attached to the fetched bytes, not raised at fetch time. The fetch buffer holds, per entry, the instruction bytes plus a fault status and cause. The fault is only converted into an architectural trap when that instruction reaches the point of execution.</p>
+      <p>This matters most at page boundaries. A prefetch that runs past a taken branch and into an unmapped next page must not trap — the program never executes there. The same mechanism handles the straddling case: the second halfword's fault status travels with the instruction and is raised with mepc set to the instruction's start.</p>
+      <p>The corollary is that the fetch buffer must be flushed on redirect, and flushing must discard pending fault status along with the bytes.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Does C change the register file or the execution units at all?</summary>
+    <div class="ans">
+      <p>No. That is the key property. Every compressed instruction expands to exactly one existing base instruction, so by the time control signals reach the execute stage, the pipeline is identical to a non-C core.</p>
+      <p>The only thing that must travel downstream is the instruction's length, because the link value for a compressed call is PC+2 and the sequential next-PC is PC+2. So one extra bit rides along the pipeline.</p>
+      <p>The exception is Zcmp and Zcmt, which do expand to multiple instructions and therefore do change the front end into a sequencer. Base C does not.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>How would you verify the C extension?</summary>
+    <div class="ans">
+      <p>Three layers. First, exhaustive expansion checking: there are only 2<sup>16</sup> compressed encodings, so sweep all of them through the expander and compare against a reference expansion table, including which ones must be flagged illegal. That is a small, complete, mechanically checkable proof.</p>
+      <p>Second, directed alignment tests: a 32-bit instruction at every offset within a cache line, instructions straddling a line boundary, instructions straddling a page boundary with the second page unmapped, and branch targets landing at 2 mod 4.</p>
+      <p>Third, random mixed-length instruction streams with the boundary scanner compared against a software model, plus RISC-V compliance suites.</p>
+      <p>The exhaustive expander sweep is the one people forget, and it is the cheapest complete check available anywhere in a core.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>Convince me that C hurts more than it helps in a high-frequency core.</summary>
+    <div class="ans">
+      <p>At high frequency the front end is usually the constraint, and C adds work to exactly that stage: a rotator on the cache output, a boundary scan or the area and power of predecode bits, a deeper fetch buffer, and expansion before decode. All of it sits on the fetch-to-decode path you are trying to shorten.</p>
+      <p>Meanwhile the benefit is instruction memory density, which matters when the I-cache is small or off-chip fetch is expensive. A high-frequency core typically has a generous I-cache and a prefetcher, so the marginal hit-rate gain is small.</p>
+      <p>Add the straddling fault path, which is a verification liability, and the BTB granularity problem, and the balance can genuinely tip.</p>
+      <p>I would qualify it, though: the counter-argument is that fetch bandwidth in bytes is fixed, so compressed code delivers more instructions per fetch — which helps a wide machine rather than hurting it. The honest position is that it depends on whether your front end is limited by bytes or by boundaries.</p>
+    </div>
+  </details>
+</section>
+
+<section id="defend">
+  <h3><span class="n">16</span>Defend your claim — Hanu 1.0</h3>
+  <div class="defend"><span class="tag">write your answers down</span>
+  <ul>
+    <li>Where is your decompressor, and what did it cost in area and in the fetch-to-decode path?</li>
+    <li>How deep is your fetch buffer, in halfwords, and why that depth?</li>
+    <li>Parallel boundary scan or predecode bits in the I-cache? What drove the choice?</li>
+    <li>Does a straddling instruction cost you a bubble? Under what conditions?</li>
+    <li>Do you have virtual memory? If yes, walk your two-page fault path. If no, say so — the question then becomes access faults on a PMP boundary instead.</li>
+    <li>Does <code>C.JALR</code> write PC+2 in your RTL? Point to the line.</li>
+    <li>What is your BTB index granularity — 2-byte, or 4-byte with a halfword selector?</li>
+    <li>Did you measure the code-size reduction on your own binaries? What number did you get?</li>
+    <li>Did you run an exhaustive sweep of all 2<sup>16</sup> compressed encodings through the expander?</li>
+  </ul></div>
+</section>
+
+<section id="recap">
+  <h3><span class="n">17</span>Recap</h3>
+  <ul class="tight">
+    <li>Three quadrants selected by <code>inst[1:0]</code>; funct3 at <code>inst[15:13]</code> selects within each.</li>
+    <li>Compressed register fields cover x8&ndash;x15 — the ABI's hottest eight. Index expansion is free.</li>
+    <li>Every C instruction expands 1:1 to one base instruction. No new state, no new operations.</li>
+    <li>Expand between fetch and decode. Never expand on cache fill.</li>
+    <li>RV32 and RV64 reuse compressed slots differently. C.JAL becomes C.ADDIW; C.FLW becomes C.LD.</li>
+    <li>IALIGN becomes 16. Everything hard follows from that.</li>
+    <li>Straddling instruction fault: mepc is the instruction start, mtval is the faulting portion.</li>
+    <li>Fetch faults must be carried as attributes and raised at execution, never eagerly.</li>
+    <li>Length depends only on the first halfword, so boundary scan is a parallel-prefix problem.</li>
+    <li>BTB granularity becomes 2-byte. C.JALR pushes PC+2 onto the return stack.</li>
+    <li>Zcmp and Zcmt break the 1:1 rule and turn the expander into a sequencer.</li>
+  </ul>
+</section>
+
+<div class="navfoot">
+  <a href="rv32imac_lesson03_a_extension.html">&#8592; Lesson 03 · A extension</a>
+  <a href="rv32imac_lesson05_decode_pipeline.html">Lesson 05 · Unified decode &#8594;</a>
+</div>
+</main>
+</div>
+<script src="rv32imac_shared.js"></script>
+</body>
+</html>

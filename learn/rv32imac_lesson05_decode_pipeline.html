@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RV32IMAC · Lesson 5 — Unified Decode &amp; Pipeline Integration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="rv32imac_shared.css">
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">RV32IMAC · LESSON 05</div>
+  <h1>Unified Decode</h1>
+  <a href="#frame">The interview frame</a>
+  <a href="#tree">The decode tree</a>
+  <a href="#stages">Three decode stages</a>
+  <a href="#bundle">The control bundle</a>
+  <a href="#onehot">One-hot versus encoded</a>
+  <a href="#illegal">Illegal detection, all four</a>
+  <a href="#critpath">Critical path budgeting</a>
+  <a href="#insert">Where each extension attaches</a>
+  <a href="#share">Resource sharing</a>
+  <a href="#struct">Structural hazards</a>
+  <a href="#misa">misa and runtime disable</a>
+  <a href="#check">Self-check</a>
+  <a href="#qa">Interview Q&amp;A</a>
+  <a href="#defend">Defend your claim</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="rv32imac_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Interview Defence Track · Lesson 5 of 7</div>
+<h2 class="title">Unified decoder and pipeline integration</h2>
+<p class="lede">Four extensions, one decoder, one clock period. This lesson is about composition — what happens when I, M, A and C all have to coexist in the same ID stage without blowing your timing budget.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Draw the decode tree from <code>inst[1:0]</code> down to individual operations.</li>
+    <li>Split decode into stages and justify where each boundary sits.</li>
+    <li>List the control bundle a five-stage RV32IMAC core needs.</li>
+    <li>Argue one-hot versus encoded control on timing and area.</li>
+    <li>Enumerate every illegal-instruction condition across the four extensions.</li>
+    <li>Identify the ID critical path and give three ways to shorten it.</li>
+    <li>Explain what happens when <code>misa</code> disables C at an odd PC.</li>
+  </ul>
+</div>
+
+<section id="frame">
+  <h3><span class="n">1</span>The interview frame</h3>
+  <div class="crux"><span class="tag">crux</span>
+  <p>Each extension was designed to be cheap in isolation. The integration cost is not the sum of the parts. C adds a stage to the front, M adds a variable-latency writeback path, A adds a non-speculative point in MEM. The decoder must serve all three without becoming the critical path.</p></div>
+  <p>Panels ask this to see whether you have actually closed timing on a core, or only simulated one. Be specific about your period, your slowest path and what you did about it.</p>
+</section>
+
+<section id="tree">
+  <h3><span class="n">2</span>The decode tree</h3>
+  <p>Decode is a strict hierarchy. Each level narrows the space. Know which bits act at which level.</p>
+  <div class="ascii-wrap"><div class="bar">RV32IMAC decode hierarchy</div>
+<pre class="ascii">                        <span class="a">inst[1:0]</span>
+             ┌──────────────┼──────────────┐
+          <span class="s">00 / 01 / 10</span>                 <span class="g">11</span>
+          <span class="s">compressed</span>                  <span class="g">32-bit</span>
+              │                            │
+        <span class="s">quadrant + funct3</span>            <span class="g">inst[6:2]</span>  <span class="cmt">← opcode</span>
+        <span class="s">inst[15:13]</span>                    │
+              │             ┌──────────────┼───────────┬──────────────┐
+              │          <span class="v">01100</span>          <span class="v">01011</span>       <span class="v">00100</span>        <span class="o">others</span>
+              │           <span class="v">OP</span>            <span class="v">AMO</span>       <span class="v">OP-IMM</span>        <span class="o">I base</span>
+              │             │               │            │
+              │       <span class="p">inst[31:25]</span>     <span class="p">funct5</span>      <span class="p">funct3</span>
+              │       ┌─────┴─────┐      <span class="p">inst[31:27]</span>   + <span class="p">inst[30]</span>
+              │  <span class="p">0000000</span>     <span class="p">0000001</span>        │        <span class="cmt">for shifts</span>
+              │  <span class="cmt">base ALU</span>    <span class="cmt">M ext</span>      <span class="cmt">A ext</span>
+              │
+        <span class="cmt">EXPANDER → re-enters the 32-bit tree as a synthesised instruction</span></pre>
+  </div>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Level</th><th>Bits</th><th>Decides</th></tr>
+    <tr><td>0</td><td class="mono">inst[1:0]</td><td>16-bit or 32-bit. Drives PC increment and expander enable.</td></tr>
+    <tr><td>1</td><td class="mono">inst[6:2]</td><td>Opcode, therefore instruction format and immediate select.</td></tr>
+    <tr><td>2</td><td class="mono">inst[14:12]</td><td>funct3 — operation within the opcode, or access width.</td></tr>
+    <tr><td>3</td><td class="mono">inst[31:25]</td><td>funct7 for OP: base versus M. funct5 plus aq/rl for AMO.</td></tr>
+    <tr><td>3&prime;</td><td class="mono">inst[30]</td><td>Alternate operation, but only for OP and the two OP-IMM shifts.</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">the composition insight</span>
+  <p>M costs one extra funct7 comparison at level 3 of an existing branch. A costs one new leaf at level 1. C costs a whole new subtree at level 0 plus an expander. That is why C dominates the integration cost even though its instructions are the simplest.</p></div>
+</section>
+
+<section id="stages">
+  <h3><span class="n">3</span>Three decode stages</h3>
+  <p>In a core with C, decode is naturally three sequential pieces. Where you put the pipeline registers is a design decision.</p>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="st-0">Stage 0 — length</button>
+      <button data-t="st-1">Stage 1 — expand</button>
+      <button data-t="st-2">Stage 2 — control</button>
+      <button data-t="st-split">Where to cut</button>
+    </div>
+
+    <div class="tabpane" id="st-0">
+      <h5>Length determination — in IF</h5>
+      <p>Pure function of <code>inst[1:0]</code>. One gate per halfword. It must complete in IF because next-PC depends on it.</p>
+      <ul class="tight">
+        <li>Drives the PC increment select: +2 or +4.</li>
+        <li>Drives the fetch buffer's consume amount.</li>
+        <li>Drives the boundary scan for the next instruction.</li>
+      </ul>
+      <p>This is the one part of decode that cannot be deferred. Everything else can move later.</p>
+    </div>
+
+    <div class="tabpane" id="st-1">
+      <h5>Expansion — end of IF or start of ID</h5>
+      <p>16 bits in, 32 bits out, combinational. No state, no faults, no stalls.</p>
+      <p>Placing it at the end of IF means it shares a cycle with the fetch buffer read and any rotation. Placing it at the start of ID means it shares a cycle with the main decode. Either can be right; the question is which of those two cycles has slack.</p>
+      <div class="gotcha"><span class="tag">carry the length forward</span>
+      <p>Once expanded, the instruction is indistinguishable from a native 32-bit one. So the original length must travel down the pipeline as a separate bit — it is needed for the link value of a compressed call and for the mepc value on a trap.</p></div>
+    </div>
+
+    <div class="tabpane" id="st-2">
+      <h5>Main control decode — in ID</h5>
+      <p>32 bits in, a control bundle out. This is where the levels of the decode tree are evaluated. Runs in parallel with the register file read and the immediate generation, neither of which depends on it.</p>
+      <p>Split the outputs by when they are needed:</p>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Signal group</th><th>Needed by</th><th>Slack</th></tr>
+        <tr><td>Regfile read enables, source indices</td><td class="mono">ID, same cycle</td><td class="no">None</td></tr>
+        <tr><td>Immediate select, operand-A/B select</td><td class="mono">End of ID</td><td class="no">Minimal</td></tr>
+        <tr><td>ALU operation, branch condition</td><td class="mono">EX</td><td class="ok">One stage</td></tr>
+        <tr><td>Memory command, access width</td><td class="mono">MEM</td><td class="ok">Two stages</td></tr>
+        <tr><td>Writeback source, write enable</td><td class="mono">WB</td><td class="ok">Three stages</td></tr>
+        <tr><td>Illegal instruction, trap cause</td><td class="mono">Trap point</td><td class="ok">Usually one or more stages</td></tr>
+      </table>
+      </div>
+      <div class="crux"><span class="tag">the key optimisation</span>
+      <p>Only the first two rows are timing-critical. Everything else can be computed in ID and registered, or even computed one stage later from the registered instruction word. Moving illegal-instruction detection off the ID critical path is the single easiest decode timing fix.</p></div>
+    </div>
+
+    <div class="tabpane" id="st-split">
+      <h5>Choosing the pipeline cut</h5>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Arrangement</th><th>Stages</th><th>Trade-off</th></tr>
+        <tr><td>Expand and decode both in ID</td><td class="mono">IF ID EX MEM WB</td><td>Classic five stages. Tight ID. Simplest control.</td></tr>
+        <tr><td>Expand at end of IF, decode in ID</td><td class="mono">IF ID EX MEM WB</td><td>Balances the two stages. Needs IF to have slack.</td></tr>
+        <tr><td>Separate expand stage</td><td class="mono">IF IX ID EX MEM WB</td><td>Six stages. Best timing, one more cycle of branch mispredict penalty.</td></tr>
+      </table>
+      </div>
+      <p>Adding a stage costs one cycle on every mispredict and every taken branch redirect. In a core with a weak or absent predictor that is expensive. Only do it if ID genuinely will not close.</p>
+    </div>
+  </div>
+</section>
+
+<section id="bundle">
+  <h3><span class="n">4</span>The control bundle</h3>
+  <p>What decode actually emits. Be able to list this — it is a common whiteboard request.</p>
+  <div class="ascii-wrap"><div class="bar">SystemVerilog — RV32IMAC control bundle</div>
+<pre class="code"><span class="kw">typedef struct packed</span> {
+  <span class="cmt">// --- operand selection ---------------------------------------</span>
+  <span class="kw">logic</span> [<span class="num">4</span>:<span class="num">0</span>] rs1, rs2, rd;
+  <span class="kw">logic</span>       rs1_used, rs2_used;   <span class="cmt">// for hazard comparators</span>
+  <span class="kw">logic</span>       rd_we;                <span class="cmt">// gated with (rd != 0)</span>
+  <span class="kw">logic</span> [<span class="num">31</span>:<span class="num">0</span>] imm;
+  <span class="kw">logic</span>       op_a_is_pc;           <span class="cmt">// AUIPC, JAL, branches</span>
+  <span class="kw">logic</span>       op_b_is_imm;
+
+  <span class="cmt">// --- execute --------------------------------------------------</span>
+  alu_op_e    alu_op;               <span class="cmt">// ADD SUB AND OR XOR SLL SRL SRA SLT SLTU</span>
+  <span class="kw">logic</span>       is_branch, is_jump;
+  br_cond_e   br_cond;              <span class="cmt">// 3 bits, straight from funct3</span>
+
+  <span class="cmt">// --- M extension ----------------------------------------------</span>
+  <span class="kw">logic</span>       md_valid;             <span class="cmt">// issue to mul/div unit</span>
+  md_op_e     md_op;                <span class="cmt">// 3 bits, straight from funct3</span>
+
+  <span class="cmt">// --- memory + A extension -------------------------------------</span>
+  <span class="kw">logic</span>       mem_req;
+  <span class="kw">logic</span>       mem_we;               <span class="cmt">// store, or AMO write phase</span>
+  <span class="kw">logic</span> [<span class="num">1</span>:<span class="num">0</span>] mem_size;             <span class="cmt">// funct3[1:0]</span>
+  <span class="kw">logic</span>       mem_signed;           <span class="cmt">// ~funct3[2]</span>
+  <span class="kw">logic</span>       is_amo, is_lr, is_sc;
+  amo_op_e    amo_op;               <span class="cmt">// from funct5</span>
+  <span class="kw">logic</span>       aq, rl;
+
+  <span class="cmt">// --- writeback ------------------------------------------------</span>
+  wb_sel_e    wb_sel;               <span class="cmt">// ALU | MEM | PC_NEXT | MD | CSR</span>
+
+  <span class="cmt">// --- C extension + traps --------------------------------------</span>
+  <span class="kw">logic</span>       is_compressed;        <span class="cmt">// drives PC+2 link value and mepc</span>
+  <span class="kw">logic</span>       illegal;
+  <span class="kw">logic</span>       is_ecall, is_ebreak, is_fence;
+} ctrl_t;</pre>
+  </div>
+  <div class="crux"><span class="tag">notice what is free</span>
+  <p><code>br_cond</code>, <code>md_op</code>, <code>mem_size</code> and <code>mem_signed</code> all come straight from <code>funct3</code> with no decode at all. <code>amo_op</code> comes straight from <code>funct5</code>. The ISA encoding was designed so that operation selects can be wires into the functional units. Point this out — it is the payoff of everything in Lesson 01.</p></div>
+</section>
+
+<section id="onehot">
+  <h3><span class="n">5</span>One-hot versus encoded control</h3>
+  <div class="tblwrap">
+  <table>
+    <tr><th></th><th>One-hot</th><th>Encoded</th></tr>
+    <tr><td>Decode logic</td><td class="mid">Wider — one signal per operation</td><td class="ok">Narrower</td></tr>
+    <tr><td>Pipeline register bits</td><td class="no">More flops per stage</td><td class="ok">Fewer</td></tr>
+    <tr><td>Consumer-side logic</td><td class="ok">Direct mux select, no re-decode</td><td class="no">Must decode again at the consumer</td></tr>
+    <tr><td>Timing at the consumer</td><td class="ok">Best — enable is a wire</td><td class="mid">One decode level added</td></tr>
+    <tr><td>Power</td><td class="no">More toggling flops</td><td class="ok">Fewer</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">the practical rule</span>
+  <p>One-hot for signals consumed right at the end of a long path — mux selects into the EX operand network. Encoded for everything carried several stages, where the flop count matters and the consumer has slack to re-decode. Most real cores mix the two.</p></div>
+  <p>A concrete example: keep <code>wb_sel</code> encoded in two or three bits, since WB has three stages of slack to decode it. Keep the forwarding mux selects one-hot, since they sit directly in front of the ALU.</p>
+</section>
+
+<section id="illegal">
+  <h3><span class="n">6</span>Illegal-instruction detection across all four</h3>
+  <p>A conformance requirement that candidates consistently under-specify. Enumerate it.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Source</th><th>Condition</th></tr>
+    <tr><td rowspan="5"><b>I</b></td><td>Opcode <code>inst[6:2]</code> not in the defined set</td></tr>
+    <tr><td>BRANCH with <code>funct3</code> = 010 or 011</td></tr>
+    <tr><td>OP with a funct7 that is neither 0000000 nor the defined alternates</td></tr>
+    <tr><td>RV32 shift with <code>inst[25] = 1</code> &mdash; shamt out of range</td></tr>
+    <tr><td>LOAD with <code>funct3</code> = 011, 110 or 111 &mdash; undefined widths in RV32</td></tr>
+    <tr><td rowspan="2"><b>M</b></td><td>M funct7 present when M is not implemented</td></tr>
+    <tr><td>M funct7 with an opcode other than OP</td></tr>
+    <tr><td rowspan="4"><b>A</b></td><td>AMO opcode when A is not implemented</td></tr>
+    <tr><td><code>funct5</code> not one of the eleven defined values</td></tr>
+    <tr><td><code>funct3</code> = 011 (.D forms) in RV32</td></tr>
+    <tr><td>LR with <code>rs2 &ne; 0</code></td></tr>
+    <tr><td rowspan="6"><b>C</b></td><td>The all-zeros halfword <code>16'h0000</code></td></tr>
+    <tr><td>C.ADDI4SPN with <code>nzuimm = 0</code></td></tr>
+    <tr><td>C.LUI with <code>nzimm = 0</code> or <code>rd = x0</code></td></tr>
+    <tr><td>C.ADDI16SP with <code>nzimm = 0</code></td></tr>
+    <tr><td>C.LWSP with <code>rd = x0</code>; C.JR or C.JALR with <code>rs1 = x0</code> outside the EBREAK slot</td></tr>
+    <tr><td>Floating-point compressed forms &mdash; C.FLW, C.FSW and their SP variants &mdash; since IMAC has no F</td></tr>
+  </table>
+  </div>
+  <div class="trap"><span class="tag">the design trap</span>
+  <p>It is tempting to build the decoder as a priority <code>casez</code> with a <code>default</code> that does something harmless. That silently aliases reserved encodings onto real instructions and passes every directed test. The correct structure is: compute an explicit <code>legal</code> signal as the OR of all match conditions, then <code>illegal = ~legal</code>. Reserved-field checks are ANDed into each match, not handled by a default arm.</p></div>
+  <div class="gotcha"><span class="tag">timing note</span>
+  <p>The illegal cone is wide — it touches almost every instruction bit. Keep it off the ID critical path. It is only needed at the trap point, so register the instruction word and compute <code>illegal</code> in the next stage. This costs a few flops and buys real slack.</p></div>
+</section>
+
+<section id="critpath">
+  <h3><span class="n">7</span>Critical path budgeting</h3>
+  <p>Candidate paths in an RV32IMAC core, roughly in order of how often they are the worst.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>#</th><th>Path</th><th>Why it is long</th><th>Fix</th></tr>
+    <tr><td>1</td><td>Regfile read &rarr; forwarding mux &rarr; ALU &rarr; branch compare &rarr; PC redirect</td><td>Two wide muxes plus a 32-bit adder plus comparison, all in EX</td><td>Precompute forwarding selects in ID; separate branch comparator from the main ALU; accept an extra mispredict cycle</td></tr>
+    <tr><td>2</td><td>Fetch buffer &rarr; rotate &rarr; expander &rarr; decode &rarr; operand select</td><td>C's front-end chain, all serial</td><td>Move the expander into IF; or add an expand stage; or decode both forms in parallel and mux control</td></tr>
+    <tr><td>3</td><td>Hazard comparators &rarr; priority resolution &rarr; forwarding mux select</td><td>Wide comparator tree feeding a priority encoder</td><td>One-hot the selects; flatten priority into parallel AND terms; compute one stage early</td></tr>
+    <tr><td>4</td><td>Multiplier array &rarr; final adder</td><td>Reduction tree depth plus a wide carry-propagate add</td><td>Pipeline it. This is almost always the right answer.</td></tr>
+    <tr><td>5</td><td>D-cache tag compare &rarr; way select &rarr; load align &rarr; sign extend &rarr; forward</td><td>MEM stage with a set-associative cache</td><td>Way prediction; move sign extension into WB; forward the unaligned word and align at the consumer</td></tr>
+    <tr><td>6</td><td>Illegal detection cone</td><td>Touches nearly every instruction bit</td><td>Register the instruction; compute illegal one stage later</td></tr>
+  </table>
+  </div>
+  <div class="defend"><span class="tag">how to answer "what was your critical path"</span>
+  <ul>
+    <li>Name the actual path from your timing report, with the start and end points.</li>
+    <li>State the achieved period and the slack before and after your fix.</li>
+    <li>Say what you traded. Every timing fix costs area, cycles or complexity. Naming the cost is what makes the answer credible.</li>
+  </ul></div>
+</section>
+
+<section id="insert">
+  <h3><span class="n">8</span>Where each extension attaches</h3>
+  <div class="ascii-wrap"><div class="bar">RV32IMAC — extension attachment points</div>
+<pre class="ascii">      <span class="a">IF</span>              <span class="g">ID</span>              <span class="s">EX</span>            <span class="v">MEM</span>          <span class="o">WB</span>
+  ┌───────────┐   ┌────────────┐   ┌───────────┐  ┌──────────┐  ┌────────┐
+  │ PC ± 2/4  │   │ decode     │   │ ALU       │  │ D-cache  │  │ regfile│
+  │ I-cache   │──→│ regfile rd │──→│ br compare│─→│ align    │─→│ write  │
+  │ align buf │   │ imm gen    │   │ addr add  │  │          │  │        │
+  └───────────┘   └────────────┘   └───────────┘  └──────────┘  └────────┘
+       <span class="p">▲</span>               <span class="p">▲</span>                                <span class="p">▲</span>            <span class="p">▲</span>
+       <span class="p">│</span>               <span class="p">│</span>                                <span class="p">│</span>            <span class="p">│</span>
+  <span class="p">┌────┴────┐</span>     <span class="p">┌────┴─────┐</span>                    <span class="p">┌─────┴─────┐</span>      <span class="p">│</span>
+  <span class="p">│</span> <span class="s">C</span>       <span class="p">│</span>     <span class="p">│</span> <span class="g">I M A C</span>  <span class="p">│</span>                    <span class="p">│</span> <span class="o">A</span>         <span class="p">│</span>      <span class="p">│</span>
+  <span class="p">│</span> aligner <span class="p">│</span>     <span class="p">│</span> decode   <span class="p">│</span>                    <span class="p">│</span> AMO unit  <span class="p">│</span>      <span class="p">│</span>
+  <span class="p">│</span> expander<span class="p">│</span>     <span class="p">│</span> scoreb.  <span class="p">│</span>                    <span class="p">│</span> resv mon  <span class="p">│</span>      <span class="p">│</span>
+  <span class="p">└─────────┘</span>     <span class="p">└──────────┘</span>                    <span class="p">└───────────┘</span>      <span class="p">│</span>
+                                                                  <span class="p">│</span>
+                  <span class="p">┌─────────────────────────────────────────────┴──┐</span>
+                  <span class="p">│</span> <span class="v">M</span>  mul/div unit — decoupled, variable latency   <span class="p">│</span>
+                  <span class="p">│</span>    writes back out of band, arbitrates for WB  <span class="p">│</span>
+                  <span class="p">└────────────────────────────────────────────────┘</span></pre>
+  </div>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Extension</th><th>Attaches at</th><th>Adds</th><th>Breaks</th></tr>
+    <tr><td><b>I</b></td><td>Everywhere</td><td>The pipeline itself</td><td>&mdash;</td></tr>
+    <tr><td><b>M</b></td><td>ID issue, WB arbitration</td><td>Multi-cycle unit, scoreboard</td><td>Fixed latency, in-order writeback</td></tr>
+    <tr><td><b>A</b></td><td>MEM, plus the coherency interface</td><td>Atomic ALU, reservation monitor, ordering control</td><td>Speculative execution of memory ops</td></tr>
+    <tr><td><b>C</b></td><td>IF and early ID</td><td>Aligner, buffer, expander, boundary scan</td><td>4-byte instruction alignment</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">say this</span>
+  <p>"M attacks the back end, A attacks the memory interface, C attacks the front end. They barely interact with each other, which is the nice part — but each one independently invalidates a different simplifying assumption in a textbook five-stage pipeline."</p></div>
+</section>
+
+<section id="share">
+  <h3><span class="n">9</span>Resource sharing</h3>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="sh-alu">ALU and adders</button>
+      <button data-t="sh-amo">AMO through the pipe</button>
+      <button data-t="sh-md">M unit operands</button>
+    </div>
+
+    <div class="tabpane" id="sh-alu">
+      <h5>How many adders do you actually need?</h5>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Use</th><th>Can share the main ALU?</th></tr>
+        <tr><td>R-type and I-type arithmetic</td><td class="ok">It is the main ALU</td></tr>
+        <tr><td>Load and store address</td><td class="ok">Yes — rs1 + imm is an ALU add</td></tr>
+        <tr><td>AUIPC</td><td class="ok">Yes — PC + imm through the operand-A mux</td></tr>
+        <tr><td>JALR target</td><td class="ok">Yes — rs1 + imm, then clear bit 0</td></tr>
+        <tr><td>Branch comparison</td><td class="mid">Yes via subtraction, but it serialises with the target add</td></tr>
+        <tr><td>Branch target PC + imm</td><td class="no">Needs a second adder if the compare uses the first</td></tr>
+        <tr><td>Sequential PC + 2/4</td><td class="no">Lives in IF, separate incrementer</td></tr>
+      </table>
+      </div>
+      <p>So a lean RV32IMAC core has three adders: the main ALU, the branch target adder in EX, and the PC incrementer in IF. Claiming one is wrong; claiming six means you did not share.</p>
+    </div>
+
+    <div class="tabpane" id="sh-amo">
+      <h5>Running an AMO through the existing pipeline</h5>
+      <p>A small core can avoid a dedicated atomic ALU by replaying the AMO through EX.</p>
+      <ol class="tight">
+        <li><b>Pass 1 — MEM:</b> read the memory word, lock the line, capture the old value.</li>
+        <li><b>Replay through EX:</b> feed the old value and rs2 into the main ALU with the operation derived from funct5.</li>
+        <li><b>Pass 2 — MEM:</b> write the result back, unlock the line.</li>
+        <li><b>WB:</b> write the captured old value to rd.</li>
+      </ol>
+      <ul class="tight">
+        <li><b>Pro:</b> no duplicate ALU. The min/max operations reuse SLT and SLTU, which already exist.</li>
+        <li><b>Con:</b> several extra cycles per AMO, and the pipeline needs a replay mechanism and a line lock that cannot deadlock against a snoop.</li>
+      </ul>
+      <p>Perfectly defensible for an embedded core where atomics are rare. Say the cycle count.</p>
+    </div>
+
+    <div class="tabpane" id="sh-md">
+      <h5>M unit operand capture</h5>
+      <p>The M unit reads rs1 and rs2 once, at issue, and holds them. That has two useful consequences:</p>
+      <ul class="tight">
+        <li>No WAR hazard — a later write to rs1 or rs2 cannot disturb the in-flight operation.</li>
+        <li>The unit does not need forwarding paths of its own. It takes the already-forwarded operands from the EX input muxes.</li>
+      </ul>
+      <p>What it does need is its own result register and a request line into the writeback arbiter, which is the structural hazard covered next.</p>
+    </div>
+  </div>
+</section>
+
+<section id="struct">
+  <h3><span class="n">10</span>Structural hazards</h3>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Shared resource</th><th>Contenders</th><th>Resolution</th></tr>
+    <tr><td>Register file write port</td><td>ALU result, load data, M unit result, CSR read</td><td>Arbitrate. Main pipe usually wins; M unit holds its result and retries.</td></tr>
+    <tr><td>Register file read ports</td><td>Only one instruction issues per cycle</td><td class="ok">No conflict in a single-issue core</td></tr>
+    <tr><td>D-cache port</td><td>Load, store, AMO read phase, AMO write phase</td><td>In-order MEM serialises them. AMO may need two cycles.</td></tr>
+    <tr><td>I-cache port</td><td>Fetch, plus a second fetch for a straddling instruction</td><td>Buffer depth hides most of it; otherwise a bubble.</td></tr>
+    <tr><td>Main ALU</td><td>Arithmetic, address gen, AMO replay</td><td>In-order EX serialises. AMO replay costs cycles.</td></tr>
+    <tr><td>M unit</td><td>Back-to-back multiply or divide</td><td>Busy bit stalls the second in ID, unless the unit is pipelined.</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">crux</span>
+  <p>In a single-issue in-order core, almost every structural hazard reduces to one question: who gets the register file write port. That is the honest short answer, and the follow-up is your arbitration policy.</p></div>
+</section>
+
+<section id="misa">
+  <h3><span class="n">11</span>misa and runtime extension disable</h3>
+  <p><code>misa</code> reports the implemented ISA. It is WARL, so an implementation <i>may</i> allow extensions to be disabled at runtime — or may hardwire it entirely, which is what most embedded cores do.</p>
+  <div class="trap"><span class="tag">a genuinely hard trap</span>
+  <p>Suppose software writes <code>misa</code> to disable C. That raises IALIGN from 16 to 32. But the very next instruction might sit at an address that is 2 mod 4 — now illegal. What happens?</p>
+  <p><b>The write is suppressed.</b> If a write to <code>misa</code> would increase IALIGN and the next instruction's address is not aligned to the new IALIGN, the write does not take effect and <code>misa</code> is left unchanged. The architecture refuses to put itself into an unreachable state.</p></div>
+  <p>Two further consequences worth knowing:</p>
+  <ul class="tight">
+    <li>If your implementation hardwires <code>misa</code>, writes are simply ignored and the problem never arises. Saying "I hardwired it" is a complete and correct answer.</li>
+    <li>If an extension can be disabled, the decoder must gate its legality on the enable bit — an M instruction with M disabled must raise illegal-instruction, not execute. That means the enable bit is an input to the decode cone, which is one more reason to keep illegal detection off the critical path.</li>
+  </ul>
+  <div class="gotcha"><span class="tag">practical position</span>
+  <p>For Hanu 1.0, hardwiring <code>misa</code> is the right choice and the easy answer. Dynamic extension disable exists mainly for software compatibility testing and for platforms that share one core design across configurations. Say that you considered it and chose not to pay for it.</p></div>
+</section>
+
+<section id="check">
+  <h3><span class="n">12</span>Self-check</h3>
+
+  <div class="quiz" data-a="2">
+    <div class="q">Which decode output has the <b>least</b> timing slack in a five-stage core?</div>
+    <button class="opt" data-fb="">Writeback source select</button>
+    <button class="opt" data-fb="">Memory access width</button>
+    <button class="opt" data-fb="Register file read enables and source indices are needed in the same cycle decode runs. Everything else has at least one stage of slack, which is why the fix for a tight ID stage is usually to defer signals rather than to speed up decode.">Register file read enables and source indices</button>
+    <button class="opt" data-fb="">Trap cause</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="0">
+    <div class="q">Software writes misa to disable C, but the next instruction is at an address 2 mod 4. What happens?</div>
+    <button class="opt" data-fb="The write to misa is suppressed and misa is unchanged. The architecture refuses a write that would make the next instruction unfetchable. On a core with hardwired misa, the write is simply ignored anyway.">The write is suppressed; misa is unchanged</button>
+    <button class="opt" data-fb="">An instruction-address-misaligned exception is raised on the next fetch</button>
+    <button class="opt" data-fb="">The PC is silently rounded down to a 4-byte boundary</button>
+    <button class="opt" data-fb="">Behaviour is undefined</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="3">
+    <div class="q">Your decoder uses <code>casez</code> with a <code>default</code> arm that assigns a NOP. What is wrong?</div>
+    <button class="opt" data-fb="">Nothing — that is the standard structure</button>
+    <button class="opt" data-fb="">It creates a latch</button>
+    <button class="opt" data-fb="">It is slower than a lookup table</button>
+    <button class="opt" data-fb="Reserved and illegal encodings silently become NOPs instead of raising illegal-instruction. The design passes every directed test and fails conformance. Build an explicit legal signal as the OR of all matches and derive illegal from its complement.">Reserved encodings alias to NOP instead of trapping</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="1">
+    <div class="q">How many 32-bit adders does a lean single-issue RV32IMAC core need?</div>
+    <button class="opt" data-fb="">One — everything shares the ALU</button>
+    <button class="opt" data-fb="Three: the main ALU handling arithmetic, address generation, AUIPC and JALR; a separate branch-target adder in EX because the compare occupies the ALU in the same cycle; and the PC incrementer in IF.">Three — main ALU, branch target, PC increment</button>
+    <button class="opt" data-fb="">Five — one per pipeline stage</button>
+    <button class="opt" data-fb="">Six — one per instruction class</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="qa">
+  <h3><span class="n">13</span>Interview Q&amp;A</h3>
+
+  <details>
+    <summary>Walk me through your decoder from the fetched bits to the EX operands.</summary>
+    <div class="ans">
+      <p>Fetch buffer presents 32 bits at the current instruction start. <code>inst[1:0]</code> decides length; if compressed, the low halfword goes through the expander and everything downstream sees a synthesised 32-bit instruction plus an is-compressed bit.</p>
+      <p>Three things then run in parallel. Register file read using the fixed index positions. Immediate generation, which is five wire bundles and a select driven by <code>inst[6:2]</code>. Control decode down the tree — opcode, then funct3, then funct7 or funct5.</p>
+      <p>Hazard comparators run alongside, comparing source indices against in-flight destinations, and produce one-hot forwarding selects. At the end of ID the operand muxes choose between register data, forwarded data, the immediate and the PC, and those feed the EX registers.</p>
+      <p>Illegal detection is computed from the registered instruction word one stage later, because it touches nearly every bit and does not need to be fast.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>Your ID stage misses timing by fifteen percent. Give me an ordered plan.</summary>
+    <div class="ans">
+      <p>First, find out which path. There are at least three candidates in ID and they have different fixes, so guessing wastes a synthesis run.</p>
+      <p>If it is the decode-to-operand-mux path: move illegal detection and any trap-cause encoding out of ID into the next stage. Convert the mux selects to one-hot so the consumer is a wire, not a decode. These are free in cycles.</p>
+      <p>If it is the forwarding priority network: flatten the priority chain into parallel AND terms rather than a cascaded mux, and compute the selects from the previous stage's registered destination indices instead of from combinational ones.</p>
+      <p>If it is the expander feeding decode: move the expander into IF, where there is usually slack after the fetch buffer read.</p>
+      <p>Only if none of that is enough would I add a pipeline stage, because that costs a cycle on every branch redirect and hurts a core with a weak predictor.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Why is the immediate generator never the critical path?</summary>
+    <div class="ans">
+      <p>Because it contains no gates. All five immediate forms are bit selections and sign-bit replication from the instruction word, so all five are available one wire delay after fetch. The only real logic is the final select, which is one mux level driven by five opcode bits.</p>
+      <p>That is a direct consequence of the encoding decisions in the base ISA — fixed sign-bit position and fixed positions for most immediate bits. It is the clearest example of the ISA buying decoder timing with encoding complexity.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Do M and A share any logic?</summary>
+    <div class="ans">
+      <p>Almost none, and that is worth saying because candidates sometimes assume they do. M is a datapath unit in the back end with its own multiplier and divider. A is a memory-side feature: an atomic ALU and a reservation monitor near the cache, plus ordering control.</p>
+      <p>The one genuine overlap is the register file write port, which both compete for alongside loads. And if you implement AMOs by replaying through the main ALU, then A and the base ALU share, but still not A and M.</p>
+      <p>C shares with neither. It is confined to the front end.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>How would you make this decoder parameterisable between RV32 and RV64?</summary>
+    <div class="ans">
+      <p>The base is mostly clean: widen the datapath, extend the shift amount field from five bits to six, and remove the <code>inst[25] == 0</code> legality check because that bit becomes shamt[5]. Add the W-suffixed instructions, which is a new funct3 decode under a new opcode.</p>
+      <p>M is similarly clean: MULW, DIVW, DIVUW, REMW, REMUW under OP-32, with sign extension of the 32-bit result — remembering that even the unsigned forms sign-extend.</p>
+      <p>A just adds the <code>.D</code> forms under <code>funct3 = 011</code>.</p>
+      <p>C is the problem. The compressed quadrants reuse encoding slots differently between XLEN — C.JAL becomes C.ADDIW, C.FLW becomes C.LD — so the compressed decode table is structurally different, not merely wider. I would keep two tables selected by the XLEN parameter rather than trying to unify them, and I would not pretend the expander is portable.</p>
+    </div>
+  </details>
+</section>
+
+<section id="defend">
+  <h3><span class="n">14</span>Defend your claim — Hanu 1.0</h3>
+  <div class="defend"><span class="tag">write your answers down</span>
+  <ul>
+    <li>How many pipeline stages, and where exactly did you cut between expand and decode?</li>
+    <li>One-hot, encoded, or mixed control? Which signals are which, and why?</li>
+    <li>Is your illegal-instruction signal computed in ID or later? Show it.</li>
+    <li>Does a reserved encoding actually trap in your RTL, or does it fall through a <code>default</code>?</li>
+    <li>How many adders in your design? List them and their uses.</li>
+    <li>How is an AMO executed — dedicated atomic ALU, or replay through EX? How many cycles?</li>
+    <li>Is <code>misa</code> hardwired or writable?</li>
+    <li>What was your ID critical path, your achieved period, and the slack you gained from each fix?</li>
+  </ul></div>
+</section>
+
+<section id="recap">
+  <h3><span class="n">15</span>Recap</h3>
+  <ul class="tight">
+    <li>Decode is a four-level tree: <code>inst[1:0]</code>, <code>inst[6:2]</code>, funct3, then funct7 or funct5.</li>
+    <li>M is one funct7 comparison. A is one new opcode leaf. C is a whole new subtree plus an expander.</li>
+    <li>Length determination must happen in IF. Everything else can be deferred.</li>
+    <li>Only regfile read enables and operand selects are timing-critical in ID. Defer the rest.</li>
+    <li>funct3 feeds branch condition, memory width, memory signedness and M operation directly &mdash; no decode.</li>
+    <li>Build <code>illegal</code> as the complement of an explicit legal signal, never as a <code>default</code> arm.</li>
+    <li>One-hot for the last mux, encoded for anything carried several stages.</li>
+    <li>Three adders: main ALU, branch target, PC incrementer.</li>
+    <li>A write to <code>misa</code> that would increase IALIGN with the next PC unaligned is suppressed.</li>
+  </ul>
+</section>
+
+<div class="navfoot">
+  <a href="rv32imac_lesson04_c_extension.html">&#8592; Lesson 04 · C extension</a>
+  <a href="rv32imac_lesson06_hazards_exceptions.html">Lesson 06 · Hazards &amp; exceptions &#8594;</a>
+</div>
+</main>
+</div>
+<script src="rv32imac_shared.js"></script>
+</body>
+</html>

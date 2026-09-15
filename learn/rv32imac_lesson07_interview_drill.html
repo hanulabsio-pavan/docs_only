@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RV32IMAC · Lesson 7 — Interview Drill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="rv32imac_shared.css">
+<style>
+.count{font-family:var(--mono); font-size:11px; color:var(--ink-faint); letter-spacing:1px; text-transform:uppercase; margin:4px 0 12px}
+.script{background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--cyn);
+  border-radius:var(--radius); padding:14px 16px; margin:14px 0; font-size:14.5px; color:#d6e6ea}
+.script .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--cyn); display:block; margin-bottom:5px}
+.checklist{list-style:none; padding:0; margin:14px 0}
+.checklist li{background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  padding:11px 14px 11px 40px; margin:7px 0; position:relative; font-size:14px; color:var(--ink-dim)}
+.checklist li::before{content:"\25A1"; position:absolute; left:15px; top:10px; color:var(--acc); font-size:15px}
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">RV32IMAC · LESSON 07</div>
+  <h1>Interview Drill</h1>
+  <a href="#how">How to use this</a>
+  <a href="#rapid">Rapid-fire, 40 questions</a>
+  <a href="#tradeoffs">Architectural trade-offs</a>
+  <a href="#killer">The five killer questions</a>
+  <a href="#scope">Scope honesty scripts</a>
+  <a href="#redflag">Red-flag answers</a>
+  <a href="#checklist">Night-before checklist</a>
+  <div class="home"><a href="rv32imac_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Interview Defence Track · Lesson 7 of 7</div>
+<h2 class="title">Interview drill — traps and trade-offs</h2>
+<p class="lede">Forty questions with model answers, six trade-off arguments you must be able to make in both directions, and the scripts for saying what Hanu 1.0 does not do. Drill this cold, out loud, before reading any answer.</p>
+
+<section id="how">
+  <h3><span class="n">1</span>How to use this</h3>
+  <ol class="tight">
+    <li>Read only the question. Say your answer aloud, in full sentences.</li>
+    <li>Then open the answer. Compare structure, not wording.</li>
+    <li>Mark anything you got structurally wrong and go back to that lesson.</li>
+    <li>Repeat the whole set twice. The second pass is the one that sticks.</li>
+  </ol>
+  <div class="crux"><span class="tag">the grading rubric panels actually use</span>
+  <p>A correct fact scores little. A correct fact plus the hardware consequence plus the trade-off scores well. Structure every answer as: <b>what it is &rarr; what it costs &rarr; what you chose</b>.</p></div>
+</section>
+
+<section id="rapid">
+  <h3><span class="n">2</span>Rapid-fire, forty questions</h3>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="d-i">Base I</button>
+      <button data-t="d-m">M</button>
+      <button data-t="d-a">A</button>
+      <button data-t="d-c">C</button>
+      <button data-t="d-int">Integration</button>
+    </div>
+
+    <div class="tabpane" id="d-i">
+      <div class="count">Questions 1&ndash;9 · Base integer ISA</div>
+
+      <details><summary>1. How many instruction formats, and what selects between them?</summary>
+      <div class="ans"><p>Six: R, I, S, B, U, J. B and J are immediate variants of S and U. The format is a pure function of <code>inst[6:2]</code> once <code>inst[1:0] = 11</code> confirms a 32-bit instruction &mdash; five bits into a small decode, with no dependency on funct3 or funct7.</p></div></details>
+
+      <details><summary>2. Why are immediates scrambled across the instruction word?</summary>
+      <div class="ans"><p>To make the immediate generator free. Every immediate takes its sign from <code>inst[31]</code>, so sign extension is a wire fanout rather than a variable-width extender. Bits 10:5 always come from <code>inst[30:25]</code>. Bits 4:1 have exactly two possible sources. So the generator is bit selection plus one 5:1 select, and it is never the ID critical path.</p></div></details>
+
+      <details><summary>3. Why are rs1, rs2 and rd always at the same bit positions?</summary>
+      <div class="ans"><p>So the register file read and the hazard comparators can start from the raw fetched word, before decode resolves. Decode then only decides whether the read values are used, not where to read from. In an out-of-order design it also means rename sees stable indices immediately.</p></div></details>
+
+      <details><summary>4. What is <code>inst[30]</code>?</summary>
+      <div class="ans"><p>The alternate-operation bit, selecting SUB from ADD and SRA from SRL &mdash; but only for opcode OP, and for the two shift encodings of OP-IMM. For every other OP-IMM instruction it is simply <code>imm[10]</code>. A decoder that wires it into the ALU unqualified is broken. There is no SUBI.</p></div></details>
+
+      <details><summary>5. How many register file ports, and why?</summary>
+      <div class="ans"><p>Two read, one write, for a single-issue in-order core. No instruction in RV32IMAC reads three registers &mdash; which is exactly why there is no integer multiply-accumulate. Stores read rs1 for the address and rs2 for the data; AMOs do the same and write rd. Two reads covers all of it.</p></div></details>
+
+      <details><summary>6. Three ways to implement x0.</summary>
+      <div class="ans"><p>Store 32 registers and force read data to zero on index 0. Store 32 and suppress the write to entry 0. Or store only 31 and decode index 0 as a constant zero. All three are correct for the register file &mdash; and all three are insufficient on their own, because the forwarding comparators must also be gated on <code>rd != 0</code>.</p></div></details>
+
+      <details><summary>7. Why no condition-code register?</summary>
+      <div class="ans"><p>Flags are an implicit serialising architectural resource. Removing them means nothing extra to rename in an out-of-order machine and no partial-flag-update hazards. The cost is no predicated execution and explicit compare instructions for overflow checks, which compilers handle as known idioms.</p></div></details>
+
+      <details><summary>8. Decode the branch funct3 field.</summary>
+      <div class="ans"><p>Three orthogonal bits. <code>funct3[0]</code> inverts the condition. <code>funct3[1]</code> selects unsigned. <code>funct3[2]</code> selects magnitude comparison over equality. So branch control is three wires into a small mux with no lookup table. Encodings 010 and 011 are reserved and must raise illegal-instruction.</p></div></details>
+
+      <details><summary>9. Is <code>CSRRW</code> part of RV32I?</summary>
+      <div class="ans"><p>Strictly, no. The CSR instructions were split out into Zicsr, <code>FENCE.I</code> into Zifencei, and the counter reads into Zicntr. So the string RV32IMAC does not by itself imply any of them &mdash; though no usable core ships without Zicsr. Saying this shows specification literacy rather than tutorial knowledge.</p></div></details>
+    </div>
+
+    <div class="tabpane" id="d-m">
+      <div class="count">Questions 10&ndash;18 · M extension</div>
+
+      <details><summary>10. What does <code>DIV x5, x6, x0</code> do?</summary>
+      <div class="ans"><p>Writes all ones to x5, which is &minus;1. No exception. RISC-V has no divide-by-zero trap. <code>DIVU</code> gives the same bit pattern as 2<sup>XLEN</sup>&minus;1. <code>REM</code> and <code>REMU</code> return the dividend unchanged.</p></div></details>
+
+      <details><summary>11. What about <code>-2^31 / -1</code>?</summary>
+      <div class="ans"><p><code>DIV</code> returns &minus;2<sup>31</sup>, the quotient wrapping. <code>REM</code> returns 0. Again no exception. Both cases are detected up front and bypass the iteration loop entirely &mdash; taking the absolute value of &minus;2<sup>31</sup> would itself overflow.</p></div></details>
+
+      <details><summary>12. Why no divide-by-zero exception?</summary>
+      <div class="ans"><p>A trap on a long-latency decoupled unit forces a precise-exception path through it, for a case that is rare and that software can test in one instruction. Avoiding it keeps the whole integer datapath exception-free, which is what makes out-of-order writeback from the M unit safe. It is a deliberate microarchitectural simplification, not an oversight.</p></div></details>
+
+      <details><summary>13. Explain MULHSU in one sentence.</summary>
+      <div class="ans"><p>Multi-word signed arithmetic needs signed-by-unsigned cross-products, because in a multi-word signed number only the top word is signed and every lower word is unsigned &mdash; and two of the four cross-products in a 64-by-64 multiply built from 32-bit operations are exactly that shape.</p></div></details>
+
+      <details><summary>14. What rounding convention does RISC-V division use?</summary>
+      <div class="ans"><p>Truncated &mdash; the quotient rounds toward zero and the remainder takes the sign of the dividend, as in C99. So &minus;7 divided by 2 is &minus;3 with remainder &minus;1, not &minus;4 with remainder 1. It is not floored division.</p></div></details>
+
+      <details><summary>15. What are the fusion idioms and what do they require?</summary>
+      <div class="ans"><p><code>MULH</code> then <code>MUL</code>, and <code>DIV</code> then <code>REM</code>. Both need the same source registers in the same order, and the first instruction's destination must not be either source. Hardware detects the pair in decode and issues one operation, holding both result halves. For divide it saves roughly a full division &mdash; a real speedup, not a micro-optimisation.</p></div></details>
+
+      <details><summary>16. Compare multiplier implementations.</summary>
+      <div class="ans"><p>Shift-add radix-2 is about 32 cycles and smallest. Booth radix-4 halves the partial products to 17 and gives roughly 16 cycles iteratively. Booth feeding a Wallace or Dadda carry-save tree with a fast final adder gives 2 to 4 cycles pipelined, at the largest area. On FPGA you infer hard DSP slices and use their internal pipeline registers. The choice is driven by how often you multiply and what clock period you must hit.</p></div></details>
+
+      <details><summary>17. Compare divider implementations.</summary>
+      <div class="ans"><p>Restoring is simplest, one bit per cycle with a conditional restore. Non-restoring is the same rate with a shorter cycle and a final correction &mdash; the sensible default. SRT radix-4 gives two bits per cycle using redundant quotient digits chosen from truncated operands, at the cost of a selection table that must be exhaustively or formally verified. Newton-Raphson is multiplicative and only pays off if you already have a fast pipelined multiplier, which integer-only cores usually do not.</p></div></details>
+
+      <details><summary>18. How do you stop a 34-cycle divider blocking the pipe?</summary>
+      <div class="ans"><p>Decouple it. Issue to a side unit with a scoreboard holding a busy bit and the pending destination, and let independent younger instructions proceed. Then you need three ID interlocks: RAW on the pending destination, WAW on the pending destination, and structural on the busy bit. WAR cannot occur because operands are captured at issue. The alternative is to stall in place, which is trivially correct and costs IPC only when divides are frequent.</p></div></details>
+    </div>
+
+    <div class="tabpane" id="d-a">
+      <div class="count">Questions 19&ndash;28 · A extension</div>
+
+      <details><summary>19. When may an SC fail?</summary>
+      <div class="ans"><p>When another hart stored into the reservation set, when the address does not match the LR, when no reservation exists &mdash; and <b>spuriously</b>, for implementation reasons such as a cache eviction, a context switch or an interrupt. Spurious failure is architecturally permitted, which is why every use must be a retry loop.</p></div></details>
+
+      <details><summary>20. What is a reservation set?</summary>
+      <div class="ans"><p>An implementation-defined set of bytes that always contains the bytes the LR accessed. Cache-line granularity is the usual choice because the coherency protocol already delivers invalidations at exactly that granularity, so the monitoring is free. The cost is false sharing, which causes spurious SC failures on unrelated adjacent words.</p></div></details>
+
+      <details><summary>21. List everything that clears a reservation.</summary>
+      <div class="ans"><p>A remote store to the set. Any SC by this hart, success or failure. A second LR. Eviction of the reserved line. A trap, interrupt or context switch. Optionally a local store to the set. A watchdog timeout. And a coherent DMA or accelerator write, which is just a remote store by another agent.</p></div></details>
+
+      <details><summary>22. State the constrained-sequence rules.</summary>
+      <div class="ans"><p>Same naturally aligned address for the LR and SC. At most 16 dynamically executed instructions between them. Only base integer instructions, and their compressed forms when C is present. No loads, no stores, no backward jumps or taken backward branches, no JALR, no FENCE, no SYSTEM instructions. The retry branch itself sits outside the constrained body.</p></div></details>
+
+      <details><summary>23. Why is the bound 16 instructions?</summary>
+      <div class="ans"><p>Because the implementation must guarantee eventual success, and that means protecting the reservation against remote invalidation for the duration of the window. A bounded window is implementable with a hold-off timer; an unbounded one is not. Every other rule exists to keep the window bounded and free of anything that could evict the reserved line.</p></div></details>
+
+      <details><summary>24. How do you prevent LR/SC livelock?</summary>
+      <div class="ans"><p>Three layers. Bound the window via the constrained-sequence rules. Protect it with a reservation hold window that delays or retries incoming invalidations to the reserved line for a bounded period. And guarantee starvation-free arbitration at the point of coherency so no requester is indefinitely denied ownership. Without the third layer the livelock just moves into the fabric.</p></div></details>
+
+      <details><summary>25. Near or far atomics?</summary>
+      <div class="ans"><p>Near means bringing the line into a writable state and doing the read-modify-write locally &mdash; best when uncontended, because a reacquiring thread hits in its own cache. Far means shipping the operation to the point of coherency, which performs it where the line already lives &mdash; best under contention, because the line never migrates. The sophisticated answer is adaptive: near if the line is already writable locally, far otherwise.</p></div></details>
+
+      <details><summary>26. What does an AMO return?</summary>
+      <div class="ans"><p>The <b>original</b> memory value, always. So AMOADD is fetch-and-add, not add-and-fetch. If <code>rd</code> is x0 the old value is discarded, and an implementation can then issue a non-returning atomic &mdash; saving the return data path entirely, which maps onto the store-style atomic transaction in a coherent fabric.</p></div></details>
+
+      <details><summary>27. Define aq and rl precisely.</summary>
+      <div class="ans"><p><code>aq</code> means no memory operation later in program order may be observed by another hart before this one. <code>rl</code> means no earlier operation may be observed after this one. Both together give sequential consistency with respect to other similarly annotated operations. Software should not set <code>rl</code> alone on an LR, nor <code>aq</code> alone on an SC &mdash; the standard lock pattern is <code>lr.w.aq</code> paired with an <code>.rl</code> release.</p></div></details>
+
+      <details><summary>28. Does RISC-V have compare-and-swap?</summary>
+      <div class="ans"><p>Not in the A extension. CAS is emulated with an LR/SC loop. A separate extension, Zacas, adds native compare-and-swap. A and Zaamo provide swap, add, the three logicals and signed and unsigned min and max &mdash; eleven operations, none of them a compare-and-exchange.</p></div></details>
+    </div>
+
+    <div class="tabpane" id="d-c">
+      <div class="count">Questions 29&ndash;36 · C extension</div>
+
+      <details><summary>29. What is the single most important consequence of C?</summary>
+      <div class="ans"><p>IALIGN drops from 32 to 16. A 32-bit instruction may therefore begin at an address that is 2 mod 4, and can span two fetch words, two cache lines or two pages. Every hard thing about C follows from that one sentence. The decompressor is the easy part.</p></div></details>
+
+      <details><summary>30. Which registers do the compressed fields address, and why those?</summary>
+      <div class="ans"><p>x8 through x15 &mdash; s0, s1 and a0 to a5. They are the highest-frequency registers in compiled code, and the ABI and the compressed encoding were designed together. The index expansion is a constant bit concatenated with the three-bit field, so it costs zero gates.</p></div></details>
+
+      <details><summary>31. A 32-bit instruction at 0x0FFC and page 0x1000 is unmapped. mepc and mtval?</summary>
+      <div class="ans"><p><code>mepc</code> is 0x0FFC, the beginning of the instruction. <code>mtval</code> is 0x1000, the portion that actually faulted. They differ, and that asymmetry exists precisely because variable-length instructions can straddle a boundary.</p></div></details>
+
+      <details><summary>32. How do you avoid spurious page faults from fetch-ahead?</summary>
+      <div class="ans"><p>Carry fault status as an attribute attached to the fetched bytes in the buffer, and convert it into an architectural trap only when that instruction reaches the point of execution. A prefetch past a taken branch into an unmapped page must not trap, because the program never runs there. The corollary is that a flush must discard pending fault status, not just clear a valid bit.</p></div></details>
+
+      <details><summary>33. How do you find instruction boundaries in parallel?</summary>
+      <div class="ans"><p>Length depends only on the first halfword, so compute a length bit for every halfword position in parallel, one gate each. Only the start-position chain is sequential, and that is a prefix problem solvable with parallel-prefix logic in logarithmic depth. Alternatively, do the scan once on cache fill and store instruction-start markers as predecode bits.</p></div></details>
+
+      <details><summary>34. Why not expand compressed instructions on cache fill?</summary>
+      <div class="ans"><p>Because it stores 32-bit instructions in the I-cache and destroys the entire density benefit. The cache then holds exactly as many instructions as an uncompressed ISA, and you have paid for the expander for nothing. Only the off-chip instruction memory still benefits. The legitimate variant is predecode, which stores derived bits without expanding.</p></div></details>
+
+      <details><summary>35. What does the RV32 <code>C.JAL</code> encoding mean in RV64?</summary>
+      <div class="ans"><p><code>C.ADDIW</code>. RV64 reallocated that slot because 32-bit-result arithmetic is far more common in 64-bit code than short calls. Similarly <code>C.FLW</code> becomes <code>C.LD</code> and <code>C.FSW</code> becomes <code>C.SD</code>. So compressed decode tables are structurally different between XLEN, not merely wider &mdash; a parameterised core needs two tables.</p></div></details>
+
+      <details><summary>36. What must <code>C.JALR</code> write to the link register?</summary>
+      <div class="ans"><p><code>PC + 2</code>. The link value follows the encoded length, not the expansion's length. If the writeback path hard-codes <code>PC + 4</code>, every compressed call returns two bytes too far. The is-compressed bit must therefore travel down the pipeline alongside the expanded instruction.</p></div></details>
+    </div>
+
+    <div class="tabpane" id="d-int">
+      <div class="count">Questions 37&ndash;40 · Integration</div>
+
+      <details><summary>37. Which hazard exists only because of M?</summary>
+      <div class="ans"><p>WAW. Once a long-latency unit writes back out of order, a younger single-cycle instruction targeting the same destination can write first and then be overwritten. Fixes are to stall the younger writer, to cancel the M writeback &mdash; legal because M has no other architectural effect &mdash; or to reserve the writeback slot at issue. RAW also needs an interlock, but RAW exists in every pipeline.</p></div></details>
+
+      <details><summary>38. Why does out-of-order M writeback not break precise exceptions?</summary>
+      <div class="ans"><p>Because no M instruction can raise an exception. There is no divide-by-zero trap and no overflow trap, so an M result written out of band can never need to be undone and can never itself be the faulting instruction. The absence of traps in M is what makes the decoupling safe.</p></div></details>
+
+      <details><summary>39. What are the four qualifiers on every forwarding comparator?</summary>
+      <div class="ans"><p>The producer actually writes a destination. Its destination is not x0. The indices match. And the consumer actually reads that source. Plus a fifth term between the two paths: the nearer producer wins, so the MEM/WB term is ANDed against the negation of the EX/MEM match.</p></div></details>
+
+      <details><summary>40. Software writes <code>misa</code> to disable C, but the next PC is 2 mod 4. What happens?</summary>
+      <div class="ans"><p>The write is suppressed and <code>misa</code> is left unchanged. A write that would increase IALIGN is refused when the next instruction's address is not aligned to the new IALIGN &mdash; the architecture will not put itself into an unfetchable state. On a core with hardwired <code>misa</code>, which is the normal embedded choice, writes are simply ignored and the case never arises.</p></div></details>
+    </div>
+  </div>
+</section>
+
+<section id="tradeoffs">
+  <h3><span class="n">3</span>Architectural trade-offs — argue both sides</h3>
+  <p>You may be asked to defend a position you do not hold. Prepare both directions for each of these.</p>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="t-c">Keep or drop C</button>
+      <button data-t="t-div">Divider or Zmmul</button>
+      <button data-t="t-dec">Stall or decouple</button>
+      <button data-t="t-at">Near or far atomics</button>
+      <button data-t="t-stage">Five stages or six</button>
+      <button data-t="t-mis">Misaligned in hardware</button>
+    </div>
+
+    <div class="tabpane" id="t-c">
+      <div class="grid g2">
+        <div class="card"><h6><span class="dot b-grn"></span>Keep C</h6>
+          <p>Roughly a quarter to a third off static code size, because typically half to sixty percent of instructions in ordinary integer code have a compressed form.</p>
+          <p>Higher effective I-cache hit rate for the same area, less fetch traffic, less fetch energy, less ROM or flash on a cost-sensitive part.</p>
+          <p>The expander is small &mdash; a permutation network. Gate count is not the reason to drop it.</p>
+          <p>Fetch bandwidth is fixed in bytes, so compressed code delivers more instructions per fetch, which helps a wide machine.</p></div>
+        <div class="card"><h6><span class="dot b-warn"></span>Drop C</h6>
+          <p>The front end gets materially harder: aligner, rotator, deeper buffer, boundary scan or predecode storage, dual fault tracking.</p>
+          <p>Straddling instructions add fetch bubbles and a two-page fault path that is easy to get wrong and expensive to verify.</p>
+          <p>BTB granularity halves, so equal coverage needs twice the entries or a halfword selector field.</p>
+          <p>If the core runs from tightly-coupled SRAM with no cache and code size is not a constraint, none of the benefits apply.</p></div>
+      </div>
+      <div class="script"><span class="tag">balanced closing line</span>
+      C earns its place whenever instruction memory is a cost or a bottleneck, which is nearly always in embedded. It stops earning it when you are boundary-limited rather than byte-limited in the front end.</div>
+    </div>
+
+    <div class="tabpane" id="t-div">
+      <div class="grid g2">
+        <div class="card"><h6><span class="dot b-grn"></span>Keep the divider</h6>
+          <p>Software emulation of division is hundreds of cycles, not tens. Any workload with a runtime divisor in a loop degrades badly.</p>
+          <p>A non-restoring divider is genuinely small &mdash; one adder-subtractor, two shift registers, a counter and a sign wrapper.</p>
+          <p>Toolchain and library code assumes M. Dropping the divider means a different ABI multilib and a different binary distribution.</p></div>
+        <div class="card"><h6><span class="dot b-warn"></span>Move to Zmmul</h6>
+          <p>Compilers strength-reduce division by constants into a multiply-high plus a shift, so the divides that reach hardware have runtime divisors and are genuinely rare.</p>
+          <p>The divider is comparable in area to the multiplier while being used a fraction as often.</p>
+          <p>It is the cleanest single area cut available in an integer core, and it is a standard, named subset &mdash; not a non-conforming hack.</p></div>
+      </div>
+      <div class="script"><span class="tag">how to close</span>
+      Profile the dynamic divide count first. If it is under a fraction of a percent, Zmmul plus software emulation is the right call and you can say so with a number behind it.</div>
+    </div>
+
+    <div class="tabpane" id="t-dec">
+      <div class="grid g2">
+        <div class="card"><h6><span class="dot b-grn"></span>Stall in place</h6>
+          <p>Trivially correct. No scoreboard, no WAW interlock, no writeback arbitration.</p>
+          <p>Writeback stays in order, so precise exceptions come free.</p>
+          <p>Verification effort is a fraction of the decoupled case &mdash; there are no out-of-order corner cases to hit.</p></div>
+        <div class="card"><h6><span class="dot b-warn"></span>Decouple</h6>
+          <p>Independent instructions behind a divide continue, which matters when a divide sits in a loop with unrelated work.</p>
+          <p>A pipelined multiplier needs no busy bit at all &mdash; it becomes a deeper forwarding problem, so decoupling is nearly free for MUL.</p>
+          <p>Necessary anyway if you later go superscalar or out-of-order.</p></div>
+      </div>
+      <div class="script"><span class="tag">the answer that lands best</span>
+      Split the decision. Decouple the pipelined multiplier, because it costs almost nothing there. Stall for the iterative divider, because the scoreboard's verification cost is not repaid by a rare instruction. Then say what your profile showed.</div>
+    </div>
+
+    <div class="tabpane" id="t-at">
+      <div class="grid g2">
+        <div class="card"><h6><span class="dot b-grn"></span>Near</h6>
+          <p>Uncontended atomics become local cache hits. A thread reacquiring its own lock pays nothing.</p>
+          <p>No atomic ALU needs to exist in the fabric &mdash; add, the logicals and signed and unsigned min and max stay in the core.</p>
+          <p>Simpler interconnect. No new transaction types.</p></div>
+        <div class="card"><h6><span class="dot b-warn"></span>Far</h6>
+          <p>Under contention the line never migrates. Sixteen harts incrementing one counter serialise at the home node instead of ping-ponging a line sixteen ways.</p>
+          <p>Works on uncacheable and device memory, where no cacheable state exists to own.</p>
+          <p>A non-returning atomic &mdash; <code>rd = x0</code> &mdash; needs no return data path at all.</p></div>
+      </div>
+      <div class="script"><span class="tag">the senior answer</span>
+      The instruction is not the interesting decision. Where you put the atomic ALU is &mdash; in the requester's L1 or at the point of coherency &mdash; and that is driven entirely by the expected contention profile. An adaptive policy picks near when the line is already writable locally and far otherwise.</div>
+    </div>
+
+    <div class="tabpane" id="t-stage">
+      <div class="grid g2">
+        <div class="card"><h6><span class="dot b-grn"></span>Five stages</h6>
+          <p>One less cycle of branch mispredict penalty on every taken branch, which matters a lot with a weak or absent predictor.</p>
+          <p>Fewer pipeline registers, less area, less clock power.</p>
+          <p>Simpler forwarding network &mdash; fewer sources to bypass from.</p></div>
+        <div class="card"><h6><span class="dot b-warn"></span>Six, with a separate expand stage</h6>
+          <p>Breaks the serial aligner-expander-decoder chain that C creates, which is often the second-worst path in the core.</p>
+          <p>Lets you hit a higher frequency, which may more than repay the extra mispredict cycle.</p>
+          <p>Gives decode room for the illegal-detection cone without registering the instruction word separately.</p></div>
+      </div>
+      <div class="script"><span class="tag">how to decide out loud</span>
+      Add the stage only after cheaper fixes fail: move the expander into IF, defer illegal detection, one-hot the operand mux selects. Those cost area, not cycles. A stage costs a cycle on every redirect, forever.</div>
+    </div>
+
+    <div class="tabpane" id="t-mis">
+      <div class="grid g2">
+        <div class="card"><h6><span class="dot b-grn"></span>Trap and emulate</h6>
+          <p>Hardware misalignment support needs a second cache access, a merge network and byte rotation on both directions.</p>
+          <p>The precise-exception story gets much harder &mdash; the first half may succeed and the second half fault.</p>
+          <p>Compiled code rarely produces misaligned accesses. The cases that do are usually packed structures or hand-written code.</p></div>
+        <div class="card"><h6><span class="dot b-warn"></span>Handle in hardware</h6>
+          <p>Trap handlers for misaligned access are slow &mdash; hundreds of cycles versus a few.</p>
+          <p>Network and protocol code parsing unaligned wire formats is a real workload, and it is exactly the kind of code that appears in an SoC control plane.</p>
+          <p>Some legacy or ported software assumes it works and is not worth rewriting.</p></div>
+      </div>
+      <div class="script"><span class="tag">note</span>
+      Atomics are not part of this trade-off. LR, SC and all AMOs must be naturally aligned regardless &mdash; an atomic spanning two lines cannot be made atomic cheaply, which is why the requirement exists.</div>
+    </div>
+  </div>
+</section>
+
+<section id="killer">
+  <h3><span class="n">4</span>The five killer questions</h3>
+  <p>If you prepare nothing else, prepare these. They are the ones that decide the interview.</p>
+
+  <details class="hard"><summary>K1. Walk me through your core, from a fetched word to a register write.</summary>
+  <div class="ans">
+    <p>Structure it by stage and name the extension-specific pieces as you pass them. IF: PC, I-cache, aligner and fetch buffer, length from <code>inst[1:0]</code>, next PC plus 2 or 4. Expander if compressed, with the is-compressed bit carried forward.</p>
+    <p>ID: register file read from fixed index positions, immediate generation as five wire bundles and a select, control decode down the opcode tree, hazard comparators and forwarding selects computed in parallel. M instructions issue to the side unit here.</p>
+    <p>EX: main ALU doing arithmetic, address generation, AUIPC and JALR; separate branch target adder; branch comparison; redirect to IF on mispredict.</p>
+    <p>MEM: D-cache, load alignment and extension, store byte enables. AMOs execute here, non-speculatively, after fault checks. The reservation monitor lives here.</p>
+    <p>WB: one write port, arbitrated between the main pipe and the M unit, gated on <code>rd != 0</code> and on no trap being taken.</p>
+    <p>Finish by naming your critical path and your achieved frequency. That converts a description into evidence.</p>
+  </div></details>
+
+  <details class="hard"><summary>K2. What was your critical path, and what did you do about it?</summary>
+  <div class="ans">
+    <p>Name the actual start and end points from your timing report, not a generic answer. State the period, the slack before and after, and the cost of the fix.</p>
+    <p>The common candidates in this core are: regfile read through the forwarding mux through the ALU to branch comparison and PC redirect; the aligner-expander-decoder chain in the front end; the hazard comparator tree feeding the forwarding priority network; and the multiplier reduction tree into its final adder.</p>
+    <p>For each there is a standard fix &mdash; precompute forwarding selects one stage early, move the expander into IF, flatten priority into parallel AND terms, pipeline the multiplier. Say which you used and what it cost in area or cycles. A timing fix with no stated cost reads as a fix you did not actually make.</p>
+  </div></details>
+
+  <details class="hard"><summary>K3. What would you change if you rebuilt it?</summary>
+  <div class="ans">
+    <p>This is a maturity question, not a technical one. Have two concrete answers and one honest admission.</p>
+    <p>A good shape: "I would have decoupled the multiplier from the start rather than retrofitting it, because the stall logic ended up more tangled than a clean scoreboard would have been." Or: "I would have built the illegal-instruction signal as the complement of an explicit legal term from day one, instead of relying on a default arm that I later had to unpick."</p>
+    <p>Avoid two failure modes: claiming you would change nothing, which reads as no reflection; and listing everything, which reads as no judgement. Two changes, with reasons, is the right dose.</p>
+  </div></details>
+
+  <details class="hard"><summary>K4. How did you verify it?</summary>
+  <div class="ans">
+    <p>Name a layered strategy, not a tool. Unit level: exhaustive sweep of all 2<sup>16</sup> compressed encodings through the expander against a reference table, including which must be illegal &mdash; a complete, cheap proof that most people forget exists. Directed corners for the M edge cases, the alignment cases and the trap priority cases.</p>
+    <p>Core level: co-simulation against a reference model, comparing architectural state at every commit rather than at the end of the test. That is what catches an out-of-order writeback or a bad forward, because it localises the divergence to one instruction.</p>
+    <p>Then constrained-random instruction streams, the RISC-V compliance suites, and a shrinking harness so a failing seed reduces to a three or four instruction sequence automatically.</p>
+    <p>If you did less than this, say what you did and what you would add. "I ran the compliance suite and directed tests; I would add commit-level co-simulation next" is a perfectly strong answer.</p>
+  </div></details>
+
+  <details class="hard"><summary>K5. Why RISC-V at all, given your Power and CHI background?</summary>
+  <div class="ans">
+    <p>Answer it as an engineer, not an enthusiast. The ISA is open, so you can build a complete core and publish it without licensing. The base is small enough that one person can implement and verify it, which makes it a realistic vehicle for learning microarchitecture end to end rather than a subsystem at a time.</p>
+    <p>Then connect it to your day job honestly: the interesting problems in a RISC-V core &mdash; coherency for the A extension, ordering, forward progress at a shared serialisation point &mdash; are the same problems you work on in fabric and interconnect, approached from the requester side rather than the network side. That is the strongest version of this answer, because it makes the side project reinforce your professional experience instead of competing with it.</p>
+  </div></details>
+</section>
+
+<section id="scope">
+  <h3><span class="n">5</span>Scope honesty scripts</h3>
+  <p>You will be asked about things Hanu 1.0 does not implement. Prepared honesty beats improvisation every time.</p>
+
+  <div class="script"><span class="tag">when a feature is not implemented</span>
+  "That is not in the RTL today. I designed the interface for it &mdash; here is what it would need &mdash; but I stopped at [X] because [reason]." Then describe the design. Panels score the design, not the line count.</div>
+
+  <div class="script"><span class="tag">when you implemented a simplification</span>
+  "I stalled rather than decoupling. The reason was verification cost against my expected dynamic instruction mix. If the profile had shown more divides I would have built the scoreboard, and the three interlocks it needs are RAW, WAW and structural."</div>
+
+  <div class="script"><span class="tag">when you genuinely do not know</span>
+  "I do not know that one. My instinct is [reasoning], because [principle] &mdash; but I would check the specification rather than guess." Then actually reason. A visible thought process on an unknown scores better than a confident wrong answer.</div>
+
+  <div class="script"><span class="tag">when the scope is smaller than the resume line suggests</span>
+  "The resume line reflects the ISA I targeted and decoded. I and M are complete and verified. A is [state]. C is [state]. I would rather be precise about that than let it sit ambiguous." Say this early, unprompted, if the gap is material. It converts a potential credibility problem into a credibility signal.</div>
+
+  <div class="trap"><span class="tag">the only unrecoverable mistake</span>
+  <p>Claiming something works when it does not. A panel that catches one overstatement re-examines everything else you said. Scope is forgivable. Bluffing is not.</p></div>
+</section>
+
+<section id="redflag">
+  <h3><span class="n">6</span>Red-flag answers</h3>
+  <div class="tblwrap">
+  <table>
+    <tr><th>If you say this</th><th>They hear</th><th>Say this instead</th></tr>
+    <tr><td class="no">"Divide by zero raises an exception"</td><td>Has not read the specification</td><td class="ok">"DIV returns &minus;1, REM returns the dividend, no trap"</td></tr>
+    <tr><td class="no">"SC only fails if another hart wrote"</td><td>Does not understand why the retry loop exists</td><td class="ok">"SC may also fail spuriously &mdash; eviction, context switch, implementation policy"</td></tr>
+    <tr><td class="no">"C is just a decompressor"</td><td>Has never built a fetch unit</td><td class="ok">"The decompressor is trivial; IALIGN dropping to 16 is the real cost"</td></tr>
+    <tr><td class="no">"Immediates are scrambled, it is a quirk"</td><td>Memorised, did not understand</td><td class="ok">"Scrambled so sign extension is a wire and the immediate mux stays 2:1"</td></tr>
+    <tr><td class="no">"I forward from EX and MEM"</td><td>Incomplete, likely has the x0 bug</td><td class="ok">Name all four qualifiers and the priority term</td></tr>
+    <tr><td class="no">"An AMO is just a locked load and store"</td><td>Has not thought about placement</td><td class="ok">"Where the atomic ALU sits &mdash; L1 or point of coherency &mdash; is the real decision"</td></tr>
+    <tr><td class="no">"RV32IMAC includes CSR instructions"</td><td>Tutorial knowledge</td><td class="ok">"Strictly that is Zicsr, though every practical core has it"</td></tr>
+    <tr><td class="no">"My core is fully verified"</td><td>Overclaiming</td><td class="ok">Name the layers you ran and the one you would add next</td></tr>
+  </table>
+  </div>
+</section>
+
+<section id="checklist">
+  <h3><span class="n">7</span>Night-before checklist</h3>
+  <p>Ten things to be able to state without hesitation.</p>
+  <ul class="checklist">
+    <li>The six instruction formats, and that format is a function of <code>inst[6:2]</code> alone.</li>
+    <li>The four immediate invariants, and why sign extension is a wire.</li>
+    <li>The divide-by-zero and overflow result table, all four instructions.</li>
+    <li>The three M interlocks: RAW, WAW, structural &mdash; and that WAR cannot occur in-order.</li>
+    <li>Every condition that clears an LR reservation.</li>
+    <li>The six constrained-sequence rules, and why the bound is 16.</li>
+    <li>Near versus far atomics, with a contention argument in both directions.</li>
+    <li>IALIGN 16, the straddling-instruction fault, and that mepc and mtval differ.</li>
+    <li>The four forwarding qualifiers, including <code>rd != 0</code>.</li>
+    <li>Your own numbers: pipeline depth, critical path, frequency, area, code-size reduction.</li>
+  </ul>
+  <div class="crux"><span class="tag">the last one matters most</span>
+  <p>Everything above this line is knowledge any candidate can acquire. Your measurements are the only part nobody else can say. Have them ready, and quote them.</p></div>
+</section>
+
+<div class="navfoot">
+  <a href="rv32imac_lesson06_hazards_exceptions.html">&#8592; Lesson 06 · Hazards &amp; exceptions</a>
+  <a href="rv32imac_course_map.html">Course map &#8594;</a>
+</div>
+</main>
+</div>
+<script src="rv32imac_shared.js"></script>
+</body>
+</html>

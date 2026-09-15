@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RV32IMAC · Lesson 6 — Hazards &amp; Precise Exceptions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="rv32imac_shared.css">
+</head>
+<body>
+<div class="shell">
+<nav class="side">
+  <div class="crumb">RV32IMAC · LESSON 06</div>
+  <h1>Hazards &amp; Exceptions</h1>
+  <a href="#frame">The interview frame</a>
+  <a href="#tax">Hazard taxonomy</a>
+  <a href="#fwd">The forwarding network</a>
+  <a href="#x0">The x0 forwarding bug</a>
+  <a href="#loaduse">Load-use interlock</a>
+  <a href="#mhaz">M extension hazards</a>
+  <a href="#ahaz">A extension hazards</a>
+  <a href="#ctrl">Control hazards with C</a>
+  <a href="#precise">What precise means</a>
+  <a href="#sources">Exception sources by letter</a>
+  <a href="#priority">Trap priority</a>
+  <a href="#csr">mepc, mcause, mtval</a>
+  <a href="#control">Stall and flush control</a>
+  <a href="#check">Self-check</a>
+  <a href="#qa">Interview Q&amp;A</a>
+  <a href="#defend">Defend your claim</a>
+  <a href="#recap">Recap</a>
+  <div class="home"><a href="rv32imac_course_map.html">&#8592; Course map</a><br><a href="index.html">&#8592; Portal</a></div>
+</nav>
+<main>
+<div class="kick">Interview Defence Track · Lesson 6 of 7</div>
+<h2 class="title">Hazard resolution and precise exceptions</h2>
+<p class="lede">This is where most candidates get caught. Not because the theory is hard, but because the corner cases are specific and the panel knows exactly which ones to ask about.</p>
+
+<div class="obj">
+  <h4>By the end of this lesson you can</h4>
+  <ul>
+    <li>Enumerate every forwarding path and state the priority between them.</li>
+    <li>Explain the x0 forwarding bug and the one-gate fix.</li>
+    <li>Prove that the load-use bubble is unavoidable without a longer clock period.</li>
+    <li>Write the full stall and flush condition for a decoupled M unit.</li>
+    <li>Say why an AMO cannot be replayed and what that forces.</li>
+    <li>Define precise exceptions and name which of the four letters contributes which trap.</li>
+    <li>State what goes in mepc, mcause and mtval for each case.</li>
+  </ul>
+</div>
+
+<section id="frame">
+  <h3><span class="n">1</span>The interview frame</h3>
+  <div class="crux"><span class="tag">crux</span>
+  <p>Hazards are about <i>values</i> arriving late. Exceptions are about <i>state</i> being undone. Forwarding solves the first. A single commit point solves the second. Every question in this lesson is one or the other.</p></div>
+  <p>The specific thing panels test is whether your qualifying conditions are complete. "I forward from EX/MEM and MEM/WB" is half an answer. The full answer includes the write-enable qualifier, the x0 qualifier, the source-used qualifier and the priority between the two paths.</p>
+</section>
+
+<section id="tax">
+  <h3><span class="n">2</span>Hazard taxonomy for this core</h3>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Hazard</th><th>Present in a base 5-stage?</th><th>Introduced or worsened by</th><th>Resolution</th></tr>
+    <tr><td><b>RAW</b> — read after write</td><td class="ok">Yes</td><td>M makes it non-forwardable</td><td>Forward, or stall when the value does not exist yet</td></tr>
+    <tr><td><b>WAW</b> — write after write</td><td class="no">No</td><td class="mid">M — out-of-order writeback</td><td>Stall, cancel, or reserve the WB slot</td></tr>
+    <tr><td><b>WAR</b> — write after read</td><td class="no">No</td><td>&mdash;</td><td>Impossible in-order; operands read at issue</td></tr>
+    <tr><td><b>Load-use</b></td><td class="ok">Yes</td><td>&mdash;</td><td>One-cycle interlock. No delay slot exists to hide it.</td></tr>
+    <tr><td><b>Structural</b> — WB port</td><td class="no">Rarely</td><td class="mid">M</td><td>Arbitration</td></tr>
+    <tr><td><b>Structural</b> — D-cache port</td><td class="no">No</td><td class="mid">A — AMO reads and writes</td><td>Two MEM cycles, or a read-modify-write cache</td></tr>
+    <tr><td><b>Structural</b> — I-cache port</td><td class="no">No</td><td class="mid">C — straddling fetch</td><td>Deeper fetch buffer</td></tr>
+    <tr><td><b>Control</b> — branch</td><td class="ok">Yes</td><td>C changes redirect granularity</td><td>Flush, predict, or both</td></tr>
+    <tr><td><b>Speculation</b> — irreversible op</td><td class="no">No</td><td class="mid">A — AMO cannot be undone</td><td>Issue only when non-speculative</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">say this in one line</span>
+  <p>"A textbook five-stage pipeline has RAW, load-use and control hazards. M adds WAW and write-port contention. A adds a non-speculative point and D-cache port pressure. C adds I-cache port pressure and 2-byte redirect granularity."</p></div>
+</section>
+
+<section id="fwd">
+  <h3><span class="n">3</span>The forwarding network</h3>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="fw-paths">Paths</button>
+      <button data-t="fw-prio">Priority</button>
+      <button data-t="fw-rtl">Qualified RTL</button>
+      <button data-t="fw-store">Store data forwarding</button>
+    </div>
+
+    <div class="tabpane" id="fw-paths">
+      <h5>Every path in a five-stage RV32IMAC core</h5>
+      <div class="ascii-wrap"><div class="bar">Forwarding paths</div>
+<pre class="ascii">   <span class="g">ID</span>            <span class="s">EX</span>            <span class="v">MEM</span>           <span class="o">WB</span>
+  ┌──────┐     ┌──────┐      ┌──────┐      ┌──────┐
+  │ read │────→│ ALU  │─────→│ cache│─────→│ write│
+  └──────┘     └──────┘      └──────┘      └──────┘
+     <span class="p">▲</span>            <span class="p">▲</span>  <span class="p">▲</span>          <span class="p">▲</span>             <span class="p">│</span>
+     <span class="p">│</span>            <span class="p">│</span>  <span class="p">└──────────┘</span>             <span class="p">│</span>   <span class="a">① EX/MEM → EX</span>
+     <span class="p">│</span>            <span class="p">│</span>            <span class="p">│</span>                <span class="p">│</span>
+     <span class="p">│</span>            <span class="p">└────────────┼────────────────┘</span>   <span class="a">② MEM/WB → EX</span>
+     <span class="p">│</span>                         <span class="p">│</span>
+     <span class="p">└─────────────────────────┼────────────────┐</span>   <span class="a">③ WB → ID (write-through)</span>
+                               <span class="p">└────────────────┘</span>   <span class="a">④ MEM/WB → MEM (store data)</span></pre>
+      </div>
+      <div class="tblwrap">
+      <table>
+        <tr><th>#</th><th>Path</th><th>Covers</th></tr>
+        <tr><td class="mono">1</td><td>EX/MEM &rarr; EX operand mux</td><td>Distance-1 dependency on an ALU result</td></tr>
+        <tr><td class="mono">2</td><td>MEM/WB &rarr; EX operand mux</td><td>Distance-2 dependency; also load data at distance 2</td></tr>
+        <tr><td class="mono">3</td><td>WB &rarr; ID regfile read</td><td>Distance-3. Usually implemented as write-through in the regfile rather than an explicit mux.</td></tr>
+        <tr><td class="mono">4</td><td>MEM/WB &rarr; MEM store data</td><td>A load or ALU result being stored by the very next instruction</td></tr>
+      </table>
+      </div>
+      <p>Path 3 is often free: if the register file writes on the rising edge and reads combinationally from the same array, a same-cycle read returns the old value — so you either add the bypass mux or build the array write-first. Say which you did.</p>
+    </div>
+
+    <div class="tabpane" id="fw-prio">
+      <h5>Priority — nearest producer wins</h5>
+      <p>If both EX/MEM and MEM/WB hold a write to the same register, the EX/MEM one is <b>younger</b> and therefore correct.</p>
+      <div class="ascii-wrap"><div class="bar">Why priority matters</div>
+<pre class="code">    <span class="ins">addi</span>  <span class="reg">x5</span>, <span class="reg">x0</span>, <span class="num">1</span>      <span class="cmt"># in MEM/WB when the consumer is in EX</span>
+    <span class="ins">addi</span>  <span class="reg">x5</span>, <span class="reg">x0</span>, <span class="num">2</span>      <span class="cmt"># in EX/MEM  — this is the correct source</span>
+    <span class="ins">add</span>   <span class="reg">x6</span>, <span class="reg">x5</span>, <span class="reg">x0</span>     <span class="cmt"># must see 2, not 1</span></pre>
+      </div>
+      <div class="gotcha"><span class="tag">implementation note</span>
+      <p>A cascaded priority mux is correct but adds a level of logic in front of the ALU. Faster: compute one-hot selects in parallel, with the MEM/WB select explicitly ANDed with the negation of the EX/MEM match. Same logic, flatter, and it removes a mux level from the EX critical path.</p></div>
+    </div>
+
+    <div class="tabpane" id="fw-rtl">
+      <h5>Fully qualified forwarding condition</h5>
+      <div class="ascii-wrap"><div class="bar">All four qualifiers — this is the answer panels want</div>
+<pre class="code"><span class="cmt">// Forward from EX/MEM to the rs1 operand of the instruction in EX</span>
+<span class="kw">wire</span> fwd_a_ex =  ex_mem.rd_we               <span class="cmt">// 1. producer actually writes</span>
+              &amp; (ex_mem.rd != <span class="num">5'd0</span>)        <span class="cmt">// 2. destination is not x0</span>
+              &amp; (ex_mem.rd == id_ex.rs1)    <span class="cmt">// 3. indices match</span>
+              &amp;  id_ex.rs1_used;            <span class="cmt">// 4. consumer really reads rs1</span>
+
+<span class="kw">wire</span> fwd_a_mem = mem_wb.rd_we
+              &amp; (mem_wb.rd != <span class="num">5'd0</span>)
+              &amp; (mem_wb.rd == id_ex.rs1)
+              &amp;  id_ex.rs1_used
+              &amp; ~fwd_a_ex;                  <span class="cmt">// 5. younger producer wins</span>
+
+<span class="kw">assign</span> op_a = fwd_a_ex  ? ex_mem.result
+            : fwd_a_mem ? mem_wb.result
+            :             id_ex.rs1_data;</pre>
+      </div>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Qualifier</th><th>Omitting it causes</th></tr>
+        <tr><td class="mono">rd_we</td><td>Forwarding from a store or branch, which has no destination — garbage operand</td></tr>
+        <tr><td class="mono">rd != 0</td><td>The x0 bug. See the next section.</td></tr>
+        <tr><td class="mono">rs_used</td><td>Spurious stalls and needless mux toggling. Correctness survives, power and timing do not.</td></tr>
+        <tr><td class="mono">~fwd_a_ex</td><td>Stale value when two producers target the same register</td></tr>
+      </table>
+      </div>
+    </div>
+
+    <div class="tabpane" id="fw-store">
+      <h5>Store data forwarding — the path people forget</h5>
+      <p>Store data is consumed in MEM, not EX. So a store whose data register is written by the immediately preceding instruction needs a forward into MEM, not into EX.</p>
+      <div class="ascii-wrap"><div class="bar">MEM-stage forward</div>
+<pre class="code">    <span class="ins">lw</span>    <span class="reg">x5</span>, <span class="num">0</span>(<span class="reg">x10</span>)     <span class="cmt"># load data available at end of MEM</span>
+    <span class="ins">sw</span>    <span class="reg">x5</span>, <span class="num">0</span>(<span class="reg">x11</span>)     <span class="cmt"># needs x5 in ITS MEM stage — one cycle later</span>
+
+<span class="cmt">// No bubble needed. The load's MEM/WB register holds the data exactly</span>
+<span class="cmt">// when the store reaches MEM. A MEM/WB → MEM forward covers it.</span>
+<span class="cmt">// A core lacking this path inserts a pointless stall on a very common</span>
+<span class="cmt">// load-then-store idiom.</span></pre>
+      </div>
+      <div class="crux"><span class="tag">crux</span>
+      <p>Load-to-store at distance 1 costs <b>no</b> bubble, because store data is needed one stage later than ALU operands. Load-to-ALU at distance 1 costs one bubble. Being able to distinguish these two cases is a strong signal.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="x0">
+  <h3><span class="n">4</span>The x0 forwarding bug</h3>
+  <div class="trap"><span class="tag">this is asked constantly</span>
+  <p>Suppressing the register file <i>write</i> when <code>rd = x0</code> is not sufficient. The forwarding comparator also matches on <code>rd = x0</code>, and forwards a non-zero result to an instruction reading x0. The architectural register file stays correct; the bypassed value is wrong.</p></div>
+  <div class="ascii-wrap"><div class="bar">The failure</div>
+<pre class="code">    <span class="ins">add</span>   <span class="reg">x0</span>, <span class="reg">x1</span>, <span class="reg">x2</span>     <span class="cmt"># result discarded — a legal RISC-V nop idiom</span>
+    <span class="ins">add</span>   <span class="reg">x3</span>, <span class="reg">x0</span>, <span class="reg">x0</span>     <span class="cmt"># must compute 0 + 0 = 0</span>
+
+<span class="cmt">// Without the rd != 0 qualifier:</span>
+<span class="cmt">//   comparator sees ex_mem.rd (= 0) == id_ex.rs1 (= 0)  → MATCH</span>
+<span class="cmt">//   forwards (x1 + x2) into both operands</span>
+<span class="cmt">//   x3 = 2 * (x1 + x2)   ← wrong, and silently so</span></pre>
+  </div>
+  <p>The fix is one AND gate per comparator: <code>&amp; (producer_rd != 5'd0)</code>. It costs nothing and is trivially verified — but it is omitted often enough that it is a standard interview probe.</p>
+  <div class="gotcha"><span class="tag">why the idiom exists at all</span>
+  <p>Writing to x0 is the canonical way to discard a result. <code>ADD x0, x1, x2</code> is a nop that still exercises the ALU. More practically, <code>C.SWSP x0, off(sp)</code> stores a zero, and hint encodings in the base ISA deliberately write x0. The case is real, not theoretical.</p></div>
+</section>
+
+<section id="loaduse">
+  <h3><span class="n">5</span>The load-use interlock</h3>
+  <p>The one bubble you cannot forward away in a classic five-stage pipeline.</p>
+  <div class="ascii-wrap"><div class="bar">Load-use at distance 1</div>
+<pre class="ascii">cyc      1     2     3     4     5     6
+<span class="a">lw x5</span>    IF    ID    EX   <span class="v">MEM</span>   WB
+                           <span class="cmt">└─ data valid at END of cycle 4</span>
+<span class="s">add x6,x5</span>     IF    ID   <span class="o">■</span>    <span class="s">EX</span>   MEM   WB
+                     <span class="cmt">└─ needs x5 at START of cycle 4 — impossible</span>
+                          <span class="o">■ = injected bubble</span></pre>
+  </div>
+  <div class="crux"><span class="tag">why it is unavoidable</span>
+  <p>The cache access consumes the whole MEM cycle. Forwarding its output to the EX input of an instruction in the <i>same</i> cycle would mean cache access plus forwarding mux plus ALU in one period. That is a longer clock, not a free forward. So the bubble buys you frequency.</p></div>
+  <h5>Detection</h5>
+  <div class="ascii-wrap"><div class="bar">Load-use stall condition</div>
+<pre class="code"><span class="kw">wire</span> load_use_stall = id_ex.mem_req &amp; ~id_ex.mem_we          <span class="cmt">// producer is a load</span>
+                    &amp; (id_ex.rd != <span class="num">5'd0</span>)
+                    &amp; ( (if_id.rs1_used &amp; (if_id.rs1 == id_ex.rd))
+                      | (if_id.rs2_used &amp; (if_id.rs2 == id_ex.rd)) );
+
+<span class="cmt">// On assert: hold IF and ID, inject a bubble into EX.</span>
+<span class="cmt">// Note rs2_used must be FALSE for a store's data register here —</span>
+<span class="cmt">// a store consuming the load result needs no stall (MEM→MEM forward).</span></pre>
+  </div>
+  <div class="gotcha"><span class="tag">the refinement worth mentioning</span>
+  <p>A naive condition stalls <code>lw x5</code> followed by <code>sw x5</code>. That is unnecessary, because store data is consumed in MEM where the MEM/WB forward already covers it. Distinguishing "rs2 used as an ALU operand" from "rs2 used as store data" removes a bubble from a very common idiom. Small change, measurable IPC.</p></div>
+  <div class="delta"><span class="tag">no delay slots</span>
+  <p>MIPS I exposed the load delay slot architecturally — the instruction after a load could not use its result, and the compiler filled the slot. RISC-V deliberately does not. The hardware must interlock. The upside is that deeper or shallower pipelines remain binary-compatible; the downside is that you cannot omit the interlock logic.</p></div>
+</section>
+
+<section id="mhaz">
+  <h3><span class="n">6</span>M extension hazards — the full condition</h3>
+  <p>With a decoupled multi-cycle unit, ID needs three additional stall terms.</p>
+  <div class="ascii-wrap"><div class="bar">Complete M interlock</div>
+<pre class="code"><span class="cmt">// Scoreboard state, one entry for a non-pipelined unit</span>
+<span class="kw">logic</span>       md_busy;
+<span class="kw">logic</span> [<span class="num">4</span>:<span class="num">0</span>] md_dest;
+
+<span class="cmt">// --- 1. RAW: consumer needs a result that does not exist yet ---------</span>
+<span class="kw">wire</span> md_raw = md_busy &amp; (md_dest != <span class="num">5'd0</span>)
+             &amp; ( (id.rs1_used &amp; (id.rs1 == md_dest))
+               | (id.rs2_used &amp; (id.rs2 == md_dest)) );
+
+<span class="cmt">// --- 2. WAW: a younger writer would be overtaken ---------------------</span>
+<span class="kw">wire</span> md_waw = md_busy &amp; id.rd_we &amp; (id.rd != <span class="num">5'd0</span>)
+             &amp; (id.rd == md_dest);
+
+<span class="cmt">// --- 3. Structural: unit already occupied ----------------------------</span>
+<span class="kw">wire</span> md_struct = md_busy &amp; id.md_valid;
+
+<span class="kw">wire</span> md_stall = md_raw | md_waw | md_struct;</pre>
+  </div>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Term</th><th>Example that trips it</th><th>Alternative to stalling</th></tr>
+    <tr><td class="mono">md_raw</td><td><code>div x5,..</code> then <code>add x6, x5, x7</code></td><td>None. The value genuinely does not exist.</td></tr>
+    <tr><td class="mono">md_waw</td><td><code>div x5,..</code> then <code>addi x5, x0, 1</code></td><td>Cancel the divide's writeback — legal because DIV has no other effect.</td></tr>
+    <tr><td class="mono">md_struct</td><td><code>mul</code> then <code>mul</code></td><td>Pipeline the multiplier so it accepts one per cycle.</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">the pipelined-multiplier refinement</span>
+  <p>Split the scoreboard: a pipelined multiplier with fixed 3-cycle latency needs no busy bit at all — it behaves like a deeper forwarding problem, and a shift register of pending destinations suffices. The iterative divider keeps the busy bit. Treating M as one monolithic unit throws away that distinction and costs IPC.</p></div>
+</section>
+
+<section id="ahaz">
+  <h3><span class="n">7</span>A extension hazards</h3>
+  <div class="tabs">
+    <div class="tabbar">
+      <button data-t="ah-spec">Non-speculative point</button>
+      <button data-t="ah-replay">Why replay is forbidden</button>
+      <button data-t="ah-fault">Fault ordering</button>
+      <button data-t="ah-ord">Ordering drains</button>
+    </div>
+    <div class="tabpane" id="ah-spec">
+      <h5>The AMO must be non-speculative when it issues</h5>
+      <p>In a classic five-stage pipeline this comes free, and that is worth stating explicitly because it sounds like it should be hard.</p>
+      <ul class="tight">
+        <li>Branches resolve in EX. An instruction in MEM is therefore past any mispredict shadow.</li>
+        <li>Execution is in order, so every older instruction is already in MEM or WB and has passed its own fault point.</li>
+        <li>Therefore an AMO reaching MEM is guaranteed to commit.</li>
+      </ul>
+      <p>What breaks this: a deeper pipeline where branches resolve later than the memory stage, any out-of-order issue, or a store buffer that lets younger memory operations bypass older ones. Then the AMO must be explicitly held until it is the oldest uncommitted instruction.</p>
+    </div>
+    <div class="tabpane" id="ah-replay">
+      <h5>Why an AMO cannot be replayed</h5>
+      <p>Many pipelines recover from a stall or a cache miss by replaying the instruction from an earlier stage. An AMO forbids this once it has touched memory.</p>
+      <div class="ascii-wrap"><div class="bar">The double-increment bug</div>
+<pre class="code">    <span class="ins">amoadd.w</span> <span class="reg">x5</span>, <span class="reg">x6</span>, (<span class="reg">x10</span>)
+
+<span class="cmt">// cycle N   : read mem → 100, compute 100 + x6, write 105</span>
+<span class="cmt">// cycle N+1 : unrelated replay condition re-issues the instruction</span>
+<span class="cmt">// cycle N+2 : read mem → 105, compute 105 + x6, write 110</span>
+<span class="cmt">//</span>
+<span class="cmt">// The counter incremented twice for one instruction. Silent corruption.</span></pre>
+      </div>
+      <p>So the design rule is: an AMO is either <b>fully performed</b> or <b>not started</b>. Any replay mechanism must be gated off for the AMO once the read phase has committed, and the line must stay locked across the read and write phases so no snoop can observe the intermediate state.</p>
+      <div class="gotcha"><span class="tag">the snoop deadlock</span>
+      <p>Locking a line for two cycles creates a window where an incoming snoop to that line must be delayed. If the snoop path has no retry and the lock waits on something the snoop is blocking, you deadlock. Give the snoop path a retry response, or bound the lock duration so it always releases. Mention this — it shows fabric awareness.</p></div>
+    </div>
+    <div class="tabpane" id="ah-fault">
+      <h5>Fault checks precede modification</h5>
+      <ol class="tight">
+        <li>Translate the address. A translation failure raises a <b>store/AMO page fault</b>, cause 15.</li>
+        <li>Check write permission. An AMO to a read-only page faults as a store, not a load.</li>
+        <li>Check alignment. A misaligned AMO raises <b>store/AMO address misaligned</b>, cause 6.</li>
+        <li>Check the physical region. A failure raises <b>store/AMO access fault</b>, cause 7.</li>
+        <li>Only now issue the read-modify-write.</li>
+      </ol>
+      <div class="trap"><span class="tag">trap</span>
+      <p>LR and SC are governed by the same rules. An <code>SC</code> that faults must not clear the reservation in a way that a restarted sequence cannot recover from — and crucially, must not have stored anything. The fault is taken before the conditional store is attempted.</p></div>
+    </div>
+    <div class="tabpane" id="ah-ord">
+      <h5>Ordering annotations as stall sources</h5>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Annotation</th><th>What must drain</th><th>Cost driver</th></tr>
+        <tr><td class="mono">rl</td><td>All earlier memory operations globally observable</td><td>Store buffer depth, outstanding miss count</td></tr>
+        <tr><td class="mono">aq</td><td>Later memory operations held at issue</td><td>How far ahead the load-store unit runs</td></tr>
+        <tr><td class="mono">aq + rl</td><td>Both</td><td>Full memory-system quiesce</td></tr>
+        <tr><td class="mono">FENCE rw,rw</td><td>Same as aq+rl, but as a standalone instruction</td><td>Same</td></tr>
+      </table>
+      </div>
+      <p>In a simple in-order core with blocking accesses and no store buffer, all four rows cost approximately nothing — the machine is already ordered. Say that plainly if it is true of your design. It is an honest answer and it explains why small cores get A cheaply.</p>
+    </div>
+  </div>
+</section>
+
+<section id="ctrl">
+  <h3><span class="n">8</span>Control hazards, and what C changes</h3>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Resolution point</th><th>Instructions flushed</th><th>Cost</th></tr>
+    <tr><td>Branch resolved in ID with a dedicated comparator</td><td class="mono">1</td><td class="ok">1 cycle</td></tr>
+    <tr><td>Branch resolved in EX</td><td class="mono">2</td><td class="mid">2 cycles</td></tr>
+    <tr><td>Branch resolved in EX, with an extra expand stage</td><td class="mono">3</td><td class="no">3 cycles</td></tr>
+    <tr><td>JALR target from EX</td><td class="mono">2</td><td class="mid">Always, unless predicted</td></tr>
+  </table>
+  </div>
+  <p>Resolving in ID sounds attractive but pulls the comparator, and therefore the forwarded operands, into ID — often making ID the critical path. The usual compromise is EX resolution with a static or dynamic prediction.</p>
+  <h5>What C changes</h5>
+  <ul class="tight">
+    <li>Flush <b>depth</b> is unchanged. The same number of stages are killed.</li>
+    <li>Redirect <b>granularity</b> becomes 2 bytes. The PC mux and every PC-indexed structure must carry bit 1.</li>
+    <li>The fetch buffer must be flushed too, including any pending fault status, or a stale fault from a discarded path will surface later.</li>
+    <li>A redirect target at 2 mod 4 may immediately require a straddling fetch, so the first instruction after a taken branch can cost an extra fetch cycle.</li>
+  </ul>
+  <div class="trap"><span class="tag">a real bug class</span>
+  <p>Flushing the pipeline registers but not the fetch buffer leaves pre-fetched bytes from the wrong path. With fixed-length instructions this is usually caught by a simple valid bit. With C, the buffer also holds partial instructions and boundary state, so the flush must reset the alignment state machine — not just clear a valid flag.</p></div>
+</section>
+
+<section id="precise">
+  <h3><span class="n">9</span>What "precise" actually means</h3>
+  <div class="crux"><span class="tag">definition</span>
+  <p>An exception is precise when, at the moment the handler begins, every instruction before the faulting one has completed and written its results, the faulting instruction and every instruction after it have written <i>nothing</i>, and <code>mepc</code> identifies the faulting instruction exactly.</p></div>
+  <h5>How a five-stage pipeline achieves it</h5>
+  <ol class="tight">
+    <li>Exceptions are <b>detected</b> in whatever stage discovers them, but not acted upon there.</li>
+    <li>The exception flag and cause travel down the pipeline with the instruction, in the pipeline registers.</li>
+    <li>They are <b>taken</b> at one single point — conventionally at the WB boundary, the commit point.</li>
+    <li>At that point, all younger instructions in earlier stages are flushed, so none of them writes back.</li>
+    <li>Older instructions are already past commit, so their writes stand.</li>
+  </ol>
+  <div class="ascii-wrap"><div class="bar">Exception flowing to the commit point</div>
+<pre class="ascii">cyc      1     2     3     4     5
+<span class="s">ok</span>        IF    ID    EX   MEM    <span class="s">WB</span>      <span class="cmt">← completes normally</span>
+<span class="o">fault</span>           IF    ID    EX   <span class="o">MEM</span>   <span class="o">WB</span>  <span class="cmt">← page fault detected in MEM,</span>
+                                       <span class="cmt">  carried to WB, taken there</span>
+<span class="v">younger1</span>              IF    ID    <span class="v">✕</span>      <span class="cmt">← flushed</span>
+<span class="v">younger2</span>                    IF    <span class="v">✕</span>      <span class="cmt">← flushed</span>
+
+  <span class="cmt">mepc ← PC of `fault`     mcause ← 13 (load page fault)</span>
+  <span class="cmt">mtval ← faulting address PC ← trap vector</span></pre>
+  </div>
+  <div class="gotcha"><span class="tag">why M does not disturb this</span>
+  <p>The M extension writes back out of order, which normally threatens precision. It is safe here for one specific reason: <b>no M instruction can raise an exception</b>. There is no divide-by-zero trap. So an out-of-band M writeback can never need to be undone, and can never be the faulting instruction. This is the payoff of the no-trap design decision in Lesson 02.</p></div>
+</section>
+
+<section id="sources">
+  <h3><span class="n">10</span>Exception sources by letter</h3>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Letter</th><th>Exception</th><th>Cause</th><th>Detected in</th></tr>
+    <tr><td rowspan="7"><b>I</b></td><td>Instruction address misaligned</td><td class="mono">0</td><td>EX (on the branch or jump)</td></tr>
+    <tr><td>Instruction access fault</td><td class="mono">1</td><td>IF</td></tr>
+    <tr><td>Illegal instruction</td><td class="mono">2</td><td>ID</td></tr>
+    <tr><td>Breakpoint (EBREAK)</td><td class="mono">3</td><td>ID</td></tr>
+    <tr><td>Load address misaligned / access fault</td><td class="mono">4 / 5</td><td>MEM</td></tr>
+    <tr><td>Store address misaligned / access fault</td><td class="mono">6 / 7</td><td>MEM</td></tr>
+    <tr><td>Environment call (ECALL)</td><td class="mono">8 / 9 / 11</td><td>ID</td></tr>
+    <tr><td><b>M</b></td><td class="ok">None. No M instruction can trap.</td><td>&mdash;</td><td>&mdash;</td></tr>
+    <tr><td rowspan="3"><b>A</b></td><td>Store/AMO address misaligned &mdash; LR, SC and AMO must be aligned</td><td class="mono">6</td><td>MEM</td></tr>
+    <tr><td>Store/AMO access fault</td><td class="mono">7</td><td>MEM</td></tr>
+    <tr><td>Store/AMO page fault &mdash; including on a read-only page</td><td class="mono">15</td><td>MEM</td></tr>
+    <tr><td rowspan="3"><b>C</b></td><td>Illegal instruction &mdash; reserved compressed encodings, and <code>16'h0000</code></td><td class="mono">2</td><td>ID</td></tr>
+    <tr><td>Instruction access fault on the second half of a straddling instruction</td><td class="mono">1</td><td>IF</td></tr>
+    <tr><td>Instruction page fault on the second half of a straddling instruction</td><td class="mono">12</td><td>IF</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">the one-line answer</span>
+  <p>"M contributes no exceptions at all. A contributes store-class faults even for its read phase. C contributes reserved-encoding illegals plus a second instruction-fetch fault path for straddling instructions. The base contributes everything else."</p></div>
+  <div class="gotcha"><span class="tag">note on cause 0</span>
+  <p>Instruction-address-misaligned is reported on the branch or jump that would produce the misaligned target, not on the fetch of the target. With C implemented, IALIGN is 16 and every encodable target is already even, so this exception becomes unreachable. It remains in the table for IALIGN=32 implementations.</p></div>
+</section>
+
+<section id="priority">
+  <h3><span class="n">11</span>Trap priority</h3>
+  <p>One instruction can qualify for several exceptions at once. The architecture defines which wins.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Order</th><th>Group</th><th>Rationale</th></tr>
+    <tr><td class="mono">1</td><td>Instruction address breakpoint</td><td>Debug must see the instruction before anything else happens to it</td></tr>
+    <tr><td class="mono">2</td><td>Instruction page fault</td><td>You cannot decode bits you could not translate</td></tr>
+    <tr><td class="mono">3</td><td>Instruction access fault</td><td>You cannot decode bits you could not read</td></tr>
+    <tr><td class="mono">4</td><td>Illegal instruction</td><td>Decode-time faults, once the bits exist</td></tr>
+    <tr><td class="mono">5</td><td>Instruction address misaligned</td><td>Reported on the transferring branch or jump</td></tr>
+    <tr><td class="mono">6</td><td>ECALL, EBREAK, load/store/AMO address breakpoint</td><td>Explicit and debug traps</td></tr>
+    <tr><td class="mono">7</td><td>Load/store/AMO address misaligned</td><td class="mid">Optionally here; otherwise lowest &mdash; see note</td></tr>
+    <tr><td class="mono">8</td><td>Load/store/AMO page fault</td><td>Translation before physical access</td></tr>
+    <tr><td class="mono">9</td><td>Load/store/AMO access fault</td><td>Physical region check</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">the shape to remember</span>
+  <p>Fetch-stage faults beat decode-stage faults, which beat memory-stage faults. Within each group, translation faults beat physical access faults. That ordering is just pipeline order, which makes it easy to reconstruct under pressure.</p></div>
+  <div class="gotcha"><span class="tag">the misaligned-access subtlety</span>
+  <p>An implementation may check address alignment either <b>before</b> or <b>after</b> the translation and access-fault checks. So a misaligned access to an unmapped page may report either misaligned or page fault, depending on the design. The specification permits both. If asked, say "implementation-defined ordering, and I chose to check alignment first because it needs no TLB lookup".</p></div>
+  <div class="trap"><span class="tag">interrupts versus exceptions</span>
+  <p>Interrupts are not in this table. An interrupt is taken <i>between</i> instructions, and when an interrupt is pending and enabled it takes priority over any synchronous exception that the next instruction would raise &mdash; because that instruction simply does not execute. Do not merge the two priority schemes.</p></div>
+</section>
+
+<section id="csr">
+  <h3><span class="n">12</span>mepc, mcause and mtval</h3>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Event</th><th>mepc</th><th>mtval</th></tr>
+    <tr><td>Illegal instruction</td><td>PC of the instruction</td><td>The faulting instruction bits, or 0 if not implemented</td></tr>
+    <tr><td>Load / store / AMO fault</td><td>PC of the instruction</td><td>The faulting effective address</td></tr>
+    <tr><td>Instruction fetch fault</td><td>PC of the instruction</td><td>The faulting address</td></tr>
+    <tr><td><b>Fetch fault on a straddling instruction</b></td><td class="mid">Start of the instruction</td><td class="mid">The portion that faulted &mdash; a different value</td></tr>
+    <tr><td>ECALL</td><td>PC of the ECALL</td><td>0</td></tr>
+    <tr><td>EBREAK</td><td>PC of the EBREAK</td><td>The address, or 0 depending on the implementation</td></tr>
+    <tr><td>Interrupt</td><td>PC of the instruction that would have run next</td><td>0</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">mepc alignment</span>
+  <p><code>mepc[0]</code> is always zero. With C implemented, IALIGN is 16 and <code>mepc[1]</code> can be set. Without C, IALIGN is 32 and <code>mepc[1:0]</code> is always zero &mdash; a core built without C that later adds it must widen the mepc write path accordingly.</p></div>
+  <div class="gotcha"><span class="tag">returning from a trap</span>
+  <p><code>ECALL</code> and <code>EBREAK</code> set <code>mepc</code> to their own address, not the following instruction. So the handler must advance <code>mepc</code> itself before <code>MRET</code>, and it must advance by <b>2 or 4</b> depending on whether the trapping instruction was compressed. The handler reads <code>inst[1:0]</code> at <code>mepc</code> to decide. A handler that blindly adds 4 breaks on <code>C.EBREAK</code> &mdash; another consequence of C reaching further than people expect.</p></div>
+</section>
+
+<section id="control">
+  <h3><span class="n">13</span>Stall and flush control</h3>
+  <p>The complete control table for this core. Worth being able to reproduce.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Condition</th><th>IF</th><th>ID</th><th>EX</th><th>MEM</th><th>WB</th></tr>
+    <tr><td>Load-use hazard</td><td class="mid">stall</td><td class="mid">stall</td><td class="no">bubble</td><td class="ok">run</td><td class="ok">run</td></tr>
+    <tr><td>M unit RAW / WAW / busy</td><td class="mid">stall</td><td class="mid">stall</td><td class="no">bubble</td><td class="ok">run</td><td class="ok">run</td></tr>
+    <tr><td>I-cache miss</td><td class="mid">stall</td><td class="no">bubble</td><td class="ok">run</td><td class="ok">run</td><td class="ok">run</td></tr>
+    <tr><td>D-cache miss</td><td class="mid">stall</td><td class="mid">stall</td><td class="mid">stall</td><td class="mid">stall</td><td class="no">bubble</td></tr>
+    <tr><td>AMO second MEM cycle</td><td class="mid">stall</td><td class="mid">stall</td><td class="mid">stall</td><td class="mid">stall</td><td class="no">bubble</td></tr>
+    <tr><td>Branch mispredict (resolved EX)</td><td class="no">flush</td><td class="no">flush</td><td class="ok">run</td><td class="ok">run</td><td class="ok">run</td></tr>
+    <tr><td>Trap taken at WB</td><td class="no">flush</td><td class="no">flush</td><td class="no">flush</td><td class="no">flush</td><td class="ok">commit trap</td></tr>
+    <tr><td>FENCE.I / CSR write side effect</td><td class="no">flush</td><td class="no">flush</td><td class="ok">run</td><td class="ok">run</td><td class="ok">run</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">the two rules underneath the table</span>
+  <p><b>Stall propagates backwards.</b> If a stage cannot advance, every stage in front of it must hold. <b>Flush propagates forwards.</b> When a redirect or trap is taken, every stage behind it is killed. Any control bug in a pipeline is almost always a violation of one of these two rules.</p></div>
+  <div class="gotcha"><span class="tag">why FENCE.I flushes</span>
+  <p><code>FENCE.I</code> makes prior stores visible to instruction fetch. So the I-cache must be invalidated and any already-fetched instructions discarded &mdash; they may be stale copies of code that was just rewritten. Note it is part of Zifencei, not the base, as covered in Lesson 01.</p></div>
+</section>
+
+<section id="check">
+  <h3><span class="n">14</span>Self-check</h3>
+
+  <div class="quiz" data-a="1">
+    <div class="q">Your forwarding logic checks <code>rd_we</code> and index match but not <code>rd != 0</code>. What breaks?</div>
+    <button class="opt" data-fb="">Nothing — the register file already suppresses x0 writes</button>
+    <button class="opt" data-fb="An instruction writing x0 will be forwarded to a consumer reading x0, delivering a non-zero value where zero is required. The register file stays correct; the bypass does not. The fix is one AND gate per comparator.">An instruction reading x0 receives a forwarded non-zero value</button>
+    <button class="opt" data-fb="">Stores forward the wrong data</button>
+    <button class="opt" data-fb="">The load-use interlock fails</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="2">
+    <div class="q"><code>lw x5, 0(x10)</code> followed immediately by <code>sw x5, 0(x11)</code>. How many bubbles?</div>
+    <button class="opt" data-fb="">One — it is a load-use dependency</button>
+    <button class="opt" data-fb="">Two — store data is needed early</button>
+    <button class="opt" data-fb="Zero. Store data is consumed in MEM, one stage later than an ALU operand, so the load's MEM/WB register holds the value exactly when the store needs it. A MEM/WB to MEM forward covers it with no stall.">Zero — a MEM/WB to MEM forward covers it</button>
+    <button class="opt" data-fb="">Depends on the cache hit latency</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="0">
+    <div class="q">Why does out-of-order writeback from the M unit not break precise exceptions?</div>
+    <button class="opt" data-fb="No M instruction can raise an exception — there is no divide-by-zero trap and no overflow trap. So an M result written out of band can never need to be undone and can never itself be the faulting instruction.">Because no M instruction can raise an exception</button>
+    <button class="opt" data-fb="">Because the M unit writes through a reorder buffer</button>
+    <button class="opt" data-fb="">Because M results are always written in program order anyway</button>
+    <button class="opt" data-fb="">Because exceptions are imprecise for M instructions by definition</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="3">
+    <div class="q">A trap handler returns from <code>C.EBREAK</code> by adding 4 to <code>mepc</code>. What goes wrong?</div>
+    <button class="opt" data-fb="">Nothing — the expander made it a 32-bit EBREAK</button>
+    <button class="opt" data-fb="">mepc becomes misaligned</button>
+    <button class="opt" data-fb="">The reservation is lost</button>
+    <button class="opt" data-fb="It skips two bytes too many. C.EBREAK is a 16-bit instruction, so the handler must advance mepc by 2. The handler has to inspect inst[1:0] at mepc to decide between 2 and 4.">Execution resumes two bytes past the correct instruction</button>
+    <div class="fb"></div>
+  </div>
+
+  <div class="quiz" data-a="1">
+    <div class="q">Why can an AMO never be replayed once its read phase has completed?</div>
+    <button class="opt" data-fb="">Because the reservation would be lost</button>
+    <button class="opt" data-fb="The read-modify-write would be applied twice — an atomic increment would increment by two. The rule is that an AMO is either fully performed or not started, and the line stays locked across both phases.">Because the operation would be applied to memory twice</button>
+    <button class="opt" data-fb="">Because rd has already been written</button>
+    <button class="opt" data-fb="">Because the aq bit has already taken effect</button>
+    <div class="fb"></div>
+  </div>
+</section>
+
+<section id="qa">
+  <h3><span class="n">15</span>Interview Q&amp;A</h3>
+
+  <details>
+    <summary>List every forwarding path in your core and the priority between them.</summary>
+    <div class="ans">
+      <p>Four. EX/MEM to the EX operand muxes, covering distance-one dependencies on ALU results. MEM/WB to the EX operand muxes, covering distance two and load results at distance two. MEM/WB to the MEM store-data port, covering a load or ALU result consumed as store data at distance one. And WB to ID, which I implemented as a write-first register file rather than an explicit mux.</p>
+      <p>Priority is nearest-producer-wins: EX/MEM overrides MEM/WB. I implemented that as parallel one-hot selects with the MEM/WB term ANDed against the negation of the EX/MEM match, rather than a cascaded priority mux, to keep a level of logic out of the EX path.</p>
+      <p>Every match is qualified four ways: the producer writes, its destination is not x0, the indices match, and the consumer actually reads that source.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>Prove your exceptions are precise.</summary>
+    <div class="ans">
+      <p>The argument has three parts. First, there is exactly one commit point — the WB boundary — and nothing writes architectural state before it except the register file write, which is itself gated by the trap signal at that boundary.</p>
+      <p>Second, exception status is data, not control. It is detected wherever it is discovered and carried in the pipeline registers alongside the instruction, so it arrives at commit with the right instruction and cannot overtake or lag it.</p>
+      <p>Third, taking a trap flushes every stage behind the commit point in the same cycle, so no younger instruction can write. Older instructions are already past commit.</p>
+      <p>The two things that could break it are handled explicitly. The M unit writes out of band, which is safe only because M raises no exceptions. And the AMO modifies memory in MEM, before commit — which is safe only because in-order MEM is already non-speculative, and because all its faults are checked before the modification is issued.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>An interrupt arrives while a load is stalled on a cache miss. What happens?</summary>
+    <div class="ans">
+      <p>Two legitimate policies. The simple one is to let the miss complete, then take the interrupt at the next instruction boundary. Interrupt latency then includes the full miss penalty, which for an external memory access can be long.</p>
+      <p>The other is to abort the load and set mepc to the load's own PC so it re-executes on return. That is safe because a load writes nothing until writeback — it is idempotent in the same sense as a divide. But it is only safe for ordinary loads. An AMO that has already performed its read-modify-write must not be aborted, and a load from device memory with read side effects must not be re-executed.</p>
+      <p>So the honest answer is that abort-and-restart is a per-region decision: safe for normal cacheable memory, unsafe for anything with side effects. If I had a hard interrupt-latency budget I would implement abort for cacheable loads only.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Where do you detect illegal instructions, and why not in ID?</summary>
+    <div class="ans">
+      <p>I compute it from the registered instruction word in the stage after decode. The illegal cone touches nearly every instruction bit — opcode, funct3, funct7, funct5, reserved-field checks across all four extensions — so it is wide and slow, and it sits on no other signal's path.</p>
+      <p>Since the exception is not taken until the commit point anyway, there is no correctness reason to have it early. Moving it one stage later cost a few flops for the instruction word and bought real slack in ID.</p>
+      <p>The structure matters as much as the placement: illegal is the complement of an explicit legal signal built as the OR of every match term, with reserved-field checks ANDed into each term. It is never a <code>default</code> arm, because a default silently aliases reserved encodings onto real instructions.</p>
+    </div>
+  </details>
+
+  <details class="hard">
+    <summary>Your core passes every directed test but fails a random instruction-stream test intermittently. Where do you look?</summary>
+    <div class="ans">
+      <p>Directed tests exercise intended cases; random streams exercise interactions. So I would look at the interactions first, in this order.</p>
+      <p>Forwarding qualifiers — specifically the x0 case and the store-data path, because directed tests rarely write x0 deliberately or chain a load straight into a store.</p>
+      <p>WAW against the M unit, because it needs a long-latency operation followed by a short one to the same destination, which random streams generate and hand-written tests almost never do.</p>
+      <p>Flush completeness on redirect — especially whether the fetch buffer's alignment state and pending fault status are reset, not just a valid bit cleared. With C that is a genuine bug class.</p>
+      <p>And reserved encodings, because a random generator will emit them and a <code>default</code>-arm decoder will silently execute them as something else.</p>
+      <p>Method-wise I would bisect with a shrinking harness on the failing seed rather than reading waveforms first — an intermittent failure usually reduces to a three or four instruction sequence.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Does the C extension make exceptions harder?</summary>
+    <div class="ans">
+      <p>In two specific ways, yes. First, a 32-bit instruction can span two pages, so one instruction has two fetch-fault sites — and the reporting rule is asymmetric: mepc holds the instruction's start while mtval holds the portion that actually faulted.</p>
+      <p>Second, mepc can now have bit 1 set, and trap handlers must advance mepc by 2 or 4 after ECALL or EBREAK depending on the trapping instruction's length.</p>
+      <p>There is one way it makes things easier: instruction-address-misaligned becomes unreachable, because every encodable branch or jump target is already even when IALIGN is 16.</p>
+    </div>
+  </details>
+</section>
+
+<section id="defend">
+  <h3><span class="n">16</span>Defend your claim — Hanu 1.0</h3>
+  <div class="defend"><span class="tag">write your answers down</span>
+  <ul>
+    <li>List your forwarding paths. Is the <code>rd != 0</code> qualifier present on every comparator? Point to the line.</li>
+    <li>Does a load followed by a store of the same register cost you a bubble? If yes, do you know why?</li>
+    <li>Where is your commit point, and what exactly is gated by the trap signal there?</li>
+    <li>Where do you check alignment relative to translation, and can you justify the ordering?</li>
+    <li>Is your fetch buffer flushed completely on redirect, including alignment state and pending fault status?</li>
+    <li>Does your handler advance <code>mepc</code> by 2 or 4 after <code>EBREAK</code>? How does it decide?</li>
+    <li>Can an interrupt abort a stalled load or an in-flight divide in your design?</li>
+    <li>How did you verify precision &mdash; a reference model comparison at every commit, or directed trap tests only?</li>
+  </ul></div>
+</section>
+
+<section id="recap">
+  <h3><span class="n">17</span>Recap</h3>
+  <ul class="tight">
+    <li>Four forwarding paths. Nearest producer wins. Four qualifiers on every match.</li>
+    <li>The <code>rd != 0</code> qualifier is one gate and its absence is a silent corruption bug.</li>
+    <li>Load-use costs one bubble and cannot be forwarded away without lengthening the clock.</li>
+    <li>Load-to-store at distance one costs zero bubbles. Know the difference.</li>
+    <li>M adds RAW, WAW and structural stall terms. WAW is the one that is new.</li>
+    <li>An AMO is non-speculative for free in a five-stage pipeline, must never be replayed, and faults as a store.</li>
+    <li>Precise means: one commit point, exception status carried as data, younger instructions flushed.</li>
+    <li>M raises no exceptions at all. That is what makes its out-of-order writeback safe.</li>
+    <li>Fetch faults beat decode faults beat memory faults. Translation beats physical access.</li>
+    <li>Interrupts are taken between instructions and sit outside the synchronous priority table.</li>
+    <li>With C, mepc can have bit 1 set, and a handler must advance it by 2 or 4.</li>
+    <li>Stall propagates backwards. Flush propagates forwards.</li>
+  </ul>
+</section>
+
+<div class="navfoot">
+  <a href="rv32imac_lesson05_decode_pipeline.html">&#8592; Lesson 05 · Unified decode</a>
+  <a href="rv32imac_lesson07_interview_drill.html">Lesson 07 · Interview drill &#8594;</a>
+</div>
+</main>
+</div>
+<script src="rv32imac_shared.js"></script>
+</body>
+</html>
