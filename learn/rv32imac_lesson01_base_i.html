@@ -81,6 +81,24 @@
       </div>
       <p>Covers <code>ADD SUB SLL SLT SLTU XOR SRL SRA OR AND</code>. Also the whole M extension and, with a different opcode, the A extension.</p>
       <p>funct7 is a 7-bit wide field but almost entirely unused. Only bit 30 and bit 25 carry meaning in the base. The rest is reserved encoding space — deliberately left for extensions.</p>
+
+      <h5>Worked encoding</h5>
+      <div class="ascii-wrap"><div class="bar">add x5, x6, x7 &nbsp;&rarr;&nbsp; 0x007302B3</div>
+<pre class="ascii"><span class="o">0000000</span> <span class="c">00111</span> <span class="s">00110</span> <span class="v">000</span> <span class="g">00101</span> <span class="a">0110011</span></pre>
+      </div>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Bits</th><th>Field</th><th>Value</th><th>Reads as</th></tr>
+        <tr><td class="mono">31:25</td><td class="mono">funct7</td><td class="mono">0000000</td><td>Base operation. <code>0100000</code> here would make it SUB.</td></tr>
+        <tr><td class="mono">24:20</td><td class="mono">rs2</td><td class="mono">00111</td><td>x7</td></tr>
+        <tr><td class="mono">19:15</td><td class="mono">rs1</td><td class="mono">00110</td><td>x6</td></tr>
+        <tr><td class="mono">14:12</td><td class="mono">funct3</td><td class="mono">000</td><td>ADD / SUB family</td></tr>
+        <tr><td class="mono">11:7</td><td class="mono">rd</td><td class="mono">00101</td><td>x5</td></tr>
+        <tr><td class="mono">6:0</td><td class="mono">opcode</td><td class="mono">0110011</td><td>OP</td></tr>
+      </table>
+      </div>
+      <div class="crux"><span class="tag">one field, three instructions</span>
+      <p>Change only funct7 and nothing else moves. <code>sub x5, x6, x7</code> is <code>0x407302B3</code> (funct7 <code>0100000</code>). <code>mul x5, x6, x7</code> is <code>0x027302B3</code> (funct7 <code>0000001</code>). The entire M extension lives in that one funct7 value.</p></div>
     </div>
 
     <div class="tabpane" id="f-i">
@@ -96,6 +114,24 @@
       <p>Range is &minus;2048 to +2047. This is why <code>LI</code> of a large constant expands to <code>LUI</code> plus <code>ADDI</code>.</p>
       <div class="trap"><span class="tag">trap</span>
       <p>Shifts are I-type but are <b>not</b> 12-bit immediates. <code>SLLI/SRLI/SRAI</code> use only <code>inst[24:20]</code> as a 5-bit shift amount in RV32. Bits 31:25 become a function field. A shift with <code>inst[25]=1</code> is an illegal instruction in RV32, not a shift by 33.</p></div>
+
+      <h5>Worked encoding</h5>
+      <div class="ascii-wrap"><div class="bar">addi x5, x6, -20 &nbsp;&rarr;&nbsp; 0xFEC30293</div>
+<pre class="ascii"><span class="p">111111101100</span> <span class="s">00110</span> <span class="v">000</span> <span class="g">00101</span> <span class="a">0010011</span></pre>
+      </div>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Bits</th><th>Field</th><th>Value</th><th>Reads as</th></tr>
+        <tr><td class="mono">31:20</td><td class="mono">imm[11:0]</td><td class="mono">111111101100</td><td><code>0xFEC</code> = &minus;20, sign taken from <code>inst[31]</code></td></tr>
+        <tr><td class="mono">19:15</td><td class="mono">rs1</td><td class="mono">00110</td><td>x6</td></tr>
+        <tr><td class="mono">14:12</td><td class="mono">funct3</td><td class="mono">000</td><td>ADDI</td></tr>
+        <tr><td class="mono">11:7</td><td class="mono">rd</td><td class="mono">00101</td><td>x5</td></tr>
+        <tr><td class="mono">6:0</td><td class="mono">opcode</td><td class="mono">0010011</td><td>OP-IMM</td></tr>
+      </table>
+      </div>
+      <p>A negative immediate fills the whole upper field with ones. That is the sign extension happening in the encoding itself — no separate sign field exists.</p>
+      <div class="gotcha"><span class="tag">same shape, different opcode</span>
+      <p><code>lw x5, 8(x6)</code> is <code>0x00832283</code>. Identical field layout; only <code>funct3</code> becomes <code>010</code> and the opcode becomes <code>0000011</code> (LOAD). The address adder does not change at all.</p></div>
     </div>
 
     <div class="tabpane" id="f-s">
@@ -110,6 +146,24 @@
       </div>
       <p>The immediate is split because <code>rs2</code> must stay at 24:20. Store data comes from rs2. Keeping rs2 fixed lets the second regfile read port be driven straight off the fetched word.</p>
       <p>Address is <code>rs1 + sext(imm)</code>. Identical adder to the load path, so one address adder serves both.</p>
+
+      <h5>Worked encoding</h5>
+      <div class="ascii-wrap"><div class="bar">sw x7, 12(x6) &nbsp;&rarr;&nbsp; 0x00732623</div>
+<pre class="ascii"><span class="p">0000000</span> <span class="c">00111</span> <span class="s">00110</span> <span class="v">010</span> <span class="p">01100</span> <span class="a">0100011</span></pre>
+      </div>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Bits</th><th>Field</th><th>Value</th><th>Reads as</th></tr>
+        <tr><td class="mono">31:25</td><td class="mono">imm[11:5]</td><td class="mono">0000000</td><td rowspan="2">The two halves recombine to <code>000000001100</code> = +12</td></tr>
+        <tr><td class="mono">11:7</td><td class="mono">imm[4:0]</td><td class="mono">01100</td></tr>
+        <tr><td class="mono">24:20</td><td class="mono">rs2</td><td class="mono">00111</td><td>x7 — the data being stored</td></tr>
+        <tr><td class="mono">19:15</td><td class="mono">rs1</td><td class="mono">00110</td><td>x6 — the base address</td></tr>
+        <tr><td class="mono">14:12</td><td class="mono">funct3</td><td class="mono">010</td><td>word access</td></tr>
+        <tr><td class="mono">6:0</td><td class="mono">opcode</td><td class="mono">0100011</td><td>STORE</td></tr>
+      </table>
+      </div>
+      <div class="crux"><span class="tag">why split at all</span>
+      <p>Compare against the I-type example. <code>rs1</code>, <code>funct3</code> and the sign bit sit in exactly the same places. Only <code>rd</code> is gone, replaced by the low five immediate bits, because a store writes no register. Splitting the immediate is what keeps every other field stationary.</p></div>
     </div>
 
     <div class="tabpane" id="f-b">
@@ -126,6 +180,27 @@
       </div>
       <p>Offset is 13 bits signed, but bit 0 is not encoded. Branch targets are always even. Range is &plusmn;4 KiB.</p>
       <p>Note where bit 11 sits: <code>inst[7]</code>, the slot S-type uses for <code>imm[0]</code>. B-type is S-type with two immediate bits swapped. That swap costs one 2:1 mux and buys a doubled branch range.</p>
+
+      <h5>Worked encoding</h5>
+      <div class="ascii-wrap"><div class="bar">beq x5, x6, +16 &nbsp;&rarr;&nbsp; 0x00628863</div>
+<pre class="ascii"><span class="p">0</span> <span class="p">000000</span> <span class="c">00110</span> <span class="s">00101</span> <span class="v">000</span> <span class="p">1000</span> <span class="p">0</span> <span class="a">1100011</span></pre>
+      </div>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Bits</th><th>Field</th><th>Value</th><th>Reads as</th></tr>
+        <tr><td class="mono">31</td><td class="mono">imm[12]</td><td class="mono">0</td><td rowspan="4">Reassembled: <code>0 0 000000 1000 0</code> = <code>0000000010000</code> = +16</td></tr>
+        <tr><td class="mono">30:25</td><td class="mono">imm[10:5]</td><td class="mono">000000</td></tr>
+        <tr><td class="mono">11:8</td><td class="mono">imm[4:1]</td><td class="mono">1000</td></tr>
+        <tr><td class="mono">7</td><td class="mono">imm[11]</td><td class="mono">0</td></tr>
+        <tr><td class="mono">24:20</td><td class="mono">rs2</td><td class="mono">00110</td><td>x6</td></tr>
+        <tr><td class="mono">19:15</td><td class="mono">rs1</td><td class="mono">00101</td><td>x5</td></tr>
+        <tr><td class="mono">14:12</td><td class="mono">funct3</td><td class="mono">000</td><td>BEQ</td></tr>
+        <tr><td class="mono">6:0</td><td class="mono">opcode</td><td class="mono">1100011</td><td>BRANCH</td></tr>
+      </table>
+      </div>
+      <p><code>imm[0]</code> is not encoded anywhere. It is implicitly zero, which is why branch targets are always even and why the 12 encoded bits reach &plusmn;4 KiB rather than &plusmn;2 KiB.</p>
+      <div class="crux"><span class="tag">see the swap isolated</span>
+      <p>Encode <code>beq x5, x6, +2048</code> instead. Now only <code>imm[11]</code> is set, and the whole instruction becomes <code>0x006280E3</code>. Compare against the +16 case: the single changed bit is <code>inst[7]</code>. That is the S-to-B swap, visible in one hex digit.</p></div>
     </div>
 
     <div class="tabpane" id="f-u">
@@ -138,6 +213,22 @@
       <p><code>LUI</code> writes <code>imm &lt;&lt; 12</code>. <code>AUIPC</code> writes <code>PC + (imm &lt;&lt; 12)</code>. AUIPC is what makes position-independent code cheap — no GOT indirection for nearby symbols.</p>
       <div class="trap"><span class="tag">trap</span>
       <p><code>LUI</code> + <code>ADDI</code> does not simply concatenate. ADDI sign-extends its 12-bit immediate. If <code>imm[11]</code> is set, the assembler must add 1 to the LUI immediate to compensate. Interviewers love this because it shows you have actually written the expansion.</p></div>
+
+      <h5>Worked encoding</h5>
+      <div class="ascii-wrap"><div class="bar">lui x5, 0x12345 &nbsp;&rarr;&nbsp; 0x123452B7</div>
+<pre class="ascii"><span class="p">00010010001101000101</span> <span class="g">00101</span> <span class="a">0110111</span></pre>
+      </div>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Bits</th><th>Field</th><th>Value</th><th>Reads as</th></tr>
+        <tr><td class="mono">31:12</td><td class="mono">imm[31:12]</td><td class="mono">0001 0010 0011 0100 0101</td><td><code>0x12345</code>, already in its final position</td></tr>
+        <tr><td class="mono">11:7</td><td class="mono">rd</td><td class="mono">00101</td><td>x5</td></tr>
+        <tr><td class="mono">6:0</td><td class="mono">opcode</td><td class="mono">0110111</td><td>LUI</td></tr>
+      </table>
+      </div>
+      <div class="crux"><span class="tag">read the hex</span>
+      <p>The immediate is literally visible in the encoding: <code>0x<b>12345</b>2B7</code>. No shifter is needed because the field already sits at bits 31:12. That is the whole point of U-type.</p></div>
+      <p>No rs1, no rs2, no funct3. <code>auipc x5, 0x12345</code> has the identical layout with opcode <code>0010111</code>, and adds the PC instead of zero.</p>
     </div>
 
     <div class="tabpane" id="f-j">
@@ -152,8 +243,42 @@
       </div>
       <p>21-bit signed offset, bit 0 implied zero. Range &plusmn;1 MiB. J-type is U-type with the immediate rearranged so that bits 10:1 land in the same place they occupy in I-type and B-type.</p>
       <p><code>JAL x0, offset</code> is the canonical unconditional jump. <code>JAL x1, offset</code> is a call. There is no separate CALL opcode.</p>
+
+      <h5>Worked encoding</h5>
+      <div class="ascii-wrap"><div class="bar">jal x1, +2048 &nbsp;&rarr;&nbsp; 0x001000EF</div>
+<pre class="ascii"><span class="p">0</span> <span class="p">0000000000</span> <span class="p">1</span> <span class="p">00000000</span> <span class="g">00001</span> <span class="a">1101111</span></pre>
+      </div>
+      <div class="tblwrap">
+      <table>
+        <tr><th>Bits</th><th>Field</th><th>Value</th><th>Reads as</th></tr>
+        <tr><td class="mono">31</td><td class="mono">imm[20]</td><td class="mono">0</td><td rowspan="4">Reassembled: <code>0 00000000 1 0000000000 0</code> = +2048</td></tr>
+        <tr><td class="mono">30:21</td><td class="mono">imm[10:1]</td><td class="mono">0000000000</td></tr>
+        <tr><td class="mono">20</td><td class="mono">imm[11]</td><td class="mono">1</td></tr>
+        <tr><td class="mono">19:12</td><td class="mono">imm[19:12]</td><td class="mono">00000000</td></tr>
+        <tr><td class="mono">11:7</td><td class="mono">rd</td><td class="mono">00001</td><td>x1 — link register, so this is a call</td></tr>
+        <tr><td class="mono">6:0</td><td class="mono">opcode</td><td class="mono">1101111</td><td>JAL</td></tr>
+      </table>
+      </div>
+      <div class="crux"><span class="tag">scrambling in one hex value</span>
+      <p>+2048 is 2<sup>11</sup>, so only <code>imm[11]</code> is set and every other immediate bit is zero. The whole instruction is <code>0x001000EF</code> — that lone <code>1</code> nibble is bit 20. One offset bit, sitting on its own, in the middle of the word. Nothing else demonstrates J-type reordering as cleanly.</p></div>
     </div>
   </div>
+
+  <h5>All six side by side</h5>
+  <p>Same three registers, x5, x6 and x7, wherever the format allows it.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Fmt</th><th>Example</th><th>Encoding</th><th>rd</th><th>rs1</th><th>rs2</th><th>funct3</th><th>funct7</th><th>Immediate</th></tr>
+    <tr><td class="mono">R</td><td class="mono">add x5, x6, x7</td><td class="mono">0x007302B3</td><td class="ok">&check;</td><td class="ok">&check;</td><td class="ok">&check;</td><td class="ok">&check;</td><td class="ok">&check;</td><td class="no">none</td></tr>
+    <tr><td class="mono">I</td><td class="mono">addi x5, x6, -20</td><td class="mono">0xFEC30293</td><td class="ok">&check;</td><td class="ok">&check;</td><td class="no">&mdash;</td><td class="ok">&check;</td><td class="no">&mdash;</td><td>12 signed</td></tr>
+    <tr><td class="mono">S</td><td class="mono">sw x7, 12(x6)</td><td class="mono">0x00732623</td><td class="no">&mdash;</td><td class="ok">&check;</td><td class="ok">&check;</td><td class="ok">&check;</td><td class="no">&mdash;</td><td>12 signed, split</td></tr>
+    <tr><td class="mono">B</td><td class="mono">beq x5, x6, +16</td><td class="mono">0x00628863</td><td class="no">&mdash;</td><td class="ok">&check;</td><td class="ok">&check;</td><td class="ok">&check;</td><td class="no">&mdash;</td><td>13 signed, bit 0 implied</td></tr>
+    <tr><td class="mono">U</td><td class="mono">lui x5, 0x12345</td><td class="mono">0x123452B7</td><td class="ok">&check;</td><td class="no">&mdash;</td><td class="no">&mdash;</td><td class="no">&mdash;</td><td class="no">&mdash;</td><td>20, upper bits</td></tr>
+    <tr><td class="mono">J</td><td class="mono">jal x1, +2048</td><td class="mono">0x001000EF</td><td class="ok">&check;</td><td class="no">&mdash;</td><td class="no">&mdash;</td><td class="no">&mdash;</td><td class="no">&mdash;</td><td>21 signed, bit 0 implied</td></tr>
+  </table>
+  </div>
+  <div class="crux"><span class="tag">the invariant worth memorising</span>
+  <p>Across all six encodings above, <code>rd</code> never leaves <code>11:7</code>, <code>rs1</code> never leaves <code>19:15</code>, <code>rs2</code> never leaves <code>24:20</code>, and the sign bit is always <code>inst[31]</code>. Fields disappear; they never move. That is the property which lets the register file read and the hazard comparators start before decode has resolved anything.</p></div>
 </section>
 
 <section id="imm">

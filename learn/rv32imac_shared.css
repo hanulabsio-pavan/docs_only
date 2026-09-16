@@ -118,6 +118,7 @@ pre.ascii,pre.code{white-space:pre; font-family:var(--mono); font-size:12.5px; l
 .ascii .box{color:#3f5468} .ascii .a{color:var(--acc);font-weight:600} .ascii .g{color:var(--gold);font-weight:600}
 .ascii .s{color:var(--grn);font-weight:600} .ascii .v{color:var(--vio);font-weight:600}
 .ascii .o{color:var(--org);font-weight:600} .ascii .p{color:var(--pnk);font-weight:600}
+.ascii .c{color:var(--cyn);font-weight:600}
 .ascii .cmt,.code .cmt{color:#5a6b7a;font-style:italic}
 .code .kw{color:var(--vio);font-weight:600} .code .ins{color:var(--acc);font-weight:600}
 .code .reg{color:var(--gold)} .code .num{color:var(--grn)} .code .lbl{color:var(--pnk)}
