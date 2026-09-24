@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHI Protocol Fundamentals</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #0066cc;
+      --secondary: #00b359;
+      --accent: #ff6b35;
+      --bg-main: #ffffff;
+      --bg-sidebar: #f8f8f8;
+      --text-dark: #1a1a1a;
+      --text-light: #666666;
+      --border: #ddd;
+      --code-bg: #fff3e0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-dark);
+      line-height: 1.6;
+      letter-spacing: 0.3px;
+    }
+
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ===== SIDEBAR ===== */
+    aside.sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 280px;
+      height: 100vh;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    aside.sidebar h2 {
+      font-size: 18px;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background-color: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background-color: var(--secondary);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .chapter-count {
+      font-size: 12px;
+      color: var(--text-light);
+      text-align: right;
+      margin-bottom: 1.5rem;
+    }
+
+    .toc {
+      margin-bottom: 2rem;
+    }
+
+    .toc ul {
+      list-style: none;
+    }
+
+    .toc li {
+      margin-bottom: 0.75rem;
+    }
+
+    .toc a {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .toc a:hover {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .toc a.active {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    main.content {
+      margin-left: 280px;
+      padding: 3rem 2rem;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .chapter {
+      display: none;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    .chapter.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .intro-page {
+      text-align: center;
+    }
+
+    .intro-page h1 {
+      font-size: 42px;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .intro-page .subtitle {
+      font-size: 20px;
+      color: var(--text-light);
+      margin-bottom: 2rem;
+    }
+
+    .intro-content {
+      background-color: var(--bg-sidebar);
+      padding: 2.5rem;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary);
+      text-align: left;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .intro-content p {
+      margin-bottom: 1rem;
+      font-size: 16px;
+    }
+
+    .intro-content ul {
+      margin: 1.5rem 0 2rem 1.5rem;
+    }
+
+    .intro-content li {
+      margin-bottom: 0.5rem;
+    }
+
+    .start-btn {
+      background-color: var(--primary);
+      color: white;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .start-btn:hover {
+      background-color: #0052a3;
+    }
+
+    /* ===== CHAPTER CONTENT ===== */
+    .chapter h1 {
+      font-size: 28px;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .chapter h2 {
+      font-size: 22px;
+      color: var(--primary);
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .chapter h3 {
+      font-size: 18px;
+      color: var(--text-dark);
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .chapter p {
+      margin-bottom: 1rem;
+      line-height: 1.7;
+    }
+
+    .chapter ul, .chapter ol {
+      margin: 1rem 0 1rem 2rem;
+    }
+
+    .chapter li {
+      margin-bottom: 0.5rem;
+    }
+
+    /* ===== DIAGRAMS ===== */
+    figure.diagram {
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    figure.diagram svg {
+      max-width: 100%;
+      height: auto;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+      animation: diagramFadeIn 0.8s ease-in;
+    }
+
+    @keyframes diagramFadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    figcaption {
+      font-size: 14px;
+      color: var(--text-light);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+
+    /* ===== CODE BLOCKS ===== */
+    .code-block {
+      background-color: var(--code-bg);
+      border-left: 4px solid var(--accent);
+      padding: 1rem;
+      border-radius: 4px;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .code-block code {
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-dark);
+      display: block;
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .code-copy-btn {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 4px 12px;
+      border-radius: 3px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .code-copy-btn:hover {
+      background-color: #e55a2b;
+    }
+
+    /* ===== COLLAPSIBLE ===== */
+    .collapsible {
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .collapsible summary {
+      padding: 1rem;
+      background-color: var(--bg-sidebar);
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--primary);
+      user-select: none;
+      transition: background-color 0.2s;
+    }
+
+    .collapsible summary:hover {
+      background-color: #f0f0f0;
+    }
+
+    .collapsible[open] summary {
+      background-color: #f0f0f0;
+    }
+
+    .collapsible-content {
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ===== QUIZ ===== */
+    .quiz {
+      background-color: var(--bg-sidebar);
+      padding: 1.5rem;
+      border-radius: 6px;
+      margin: 2rem 0;
+      border-left: 4px solid var(--primary);
+    }
+
+    .quiz h3 {
+      color: var(--primary);
+      margin-top: 0;
+    }
+
+    .quiz-question {
+      margin: 1.5rem 0;
+      padding: 1rem;
+      background-color: white;
+      border-radius: 4px;
+    }
+
+    .quiz-question p {
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .reveal-btn {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-bottom: 0.75rem;
+    }
+
+    .reveal-btn:hover {
+      background-color: #e55a2b;
+    }
+
+    .answer {
+      background-color: #f0f9f4;
+      padding: 1rem;
+      border-left: 4px solid var(--secondary);
+      border-radius: 4px;
+      margin-top: 0.75rem;
+      animation: slideIn 0.4s ease-in;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        max-height: 0;
+      }
+      to {
+        opacity: 1;
+        max-height: 500px;
+      }
+    }
+
+    /* ===== KEY TAKEAWAYS ===== */
+    .key-takeaways {
+      background-color: #f0f9f4;
+      padding: 1.5rem;
+      border-radius: 6px;
+      margin: 2rem 0;
+      border-left: 4px solid var(--secondary);
+    }
+
+    .key-takeaways h3 {
+      color: var(--secondary);
+      margin-top: 0;
+    }
+
+    .key-takeaways ul {
+      margin-left: 1.5rem;
+    }
+
+    .key-takeaways li {
+      margin-bottom: 0.75rem;
+      color: var(--text-dark);
+    }
+
+    /* ===== NAVIGATION ===== */
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 3rem;
+      gap: 1rem;
+    }
+
+    .nav-buttons button {
+      flex: 1;
+      padding: 12px 20px;
+      border: 1px solid var(--border);
+      background-color: white;
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-buttons button:hover {
+      background-color: var(--bg-sidebar);
+      border-color: var(--primary);
+    }
+
+    .nav-buttons button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      aside.sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 1.5rem;
+      }
+
+      main.content {
+        margin-left: 0;
+        padding: 2rem 1rem;
+      }
+
+      .chapter h1 {
+        font-size: 24px;
+      }
+
+      .intro-page h1 {
+        font-size: 32px;
+      }
+    }
+
+    /* Syntax highlighting for code */
+    .keyword { color: #0066cc; font-weight: 600; }
+    .string { color: #00b359; }
+    .comment { color: #999; font-style: italic; }
+    .number { color: #ff6b35; }
+    .type { color: #d9534f; font-weight: 600; }
+    .function { color: #0066cc; }
+    
+    /* Code block improvements */
+    .code-block code .line-number {
+      display: inline-block;
+      width: 2.5em;
+      text-align: right;
+      margin-right: 1em;
+      color: #ccc;
+      user-select: none;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar">
+      <h2>CHI Lesson</h2>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="chapter-count" id="chapterCount">0/4</div>
+      <nav class="toc">
+        <ul>
+          <li><a href="#" onclick="goToChapter(0)">Introduction</a></li>
+          <li><a href="#" onclick="goToChapter(1)">Ch 1: CHI Overview</a></li>
+          <li><a href="#" onclick="goToChapter(2)">Ch 2: Cache States</a></li>
+          <li><a href="#" onclick="goToChapter(3)">Ch 3: Transactions</a></li>
+          <li><a href="#" onclick="goToChapter(4)">Ch 4: Performance</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="content">
+      <!-- INTRO PAGE -->
+      <section id="chapter-0" class="chapter intro-page active">
+        <h1>CHI Protocol Fundamentals</h1>
+        <p class="subtitle">Coherent Hub Interface Deep Dive</p>
+        <div class="intro-content">
+          <p><strong>Estimated reading time:</strong> 60–80 minutes (4 chapters)</p>
+          <p><strong>What you'll learn:</strong></p>
+          <ul>
+            <li>CHI protocol overview and transaction model</li>
+            <li>Cache coherency states and transitions (MESI model)</li>
+            <li>All transaction types: requests, responses, snoops</li>
+            <li>Deadlock prevention and performance optimization</li>
+          </ul>
+          <p><strong>Prerequisites:</strong> Basic understanding of cache hierarchies and coherency concepts</p>
+          <button class="start-btn" onclick="goToChapter(1)">Start Learning →</button>
+        </div>
+      </section>
+
+      <!-- CHAPTER 1: CHI OVERVIEW -->
+      <section id="chapter-1" class="chapter">
+        <h1>Chapter 1: CHI Protocol Overview</h1>
+
+        <h2>What is CHI?</h2>
+        <p>The <strong>Coherent Hub Interface (CHI)</strong> is ARM's open-source protocol for coherent system interconnects. It defines how multiple processors, caches, and other coherent agents communicate to maintain cache consistency across a system-on-chip (SoC).</p>
+
+        <p>CHI is designed for:</p>
+        <ul>
+          <li>Multi-core processors with shared caches</li>
+          <li>Heterogeneous computing (CPUs + GPUs + accelerators)</li>
+          <li>Scalable SoCs with complex memory hierarchies</li>
+          <li>Deterministic, low-latency coherency</li>
+        </ul>
+
+        <h2>Core Architecture</h2>
+        <p>CHI systems consist of three main components:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background -->
+            <rect width="700" height="400" fill="#ffffff"/>
+            
+            <!-- Title -->
+            <text x="350" y="30" font-size="20" font-weight="bold" text-anchor="middle" fill="#0066cc">CHI System Architecture</text>
+            
+            <!-- Request Node (Left) -->
+            <rect x="50" y="100" width="140" height="100" fill="#e6f2ff" stroke="#0066cc" stroke-width="2" rx="4"/>
+            <text x="120" y="135" font-size="14" font-weight="bold" text-anchor="middle" fill="#1a1a1a">Request Node</text>
+            <text x="120" y="155" font-size="12" text-anchor="middle" fill="#1a1a1a">(CPU/GPU)</text>
+            <text x="120" y="175" font-size="11" text-anchor="middle" fill="#666">Initiates coherent</text>
+            <text x="120" y="188" font-size="11" text-anchor="middle" fill="#666">transactions</text>
+            
+            <!-- Home Node (Center) -->
+            <rect x="280" y="80" width="140" height="140" fill="#fff3e0" stroke="#ff6b35" stroke-width="2" rx="4"/>
+            <text x="350" y="120" font-size="14" font-weight="bold" text-anchor="middle" fill="#1a1a1a">Home Node</text>
+            <text x="350" y="140" font-size="12" text-anchor="middle" fill="#1a1a1a">(Memory Controller)</text>
+            <text x="350" y="160" font-size="11" text-anchor="middle" fill="#666">Maintains coherency</text>
+            <text x="350" y="173" font-size="11" text-anchor="middle" fill="#666">point for addresses</text>
+            <text x="350" y="186" font-size="11" text-anchor="middle" fill="#666">Distributes snoops</text>
+            
+            <!-- Snoop Node (Right) -->
+            <rect x="510" y="100" width="140" height="100" fill="#f0f9f4" stroke="#00b359" stroke-width="2" rx="4"/>
+            <text x="580" y="135" font-size="14" font-weight="bold" text-anchor="middle" fill="#1a1a1a">Snoop Node</text>
+            <text x="580" y="155" font-size="12" text-anchor="middle" fill="#1a1a1a">(Cache)</text>
+            <text x="580" y="175" font-size="11" text-anchor="middle" fill="#666">Responds to</text>
+            <text x="580" y="188" font-size="11" text-anchor="middle" fill="#666">snoop requests</text>
+            
+            <!-- Interconnect -->
+            <path d="M 190 150 L 280 150" stroke="#0066cc" stroke-width="2" marker-end="url(#arrowhead)"/>
+            <text x="235" y="140" font-size="11" fill="#0066cc" text-anchor="middle">Requests</text>
+            
+            <path d="M 420 150 L 510 150" stroke="#00b359" stroke-width="2" marker-end="url(#arrowhead2)"/>
+            <text x="465" y="140" font-size="11" fill="#00b359" text-anchor="middle">Snoops</text>
+            
+            <path d="M 510 180 L 420 180" stroke="#ff6b35" stroke-width="2" marker-end="url(#arrowhead3)"/>
+            <text x="465" y="200" font-size="11" fill="#ff6b35" text-anchor="middle">Responses</text>
+            
+            <!-- Arrow markers -->
+            <defs>
+              <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#0066cc"/>
+              </marker>
+              <marker id="arrowhead2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#00b359"/>
+              </marker>
+              <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#ff6b35"/>
+              </marker>
+            </defs>
+            
+            <!-- Legend -->
+            <text x="50" y="320" font-size="12" font-weight="bold" fill="#1a1a1a">Transaction Flow:</text>
+            <text x="50" y="345" font-size="11" fill="#666">1. Request Node initiates coherent transaction (Read/Write request)</text>
+            <text x="50" y="365" font-size="11" fill="#666">2. Home Node routes snoop messages to relevant nodes</text>
+            <text x="50" y="385" font-size="11" fill="#666">3. Snoop Nodes respond with cache state / data</text>
+          </svg>
+          <figcaption>CHI interconnect with Request Node, Home Node, and Snoop Node</figcaption>
+        </figure>
+
+        <h2>Transaction Model</h2>
+        <p>CHI transactions follow a <strong>three-phase model</strong>:</p>
+
+        <ol>
+          <li><strong>Request Phase:</strong> Request Node sends a coherent request (e.g., read, write, atomic) to the Home Node</li>
+          <li><strong>Snoop Phase:</strong> Home Node broadcasts snoop messages to relevant nodes (caches) to invalidate or update data</li>
+          <li><strong>Response & Data Phase:</strong> Snoop nodes and home respond with acknowledgments and data</li>
+        </ol>
+
+        <details class="collapsible">
+          <summary>Advanced: CHI vs. Other Protocols (ACE, AXI)</summary>
+          <div class="collapsible-content">
+            <p><strong>ACE (AXI Coherency Extension):</strong> Earlier ARM coherency protocol; simpler but less flexible. Still used in some SoCs.</p>
+            <p><strong>AXI:</strong> Non-coherent interconnect; CHI sits on top of AXI in some designs.</p>
+            <p><strong>CHI advantages:</strong></p>
+            <ul>
+              <li>Scalable: Supports many more agents than ACE</li>
+              <li>Flexible: Multiple transaction types and ordering semantics</li>
+              <li>Modern: Designed for heterogeneous compute with GPU/AI accelerators</li>
+            </ul>
+          </div>
+        </details>
+
+        <div class="quiz">
+          <h3>Self-Check Quiz</h3>
+          <div class="quiz-question">
+            <p><strong>Q1:</strong> What are the three main node types in a CHI system?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">Request Nodes (CPUs/GPUs), Home Nodes (memory controllers), and Snoop Nodes (caches). The Home Node maintains coherency and distributes snoops; Snoop Nodes respond to maintain cache consistency.</p>
+          </div>
+          <div class="quiz-question">
+            <p><strong>Q2:</strong> How many phases does a typical CHI transaction have?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">Three phases: (1) Request Phase, (2) Snoop Phase, and (3) Response & Data Phase. This allows distributed coherency decisions.</p>
+          </div>
+        </div>
+
+        <section class="key-takeaways">
+          <h3>Key Takeaways</h3>
+          <ul>
+            <li><strong>CHI (Coherent Hub Interface)</strong> is ARM's protocol for cache coherency in SoCs</li>
+            <li>Systems consist of <strong>Request Nodes</strong> (CPU/GPU), <strong>Home Nodes</strong> (memory), and <strong>Snoop Nodes</strong> (caches)</li>
+            <li>Transactions follow a <strong>three-phase model</strong>: request → snoop → response</li>
+            <li>CHI scales better than older ACE protocol and supports heterogeneous architectures</li>
+          </ul>
+        </section>
+
+        <div class="nav-buttons">
+          <button onclick="previousChapter()" disabled>← Previous</button>
+          <button onclick="nextChapter()">Next →</button>
+        </div>
+      </section>
+
+      <!-- CHAPTER 2: CACHE STATES & TRANSITIONS -->
+      <section id="chapter-2" class="chapter">
+        <h1>Chapter 2: Cache States & Transitions</h1>
+
+        <h2>The MESI Coherency Model</h2>
+        <p>CHI uses a <strong>MESI</strong> (Modified, Exclusive, Shared, Invalid) coherency model to track cache line states across the system. Each cache line can be in one of four states:</p>
+
+        <ul>
+          <li><strong>Invalid (I):</strong> Cache line does not contain valid data</li>
+          <li><strong>Shared (S):</strong> Cache line is clean (matches memory); may exist in multiple caches</li>
+          <li><strong>Exclusive (E):</strong> Cache line is clean and only in this cache; can transition to Modified without snoop</li>
+          <li><strong>Modified (M):</strong> Cache line is dirty (differs from memory); exists only in this cache</li>
+        </ul>
+
+        <h2>State Transition Diagram (Interactive & Animated)</h2>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 750 500" xmlns="http://www.w3.org/2000/svg" id="mesiDiagram">
+            <!-- Background -->
+            <rect width="750" height="500" fill="#ffffff"/>
+            <text x="375" y="25" font-size="18" font-weight="bold" text-anchor="middle" fill="#0066cc">MESI State Machine (Click buttons or watch auto-play)</text>
+            
+            <!-- States (circles) -->
+            <circle id="state-I" cx="150" cy="150" r="50" fill="#e6f2ff" stroke="#0066cc" stroke-width="2" class="state-circle"/>
+            <text x="150" y="160" font-size="18" font-weight="bold" text-anchor="middle" fill="#1a1a1a">I</text>
+            <text x="150" y="225" font-size="13" font-weight="600" text-anchor="middle" fill="#1a1a1a">Invalid</text>
+            
+            <circle id="state-S" cx="375" cy="150" r="50" fill="#f0f9f4" stroke="#00b359" stroke-width="2" class="state-circle"/>
+            <text x="375" y="160" font-size="18" font-weight="bold" text-anchor="middle" fill="#1a1a1a">S</text>
+            <text x="375" y="225" font-size="13" font-weight="600" text-anchor="middle" fill="#1a1a1a">Shared</text>
+            
+            <circle id="state-E" cx="600" cy="150" r="50" fill="#e6f2ff" stroke="#0066cc" stroke-width="2" class="state-circle"/>
+            <text x="600" y="160" font-size="18" font-weight="bold" text-anchor="middle" fill="#1a1a1a">E</text>
+            <text x="600" y="225" font-size="13" font-weight="600" text-anchor="middle" fill="#1a1a1a">Exclusive</text>
+            
+            <circle id="state-M" cx="375" cy="370" r="50" fill="#fff3e0" stroke="#ff6b35" stroke-width="2" class="state-circle"/>
+            <text x="375" y="380" font-size="18" font-weight="bold" text-anchor="middle" fill="#1a1a1a">M</text>
+            <text x="375" y="445" font-size="13" font-weight="600" text-anchor="middle" fill="#1a1a1a">Modified</text>
+            
+            <!-- Animated transition paths -->
+            <g id="transitions">
+              <!-- I to S -->
+              <path id="path-I-S" d="M 200 150 L 325 150" stroke="#0066cc" stroke-width="2" fill="none" marker-end="url(#arrowblue)" opacity="0.5"/>
+              <text x="260" y="135" font-size="10" fill="#0066cc" font-weight="600">Read</text>
+              
+              <!-- I to E -->
+              <path id="path-I-E" d="M 210 130 Q 375 50 550 130" stroke="#0066cc" stroke-width="2" fill="none" marker-end="url(#arrowblue)" opacity="0.5"/>
+              <text x="375" y="85" font-size="10" fill="#0066cc" font-weight="600">ReadUnique</text>
+              
+              <!-- S to M -->
+              <path id="path-S-M" d="M 375 200 L 375 320" stroke="#ff6b35" stroke-width="2" fill="none" marker-end="url(#arroworange)" opacity="0.5"/>
+              <text x="400" y="265" font-size="10" fill="#ff6b35" font-weight="600">Write</text>
+              
+              <!-- E to M -->
+              <path id="path-E-M" d="M 550 185 Q 460 280 420 340" stroke="#ff6b35" stroke-width="2" fill="none" marker-end="url(#arroworange)" opacity="0.5"/>
+              <text x="520" y="280" font-size="10" fill="#ff6b35" font-weight="600">Write</text>
+              
+              <!-- S to I -->
+              <path id="path-S-I" d="M 325 150 L 200 150" stroke="#d9534f" stroke-width="2" fill="none" marker-end="url(#arrowred)" opacity="0.5"/>
+              <text x="260" y="165" font-size="10" fill="#d9534f" font-weight="600">Snoop Inv</text>
+              
+              <!-- E to S -->
+              <path id="path-E-S" d="M 550 130 Q 470 100 420 145" stroke="#d9534f" stroke-width="2" fill="none" marker-end="url(#arrowred)" opacity="0.5"/>
+              <text x="490" y="105" font-size="10" fill="#d9534f" font-weight="600">Snoop</text>
+              
+              <!-- M to I -->
+              <path id="path-M-I" d="M 330 360 Q 200 280 185 200" stroke="#d9534f" stroke-width="2" fill="none" marker-end="url(#arrowred)" opacity="0.5"/>
+              <text x="220" y="310" font-size="10" fill="#d9534f" font-weight="600">Evict/Snoop</text>
+            </g>
+            
+            <!-- Current state indicator -->
+            <text id="current-state-label" x="375" y="490" font-size="12" font-weight="bold" text-anchor="middle" fill="#1a1a1a">Current State: I (Invalid)</text>
+            
+            <!-- Arrow markers -->
+            <defs>
+              <marker id="arrowblue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#0066cc"/>
+              </marker>
+              <marker id="arroworange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#ff6b35"/>
+              </marker>
+              <marker id="arrowred" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#d9534f"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>MESI state machine—interactive and auto-animating. Watch the auto-demo or click buttons to trigger transitions.</figcaption>
+        </figure>
+
+        <!-- Control Buttons -->
+        <div style="display: flex; gap: 1rem; justify-content: center; margin: 2rem 0; flex-wrap: wrap;">
+          <button onclick="mesiTransition('I', 'S')" style="padding: 10px 16px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;">📖 Read (I→S)</button>
+          <button onclick="mesiTransition('I', 'E')" style="padding: 10px 16px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;">📖 ReadUnique (I→E)</button>
+          <button onclick="mesiTransition('S', 'M')" style="padding: 10px 16px; background-color: #ff6b35; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;">✏️ Write (S→M)</button>
+          <button onclick="mesiTransition('E', 'M')" style="padding: 10px 16px; background-color: #ff6b35; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;">✏️ Write (E→M)</button>
+          <button onclick="mesiTransition('S', 'I')" style="padding: 10px 16px; background-color: #d9534f; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;">🔔 Snoop Inv (S→I)</button>
+          <button onclick="toggleAutoPlay()" id="autoplay-btn" style="padding: 10px 16px; background-color: #00b359; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;">▶️ Start Auto-Demo</button>
+          <button onclick="resetMesi()" style="padding: 10px 16px; background-color: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;">🔄 Reset</button>
+        </div>
+
+        <h2>Key Transitions Explained</h2>
+
+        <p><strong>I → S (Read Miss):</strong> A cache miss on a read results in fetching the line in Shared state. Other caches may also have copies.</p>
+
+        <p><strong>I → E (Read-Exclusive):</strong> If only this cache has requested the line, it arrives in Exclusive state (clean, owned by this cache).</p>
+
+        <p><strong>S/E → M (Write):</strong> Writing to a cache line transitions it to Modified. From Shared, a snoop is required to invalidate other copies; from Exclusive, no snoop needed.</p>
+
+        <p><strong>* → I (Snoop Invalidate):</strong> When another cache requests write access, snoops invalidate other copies.</p>
+
+        <details class="collapsible">
+          <summary>Advanced: MOESI & Other Extensions</summary>
+          <div class="collapsible-content">
+            <p>Some systems use <strong>MOESI</strong> (adds Owned state), which allows a cache to hold a dirty line and supply data to other caches without writing to memory first.</p>
+            <p>CHI can be configured with various coherency models; MESI is the most common for ARMv8 systems.</p>
+          </div>
+        </details>
+
+        <div class="quiz">
+          <h3>Self-Check Quiz</h3>
+          <div class="quiz-question">
+            <p><strong>Q1:</strong> What is the difference between Shared and Exclusive states?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;"><strong>Shared:</strong> Multiple caches may have the line; writes require snoops to invalidate others. <strong>Exclusive:</strong> Only this cache has the line; writes can proceed without snoops.</p>
+          </div>
+          <div class="quiz-question">
+            <p><strong>Q2:</strong> What transition occurs when a snoop invalidate message arrives for a cache line in Modified state?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">The line transitions from Modified → Invalid. The cache must write-back the dirty data to memory (or supply it to the requestor) before invalidating.</p>
+          </div>
+        </div>
+
+        <section class="key-takeaways">
+          <h3>Key Takeaways</h3>
+          <ul>
+            <li><strong>MESI</strong> has four states: Invalid, Shared, Exclusive, Modified</li>
+            <li><strong>Exclusive</strong> is special: allows writes without snoops (fast path)</li>
+            <li><strong>Transitions</strong> are triggered by local reads/writes and incoming snoop messages</li>
+            <li><strong>Coherency invariant:</strong> Only one cache can have Modified; Shared lines are clean</li>
+          </ul>
+        </section>
+
+        <div class="nav-buttons">
+          <button onclick="previousChapter()">← Previous</button>
+          <button onclick="nextChapter()">Next →</button>
+        </div>
+      </section>
+
+      <!-- CHAPTER 3: TRANSACTION TYPES -->
+      <section id="chapter-3" class="chapter">
+        <h1>Chapter 3: CHI Transaction Types</h1>
+
+        <h2>Overview</h2>
+        <p>CHI defines several categories of transactions to handle different access patterns and coherency requirements:</p>
+
+        <ul>
+          <li><strong>Request Transactions:</strong> Initiated by Request Nodes (reads, writes, atomics)</li>
+          <li><strong>Snoop Transactions:</strong> Broadcast by Home Node to invalidate/update cache lines</li>
+          <li><strong>Response Transactions:</strong> Sent by nodes to acknowledge and provide data</li>
+        </ul>
+
+        <h2>Request Transaction Types</h2>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 1.5rem 0;">
+          <thead>
+            <tr style="background-color: var(--bg-sidebar); border-bottom: 2px solid var(--border);">
+              <th style="padding: 0.75rem; text-align: left; border: 1px solid var(--border);">Transaction</th>
+              <th style="padding: 0.75rem; text-align: left; border: 1px solid var(--border);">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem; border: 1px solid var(--border);"><strong>ReadShared</strong></td>
+              <td style="padding: 0.75rem; border: 1px solid var(--border);">Read-only access; line arrives in Shared state</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem; border: 1px solid var(--border);"><strong>ReadUnique</strong></td>
+              <td style="padding: 0.75rem; border: 1px solid var(--border);">Read for future write; line arrives Exclusive</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem; border: 1px solid var(--border);"><strong>WriteUnique</strong></td>
+              <td style="padding: 0.75rem; border: 1px solid var(--border);">Write; invalidates other copies, line arrives Modified</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem; border: 1px solid var(--border);"><strong>AtomicStore</strong></td>
+              <td style="padding: 0.75rem; border: 1px solid var(--border);">Atomic operation (CAS, swap); returns old value</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.75rem; border: 1px solid var(--border);"><strong>Evict</strong></td>
+              <td style="padding: 0.75rem; border: 1px solid var(--border);">Cache line eviction; notifies home</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Snoop Transaction Types</h2>
+
+        <p>The Home Node sends snoop transactions to Snoop Nodes (caches) to maintain coherency:</p>
+
+        <ul>
+          <li><strong>SnpShared:</strong> "Do you have this line?" (read-only check)</li>
+          <li><strong>SnpUnique:</strong> "Invalidate or downgrade your copy" (for incoming exclusive access)</li>
+          <li><strong>SnpCleanInvalid:</strong> "If you have a clean copy, invalidate it"</li>
+        </ul>
+
+        <h2>Example Transaction Flow</h2>
+
+        <p>Let's trace a <strong>ReadUnique</strong> transaction (read for future write):</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span>Transaction Sequence (ReadUnique)</span>
+            <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <code><span class="comment">// Step 1: Requester sends ReadUnique to Home</span>
+Request: ReadUnique (Address=0x4000, Requester=CPU0)
+
+<span class="comment">// Step 2: Home Node checks directory, sends snoops to caches holding line</span>
+Snoop: SnpUnique → CPU1 (Address=0x4000)
+Snoop: SnpUnique → CPU2 (Address=0x4000)
+
+<span class="comment">// Step 3: Snoopers respond with SnpResp_Inv (invalidate & send data if dirty)</span>
+Response: SnpResp_Inv (Data="CachedValue", WasModified=false) ← CPU1
+Response: SnpResp_Inv (Data="invalid", WasModified=false) ← CPU2
+
+<span class="comment">// Step 4: Home sends CompData with line in Exclusive state</span>
+Response: CompData (Data=0x4000, State=Exclusive) → CPU0
+
+<span class="comment">// Result: CPU0 has line in Exclusive; can write without further snoops</span></code>
+        </div>
+
+        <details class="collapsible">
+          <summary>Advanced: WriteUnique vs. ReadUnique Performance Trade-off</summary>
+          <div class="collapsible-content">
+            <p><strong>ReadUnique:</strong> Acquires exclusive access before write; higher latency upfront, but write is fast (no snoop needed).</p>
+            <p><strong>WriteUnique:</strong> Sends write directly; lower latency if no other copies, but requires snoop at write time if others have the line.</p>
+            <p>Software (compiler, runtime) chooses based on predicted access patterns.</p>
+          </div>
+        </details>
+
+        <div class="quiz">
+          <h3>Self-Check Quiz</h3>
+          <div class="quiz-question">
+            <p><strong>Q1:</strong> What is the key difference between ReadShared and ReadUnique requests?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;"><strong>ReadShared</strong> fetches the line in Shared state (multiple readers allowed). <strong>ReadUnique</strong> acquires exclusive access, allowing a fast subsequent write without additional snoops.</p>
+          </div>
+          <div class="quiz-question">
+            <p><strong>Q2:</strong> When a WriteUnique request arrives at the Home Node, what snoop messages are sent?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">SnpUnique snoops are sent to all caches holding the line (in directory). They respond by invalidating their copy and sending data if modified.</p>
+          </div>
+        </div>
+
+        <section class="key-takeaways">
+          <h3>Key Takeaways</h3>
+          <ul>
+            <li><strong>Request transactions</strong> (ReadShared, ReadUnique, WriteUnique, Atomic, Evict) initiate coherent operations</li>
+            <li><strong>Snoop transactions</strong> (SnpShared, SnpUnique, SnpCleanInvalid) maintain consistency across caches</li>
+            <li><strong>ReadUnique</strong> is optimized for read-modify-write patterns; avoids snoop on subsequent write</li>
+            <li><strong>Home Node** maintains a directory to target snoops efficiently</li>
+          </ul>
+        </section>
+
+        <div class="nav-buttons">
+          <button onclick="previousChapter()">← Previous</button>
+          <button onclick="nextChapter()">Next →</button>
+        </div>
+      </section>
+
+      <!-- CHAPTER 4: DEADLOCK & PERFORMANCE -->
+      <section id="chapter-4" class="chapter">
+        <h1>Chapter 4: Deadlock Avoidance & Performance</h1>
+
+        <h2>The Deadlock Problem</h2>
+        <p>In distributed systems with multiple nodes exchanging messages, <strong>deadlock</strong> can occur if:</p>
+
+        <ul>
+          <li>Node A waits for Node B's response</li>
+          <li>Node B waits for Node C's response</li>
+          <li>Node C waits for Node A's response</li>
+          <li>→ Circular wait; all nodes stall indefinitely</li>
+        </ul>
+
+        <p>CHI mitigates this through careful protocol design and resource management.</p>
+
+        <h2>CHI Deadlock Prevention Techniques</h2>
+
+        <h3>1. Virtual Channels (VCs)</h3>
+        <p>CHI separates traffic into multiple <strong>virtual channels</strong>, each with independent buffering and ordering guarantees:</p>
+
+        <ul>
+          <li><strong>Request VC:</strong> Request transactions (ReadShared, WriteUnique, etc.)</li>
+          <li><strong>Response VC:</strong> Response transactions (CompData, SnpResp)</li>
+          <li><strong>Data VC:</strong> Data-bearing responses</li>
+          <li><strong>Snoop VC:</strong> Snoop requests from Home</li>
+        </ul>
+
+        <p>By separating channels, a stall in one VC (e.g., waiting for data) doesn't block other VCs, breaking dependency cycles.</p>
+
+        <h3>2. Strict Ordering Rules</h3>
+        <p>CHI enforces ordering constraints to prevent circular dependencies:</p>
+
+        <ul>
+          <li>A request must receive a response before being considered complete</li>
+          <li>Snoops must be answered before further requests to the same address from that snoopers</li>
+          <li>Data responses follow a deterministic ordering (FIFO per VC)</li>
+        </ul>
+
+        <h3>3. Timeout & Recovery (Optional)</h3>
+        <p>Advanced implementations include watchdog timers to detect stalls and reset interconnect state.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 350" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background -->
+            <rect width="700" height="350" fill="#ffffff"/>
+            <text x="350" y="25" font-size="18" font-weight="bold" text-anchor="middle" fill="#0066cc">Virtual Channel Usage</text>
+            
+            <!-- Request VC -->
+            <rect x="30" y="60" width="140" height="80" fill="#e6f2ff" stroke="#0066cc" stroke-width="2" rx="4"/>
+            <text x="100" y="85" font-size="12" font-weight="bold" text-anchor="middle" fill="#1a1a1a">Request VC</text>
+            <text x="100" y="105" font-size="10" text-anchor="middle" fill="#666">ReadShared,</text>
+            <text x="100" y="120" font-size="10" text-anchor="middle" fill="#666">WriteUnique,</text>
+            <text x="100" y="135" font-size="10" text-anchor="middle" fill="#666">AtomicStore</text>
+            
+            <!-- Response VC -->
+            <rect x="190" y="60" width="140" height="80" fill="#f0f9f4" stroke="#00b359" stroke-width="2" rx="4"/>
+            <text x="260" y="85" font-size="12" font-weight="bold" text-anchor="middle" fill="#1a1a1a">Response VC</text>
+            <text x="260" y="105" font-size="10" text-anchor="middle" fill="#666">CompData,</text>
+            <text x="260" y="120" font-size="10" text-anchor="middle" fill="#666">SnpResp,</text>
+            <text x="260" y="135" font-size="10" text-anchor="middle" fill="#666">CompAck</text>
+            
+            <!-- Data VC -->
+            <rect x="350" y="60" width="140" height="80" fill="#fff3e0" stroke="#ff6b35" stroke-width="2" rx="4"/>
+            <text x="420" y="85" font-size="12" font-weight="bold" text-anchor="middle" fill="#1a1a1a">Data VC</text>
+            <text x="420" y="105" font-size="10" text-anchor="middle" fill="#666">DataResp,</text>
+            <text x="420" y="120" font-size="10" text-anchor="middle" fill="#666">CopyBack</text>
+            <text x="420" y="135" font-size="10" text-anchor="middle" fill="#666">(Data payload)</text>
+            
+            <!-- Snoop VC -->
+            <rect x="510" y="60" width="140" height="80" fill="#ffe6e6" stroke="#d9534f" stroke-width="2" rx="4"/>
+            <text x="580" y="85" font-size="12" font-weight="bold" text-anchor="middle" fill="#1a1a1a">Snoop VC</text>
+            <text x="580" y="105" font-size="10" text-anchor="middle" fill="#666">SnpShared,</text>
+            <text x="580" y="120" font-size="10" text-anchor="middle" fill="#666">SnpUnique,</text>
+            <text x="580" y="135" font-size="10" text-anchor="middle" fill="#666">SnpCleanInv</text>
+            
+            <!-- Independence arrows -->
+            <text x="350" y="180" font-size="13" font-weight="bold" text-anchor="middle" fill="#1a1a1a">Benefits of Separate VCs:</text>
+            <text x="50" y="220" font-size="11" fill="#666">✓ Stall in one VC doesn't block others</text>
+            <text x="50" y="245" font-size="11" fill="#666">✓ Breaks dependency cycles → prevents deadlock</text>
+            <text x="50" y="270" font-size="11" fill="#666">✓ Enables pipeline progress even under backpressure</text>
+            <text x="50" y="295" font-size="11" fill="#666">✓ Each VC can have independent buffer management</text>
+            <text x="50" y="320" font-size="11" fill="#666">✓ Routing decisions per VC allow quality-of-service</text>
+          </svg>
+          <figcaption>CHI Virtual Channels prevent deadlock by separating traffic classes</figcaption>
+        </figure>
+
+        <h2>Performance Optimization Strategies</h2>
+
+        <h3>1. Cache Prefetching</h3>
+        <p>Anticipate future accesses and fetch lines early using <strong>prefetch requests</strong>. Reduces latency of predicted reads.</p>
+
+        <h3>2. Speculative Reads</h3>
+        <p>Use <strong>ReadUnique</strong> speculatively (guessing a write will follow soon). If no write occurs, downgrade to Shared on eviction.</p>
+
+        <h3>3. Directory Optimization</h3>
+        <p>Home Node maintains a directory of which caches hold each line. Reduces snoop broadcast to only relevant nodes (vs. broadcasting to all).</p>
+
+        <h3>4. Link-Level Flow Control</h3>
+        <p>Use backpressure (NREADY/credits) to manage interconnect congestion and prevent buffer overflow.</p>
+
+        <details class="collapsible">
+          <summary>Advanced: CHI Ordering Guarantees (Sequential vs. Relaxed)</summary>
+          <div class="collapsible-content">
+            <p>CHI supports multiple <strong>ordering semantics</strong>:</p>
+            <ul>
+              <li><strong>Sequential Consistency:</strong> Strictest; all processors see same order of operations</li>
+              <li><strong>Relaxed Consistency:</strong> Allows reordering with explicit barriers (e.g., DSB - Data Synchronization Barrier)</li>
+            </ul>
+            <p>Software uses barriers (DMB, DSB) when order matters (e.g., before releasing a lock). This improves performance by allowing aggressive reordering in the common case.</p>
+          </div>
+        </details>
+
+        <div class="quiz">
+          <h3>Self-Check Quiz</h3>
+          <div class="quiz-question">
+            <p><strong>Q1:</strong> How do virtual channels prevent deadlock in CHI?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">Virtual channels separate traffic into independent lanes (Request, Response, Data, Snoop) with independent buffering. A stall in one VC cannot block another, breaking circular wait conditions that cause deadlock.</p>
+          </div>
+          <div class="quiz-question">
+            <p><strong>Q2:</strong> What is the advantage of a directory-based approach over broadcast snooping?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">A directory tracks which caches hold each line, allowing snoops to target only relevant caches. Broadcast snooping wastes bandwidth and interconnect resources by sending to all nodes.</p>
+          </div>
+        </div>
+
+        <section class="key-takeaways">
+          <h3>Key Takeaways</h3>
+          <ul>
+            <li><strong>Deadlock</strong> arises from circular dependencies in message flow</li>
+            <li><strong>Virtual channels</strong> separate traffic into independent lanes, breaking cycles</li>
+            <li><strong>Ordering rules</strong> enforce strict sequencing to prevent hazards</li>
+            <li><strong>Directory-based snooping</strong> improves efficiency over broadcast</li>
+            <li><strong>Speculation & prefetching</strong> hide latency and improve performance</li>
+          </ul>
+        </section>
+
+        <div class="nav-buttons">
+          <button onclick="previousChapter()">← Previous</button>
+          <button onclick="nextChapter()" disabled>Next →</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const chapters = [
+      'chapter-0', 'chapter-1', 'chapter-2', 'chapter-3', 'chapter-4'
+    ];
+    let currentChapter = 0;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      showChapter(0);
+      updateProgress();
+    });
+
+    function showChapter(index) {
+      chapters.forEach((ch, i) => {
+        const el = document.getElementById(ch);
+        if (i === index) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+      currentChapter = index;
+      updateProgress();
+      window.scrollTo(0, 0);
+    }
+
+    function goToChapter(index) {
+      showChapter(index);
+    }
+
+    function nextChapter() {
+      if (currentChapter < chapters.length - 1) {
+        showChapter(currentChapter + 1);
+      }
+    }
+
+    function previousChapter() {
+      if (currentChapter > 0) {
+        showChapter(currentChapter - 1);
+      }
+    }
+
+    function updateProgress() {
+      const progress = ((currentChapter) / (chapters.length - 1)) * 100;
+      document.getElementById('progressFill').style.width = progress + '%';
+      document.getElementById('chapterCount').textContent = currentChapter + '/' + (chapters.length - 1);
+    }
+
+    function toggleAnswer(btn) {
+      const answer = btn.nextElementSibling;
+      if (answer.style.display === 'none') {
+        answer.style.display = 'block';
+        btn.textContent = 'Hide Answer';
+      } else {
+        answer.style.display = 'none';
+        btn.textContent = 'Reveal Answer';
+      }
+    }
+
+    function copyCode(btn) {
+      const codeBlock = btn.closest('.code-block').querySelector('code');
+      const text = codeBlock.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      });
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowRight') nextChapter();
+      if (e.key === 'ArrowLeft') previousChapter();
+    });
+
+    // ===== MESI STATE MACHINE =====
+    let mesiCurrentState = 'I';
+    let autoplayRunning = false;
+    const mesiStates = {
+      I: { name: 'Invalid', color: '#e6f2ff', stroke: '#0066cc' },
+      S: { name: 'Shared', color: '#f0f9f4', stroke: '#00b359' },
+      E: { name: 'Exclusive', color: '#e6f2ff', stroke: '#0066cc' },
+      M: { name: 'Modified', color: '#fff3e0', stroke: '#ff6b35' }
+    };
+
+    function updateMesiState(newState) {
+      const stateEl = document.getElementById('state-' + newState);
+      if (stateEl) {
+        stateEl.style.filter = 'drop-shadow(0 0 12px ' + mesiStates[newState].stroke + ')';
+        stateEl.style.strokeWidth = '4';
+        stateEl.style.transition = 'filter 0.4s ease, stroke-width 0.4s ease';
+      }
+
+      const oldStateEl = document.getElementById('state-' + mesiCurrentState);
+      if (oldStateEl && oldStateEl !== stateEl) {
+        oldStateEl.style.filter = 'drop-shadow(none)';
+        oldStateEl.style.strokeWidth = '2';
+      }
+
+      mesiCurrentState = newState;
+      document.getElementById('current-state-label').textContent = 
+        'Current State: ' + newState + ' (' + mesiStates[newState].name + ')';
+    }
+
+    function animateTransition(fromState, toState) {
+      const pathId = 'path-' + fromState + '-' + toState;
+      const path = document.getElementById(pathId);
+      
+      if (path) {
+        path.style.opacity = '1';
+        path.style.strokeDasharray = path.getTotalLength();
+        path.style.strokeDashoffset = path.getTotalLength();
+        path.style.transition = 'stroke-dashoffset 0.8s ease-in-out, opacity 0.8s ease-in-out';
+        path.style.strokeDashoffset = '0';
+        
+        setTimeout(() => {
+          path.style.opacity = '0.5';
+        }, 800);
+      }
+    }
+
+    function mesiTransition(fromState, toState) {
+      if (mesiCurrentState === fromState) {
+        animateTransition(fromState, toState);
+        setTimeout(() => {
+          updateMesiState(toState);
+        }, 400);
+      }
+    }
+
+    function resetMesi() {
+      const allStates = document.querySelectorAll('.state-circle');
+      allStates.forEach(el => {
+        el.style.filter = 'drop-shadow(none)';
+        el.style.strokeWidth = '2';
+        el.style.transition = 'filter 0.3s, stroke-width 0.3s';
+      });
+      mesiCurrentState = 'I';
+      document.getElementById('current-state-label').textContent = 'Current State: I (Invalid)';
+      
+      const allPaths = document.querySelectorAll('#transitions path');
+      allPaths.forEach(path => path.style.opacity = '0.5');
+      
+      autoplayRunning = false;
+      document.getElementById('autoplay-btn').textContent = '▶️ Start Auto-Demo';
+    }
+
+    function toggleAutoPlay() {
+      autoplayRunning = !autoplayRunning;
+      const btn = document.getElementById('autoplay-btn');
+      
+      if (autoplayRunning) {
+        btn.textContent = '⏸️ Stop Auto-Demo';
+        runAutoPlaySequence();
+      } else {
+        btn.textContent = '▶️ Start Auto-Demo';
+      }
+    }
+
+    function runAutoPlaySequence() {
+      const sequence = [
+        { from: 'I', to: 'S', label: 'Read Miss' },
+        { from: 'S', to: 'M', label: 'Write' },
+        { from: 'M', to: 'I', label: 'Evict' },
+        { from: 'I', to: 'E', label: 'ReadUnique' },
+        { from: 'E', to: 'M', label: 'Write' },
+        { from: 'M', to: 'I', label: 'Snoop Inv' }
+      ];
+      
+      let stepIndex = 0;
+
+      function executeStep() {
+        if (!autoplayRunning) return;
+        
+        const step = sequence[stepIndex % sequence.length];
+        mesiTransition(step.from, step.to);
+        
+        stepIndex++;
+        setTimeout(executeStep, 2000);
+      }
+
+      executeStep();
+    }
+
+    // Initialize MESI diagram
+    updateMesiState('I');
+  </script>
+</body>
+</html>

@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson: Building a Verilog Testbench Debug Agent</title>
+<style>
+:root{--primary:#0066cc;--secondary:#00b359;--accent:#ff6b35;--bg:#fff;--side:#f8f8f8;--text:#1a1a1a;--border:#ddd;--code-bg:#fff4ee;}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text);background:var(--bg);font-size:16px;line-height:1.6;letter-spacing:.3px}
+.container{display:flex;min-height:100vh}
+.sidebar{width:280px;background:var(--side);border-right:1px solid var(--border);padding:1.5rem 1.25rem;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0}
+.sidebar h2{color:var(--primary);font-size:18px;margin:0 0 .75rem}
+.progress-bar{height:8px;background:#e6e6e6;border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;width:0;background:var(--secondary);transition:width .4s ease}
+.chapter-count{font-size:13px;color:#555;margin:.4rem 0 1.25rem}
+.toc ul{list-style:none;padding:0;margin:0}
+.toc li{margin:.25rem 0}
+.toc a{display:block;padding:.45rem .6rem;border-radius:6px;color:var(--text);text-decoration:none;font-size:14px;border-left:3px solid transparent;transition:all .3s}
+.toc a:hover{background:#eef4fb;color:var(--primary)}
+.toc a.active{background:#e3eefc;border-left-color:var(--primary);color:var(--primary);font-weight:600}
+.toc a.done::after{content:" ✓";color:var(--secondary)}
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:20;background:var(--primary);color:#fff;border:0;border-radius:6px;padding:.5rem .7rem;font-size:18px;cursor:pointer}
+.content{flex:1;min-width:0;padding:2.5rem 3rem;max-width:960px;margin:0 auto}
+.chapter{display:none;animation:fadeIn .6s ease-in}
+.chapter.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h1{font-size:28px;color:var(--primary);margin:0 0 1rem}
+h2{font-size:22px;color:var(--primary);margin:2rem 0 .75rem}
+h3{font-size:18px;color:#444;font-weight:600;margin:1.5rem 0 .5rem}
+p,li{margin:.5rem 0}
+a{color:var(--primary)}
+.subtitle{font-size:18px;color:#555;margin-top:-.5rem}
+.intro-page .intro-content{background:var(--side);border:1px solid var(--border);border-radius:10px;padding:1.5rem 2rem;margin-top:1.5rem}
+.start-btn,.nav-buttons button,.reveal-btn,.sm-btn,.copy-btn{font-family:inherit;cursor:pointer;border:0;border-radius:6px;transition:all .3s}
+.start-btn{background:var(--primary);color:#fff;font-size:16px;padding:.7rem 1.4rem;margin-top:1rem}
+.start-btn:hover{background:#0052a3}
+.nav-buttons{display:flex;justify-content:space-between;margin:2.5rem 0 1rem;padding-top:1.25rem;border-top:1px solid var(--border)}
+.nav-buttons button{background:var(--primary);color:#fff;padding:.6rem 1.2rem;font-size:15px}
+.nav-buttons button:hover{background:#0052a3}
+.nav-buttons button:disabled{background:#bbb;cursor:not-allowed}
+figure.diagram{margin:1.5rem 0;text-align:center}
+figure.diagram svg{max-width:100%;height:auto;animation:fadeIn .8s ease-in}
+figcaption{font-size:14px;color:#555;margin-top:.5rem;font-style:italic}
+.diag-box{fill:#e8f1fc;stroke:var(--primary);stroke-width:2;filter:drop-shadow(1px 2px 1px rgba(0,0,0,.12));transition:stroke .3s}
+.diag-box.green{fill:#e6f7ee}
+.diag-box.orange{fill:#fff0e8}
+.diag-box.gray{fill:#f2f2f2;stroke:#888}
+.diag-box:hover{stroke:#003d7a}
+.diag-text{font-size:14px;fill:var(--text);text-anchor:middle;dominant-baseline:middle;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.diag-small{font-size:11.5px;fill:#555;text-anchor:middle;dominant-baseline:middle;font-family:inherit}
+.diag-arrow{stroke:var(--primary);stroke-width:2;fill:none;marker-end:url(#arr)}
+.diag-arrow.orange{stroke:var(--accent);marker-end:url(#arrO)}
+.diag-arrow.red{stroke:#d33;marker-end:url(#arrR)}
+.diag-arrow.green{stroke:var(--secondary);marker-end:url(#arrG)}
+.pulse{animation:pulse 1s ease-in-out 2}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+pre.code-block{position:relative;background:var(--code-bg);border:1px solid #ffd3bf;border-left:4px solid var(--accent);border-radius:8px;padding:1rem 1rem 1rem 0;margin:1.25rem 0;overflow-x:auto;font-family:Monaco,'Courier New',monospace;font-size:13px;line-height:1.5}
+pre.code-block code{display:block;white-space:pre;counter-reset:ln}
+pre.code-block code .ln{display:block;padding-left:3.6em;position:relative}
+pre.code-block code .ln::before{counter-increment:ln;content:counter(ln);position:absolute;left:0;width:2.8em;text-align:right;color:#999;user-select:none}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--accent);color:#fff;font-size:12px;padding:.3rem .6rem}
+.copy-btn:hover{background:#e0521c}
+.kw{color:var(--primary);font-weight:600}.str{color:var(--secondary)}.cm{color:#666;font-style:italic}.num{color:var(--accent)}.fn{color:#7a3e9d}
+code.inline{font-family:Monaco,'Courier New',monospace;font-size:13px;background:var(--code-bg);padding:.1em .35em;border-radius:4px}
+details.collapsible{border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;margin:1.25rem 0;background:#fafafa;transition:all .3s}
+details.collapsible summary{cursor:pointer;font-weight:600;color:var(--primary);outline:none}
+details.collapsible[open]{background:#fff}
+.quiz{background:#f7f9fc;border:1px solid var(--border);border-radius:10px;padding:1.25rem 1.5rem;margin:2rem 0}
+.quiz h3{margin-top:0;color:var(--primary)}
+.quiz-question{margin:1rem 0;padding-bottom:1rem;border-bottom:1px dashed var(--border)}
+.quiz-question:last-child{border-bottom:0;padding-bottom:0}
+.quiz-question ol{margin:.3rem 0 .5rem}
+.reveal-btn{background:var(--accent);color:#fff;padding:.4rem .9rem;font-size:14px;margin-top:.3rem}
+.reveal-btn:hover{background:#e0521c}
+.answer{display:none;background:#f0f9f4;border-left:4px solid var(--secondary);padding:.6rem .9rem;margin-top:.6rem;border-radius:4px;animation:fadeIn .4s ease-in}
+.answer.show{display:block}
+.key-takeaways{background:#f0f9f4;border:1px solid #bfe8d0;border-left:5px solid var(--secondary);border-radius:8px;padding:1rem 1.5rem;margin:2rem 0}
+.key-takeaways h3{margin-top:0;color:#00803f}
+.key-takeaways li::marker{color:var(--secondary)}
+table{border-collapse:collapse;width:100%;margin:1rem 0;font-size:14.5px}
+th,td{border:1px solid var(--border);padding:.5rem .7rem;text-align:left;vertical-align:top}
+th{background:#eef4fb;color:var(--primary)}
+.callout{border-left:4px solid var(--accent);background:#fff8f4;padding:.7rem 1rem;border-radius:4px;margin:1rem 0}
+.callout.blue{border-color:var(--primary);background:#eef4fb}
+.sm-controls{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin:.75rem 0}
+.sm-btn{background:var(--primary);color:#fff;padding:.45rem .9rem;font-size:14px}
+.sm-btn.orange{background:var(--accent)}.sm-btn.red{background:#d33}.sm-btn.green{background:var(--secondary)}.sm-btn.gray{background:#666}
+.sm-btn:disabled{background:#ccc;cursor:not-allowed}
+.sm-state{display:inline-block;background:#e3eefc;color:var(--primary);font-weight:600;padding:.35rem .9rem;border-radius:20px;margin:.5rem 0}
+.sm-node{fill:#e8f1fc;stroke:var(--primary);stroke-width:2;transition:all .4s}
+.sm-node.cur{stroke-width:4;filter:drop-shadow(0 0 6px rgba(0,102,204,.8));fill:#d4e6fb}
+.sm-node.term{fill:#e6f7ee;stroke:var(--secondary)}
+.sm-node.term.cur{filter:drop-shadow(0 0 6px rgba(0,179,89,.8))}
+.sm-node.fail{fill:#fdeaea;stroke:#d33}
+.sm-node.fail.cur{filter:drop-shadow(0 0 6px rgba(221,51,51,.8))}
+.sm-path{fill:none;stroke-width:2;marker-end:url(#arr)}
+.sm-path.drawing{stroke-dasharray:400;stroke-dashoffset:400;animation:draw .8s ease forwards;stroke-width:4}
+@keyframes draw{to{stroke-dashoffset:0}}
+.roadmap{list-style:none;padding:0;margin:1rem 0}
+.roadmap li{display:flex;gap:.8rem;align-items:flex-start;padding:.7rem .9rem;border:1px solid var(--border);border-radius:8px;margin:.5rem 0;background:#fafafa;transition:all .3s}
+.roadmap li.checked{background:#f0f9f4;border-color:#bfe8d0}
+.roadmap input{margin-top:.35rem;width:18px;height:18px;accent-color:var(--secondary);cursor:pointer}
+.roadmap .rm-title{font-weight:600;color:var(--primary)}
+.roadmap .rm-meta{font-size:13px;color:#666}
+.badge{display:inline-block;font-size:12px;background:#e3eefc;color:var(--primary);padding:.1rem .5rem;border-radius:10px;margin-left:.4rem}
+@media (max-width:768px){table{display:block;overflow-x:auto}.hamburger{display:block}.sidebar{position:fixed;left:-300px;z-index:15;transition:left .3s}.sidebar.open{left:0}.content{padding:4rem 1.25rem 2rem}}
+</style>
+</head>
+<body>
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Toggle menu">☰</button>
+<div class="container">
+<aside class="sidebar">
+  <h2>Verilog Debug Agent</h2>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="chapter-count" id="chapterCount">0/4 chapters</div>
+  <nav class="toc"><ul>
+    <li><a href="#intro" data-ch="0">Introduction &amp; Roadmap</a></li>
+    <li><a href="#chapter-1" data-ch="1">1. Anatomy of a Tool-Using Agent</a></li>
+    <li><a href="#chapter-2" data-ch="2">2. Test Material &amp; Tools (No LLM Yet)</a></li>
+    <li><a href="#chapter-3" data-ch="3">3. The Loop &amp; Taming Gnarly Output</a></li>
+    <li><a href="#chapter-4" data-ch="4">4. Eval, Safety, Verification &amp; Roadmap</a></li>
+  </ul></nav>
+  <p style="font-size:12px;color:#777;margin-top:1.5rem">Tip: use ← / → keys to change chapters.</p>
+</aside>
+
+<main class="content">
+
+<!-- ===================== INTRO ===================== -->
+<section id="intro" class="chapter intro-page active">
+  <h1>Building a Verilog Testbench Debug Agent</h1>
+  <p class="subtitle">A hands-on deep dive into LLM agent design, using a problem you already understand: a failing testbench.</p>
+  <div class="intro-content">
+    <p><strong>Estimated time:</strong> ~75 minutes of reading across 4 chapters, plus ~14–16 hours of build time following the roadmap.</p>
+    <p><strong>Prerequisites:</strong> comfortable with Verilog/SystemVerilog and basic Python. No prior agent or LLM-API experience assumed.</p>
+    <p><strong>Stack:</strong> Python 3.11+, the <code class="inline">anthropic</code> SDK with a hand-written tool loop (no framework), Icarus Verilog (<code class="inline">iverilog</code> + <code class="inline">vvp</code>) on Windows.</p>
+    <p>What you'll learn:</p>
+    <ul>
+      <li>What an "agent" actually is under the hood — a loop, a model, and a set of tools — and how to write that loop yourself in ~30 lines.</li>
+      <li>How to design tools whose outputs an LLM can reason over, using EDA tool logs as a deliberately hostile example.</li>
+      <li>Why tool descriptions and output shaping matter more than clever prompting.</li>
+      <li>How to evaluate an agent objectively, keep it sandboxed, and make it verify its own fix.</li>
+    </ul>
+    <h3>The build roadmap at a glance</h3>
+    <table>
+      <tr><th>Stage</th><th>What you build</th><th>Time</th><th>Chapter</th></tr>
+      <tr><td>0</td><td>Environment: iverilog, venv, API key, folder layout</td><td>1 h</td><td>2</td></tr>
+      <tr><td>1</td><td>Two designs with planted bugs + grading keys</td><td>2 h</td><td>2</td></tr>
+      <tr><td>2</td><td>Five tools, unit-tested with zero LLM calls</td><td>2 h</td><td>2</td></tr>
+      <tr><td>3</td><td>The agentic loop + transcript logging</td><td>2 h</td><td>3</td></tr>
+      <tr><td>4</td><td>Make tool outputs hostile, then tame them</td><td>3 h</td><td>3</td></tr>
+      <tr><td>5</td><td>Second case + an eval harness</td><td>2 h</td><td>4</td></tr>
+      <tr><td>6</td><td>Sandboxing, propose-and-verify fix, budgets</td><td>2 h</td><td>4</td></tr>
+      <tr><td>7</td><td>Stretch: VCD tool, Verilator lint, protocol bug</td><td>optional</td><td>4</td></tr>
+    </table>
+    <p>The full roadmap, with a checklist, a weekend-by-weekend schedule and a definition of done, is at the end of Chapter 4 (section 4.5).</p>
+    <button class="start-btn" onclick="goToChapter(1)">Start Learning →</button>
+  </div>
+</section>
+
+<!-- ===================== CHAPTER 1 ===================== -->
+<section id="chapter-1" class="chapter">
+  <h1>Chapter 1: Anatomy of a Tool-Using Agent</h1>
+  <p>Strip away the marketing and an LLM agent is three things: a <strong>model</strong> that can emit structured "call this tool with these arguments" requests, a set of <strong>tools</strong> (ordinary functions), and a <strong>loop</strong> that ferries results back to the model until it stops asking for tools. Every framework — LangGraph, the Claude Agent SDK, AutoGen — is this loop with extra decoration. Writing it by hand once is the single most clarifying thing you can do, which is why this lesson avoids frameworks entirely.</p>
+
+  <h2>1.1 The system you are building</h2>
+  <figure class="diagram">
+    <svg viewBox="0 0 910 330" role="img" aria-label="Architecture: agent loop between Claude API and tools which drive iverilog and the case folder">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5 0 10z" fill="#0066cc"/></marker>
+        <marker id="arrO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5 0 10z" fill="#ff6b35"/></marker>
+        <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5 0 10z" fill="#d33"/></marker>
+        <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5 0 10z" fill="#00b359"/></marker>
+      </defs>
+      <rect x="20" y="110" width="170" height="90" rx="10" class="diag-box"/>
+      <text x="105" y="143" class="diag-text">Claude API</text>
+      <text x="105" y="167" class="diag-small">Messages endpoint</text>
+      <text x="105" y="184" class="diag-small">tools=[…] schemas</text>
+
+      <rect x="290" y="90" width="230" height="130" rx="10" class="diag-box green"/>
+      <text x="405" y="118" class="diag-text">loop.py (your code)</text>
+      <text x="405" y="143" class="diag-small">messages[] history</text>
+      <text x="405" y="160" class="diag-small">stop_reason == "tool_use"?</text>
+      <text x="405" y="177" class="diag-small">dispatch() · step budget</text>
+      <text x="405" y="197" class="diag-small">transcript → runs/*.json</text>
+
+      <rect x="600" y="20" width="270" height="60" rx="10" class="diag-box orange"/>
+      <text x="735" y="43" class="diag-text">tools.py</text>
+      <text x="735" y="63" class="diag-small">list_files · read_file · grep · lint · simulate</text>
+
+      <rect x="600" y="130" width="270" height="60" rx="10" class="diag-box gray"/>
+      <text x="735" y="153" class="diag-text">iverilog / vvp</text>
+      <text x="735" y="173" class="diag-small">subprocess, timeout, stderr+stdout</text>
+
+      <rect x="600" y="240" width="270" height="60" rx="10" class="diag-box gray"/>
+      <text x="735" y="263" class="diag-text">designs/&lt;case&gt;/</text>
+      <text x="735" y="283" class="diag-small">counter.sv · tb_counter.sv · EXPECTED.md</text>
+
+      <path d="M190 140 L290 140" class="diag-arrow"/>
+      <text x="240" y="128" class="diag-small">tool_use blocks</text>
+      <path d="M290 175 L190 175" class="diag-arrow orange"/>
+      <text x="240" y="195" class="diag-small">tool_result blocks</text>
+
+      <path d="M520 120 C 560 120, 560 50, 600 50" class="diag-arrow"/>
+      <path d="M735 80 L735 130" class="diag-arrow orange"/>
+      <path d="M735 190 L735 240" class="diag-arrow orange"/>
+      <path d="M870 50 C 902 50, 902 270, 870 270" class="diag-arrow" style="stroke-dasharray:4 3"/>
+      <text x="800" y="215" class="diag-small">read/grep</text>
+    </svg>
+    <figcaption>Figure 1.1 — The whole system. Only the green box is "agent logic"; everything else is plain I/O.</figcaption>
+  </figure>
+
+  <p>Notice what is <em>not</em> in the picture: no planner, no memory store, no vector database. For this task the model's context window is the working memory and the tool results are its senses. That minimalism is a feature — when the agent misbehaves in Chapter 3, there are only three places to look.</p>
+
+  <h2>1.2 One turn of the conversation</h2>
+  <p>The Messages API is stateless. Every call sends the <em>entire</em> history. An agent turn therefore looks like this: you send a user message plus your tool schemas; the model replies with an assistant message whose content is a list of blocks. If any block is of type <code class="inline">tool_use</code>, the model is asking you to run something. You run it, and you reply with a user message containing <code class="inline">tool_result</code> blocks — one per request, matched by <code class="inline">tool_use_id</code>. Then you call again. When the reply has <code class="inline">stop_reason == "end_turn"</code> and no tool blocks, the model is done.</p>
+
+  <pre class="code-block" data-lang="json"><code>// What the model sends you when it wants a tool
+{
+  "role": "assistant",
+  "content": [
+    {"type": "text", "text": "Let me run the simulation first."},
+    {"type": "tool_use", "id": "toolu_01AbC", "name": "simulate",
+     "input": {"files": ["counter.sv", "tb_counter.sv"], "timeout_s": 30}}
+  ]
+}
+
+// What you must send back (same tool_use_id!)
+{
+  "role": "user",
+  "content": [
+    {"type": "tool_result", "tool_use_id": "toolu_01AbC",
+     "content": "... last 80 lines of vvp output ...",
+     "is_error": false}
+  ]
+}</code></pre>
+
+  <div class="callout blue"><strong>Missing from most tutorials:</strong> the <code class="inline">is_error</code> flag. If your tool raised an exception, return the traceback as the content and set <code class="inline">is_error: true</code>. The model treats it as "that didn't work, try something else" rather than as data about the design. Forgetting this is a common cause of agents that confidently mis-diagnose a Python bug as an RTL bug.</div>
+
+  <h2>1.3 Tool schemas: the part that does the most work</h2>
+  <p>A tool is declared to the model as a JSON schema: a name, a description, and an <code class="inline">input_schema</code>. The description is read by the model on every call and is the single strongest lever you have over its behaviour — stronger than the system prompt, because it sits right next to the decision the model is making. Write it as if onboarding a new hire: what the tool does, what it returns (including size limits), and when to prefer it over another tool.</p>
+
+  <pre class="code-block" data-lang="python"><code>SIMULATE_SCHEMA = {
+    "name": "simulate",
+    "description": (
+        "Compile the given Verilog/SystemVerilog files with iverilog -g2012 and run "
+        "them with vvp. Returns the compiler errors if compilation fails, otherwise "
+        "the LAST 80 lines of simulation stdout (use grep_log to search the full log). "
+        "Always run this first to see the actual failure before reading source."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "files": {"type": "array", "items": {"type": "string"},
+                      "description": "Paths relative to the case directory, DUT first."},
+            "timeout_s": {"type": "integer", "default": 30,
+                          "description": "Kill the simulation after this many seconds."},
+        },
+        "required": ["files"],
+    },
+}</code></pre>
+
+  <details class="collapsible">
+    <summary>Advanced: why not just give the model a shell?</summary>
+    <p>You could expose a single <code class="inline">run_command(cmd)</code> tool and let the model type <code class="inline">iverilog ...</code> itself. It works, and many coding agents do exactly that. But for learning it hides the lesson: with a raw shell you cannot shape outputs per tool, cannot enforce a timeout per tool, and cannot sandbox paths per tool. Narrow tools make the agent more predictable and make Chapter 3's experiments possible. Once you've done it the narrow way, try the shell version in Stage 7 and compare transcripts.</p>
+  </details>
+
+  <div class="quiz">
+    <h3>Self-Check Quiz</h3>
+    <div class="quiz-question">
+      <p><strong>Q1:</strong> The model returns a message with <code class="inline">stop_reason: "tool_use"</code> containing two <code class="inline">tool_use</code> blocks. How many <code class="inline">tool_result</code> blocks must your next message contain, and where do they go?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer">Exactly two, one per <code class="inline">tool_use_id</code>, all inside a single <em>user</em> message. The API rejects a turn that leaves a tool call unanswered, and results for calls the model never made are also an error.</p>
+    </div>
+    <div class="quiz-question">
+      <p><strong>Q2:</strong> Which has more influence over whether the agent runs the simulation before reading source: (a) the system prompt, (b) the <code class="inline">simulate</code> tool description, (c) the model temperature?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer">(b), in practice. The description is attached to the exact decision point. The system prompt helps too, but a tool description that says "run this first" reliably changes tool ordering; temperature mostly changes variance, not strategy. You'll measure this yourself in Stage 4.</p>
+    </div>
+    <div class="quiz-question">
+      <p><strong>Q3:</strong> Your <code class="inline">read_file</code> tool throws <code class="inline">FileNotFoundError</code>. What should you send back?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer">A <code class="inline">tool_result</code> whose content is the error text (e.g. "No such file: counter.v — available files: counter.sv, tb_counter.sv") with <code class="inline">is_error: true</code>. Never let the exception escape the loop; a crashed loop loses the whole transcript.</p>
+    </div>
+  </div>
+
+  <section class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>An agent = model + tools + a loop you can write in ~30 lines. Frameworks add convenience, not capability.</li>
+      <li>The API is stateless; the loop owns the message history and must answer every <code class="inline">tool_use</code> with a matching <code class="inline">tool_result</code>.</li>
+      <li>Tool descriptions are the highest-leverage text in the system. Say what the tool returns and when to use it.</li>
+      <li>Return tool failures as <code class="inline">is_error: true</code> so the model distinguishes "my tool broke" from "the design is broken".</li>
+    </ul>
+  </section>
+
+  <div class="nav-buttons">
+    <button class="prev-btn" onclick="previousChapter()">← Previous</button>
+    <button class="next-btn" onclick="nextChapter()">Next →</button>
+  </div>
+</section>
+
+<!-- ===================== CHAPTER 2 ===================== -->
+<section id="chapter-2" class="chapter">
+  <h1>Chapter 2: Test Material &amp; Tools (No LLM Yet)</h1>
+  <p>This chapter covers Stages 0–2 of the roadmap. It contains <strong>zero API calls</strong>, which is deliberate. Agents fail for boring reasons — a tool that hangs, a path that doesn't resolve on Windows, a log that's 2,000 lines long — and every one of those is easier to catch before a model is in the loop adding its own randomness.</p>
+
+  <h2>2.1 Stage 0 — Environment</h2>
+  <ol>
+    <li>Install Icarus Verilog for Windows (the bleyer.org installer bundles <code class="inline">iverilog</code>, <code class="inline">vvp</code> and GTKWave). Tick "add to PATH". Confirm in a fresh terminal: <code class="inline">iverilog -V</code> and <code class="inline">vvp -V</code>.</li>
+    <li><code class="inline">python -m venv .venv</code>, activate, <code class="inline">pip install anthropic pytest python-dotenv</code>.</li>
+    <li>Put <code class="inline">ANTHROPIC_API_KEY=sk-ant-...</code> in a <code class="inline">.env</code> file and add <code class="inline">.env</code>, <code class="inline">.venv/</code>, <code class="inline">runs/</code>, <code class="inline">*.vvp</code>, <code class="inline">*.vcd</code> to <code class="inline">.gitignore</code> <em>before</em> the first commit.</li>
+    <li>Create the layout below.</li>
+  </ol>
+
+  <pre class="code-block" data-lang="bash"><code>Agent1/
+  PLAN.md                # the roadmap
+  NOTES.md               # your Stage-4 observations (create empty now)
+  .env  .gitignore  requirements.txt
+  agent/
+    __init__.py
+    loop.py              # the agentic loop (Chapter 3)
+    tools.py             # tool implementations + JSON schemas
+    prompts.py           # system prompt versions, v1, v2, ...
+    sandbox.py           # path validation helpers (Stage 6)
+  designs/
+    counter/  counter.sv  tb_counter.sv  EXPECTED.md
+    fifo/     fifo.sv     tb_fifo.sv     EXPECTED.md   # Stage 5
+  runs/                  # one JSON transcript per agent run
+  tests/
+    test_tools.py        # pytest, no LLM
+  scripts/
+    run_case.py          # python scripts/run_case.py designs/counter
+    eval.py              # Stage 5</code></pre>
+
+  <div class="callout"><strong>Windows gotchas (added — the original plan skipped these):</strong> use <code class="inline">-o NUL</code> instead of <code class="inline">/dev/null</code>; pass <code class="inline">subprocess.run([...])</code> a list, never a shell string, so paths with spaces (like <em>01. Pavan Documents</em>) survive; OneDrive can lock files mid-write, so write <code class="inline">sim.vvp</code> to a temp dir under <code class="inline">runs/</code>, not next to the source; and set <code class="inline">encoding="utf-8", errors="replace"</code> on subprocess output because vvp occasionally emits bytes that trip the default cp1252 decoder.</div>
+
+  <h2>2.2 Stage 1 — Designs with planted bugs</h2>
+  <p>You cannot judge an agent without a grading key. So the first artefacts are designs whose bug <em>you</em> planted and wrote down. Case A is an 8-bit counter with a reset-polarity mismatch: the RTL treats <code class="inline">rst</code> as active-low, the testbench drives it active-high. The counter therefore never leaves reset and the check fails with <code class="inline">expected 10 got 0</code>.</p>
+
+  <pre class="code-block" data-lang="verilog"><code>// designs/counter/counter.sv  — DUT with a planted bug
+module counter #(parameter W = 8) (
+    input  logic         clk,
+    input  logic         rst,      // testbench thinks: active-HIGH
+    input  logic         en,
+    output logic [W-1:0] count
+);
+    always_ff @(posedge clk) begin
+        if (!rst)                  // BUG: treats rst as active-LOW
+            count <= '0;
+        else if (en)
+            count <= count + 1'b1;
+    end
+endmodule</code></pre>
+
+  <pre class="code-block" data-lang="verilog"><code>// designs/counter/tb_counter.sv
+`timescale 1ns/1ps
+module tb_counter;
+    logic clk = 0, rst, en;
+    logic [7:0] count;
+    counter dut (.*);
+    always #5 clk = ~clk;
+
+    initial begin
+        $dumpfile("counter.vcd"); $dumpvars(0, tb_counter);
+        rst = 1; en = 0;
+        repeat (2) @(posedge clk);
+        rst = 0;
+        en  = 1;
+        repeat (10) @(posedge clk);
+        #1;
+        if (count !== 8'd10) begin
+            $display("FAIL: expected 10 got %0d at t=%0t", count, $time);
+            $finish;
+        end
+        $display("PASS");
+        $finish;
+    end
+endmodule</code></pre>
+
+  <p>And the grading key, one sentence, in <code class="inline">designs/counter/EXPECTED.md</code>:</p>
+  <pre class="code-block" data-lang="bash"><code>root_cause: reset polarity mismatch — counter.sv line 9 uses `if (!rst)` (active-low)
+            while tb_counter.sv drives rst high to reset (active-high).
+keywords:   polarity, active-low, active-high, !rst
+fix:        change `if (!rst)` to `if (rst)` in counter.sv</code></pre>
+
+  <p>Case B (Stage 5) is a 4-deep synchronous FIFO where <code class="inline">full</code> is computed as <code class="inline">wr_ptr == rd_ptr</code> instead of comparing the wrap bit, so it never asserts and the testbench overflows. It's a better test because the failure shows up several cycles <em>after</em> the buggy line executes — the agent has to reason across time, not just find a line.</p>
+
+  <h2>2.3 Stage 2 — The five tools</h2>
+  <table>
+    <tr><th>Tool</th><th>Returns</th><th>Design decision to make</th></tr>
+    <tr><td><code class="inline">list_files(dir)</code></td><td>Newline-separated names</td><td>Restrict to the case folder; reject <code class="inline">..</code>.</td></tr>
+    <tr><td><code class="inline">read_file(path, start, end)</code></td><td>Numbered lines</td><td>Line numbers so the model can cite them. Cap at ~300 lines/call.</td></tr>
+    <tr><td><code class="inline">grep(pattern, path)</code></td><td>Matching lines with numbers</td><td>Cheap way to find a signal across files without reading everything.</td></tr>
+    <tr><td><code class="inline">lint(files)</code></td><td>iverilog stderr</td><td>Separate errors from warnings? (Not yet — see Stage 4.)</td></tr>
+    <tr><td><code class="inline">simulate(files, timeout_s)</code></td><td>Compile errors, or tail of vvp stdout</td><td>Timeout is mandatory; raw vs. shaped output is the Chapter 3 experiment.</td></tr>
+  </table>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 860 300" role="img" aria-label="Flowchart of the simulate tool: validate paths, compile, run with timeout, shape output">
+      <rect x="20" y="115" width="130" height="70" rx="10" class="diag-box"/>
+      <text x="85" y="142" class="diag-text">validate paths</text>
+      <text x="85" y="162" class="diag-small">inside case dir?</text>
+      <path d="M150 150 L200 150" class="diag-arrow"/>
+      <rect x="200" y="115" width="130" height="70" rx="10" class="diag-box"/>
+      <text x="265" y="142" class="diag-text">iverilog -g2012</text>
+      <text x="265" y="162" class="diag-small">→ runs/tmp/sim.vvp</text>
+      <path d="M265 115 L265 60" class="diag-arrow red"/>
+      <rect x="180" y="15" width="170" height="45" rx="10" class="diag-box orange"/>
+      <text x="265" y="37" class="diag-text">rc≠0 → return stderr</text>
+      <path d="M330 150 L380 150" class="diag-arrow"/>
+      <rect x="380" y="115" width="150" height="70" rx="10" class="diag-box"/>
+      <text x="455" y="142" class="diag-text">vvp sim.vvp</text>
+      <text x="455" y="162" class="diag-small">timeout=30 s</text>
+      <path d="M455 185 L455 240" class="diag-arrow red"/>
+      <rect x="370" y="240" width="170" height="45" rx="10" class="diag-box orange"/>
+      <text x="455" y="262" class="diag-text">TimeoutExpired → kill</text>
+      <path d="M530 150 L580 150" class="diag-arrow"/>
+      <rect x="580" y="115" width="130" height="70" rx="10" class="diag-box green"/>
+      <text x="645" y="142" class="diag-text">save full log</text>
+      <text x="645" y="162" class="diag-small">runs/tmp/sim.log</text>
+      <path d="M710 150 L760 150" class="diag-arrow"/>
+      <rect x="760" y="115" width="90" height="70" rx="10" class="diag-box green"/>
+      <text x="805" y="142" class="diag-text">shape</text>
+      <text x="805" y="162" class="diag-small">tail N lines</text>
+    </svg>
+    <figcaption>Figure 2.1 — The simulate tool. Both red branches must return a string, not raise.</figcaption>
+  </figure>
+
+  <pre class="code-block" data-lang="python"><code>import subprocess, shutil, tempfile
+from pathlib import Path
+
+IVERILOG = shutil.which("iverilog") or r"C:\iverilog\bin\iverilog.exe"
+VVP      = shutil.which("vvp")      or r"C:\iverilog\bin\vvp.exe"
+
+def simulate(files: list[str], case_dir: Path, timeout_s: int = 30,
+             tail: int = 80) -> str:
+    paths = [safe_path(case_dir, f) for f in files]          # Stage 6: raises on escape
+    work  = Path(tempfile.mkdtemp(prefix="sim_", dir="runs"))
+    out   = work / "sim.vvp"
+
+    comp = subprocess.run([IVERILOG, "-g2012", "-o", str(out), *map(str, paths)],
+                          capture_output=True, text=True, encoding="utf-8",
+                          errors="replace", cwd=case_dir)
+    if comp.returncode != 0:
+        return f"COMPILE FAILED (rc={comp.returncode})\n{comp.stderr}"
+
+    try:
+        run = subprocess.run([VVP, "-n", str(out)], capture_output=True, text=True,
+                             encoding="utf-8", errors="replace", cwd=work,
+                             timeout=timeout_s)
+    except subprocess.TimeoutExpired as e:
+        partial = (e.stdout or b"").decode("utf-8", "replace") if isinstance(e.stdout, bytes) else (e.stdout or "")
+        return (f"TIMEOUT after {timeout_s}s — simulation never reached $finish. "
+                f"Likely an infinite loop or missing $finish. Last output:\n"
+                + "\n".join(partial.splitlines()[-20:]))
+
+    log = run.stdout + run.stderr
+    (work / "sim.log").write_text(log, encoding="utf-8")   # grep_log reads this later
+    lines = log.splitlines()
+    head  = "" if len(lines) <= tail else f"[{len(lines)-tail} earlier lines omitted; use grep_log]\n"
+    return head + "\n".join(lines[-tail:])</code></pre>
+
+  <p>Every branch returns a <em>string</em>. Never let an exception leave a tool; the loop catches whatever slips through and wraps it as <code class="inline">is_error</code>, but that's a safety net, not the plan.</p>
+
+  <h3>Unit tests before any model</h3>
+  <pre class="code-block" data-lang="python"><code># tests/test_tools.py
+from pathlib import Path
+from agent.tools import simulate, read_file, grep
+
+CASE = Path("designs/counter")
+
+def test_simulate_reports_fail():
+    out = simulate(["counter.sv", "tb_counter.sv"], CASE)
+    assert "FAIL: expected 10 got 0" in out
+
+def test_read_file_has_line_numbers():
+    out = read_file("counter.sv", CASE, 1, 5)
+    assert out.splitlines()[0].startswith("1 |")
+
+def test_grep_finds_reset():
+    assert "!rst" in grep(r"rst", "counter.sv", CASE)
+
+def test_escape_is_blocked():
+    out = read_file("../../.env", CASE)
+    assert "outside case directory" in out.lower()</code></pre>
+
+  <details class="collapsible">
+    <summary>Advanced: what "gnarly" actually looks like in a vvp log</summary>
+    <p>A real run interleaves at least five kinds of line: <code class="inline">VCD info: dumpfile counter.vcd opened for output.</code>, timestamp-prefixed <code class="inline">$display</code> output, compile-time warnings that iverilog forwards (<code class="inline">warning: implicit definition of wire</code>), assertion messages if you use SVA-lite constructs, and the <code class="inline">$finish called at ...</code> footer. None of these carry a severity tag the way a UVM log does. Part of Stage 4 is deciding whether the tool should add one — e.g. prefixing lines matching <code class="inline">/FAIL|ERROR|error:/</code> with <code class="inline">[!]</code> — or leave the model to cope. Do the experiment before deciding.</p>
+  </details>
+
+  <div class="quiz">
+    <h3>Self-Check Quiz</h3>
+    <div class="quiz-question">
+      <p><strong>Q1:</strong> Why write <code class="inline">EXPECTED.md</code> before writing any agent code?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer">Because without a ground-truth root cause you can only judge the agent's answer by whether it <em>sounds</em> right, and LLM output always sounds right. The grading key turns "seems plausible" into a pass/fail you can count across runs (Stage 5).</p>
+    </div>
+    <div class="quiz-question">
+      <p><strong>Q2:</strong> The testbench in 2.2 uses <code class="inline">!==</code> rather than <code class="inline">!=</code>. Why does that matter for the agent's job?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer"><code class="inline">!=</code> returns X when either operand has X bits, so the <code class="inline">if</code> would be skipped and the testbench would wrongly print PASS with an X count. <code class="inline">!==</code> is a case inequality that compares X literally. A testbench that silently passes is a "misleading log" case — exactly the Stage 4 experiment 3 scenario.</p>
+    </div>
+    <div class="quiz-question">
+      <p><strong>Q3:</strong> Name two reasons the simulate tool writes the full log to disk instead of returning it all.</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer">(1) Context budget: a 2,000-line log can swamp the model's window and bury the one FAIL line. (2) It enables a second tool, <code class="inline">grep_log</code>, so the model can search on demand — which also produces a transcript you can read to see <em>what</em> it searched for.</p>
+    </div>
+  </div>
+
+  <section class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>Build and test tools with pytest before any model touches them; most agent bugs are tool bugs.</li>
+      <li>Plant bugs deliberately and write the root cause down first — that's your grader.</li>
+      <li>Every tool returns a string on every path; timeouts are non-negotiable for anything that runs a simulator.</li>
+      <li>Windows specifics: list-form subprocess, <code class="inline">NUL</code>, UTF-8 with <code class="inline">errors="replace"</code>, temp files outside OneDrive-synced source folders.</li>
+    </ul>
+  </section>
+
+  <div class="nav-buttons">
+    <button class="prev-btn" onclick="previousChapter()">← Previous</button>
+    <button class="next-btn" onclick="nextChapter()">Next →</button>
+  </div>
+</section>
+
+<!-- ===================== CHAPTER 3 ===================== -->
+<section id="chapter-3" class="chapter">
+  <h1>Chapter 3: The Loop &amp; Taming Gnarly Output</h1>
+  <p>This chapter covers Stages 3 and 4. Stage 3 is short: the loop is small and will probably work first time on the counter case. Stage 4 is where the learning is. You'll deliberately make the tool outputs hostile and watch the agent get worse, then fix it with tool shaping rather than prompt tweaking.</p>
+
+  <h2>3.1 The loop as a state machine</h2>
+  <p>It helps to see the loop as a tiny FSM. It has one decision point, after each model call, and two ways out: a clean final answer or a budget stop. Step through it below, or let it auto-play a typical run: simulate, grep, read, answer.</p>
+
+  <figure class="diagram">
+    <svg id="smSvg" viewBox="0 0 860 300" role="img" aria-label="Agent loop state machine">
+      <path id="p-idle-call"   class="sm-path" d="M150 150 L270 150" stroke="#0066cc"/>
+      <path id="p-call-tools"  class="sm-path" d="M390 125 C 450 60, 520 60, 580 110" stroke="#ff6b35" style="marker-end:url(#arrO)"/>
+      <path id="p-tools-call"  class="sm-path" d="M580 190 C 520 240, 450 240, 390 175" stroke="#0066cc"/>
+      <path id="p-call-done"   class="sm-path" d="M330 110 L330 50 L690 50 L740 50" stroke="#00b359" style="marker-end:url(#arrG)"/>
+      <path id="p-call-budget" class="sm-path" d="M330 190 L330 262 L720 262" stroke="#d33" style="marker-end:url(#arrR)"/>
+
+      <rect id="n-idle"   class="sm-node" x="30"  y="120" width="120" height="60" rx="30"/>
+      <text x="90"  y="150" class="diag-text">IDLE</text>
+      <rect id="n-call"   class="sm-node" x="270" y="110" width="120" height="80" rx="12"/>
+      <text x="330" y="140" class="diag-text">CALL_MODEL</text>
+      <text x="330" y="162" class="diag-small">step <tspan id="smStep">0</tspan>/15</text>
+      <rect id="n-tools"  class="sm-node" x="580" y="110" width="140" height="80" rx="12"/>
+      <text x="650" y="140" class="diag-text">RUN_TOOLS</text>
+      <text x="650" y="162" class="diag-small" id="smTool">–</text>
+      <rect id="n-done"   class="sm-node term" x="740" y="25" width="110" height="50" rx="25"/>
+      <text x="795" y="50" class="diag-text">DONE</text>
+      <rect id="n-budget" class="sm-node fail" x="720" y="237" width="130" height="50" rx="25"/>
+      <text x="785" y="262" class="diag-text">BUDGET_STOP</text>
+
+      <text x="210" y="138" class="diag-small">send task</text>
+      <text x="485" y="104" class="diag-small">stop_reason = tool_use</text>
+      <text x="485" y="200" class="diag-small">append tool_results</text>
+      <text x="530" y="38" class="diag-small">stop_reason = end_turn</text>
+      <text x="530" y="280" class="diag-small">step ≥ max_steps or tokens ≥ cap</text>
+    </svg>
+    <figcaption>Figure 3.1 — The agentic loop. Orange = model asks for tools, blue = results go back, green/red = exits.</figcaption>
+  </figure>
+  <div style="text-align:center">
+    <div class="sm-state" id="smLabel">Current state: IDLE (waiting for a task)</div>
+    <div class="sm-controls">
+      <button class="sm-btn" data-t="start">Send task</button>
+      <button class="sm-btn orange" data-t="tool">tool_use</button>
+      <button class="sm-btn" data-t="result">Return results</button>
+      <button class="sm-btn green" data-t="end">end_turn</button>
+      <button class="sm-btn red" data-t="budget">Budget hit</button>
+    </div>
+    <div class="sm-controls">
+      <button class="sm-btn gray" id="smAuto">▶ Start Auto-Demo</button>
+      <button class="sm-btn gray" id="smReset">Reset</button>
+    </div>
+  </div>
+
+  <h2>3.2 Stage 3 — Writing the loop</h2>
+  <pre class="code-block" data-lang="python"><code>import json, time
+from pathlib import Path
+from anthropic import Anthropic
+from dotenv import load_dotenv
+from agent.tools import TOOL_SCHEMAS, dispatch
+from agent.prompts import SYSTEM_V1
+
+load_dotenv()
+client = Anthropic()
+MODEL = os.getenv("AGENT_MODEL", "claude-sonnet-4-5")  # check docs.claude.com for current model IDs
+
+def run(task: str, case_dir: Path, max_steps: int = 15, token_cap: int = 200_000) -> dict:
+    messages = [{"role": "user", "content": task}]
+    used = 0
+    for step in range(1, max_steps + 1):
+        resp = client.messages.create(model=MODEL, max_tokens=4096, system=SYSTEM_V1,
+                                      tools=TOOL_SCHEMAS, messages=messages)
+        used += resp.usage.input_tokens + resp.usage.output_tokens
+        messages.append({"role": "assistant", "content": [b.model_dump() for b in resp.content]})
+
+        if resp.stop_reason != "tool_use":
+            return save(messages, case_dir, step, used, status="done")
+        if used >= token_cap:
+            return save(messages, case_dir, step, used, status="token_cap")
+
+        results = []
+        for block in resp.content:
+            if block.type != "tool_use":
+                continue
+            try:
+                out, err = dispatch(block.name, block.input, case_dir), False
+            except Exception as e:                  # safety net, tools should not raise
+                out, err = f"{type(e).__name__}: {e}", True
+            results.append({"type": "tool_result", "tool_use_id": block.id,
+                            "content": out, "is_error": err})
+        messages.append({"role": "user", "content": results})
+    return save(messages, case_dir, max_steps, used, status="max_steps")
+
+def save(messages, case_dir, steps, tokens, status):
+    Path("runs").mkdir(exist_ok=True)
+    rec = {"case": str(case_dir), "status": status, "steps": steps, "tokens": tokens,
+           "model": MODEL, "messages": messages}
+    Path(f"runs/{case_dir.name}_{int(time.time())}.json").write_text(json.dumps(rec, indent=2))
+    return rec</code></pre>
+
+  <p>The first system prompt should be short. You want to see what the model does on its own before you steer it:</p>
+  <pre class="code-block" data-lang="python"><code>SYSTEM_V1 = """You are a digital design verification engineer.
+You are given an RTL design and a testbench that fails. Use the tools to find the root cause.
+Finish with exactly these three sections:
+ROOT CAUSE: one sentence.
+EVIDENCE: file:line references and the log lines that support it.
+SUGGESTED FIX: the minimal code change."""</code></pre>
+
+  <div class="callout blue"><strong>Added: read the transcript, not just the answer.</strong> After every run, open the JSON in <code class="inline">runs/</code> and answer three questions in <code class="inline">NOTES.md</code>: what did it call first, did it read whole files or grep first, and did it ever look at the testbench as a suspect? Those tool-ordering choices <em>are</em> the agent design you're here to study. A tiny <code class="inline">scripts/show_run.py</code> that prints one line per tool call (name, args, first 60 chars of result) makes this painless.</div>
+
+  <h2>3.3 Stage 4 — Four hostile experiments</h2>
+  <p>Run each experiment as a before/after pair. Change <strong>one thing</strong> at a time, run 3 times each (the model is non-deterministic), and write a short paragraph in <code class="inline">NOTES.md</code>.</p>
+  <table>
+    <tr><th>#</th><th>Make it hostile</th><th>Typical failure</th><th>Fixes to try (one at a time)</th></tr>
+    <tr><td>1</td><td><b>Volume.</b> <code class="inline">$display</code> every cycle for 2,000 cycles.</td><td>FAIL line buried; context bloats; agent summarises noise.</td><td>Tail only; head+tail; <code class="inline">grep_log</code> tool; pre-extract <code class="inline">FAIL|ERROR|error:</code> lines to the top.</td></tr>
+    <tr><td>2</td><td><b>Noise.</b> Add benign warnings (unused signal, implicit wire).</td><td>Agent "fixes" the warning and declares victory.</td><td>Split errors vs. warnings in <code class="inline">lint</code>; description says "warnings are hints, not root causes".</td></tr>
+    <tr><td>3</td><td><b>Misleading log.</b> Checker in the TB has the wrong expected value.</td><td>Agent edits a correct DUT to match a wrong TB.</td><td>Prompt: "the testbench itself may be wrong"; require evidence from both files.</td></tr>
+    <tr><td>4</td><td><b>Truncation.</b> 400-line DUT, <code class="inline">read_file</code> capped at 100.</td><td>Agent hallucinates code it never read.</td><td>Return "lines 1–100 of 400; call again with start=101"; add <code class="inline">grep</code>-first hint.</td></tr>
+  </table>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 860 230" role="img" aria-label="Raw vs shaped simulation output">
+      <rect x="20" y="20" width="360" height="190" rx="10" class="diag-box gray"/>
+      <text x="200" y="42" class="diag-text">Raw: 2,004 lines</text>
+      <text x="200" y="72"  class="diag-small">VCD info: dumpfile counter.vcd opened…</text>
+      <text x="200" y="92"  class="diag-small">t=15 count=0</text>
+      <text x="200" y="110" class="diag-small">t=25 count=0</text>
+      <text x="200" y="128" class="diag-small">… 1,990 more lines …</text>
+      <text x="200" y="146" class="diag-small" style="fill:#d33">FAIL: expected 10 got 0 at t=131</text>
+      <text x="200" y="164" class="diag-small">t=135 count=0</text>
+      <text x="200" y="182" class="diag-small">… (FAIL scrolled away) …</text>
+      <path d="M390 115 L470 115" class="diag-arrow orange"/>
+      <text x="430" y="100" class="diag-small">shape</text>
+      <rect x="480" y="20" width="360" height="190" rx="10" class="diag-box green"/>
+      <text x="660" y="42" class="diag-text">Shaped: ~15 lines</text>
+      <text x="660" y="72"  class="diag-small">SUMMARY: 1 failure, 0 errors, finished at t=131</text>
+      <text x="660" y="92"  class="diag-small" style="fill:#d33">[!] line 14: FAIL: expected 10 got 0 at t=131</text>
+      <text x="660" y="116" class="diag-small">--- first 5 lines ---</text>
+      <text x="660" y="136" class="diag-small">--- last 5 lines ---</text>
+      <text x="660" y="162" class="diag-small">2,004 lines total saved; use grep_log(pattern)</text>
+      <text x="660" y="188" class="diag-small">to search the full log</text>
+    </svg>
+    <figcaption>Figure 3.2 — Shaping the simulate output. The shaped version tells the model what exists and how to get more.</figcaption>
+  </figure>
+
+  <pre class="code-block" data-lang="python"><code>import re
+SIGNAL = re.compile(r"\b(FAIL|ERROR|FATAL|error:|Assertion)\b", re.I)
+
+def shape_log(log: str, edge: int = 5, max_hits: int = 20) -> str:
+    lines = log.splitlines()
+    hits  = [(i + 1, l) for i, l in enumerate(lines) if SIGNAL.search(l)]
+    fin   = next((l for l in reversed(lines) if "$finish" in l), "no $finish seen")
+    out   = [f"SUMMARY: {len(hits)} failure/error lines, {len(lines)} lines total. {fin}"]
+    out  += [f"[!] line {n}: {l}" for n, l in hits[:max_hits]]
+    if len(hits) > max_hits:
+        out.append(f"... {len(hits) - max_hits} more; use grep_log")
+    out += ["--- first lines ---", *lines[:edge], "--- last lines ---", *lines[-edge:]]
+    out.append("Full log saved. Use grep_log(pattern) to search it.")
+    return "\n".join(out)</code></pre>
+
+  <details class="collapsible">
+    <summary>Advanced: prompt caching and cost control (added)</summary>
+    <p>Every loop step re-sends the whole history, so costs grow roughly quadratically with step count. Two cheap mitigations: mark the system prompt and tool schemas with <code class="inline">cache_control: {"type": "ephemeral"}</code> so repeated prefixes are billed at the cache rate, and truncate old tool results once they've been used (e.g. replace a result older than 4 steps with "[elided; call again if needed]"). The second one is a real agent-design lever: it's a form of memory management, and you can measure whether it hurts accuracy in Stage 5.</p>
+  </details>
+
+  <details class="collapsible">
+    <summary>Advanced: parallel tool calls</summary>
+    <p>The model may request several tools in one turn (e.g. <code class="inline">read_file</code> on both the DUT and TB). Your loop already handles this because it iterates all <code class="inline">tool_use</code> blocks. Running them concurrently with a thread pool is easy but gains little here since iverilog runs are short. Keep it sequential for readable transcripts.</p>
+  </details>
+
+  <div class="quiz">
+    <h3>Self-Check Quiz</h3>
+    <div class="quiz-question">
+      <p><strong>Q1:</strong> In experiment 1 you switch <code class="inline">simulate</code> from tail-80 to <code class="inline">shape_log</code>, and accuracy goes from 1/3 to 3/3. What else changed that you should record?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer">Steps taken and tokens used. Shaped output usually cuts both, because the model stops paging through the log. Accuracy alone hides cost, and cost is the main reason agents get turned off in practice.</p>
+    </div>
+    <div class="quiz-question">
+      <p><strong>Q2:</strong> In experiment 3 (buggy checker), which answer should count as correct: "fix the DUT to output 9" or "the TB's expected value is wrong"?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer">The second. Update <code class="inline">EXPECTED.md</code> for that variant so the grader reflects it. An agent that bends the DUT to match a wrong testbench is the most dangerous failure mode, because the fix makes the test pass.</p>
+    </div>
+    <div class="quiz-question">
+      <p><strong>Q3:</strong> Why change only one thing per experiment and run it three times?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer">The model is non-deterministic, so a single run can't tell a real improvement from luck. Changing two things at once means you can't attribute the effect. It's the same discipline as isolating a bug with one waveform change at a time.</p>
+    </div>
+  </div>
+
+  <section class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>The loop is a small FSM with one decision (<code class="inline">stop_reason</code>) and two exits (done, budget). Always have both exits.</li>
+      <li>Log every run as JSON and read the tool sequence. That is where you learn agent behaviour.</li>
+      <li>Most gains in Stage 4 come from shaping tool output and rewriting tool descriptions, not from the system prompt.</li>
+      <li>Good shaped output says what it contains, what it omitted, and how to get the rest.</li>
+    </ul>
+  </section>
+
+  <div class="nav-buttons">
+    <button class="prev-btn" onclick="previousChapter()">← Previous</button>
+    <button class="next-btn" onclick="nextChapter()">Next →</button>
+  </div>
+</section>
+
+<!-- ===================== CHAPTER 4 ===================== -->
+<section id="chapter-4" class="chapter">
+  <h1>Chapter 4: Eval, Safety, Verification &amp; Roadmap</h1>
+  <p>Stages 5–7. By now the agent solves the counter. This chapter turns "it seems to work" into numbers you can track, puts walls around the tools, and adds the step that makes the agent reliable instead of just plausible: it has to prove its fix works.</p>
+
+  <h2>4.1 Stage 5 — A second case and an eval harness</h2>
+  <p>Add the FIFO case from 2.2, then write <code class="inline">scripts/eval.py</code>. It runs every case N times and prints a table. Keyword grading is crude but good enough to spot regressions. If you want better grading later, a second LLM call that compares the answer to <code class="inline">EXPECTED.md</code> ("LLM-as-judge") is the usual next step.</p>
+
+  <pre class="code-block" data-lang="python"><code># scripts/eval.py
+import sys, re
+from pathlib import Path
+from agent.loop import run
+
+TASK = ("The testbench in this directory fails. Find the root cause. "
+        "Files: {files}")
+
+def load_key(case: Path) -> list[str]:
+    txt = (case / "EXPECTED.md").read_text()
+    m = re.search(r"keywords:\s*(.+)", txt)
+    return [k.strip().lower() for k in m.group(1).split(",")] if m else []
+
+def grade(answer: str, keys: list[str]) -> bool:
+    rc = answer.lower().split("evidence:")[0]          # only grade the ROOT CAUSE part
+    return sum(k in rc for k in keys) >= 2              # at least two keywords
+
+def main(n: int = 3):
+    print(f"{'case':10} {'run':>3} {'pass':>5} {'steps':>6} {'tokens':>8} status")
+    for case in sorted(Path("designs").iterdir()):
+        files = ", ".join(p.name for p in case.glob("*.sv"))
+        keys  = load_key(case)
+        for i in range(n):
+            rec = run(TASK.format(files=files), case)
+            final = rec["messages"][-1]["content"]
+            text  = " ".join(b.get("text", "") for b in final if isinstance(b, dict))
+            ok = grade(text, keys)
+            print(f"{case.name:10} {i+1:>3} {'✓' if ok else '✗':>5} "
+                  f"{rec['steps']:>6} {rec['tokens']:>8} {rec['status']}")
+
+if __name__ == "__main__":
+    main(int(sys.argv[1]) if len(sys.argv) > 1 else 3)</code></pre>
+
+  <p>Two things to decide and write down: whether eval runs use <code class="inline">temperature=0</code> (less variance, but hides brittleness), and a budget per eval run (e.g. 6 runs × ~40k tokens). Record the eval table in <code class="inline">NOTES.md</code> every time you change a prompt or tool, so you get a history of what helped.</p>
+
+  <h2>4.2 Stage 6 — Sandbox, propose, verify</h2>
+  <figure class="diagram">
+    <svg viewBox="0 0 860 260" role="img" aria-label="Propose-and-verify flow">
+      <rect x="20" y="95" width="140" height="70" rx="10" class="diag-box"/>
+      <text x="90" y="122" class="diag-text">diagnose</text>
+      <text x="90" y="142" class="diag-small">main loop</text>
+      <path d="M160 130 L210 130" class="diag-arrow"/>
+      <rect x="210" y="95" width="150" height="70" rx="10" class="diag-box orange"/>
+      <text x="285" y="122" class="diag-text">propose_fix</text>
+      <text x="285" y="142" class="diag-small">writes runs/…/fix.patch</text>
+      <path d="M360 130 L410 130" class="diag-arrow"/>
+      <rect x="410" y="95" width="160" height="70" rx="10" class="diag-box gray"/>
+      <text x="490" y="122" class="diag-text">apply to temp copy</text>
+      <text x="490" y="142" class="diag-small">originals untouched</text>
+      <path d="M570 130 L620 130" class="diag-arrow"/>
+      <rect x="620" y="95" width="120" height="70" rx="10" class="diag-box"/>
+      <text x="680" y="122" class="diag-text">re-simulate</text>
+      <text x="680" y="142" class="diag-small">same TB</text>
+      <path d="M740 115 L790 60" class="diag-arrow green"/>
+      <rect x="760" y="20" width="90" height="40" rx="20" class="diag-box green"/>
+      <text x="805" y="40" class="diag-text">PASS ✓</text>
+      <path d="M680 165 C 680 230, 285 230, 285 170" class="diag-arrow red"/>
+      <text x="480" y="222" class="diag-small">still FAIL → result goes back to the model (max 2 retries)</text>
+    </svg>
+    <figcaption>Figure 4.1 — The agent checks its own fix against the simulator before it answers.</figcaption>
+  </figure>
+
+  <pre class="code-block" data-lang="python"><code># agent/sandbox.py
+from pathlib import Path
+
+class SandboxError(ValueError): ...
+
+def safe_path(case_dir: Path, rel: str) -> Path:
+    root = case_dir.resolve()
+    p = (root / rel).resolve()
+    if not p.is_relative_to(root):                 # blocks ../, absolute paths, C:\...
+        raise SandboxError(f"'{rel}' is outside case directory; allowed: "
+                           + ", ".join(x.name for x in root.iterdir()))
+    return p</code></pre>
+
+  <ol>
+    <li><b>Sandbox.</b> Every tool path goes through <code class="inline">safe_path</code>. Test it by asking the agent to "also read C:\Windows\win.ini" and confirm it gets a clean refusal.</li>
+    <li><b>propose_fix(file, old, new).</b> It writes a patch, not the source. It then copies the case to a temp dir, applies the patch, runs <code class="inline">simulate</code>, and returns PASS or the new failure. The agent only answers once the fix passes, or after two failed tries, in which case it has to say so.</li>
+    <li><b>Budgets.</b> Stop at <code class="inline">max_steps</code> or <code class="inline">token_cap</code>, and make the final record say which one fired.</li>
+    <li><b>Metric (added).</b> Track <em>first-fix pass rate</em>: how often the first proposed patch makes the testbench pass. This is the number that says whether you can trust the agent.</li>
+  </ol>
+
+  <details class="collapsible">
+    <summary>Advanced: a guard against "make the test pass" cheating</summary>
+    <p>An agent with a verify step can learn that editing the <em>testbench</em> is the quickest way to PASS. Block it: <code class="inline">propose_fix</code> refuses files that start with <code class="inline">tb_</code> unless the agent sets <code class="inline">testbench_is_wrong=true</code> and gives a reason. The reason ends up in the transcript for you to judge. It's the agent version of a code-review rule that says "don't weaken the checker to close a bug".</p>
+  </details>
+
+  <h2>4.3 Stage 7 — Stretch goals</h2>
+  <table>
+    <tr><th>Idea</th><th>What it teaches</th></tr>
+    <tr><td><code class="inline">get_signal_values(signal, t0, t1)</code> via <code class="inline">vcdvcd</code>/<code class="inline">pyvcd</code></td><td>A real waveform tool. The agent can debug without <code class="inline">$display</code>. Also tests how you present time series to a model (table vs. value-change list).</td></tr>
+    <tr><td><code class="inline">verilator --lint-only -Wall</code> as a second lint tool (via WSL)</td><td>Tool choice. When two tools disagree, which does the model trust, and does the description change that?</td></tr>
+    <tr><td>A small valid/ready handshake with a protocol bug (e.g. data changes while <code class="inline">valid</code> is high and <code class="inline">ready</code> is low)</td><td>Bugs that are only visible across cycles. Closer to your day job, and a much harder case than off-by-one.</td></tr>
+    <tr><td>Rebuild with the Claude Agent SDK</td><td>How much of your loop a framework replaces, and what you lose in visibility.</td></tr>
+    <tr><td>Give the agent a single shell tool instead of five</td><td>The narrow vs. broad tools trade-off from Chapter 1, measured with your eval.</td></tr>
+  </table>
+
+  <h2>4.4 Troubleshooting (added)</h2>
+  <table>
+    <tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+    <tr><td><code class="inline">400: tool_use ids found without tool_result</code></td><td>Loop skipped a tool block or returned early</td><td>Answer every <code class="inline">tool_use</code> in one user message, even on error</td></tr>
+    <tr><td><code class="inline">'iverilog' is not recognized</code></td><td>PATH not updated in current terminal/IDE</td><td>Restart terminal; or hard-code the path via <code class="inline">shutil.which</code> fallback</td></tr>
+    <tr><td>Tool hangs forever</td><td>TB with no <code class="inline">$finish</code>, or <code class="inline">vvp</code> waiting on stdin</td><td><code class="inline">timeout=</code> on subprocess; <code class="inline">vvp -n</code> (non-interactive)</td></tr>
+    <tr><td><code class="inline">UnicodeDecodeError</code></td><td>cp1252 default on Windows</td><td><code class="inline">encoding="utf-8", errors="replace"</code></td></tr>
+    <tr><td>Agent loops calling the same tool</td><td>Result doesn't tell it anything new</td><td>Tell it what changed or say "identical to previous call"; cap repeat calls</td></tr>
+    <tr><td>Answer cites a line that doesn't exist</td><td>Truncated read, model filled the gap</td><td>Paging hint in <code class="inline">read_file</code>; grade EVIDENCE lines against the file</td></tr>
+    <tr><td>Cost jumps between runs</td><td>History grows with every step</td><td>Prompt caching; elide old tool results; lower <code class="inline">max_steps</code></td></tr>
+  </table>
+
+  <div class="quiz">
+    <h3>Self-Check Quiz</h3>
+    <div class="quiz-question">
+      <p><strong>Q1:</strong> Why does <code class="inline">safe_path</code> call <code class="inline">.resolve()</code> before the <code class="inline">is_relative_to</code> check?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer">Without resolving, <code class="inline">designs/counter/../../.env</code> still starts with <code class="inline">designs/counter</code> as a string and would pass a naive prefix check. Resolving collapses <code class="inline">..</code> and symlinks to the real location first.</p>
+    </div>
+    <div class="quiz-question">
+      <p><strong>Q2:</strong> Your eval shows 6/6 passes but the first-fix pass rate is 2/6. What does that tell you?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer">The agent finds the right area but usually proposes a wrong or incomplete patch first, and the verify step is rescuing it. The diagnosis is good, the fix quality isn't, and without verification 4 of 6 answers would have been wrong. Look at the failed patches to see why.</p>
+    </div>
+    <div class="quiz-question">
+      <p><strong>Q3:</strong> Short answer: which Stage 7 idea best tests whether the agent can reason about time, and why?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <p class="answer">The valid/ready protocol bug, ideally combined with the VCD tool. The bug is only visible as a relationship between signals across cycles, so the agent can't just grep for a bad line.</p>
+    </div>
+  </div>
+
+  <h2>4.5 The roadmap</h2>
+  <p>Tick stages off as you go. Ticks last while this page is open.</p>
+  <ul class="roadmap" id="roadmap">
+    <li><input type="checkbox" aria-label="Stage 0"><div><div class="rm-title">Stage 0: Environment <span class="badge">1 h</span></div><div class="rm-meta">Done when: <code class="inline">iverilog -V</code> works, venv active, <code class="inline">.env</code> ignored, and the counter TB fails by hand.</div></div></li>
+    <li><input type="checkbox" aria-label="Stage 1"><div><div class="rm-title">Stage 1: Planted-bug designs <span class="badge">2 h</span></div><div class="rm-meta">Done when: counter + <code class="inline">EXPECTED.md</code> exist; the FIFO design is sketched.</div></div></li>
+    <li><input type="checkbox" aria-label="Stage 2"><div><div class="rm-title">Stage 2: Five tools + pytest <span class="badge">2 h</span></div><div class="rm-meta">Done when: <code class="inline">pytest tests/</code> is green with zero API calls, including the escape test.</div></div></li>
+    <li><input type="checkbox" aria-label="Stage 3"><div><div class="rm-title">Stage 3: The loop <span class="badge">2 h</span></div><div class="rm-meta">Done when: <code class="inline">run_case.py designs/counter</code> prints a correct ROOT CAUSE and writes a transcript.</div></div></li>
+    <li><input type="checkbox" aria-label="Stage 4"><div><div class="rm-title">Stage 4: Hostile outputs <span class="badge">3 h</span></div><div class="rm-meta">Done when: <code class="inline">NOTES.md</code> has four before/after entries (volume, noise, misleading, truncation).</div></div></li>
+    <li><input type="checkbox" aria-label="Stage 5"><div><div class="rm-title">Stage 5: FIFO + eval <span class="badge">2 h</span></div><div class="rm-meta">Done when: <code class="inline">eval.py</code> prints a table and at least 2/3 runs pass on both cases.</div></div></li>
+    <li><input type="checkbox" aria-label="Stage 6"><div><div class="rm-title">Stage 6: Sandbox, verify, budgets <span class="badge">2 h</span></div><div class="rm-meta">Done when: escape attempts are refused, fixes are verified by re-simulation, and first-fix pass rate is recorded.</div></div></li>
+    <li><input type="checkbox" aria-label="Stage 7"><div><div class="rm-title">Stage 7: Stretch <span class="badge">optional</span></div><div class="rm-meta">Pick one: VCD tool, Verilator lint, protocol bug, Agent SDK rewrite.</div></div></li>
+  </ul>
+  <p id="rmStatus" style="font-weight:600;color:var(--primary)">0 / 8 stages complete</p>
+
+  <h3>Suggested schedule</h3>
+  <table>
+    <tr><th>Weekend</th><th>Stages</th><th>End state</th></tr>
+    <tr><td>1</td><td>0, 1, 2</td><td>Tools pass pytest; no API spend yet.</td></tr>
+    <tr><td>2</td><td>3, 4</td><td>Working agent; four experiments in NOTES.md.</td></tr>
+    <tr><td>3</td><td>5, 6</td><td>Eval table, sandbox, verified fixes.</td></tr>
+    <tr><td>4 (optional)</td><td>7</td><td>One stretch goal.</td></tr>
+  </table>
+
+  <h3>Definition of done</h3>
+  <ul>
+    <li><code class="inline">python scripts/run_case.py designs/counter</code> prints a correct root cause with file:line evidence.</li>
+    <li><code class="inline">python scripts/eval.py</code> shows at least 2/3 passes on both cases, with steps and tokens recorded.</li>
+    <li><code class="inline">NOTES.md</code> has at least four before/after observations from Stage 4.</li>
+    <li>You can explain, without notes, why tool descriptions and output shaping matter more than the system prompt.</li>
+  </ul>
+
+  <section class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>Without an eval, prompt changes are guesswork. Even a keyword grader over 3 runs per case catches regressions.</li>
+      <li>Sandbox at the tool layer with resolved paths, and never let the agent edit the originals.</li>
+      <li>Propose-then-verify is what makes the agent trustworthy. Track first-fix pass rate.</li>
+      <li>Record accuracy, steps, and tokens together. An agent that's right but costs 10× isn't better.</li>
+    </ul>
+  </section>
+
+  <div class="nav-buttons">
+    <button class="prev-btn" onclick="previousChapter()">← Previous</button>
+    <button class="next-btn" onclick="nextChapter()">Next →</button>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  const chapters = Array.from(document.querySelectorAll('.chapter'));
+  const links = Array.from(document.querySelectorAll('.toc a'));
+  const TOTAL = chapters.length - 1;           // intro not counted
+  const visited = new Set();
+  let current = 0;
+
+  function show(i){
+    if(i < 0 || i >= chapters.length) return;
+    chapters.forEach((c,k)=>c.classList.toggle('active', k===i));
+    links.forEach((a,k)=>a.classList.toggle('active', k===i));
+    current = i;
+    if(i>0) visited.add(i);
+    links.forEach((a,k)=>a.classList.toggle('done', visited.has(k) && k!==i));
+    document.getElementById('progressFill').style.width = (visited.size/TOTAL*100)+'%';
+    document.getElementById('chapterCount').textContent = visited.size+'/'+TOTAL+' chapters';
+    chapters[i].querySelectorAll('.prev-btn').forEach(b=>b.disabled = i===0);
+    chapters[i].querySelectorAll('.next-btn').forEach(b=>b.disabled = i===chapters.length-1);
+    window.scrollTo({top:0,behavior:'smooth'});
+    document.querySelector('.sidebar').classList.remove('open');
+    if(history.replaceState) history.replaceState(null,'','#'+chapters[i].id);
+  }
+  window.goToChapter = show;
+  window.nextChapter = ()=>show(current+1);
+  window.previousChapter = ()=>show(current-1);
+  links.forEach((a,k)=>a.addEventListener('click',e=>{e.preventDefault();show(k);}));
+  document.addEventListener('keydown',e=>{
+    if(['INPUT','TEXTAREA','BUTTON'].includes(document.activeElement.tagName) && e.key!=='ArrowRight' && e.key!=='ArrowLeft') return;
+    if(e.key==='ArrowRight') nextChapter();
+    if(e.key==='ArrowLeft') previousChapter();
+  });
+
+  /* ---------- syntax highlighting ---------- */
+  const KW = {
+    verilog: 'module endmodule input output inout logic wire reg always always_ff always_comb begin end if else parameter localparam assign initial repeat posedge negedge case endcase for integer timescale',
+    python: 'def return import from as for in if elif else not and or try except raise class with while True False None lambda is pass continue break',
+    json: 'true false null',
+    bash: ''
+  };
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function highlight(src, lang){
+    const kws = new Set((KW[lang]||'').split(' ').filter(Boolean));
+    const cm = (lang==='python'||lang==='bash') ? '#[^\\n]*' : '//[^\\n]*';
+    const re = new RegExp('('+cm+')|("(?:[^"\\\\\\n]|\\\\.)*"|\'(?:[^\'\\\\\\n]|\\\\.)*\')|(\\b\\d+\'[bdhBDH][0-9a-fA-F_xXzZ]+|\\b\\d[\\d_]*(?:\\.\\d+)?\\b)|([A-Za-z_$`][\\w$]*)','g');
+    let out='', last=0, m;
+    while((m=re.exec(src))){
+      out += esc(src.slice(last,m.index));
+      if(m[1]) out += '<span class="cm">'+esc(m[1])+'</span>';
+      else if(m[2]) out += '<span class="str">'+esc(m[2])+'</span>';
+      else if(m[3]) out += '<span class="num">'+esc(m[3])+'</span>';
+      else if(m[4]){
+        const w=m[4], bare=w.replace(/^[`$]/,'');
+        if(kws.has(bare) || (lang==='verilog' && /^\$/.test(w))) out += '<span class="kw">'+esc(w)+'</span>';
+        else if(lang==='python' && src[re.lastIndex]==='(') out += '<span class="fn">'+esc(w)+'</span>';
+        else out += esc(w);
+      }
+      last = re.lastIndex;
+    }
+    out += esc(src.slice(last));
+    return out;
+  }
+  document.querySelectorAll('pre.code-block').forEach(pre=>{
+    const code = pre.querySelector('code');
+    const lang = pre.dataset.lang || 'python';
+    const raw = code.textContent.replace(/^\n/,'').replace(/\s+$/,'');
+    code.dataset.raw = raw;
+    // highlight whole block (so multi-line tokens are rare), then split on newlines
+    const html = highlight(raw, lang);
+    code.innerHTML = html.split('\n').map(l=>'<span class="ln">'+(l||' ')+'</span>').join('');
+    const btn = document.createElement('button');
+    btn.className='copy-btn'; btn.type='button'; btn.textContent='Copy';
+    btn.setAttribute('aria-label','Copy code');
+    btn.addEventListener('click',()=>{
+      const done=()=>{btn.textContent='Copied ✓';setTimeout(()=>btn.textContent='Copy',1500);};
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(raw).then(done,()=>fallback());
+      } else fallback();
+      function fallback(){const t=document.createElement('textarea');t.value=raw;document.body.appendChild(t);t.select();try{document.execCommand('copy');done();}catch(e){}t.remove();}
+    });
+    pre.appendChild(btn);
+  });
+
+  /* ---------- quizzes ---------- */
+  document.querySelectorAll('.reveal-btn').forEach(b=>{
+    b.setAttribute('aria-expanded','false');
+    b.addEventListener('click',()=>{
+      const a = b.nextElementSibling;
+      const on = a.classList.toggle('show');
+      b.textContent = on ? 'Hide Answer' : 'Reveal Answer';
+      b.setAttribute('aria-expanded', String(on));
+    });
+  });
+
+  /* ---------- state machine ---------- */
+  const STATES = {
+    idle:{label:'IDLE (waiting for a task)'},
+    call:{label:'CALL_MODEL (model is thinking)'},
+    tools:{label:'RUN_TOOLS (your code executes tool_use blocks)'},
+    done:{label:'DONE (final answer: ROOT CAUSE / EVIDENCE / FIX)'},
+    budget:{label:'BUDGET_STOP (max_steps or token cap reached)'}
+  };
+  const T = {
+    start:{from:'idle',to:'call',path:'p-idle-call'},
+    tool:{from:'call',to:'tools',path:'p-call-tools'},
+    result:{from:'tools',to:'call',path:'p-tools-call'},
+    end:{from:'call',to:'done',path:'p-call-done'},
+    budget:{from:'call',to:'budget',path:'p-call-budget'}
+  };
+  const TOOL_SEQ = ['simulate(…)','grep("rst")','read_file(1–14)'];
+  let sm='idle', step=0, toolIdx=0, timer=null;
+  const btns = document.querySelectorAll('.sm-btn[data-t]');
+  function render(){
+    Object.keys(STATES).forEach(s=>document.getElementById('n-'+s).classList.toggle('cur', s===sm));
+    document.getElementById('smLabel').textContent = 'Current state: '+STATES[sm].label;
+    document.getElementById('smStep').textContent = step;
+    btns.forEach(b=>b.disabled = T[b.dataset.t].from!==sm);
+  }
+  function fire(t){
+    const tr=T[t]; if(!tr || tr.from!==sm) return;
+    const p=document.getElementById(tr.path);
+    p.classList.remove('drawing'); void p.getBBox(); p.classList.add('drawing');
+    setTimeout(()=>p.classList.remove('drawing'),900);
+    if(tr.to==='call') step++;
+    if(tr.to==='tools'){document.getElementById('smTool').textContent = TOOL_SEQ[toolIdx%TOOL_SEQ.length]; toolIdx++;}
+    if(tr.to==='call' && t==='result') document.getElementById('smTool').textContent='–';
+    sm=tr.to; render();
+  }
+  function reset(){ stopAuto(); sm='idle'; step=0; toolIdx=0; document.getElementById('smTool').textContent='–'; render(); }
+  const AUTO = ['start','tool','result','tool','result','tool','result','end'];
+  let ai=0;
+  function stopAuto(){ if(timer){clearInterval(timer);timer=null;} document.getElementById('smAuto').textContent='▶ Start Auto-Demo'; }
+  document.getElementById('smAuto').addEventListener('click',()=>{
+    if(timer){stopAuto();return;}
+    if(sm==='done'||sm==='budget'||sm!=='idle'){ reset(); }
+    ai=0; document.getElementById('smAuto').textContent='⏸ Stop Auto-Demo';
+    timer=setInterval(()=>{ if(ai>=AUTO.length){stopAuto();return;} fire(AUTO[ai++]); },2000);
+  });
+  document.getElementById('smReset').addEventListener('click',reset);
+  btns.forEach(b=>b.addEventListener('click',()=>{stopAuto();fire(b.dataset.t);}));
+  render();
+
+  /* ---------- roadmap ---------- */
+  const rm = document.querySelectorAll('#roadmap input');
+  function rmUpdate(){
+    let n=0; rm.forEach(c=>{c.closest('li').classList.toggle('checked',c.checked); if(c.checked)n++;});
+    document.getElementById('rmStatus').textContent = n+' / '+rm.length+' stages complete'+(n===rm.length?' - all done!':'');
+  }
+  rm.forEach(c=>c.addEventListener('change',rmUpdate));
+
+  /* ---------- initial chapter from hash ---------- */
+  const h = location.hash.slice(1);
+  const start = Math.max(0, chapters.findIndex(c=>c.id===h));
+  show(start);
+  window.addEventListener('hashchange',()=>{const i=chapters.findIndex(c=>c.id===location.hash.slice(1)); if(i>=0&&i!==current) show(i);});
+})();
+</script>
+</body>
+</html>

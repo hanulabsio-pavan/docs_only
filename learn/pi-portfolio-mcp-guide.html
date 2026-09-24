@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pi Portfolio MCP Server — Project Guide</title>
+<style>
+:root{
+  --primary:#0066cc; --primary-dark:#004f9e;
+  --secondary:#00b359; --secondary-text:#00753a;
+  --accent:#ff6b35; --accent-dark:#d94e1c;
+  --bg:#ffffff; --sidebar:#f8f8f8; --text:#1a1a1a; --muted:#555; --border:#ddd;
+  --code-bg:#fff6f1; --answer-bg:#f0f9f4;
+  --p-blue:#e8f1fc; --p-green:#e6f7ee; --p-orange:#fff0e8; --p-red:#fde8e8; --p-gray:#f1f1f1;
+  --shadow:0 1px 2px rgba(0,0,0,.08);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --primary:#5aa7ff; --primary-dark:#8cc2ff;
+    --secondary:#2fd07c; --secondary-text:#5fe39c;
+    --accent:#ff8a5c; --accent-dark:#ffab88;
+    --bg:#15181d; --sidebar:#1c2027; --text:#eceef1; --muted:#a9b0ba; --border:#343a44;
+    --code-bg:#221c19; --answer-bg:#15291e;
+    --p-blue:#1b2a3d; --p-green:#17301f; --p-orange:#35241b; --p-red:#3a1f1f; --p-gray:#262a31;
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --primary:#5aa7ff; --primary-dark:#8cc2ff;
+  --secondary:#2fd07c; --secondary-text:#5fe39c;
+  --accent:#ff8a5c; --accent-dark:#ffab88;
+  --bg:#15181d; --sidebar:#1c2027; --text:#eceef1; --muted:#a9b0ba; --border:#343a44;
+  --code-bg:#221c19; --answer-bg:#15291e;
+  --p-blue:#1b2a3d; --p-green:#17301f; --p-orange:#35241b; --p-red:#3a1f1f; --p-gray:#262a31;
+  --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;letter-spacing:.3px}
+a{color:var(--primary)}
+img,svg{max-width:100%}
+
+/* Layout */
+.container{display:flex;min-height:100%}
+.sidebar{width:280px;flex:0 0 280px;background:var(--sidebar);border-right:1px solid var(--border);position:sticky;top:env(safe-area-inset-top,0px);align-self:flex-start;max-height:100dvh;overflow-y:auto;padding:1.5rem 1.25rem}
+.sidebar h2{margin:0 0 .25rem;font-size:18px;color:var(--primary)}
+.sidebar .sub{font-size:13px;color:var(--muted);margin-bottom:1rem}
+.progress-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;width:0;background:var(--secondary);transition:width .5s ease}
+.chapter-count{font-size:13px;color:var(--muted);margin:.4rem 0 1rem}
+.toc ul{list-style:none;margin:0;padding:0}
+.toc li{margin:.15rem 0}
+.toc a{display:flex;gap:.5rem;align-items:flex-start;text-decoration:none;color:var(--text);padding:.45rem .6rem;border-radius:6px;font-size:14px;line-height:1.35;transition:background .3s ease,color .3s ease}
+.toc a:hover{background:var(--p-orange)}
+.toc a.active{background:var(--p-blue);color:var(--primary);font-weight:600}
+.toc .tick{width:16px;flex:0 0 16px;color:var(--secondary-text);font-weight:700}
+.theme-btn{margin-top:1.25rem;font-size:13px;background:none;border:1px solid var(--border);color:var(--muted);padding:.35rem .7rem;border-radius:6px;cursor:pointer}
+.content{flex:1;min-width:0}
+.inner{max-width:900px;margin:0 auto;padding:2rem 2rem 4rem}
+.mobile-bar{display:none}
+
+@media (max-width:768px){
+  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:50;transform:translateX(-100%);transition:transform .3s ease;max-height:none;padding-top:calc(1.5rem + env(safe-area-inset-top,0px));padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px))}
+  .sidebar.open{transform:none;box-shadow:4px 0 16px rgba(0,0,0,.2)}
+  .mobile-bar{display:flex;align-items:center;gap:.75rem;position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--bg);border-bottom:1px solid var(--border);padding:.6rem 1rem}
+  .mobile-bar button{font-size:20px;background:none;border:1px solid var(--border);border-radius:6px;padding:.1rem .6rem;color:var(--text);cursor:pointer}
+  .mobile-bar span{font-weight:600;color:var(--primary);font-size:15px}
+  .inner{padding:1.25rem 1rem 3rem}
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:45;display:none}
+  .scrim.show{display:block}
+}
+
+/* Typography */
+.chapter{display:none}
+.chapter.visible{display:block;animation:fade .5s ease}
+h1{font-size:28px;color:var(--primary);margin:.25rem 0 1rem;line-height:1.25}
+h2{font-size:22px;color:var(--primary);margin:2.25rem 0 .75rem}
+h3{font-size:18px;font-weight:600;color:var(--text);margin:1.5rem 0 .5rem}
+.eyebrow{font-size:13px;color:var(--muted);margin:0}
+p{margin:.6rem 0}
+ul,ol{padding-left:1.4rem}
+li{margin:.3rem 0}
+code.inline{font-family:Monaco,'Courier New',monospace;font-size:13px;background:var(--code-bg);padding:.1rem .35rem;border-radius:4px}
+.subtitle{font-size:18px;color:var(--muted);margin-top:-.5rem}
+
+/* Boxes */
+.callout{border-left:4px solid var(--primary);background:var(--p-blue);padding:.8rem 1rem;border-radius:0 8px 8px 0;margin:1.25rem 0}
+.callout.warn{border-color:var(--accent);background:var(--p-orange)}
+.callout.new{border-color:var(--secondary);background:var(--p-green)}
+.callout strong:first-child{display:block;margin-bottom:.2rem}
+.table-wrap{overflow-x:auto;margin:1rem 0;border:1px solid var(--border);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+th,td{padding:.55rem .75rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:var(--sidebar);color:var(--primary);font-weight:600}
+tr:last-child td{border-bottom:none}
+.tag{display:inline-block;font-size:12px;padding:.05rem .5rem;border-radius:10px;font-weight:600}
+.tag.r{background:var(--p-blue);color:var(--primary)}
+.tag.w{background:var(--p-orange);color:var(--accent-dark)}
+.tag.n{background:var(--p-green);color:var(--secondary-text)}
+
+/* Intro */
+.hero{border:1px solid var(--border);border-radius:12px;padding:1.5rem;background:linear-gradient(135deg,var(--p-blue),var(--bg) 60%);margin-bottom:1.5rem}
+.meta-row{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0}
+.meta-row span{font-size:13px;border:1px solid var(--border);border-radius:14px;padding:.2rem .7rem;background:var(--bg)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.75rem;margin:1rem 0}
+.card{border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;background:var(--bg);box-shadow:var(--shadow)}
+.card h4{margin:0 0 .3rem;color:var(--primary);font-size:15px}
+.card p{margin:0;font-size:14px;color:var(--muted)}
+.start-btn,.nav-buttons button,.sm-controls button,.seg button{font:inherit;cursor:pointer;border-radius:8px;transition:background .3s ease,border-color .3s ease,color .3s ease}
+.start-btn{background:var(--primary);color:#fff;border:none;padding:.7rem 1.4rem;font-weight:600;font-size:16px;margin-top:.5rem}
+.start-btn:hover{background:var(--primary-dark)}
+
+/* Diagrams */
+figure.diagram{margin:1.5rem 0;border:1px solid var(--border);border-radius:10px;padding:1rem;background:var(--bg);opacity:0;transform:translateY(8px);transition:opacity .7s ease-in,transform .7s ease-in}
+figure.diagram.in{opacity:1;transform:none}
+figure.diagram svg{width:100%;height:auto;display:block}
+figcaption{font-size:13px;color:var(--muted);margin-top:.6rem;text-align:center}
+.d-box{stroke:var(--primary);stroke-width:2;filter:drop-shadow(0 1px 1px rgba(0,0,0,.12));transition:stroke .3s ease}
+.d-box:hover{stroke:var(--primary-dark)}
+.f-blue{fill:var(--p-blue)} .f-green{fill:var(--p-green)} .f-orange{fill:var(--p-orange)} .f-gray{fill:var(--p-gray)} .f-red{fill:var(--p-red)} .f-bg{fill:var(--bg)}
+.d-text{fill:var(--text);font:14px -apple-system,'Segoe UI',sans-serif;text-anchor:middle;dominant-baseline:middle}
+.d-small{font-size:12px;fill:var(--muted)}
+.d-bold{font-weight:700}
+.d-line{stroke:var(--primary);stroke-width:2;fill:none}
+.d-line.green{stroke:var(--secondary)} .d-line.orange{stroke:var(--accent)} .d-line.gray{stroke:var(--muted)}
+.d-line.dash{stroke-dasharray:6 5}
+.draw{stroke-dasharray:1;stroke-dashoffset:1}
+figure.in .draw{animation:draw 1.2s ease forwards .3s}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.legend{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;font-size:13px;margin-top:.5rem}
+.legend i{display:inline-block;width:14px;height:14px;border:2px solid var(--primary);border-radius:3px;vertical-align:-2px;margin-right:.35rem}
+
+/* State machine */
+.sm-state circle{stroke:var(--primary);stroke-width:2;fill:var(--p-blue);transition:stroke-width .4s ease,filter .4s ease,fill .4s ease}
+.sm-state.err circle{fill:var(--p-red)}
+.sm-state.ok circle{fill:var(--p-green)}
+.sm-state.active circle{stroke-width:4;filter:drop-shadow(0 0 7px var(--accent))}
+.sm-tr{stroke:var(--muted);stroke-width:1.8;fill:none;opacity:.55}
+.sm-tr.err{stroke:#d33}
+.sm-tr.fire{stroke:var(--accent);stroke-width:3.2;opacity:1;stroke-dasharray:1;stroke-dashoffset:1;animation:draw .8s ease forwards}
+.sm-lbl{fill:var(--muted);font:11.5px -apple-system,'Segoe UI',sans-serif;text-anchor:middle}
+.sm-status{font-weight:600;margin:.5rem 0;text-align:center;color:var(--primary)}
+.sm-desc{text-align:center;font-size:14px;color:var(--muted);min-height:2.6em;margin:0 0 .5rem}
+.sm-controls{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center}
+.sm-controls button{border:1px solid var(--border);background:var(--bg);color:var(--text);padding:.35rem .65rem;font-size:13px}
+.sm-controls button:hover:not(:disabled){border-color:var(--accent);background:var(--p-orange)}
+.sm-controls button:disabled{opacity:.4;cursor:not-allowed}
+.sm-controls .main{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+.sm-controls .main:hover{background:var(--primary-dark)!important;color:#fff}
+
+/* Segmented toggle */
+.seg{display:flex;justify-content:center;gap:.4rem;margin-bottom:.75rem;flex-wrap:wrap}
+.seg button{border:1px solid var(--border);background:var(--bg);color:var(--text);padding:.4rem .9rem;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
+#netSvg .mode-cf,#netSvg .mode-ts{transition:opacity .5s ease}
+#netSvg[data-mode="cf"] .mode-ts{opacity:0;pointer-events:none}
+#netSvg[data-mode="ts"] .mode-cf{opacity:0;pointer-events:none}
+
+/* Code */
+.code-wrap{margin:1.25rem 0;border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;background:var(--code-bg);overflow:hidden;animation:fade .6s ease}
+.code-head{display:flex;justify-content:space-between;align-items:center;padding:.35rem .75rem;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--muted);font-family:Monaco,'Courier New',monospace}
+.copy-btn{font:12px -apple-system,'Segoe UI',sans-serif;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:5px;padding:.15rem .55rem;cursor:pointer;transition:border-color .3s ease}
+.copy-btn:hover{border-color:var(--accent)}
+.code-wrap pre{margin:0;overflow-x:auto;padding:.75rem 0}
+.code-wrap code{font-family:Monaco,'Courier New',monospace;font-size:13px;line-height:1.55;counter-reset:ln;display:block;min-width:max-content}
+.code-wrap .line{display:block;padding:0 1rem 0 0;white-space:pre}
+.code-wrap .line::before{counter-increment:ln;content:counter(ln);display:inline-block;width:2.6rem;padding-right:.9rem;text-align:right;color:var(--muted);opacity:.6;user-select:none;-webkit-user-select:none}
+.t-k{color:var(--primary);font-weight:600}
+.t-s{color:var(--secondary-text)}
+.t-c{color:#6b6b6b;font-style:italic}
+:root[data-theme="dark"] .t-c{color:#9aa0a8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .t-c{color:#9aa0a8}}
+.t-n{color:var(--accent-dark)}
+.t-d{color:var(--accent-dark);font-weight:600}
+
+/* Collapsible */
+details.collapsible{border:1px solid var(--border);border-radius:8px;margin:1rem 0;background:var(--bg);overflow:hidden}
+details.collapsible summary{cursor:pointer;padding:.7rem 1rem;font-weight:600;color:var(--primary);list-style:none;transition:background .3s ease}
+details.collapsible summary::-webkit-details-marker{display:none}
+details.collapsible summary::before{content:"▸";display:inline-block;margin-right:.5rem;transition:transform .3s ease}
+details.collapsible[open] summary::before{transform:rotate(90deg)}
+details.collapsible summary:hover{background:var(--p-orange)}
+details.collapsible .body{padding:.2rem 1rem .9rem;animation:fade .3s ease}
+
+/* Quiz */
+.quiz{border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin:2rem 0;background:var(--sidebar)}
+.quiz h3{margin-top:0;color:var(--primary)}
+.quiz-question{margin:1rem 0}
+.quiz-question p{margin:.3rem 0}
+.quiz-question ol{list-style:upper-alpha;margin:.3rem 0}
+.reveal-btn{font:13px -apple-system,'Segoe UI',sans-serif;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;cursor:pointer;transition:background .3s ease}
+.reveal-btn:hover{background:var(--accent-dark)}
+.answer{display:none;margin-top:.6rem;background:var(--answer-bg);border-left:4px solid var(--secondary);padding:.6rem .9rem;border-radius:0 6px 6px 0}
+.answer.show{display:block;animation:fade .4s ease}
+
+/* Takeaways + nav */
+.key-takeaways{background:var(--p-green);border:1px solid var(--secondary);border-radius:10px;padding:1rem 1.25rem;margin:2rem 0}
+.key-takeaways h3{margin-top:0;color:var(--secondary-text)}
+.key-takeaways li::marker{content:"✓  ";color:var(--secondary-text)}
+.nav-buttons{display:flex;justify-content:space-between;gap:1rem;margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--border)}
+.nav-buttons button{border:1px solid var(--primary);background:var(--bg);color:var(--primary);padding:.55rem 1.1rem;font-weight:600}
+.nav-buttons button:hover{background:var(--primary);color:#fff}
+.nav-buttons .spacer{flex:1}
+.kbd-hint{font-size:12px;color:var(--muted);text-align:center;margin-top:.75rem}
+</style>
+</head>
+<body>
+<div class="mobile-bar">
+  <button id="menuBtn" aria-label="Open table of contents">☰</button>
+  <span>Pi Portfolio MCP</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="container">
+  <aside class="sidebar" id="sidebar" aria-label="Table of contents">
+    <h2>Pi Portfolio MCP</h2>
+    <div class="sub">Project guide · 5 chapters</div>
+    <div class="progress-bar" role="progressbar" aria-label="Lesson progress"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="chapter-count" id="chapterCount">0/5 chapters visited</div>
+    <nav class="toc">
+      <ul>
+        <li><a href="#intro" data-idx="0"><span class="tick"></span>Overview</a></li>
+        <li><a href="#chapter-1" data-idx="1"><span class="tick"></span>1. Concept &amp; Architecture</a></li>
+        <li><a href="#chapter-2" data-idx="2"><span class="tick"></span>2. Pi Setup &amp; Excel Prep</a></li>
+        <li><a href="#chapter-3" data-idx="3"><span class="tick"></span>3. Building the MCP Server</a></li>
+        <li><a href="#chapter-4" data-idx="4"><span class="tick"></span>4. Remote Access &amp; Security</a></li>
+        <li><a href="#chapter-5" data-idx="5"><span class="tick"></span>5. Operations &amp; Roadmap</a></li>
+      </ul>
+    </nav>
+    <button class="theme-btn" id="themeBtn" aria-label="Toggle light or dark theme">◐ Theme</button>
+  </aside>
+
+  <main class="content" id="main">
+  <div class="inner">
+
+<!-- ================= INTRO ================= -->
+<section id="intro" class="chapter">
+  <div class="hero">
+    <p class="eyebrow">Hanulabs home-lab project</p>
+    <h1>Pi Portfolio MCP Server</h1>
+    <p class="subtitle">Ask Claude from your phone. Your Raspberry Pi updates the Excel sheet.</p>
+    <div class="meta-row"><span>~75 min read</span><span>5 chapters</span><span>Python · FastMCP · LibreOffice</span><span>Raspberry Pi 4/5</span></div>
+  </div>
+
+  <h2>What you'll build</h2>
+  <p>A small server on a Raspberry Pi at home. It holds <code class="inline">Portfolio.xlsx</code>. From anywhere, on mobile data, you ask Claude:</p>
+  <div class="callout"><strong>“Update my portfolio prices.”</strong>The Pi fetches live NSE prices, writes the LTP column, recalculates every formula and replies with your gain/loss.</div>
+
+  <div class="grid2">
+    <div class="card"><h4>Your data</h4><p>Holdings sheet: 10 NSE stocks with quantity, average price and LTP. Later: assets, debts and net worth.</p></div>
+    <div class="card"><h4>Your server</h4><p>Python MCP server with read and write tools. Runs 24×7 as a service.</p></div>
+    <div class="card"><h4>Your access</h4><p>Secure HTTPS tunnel. Works over 4G/5G. No router ports opened.</p></div>
+    <div class="card"><h4>Your safety net</h4><p>Login required, file locking, snapshots, nightly backups to Drive.</p></div>
+  </div>
+
+  <h2>What this guide adds</h2>
+  <p>The first plan was a good outline. These gaps are now covered:</p>
+  <div class="callout new"><strong>Added to the plan</strong>
+    <ul>
+      <li><b>One master copy.</b> The Pi file is the source of truth. Drive only keeps backups. (Ch 1)</li>
+      <li><b>Summary sheet.</b> Totals live in fixed cells so adding a stock never breaks the Dashboard. (Ch 2)</li>
+      <li><b>Hardware reliability.</b> SSD or quality SD card, cooling, optional UPS. (Ch 2)</li>
+      <li><b>Corporate actions.</b> Splits and bonuses change quantity and average price. (Ch 2)</li>
+      <li><b>Safe write flow.</b> Lock → fetch → write → recalc → verify, with rollback. (Ch 3)</li>
+      <li><b>Bad symbols.</b> A failed price keeps the old LTP and is reported. (Ch 3)</li>
+      <li><b>How Claude reaches your Pi.</b> The Claude app needs a public HTTPS URL with OAuth. Tailscale alone won't do. (Ch 4)</li>
+      <li><b>Indian ISP CGNAT.</b> Port forwarding usually fails; tunnels avoid it. (Ch 4)</li>
+      <li><b>Tests, restore drill and a “done when” check</b> for each roadmap phase. (Ch 5)</li>
+    </ul>
+  </div>
+  <button class="start-btn" onclick="goToChapter(1)">Start Learning →</button>
+  <p class="kbd-hint">Tip: use ← and → arrow keys to move between chapters.</p>
+</section>
+
+<!-- ================= CHAPTER 1 ================= -->
+<section id="chapter-1" class="chapter">
+  <p class="eyebrow">Chapter 1 · ~15 min</p>
+  <h1>Concept &amp; Architecture</h1>
+
+  <h2>MCP in one minute</h2>
+  <p>MCP (Model Context Protocol) lets Claude call functions on your server. Each function is a <b>tool</b>. Claude reads the tool's name and description, then decides when to call it.</p>
+  <ul>
+    <li><b>Client:</b> Claude (phone app, web or desktop).</li>
+    <li><b>Server:</b> your Python program on the Pi.</li>
+    <li><b>Transport:</b> Streamable HTTP. One HTTPS endpoint, usually <code class="inline">/mcp</code>.</li>
+  </ul>
+
+  <h2>System architecture</h2>
+  <figure class="diagram">
+    <svg viewBox="0 0 860 400" role="img" aria-label="Architecture: phone to Claude cloud to Cloudflare to Raspberry Pi">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--primary)"/></marker>
+        <marker id="arrO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+        <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--secondary)"/></marker>
+      </defs>
+      <!-- Phone -->
+      <rect class="d-box f-blue" x="15" y="165" width="130" height="70" rx="10"/>
+      <text class="d-text d-bold" x="80" y="192">Your phone</text>
+      <text class="d-text d-small" x="80" y="214">Claude app · 4G/5G</text>
+      <!-- Claude cloud -->
+      <rect class="d-box f-blue" x="185" y="165" width="140" height="70" rx="10"/>
+      <text class="d-text d-bold" x="255" y="192">Claude</text>
+      <text class="d-text d-small" x="255" y="214">Anthropic cloud</text>
+      <!-- Cloudflare -->
+      <rect class="d-box f-orange" x="365" y="165" width="140" height="70" rx="10"/>
+      <text class="d-text d-bold" x="435" y="192">Cloudflare edge</text>
+      <text class="d-text d-small" x="435" y="214">HTTPS · your domain</text>
+      <!-- Yahoo -->
+      <rect class="d-box f-gray" x="365" y="30" width="140" height="56" rx="10"/>
+      <text class="d-text d-bold" x="435" y="52">Yahoo Finance</text>
+      <text class="d-text d-small" x="435" y="72">NSE prices (.NS)</text>
+      <!-- Drive -->
+      <rect class="d-box f-gray" x="365" y="315" width="140" height="56" rx="10"/>
+      <text class="d-text d-bold" x="435" y="337">Google Drive</text>
+      <text class="d-text d-small" x="435" y="357">backups only</text>
+      <!-- Pi -->
+      <rect class="d-box f-bg" x="545" y="15" width="300" height="370" rx="14" stroke-dasharray="7 5"/>
+      <text class="d-text d-bold" x="695" y="38" style="fill:var(--primary)">Raspberry Pi · home Wi-Fi</text>
+      <rect class="d-box f-orange" x="565" y="60" width="260" height="44" rx="8"/>
+      <text class="d-text" x="695" y="82">cloudflared (outbound tunnel)</text>
+      <rect class="d-box f-blue pulse" x="565" y="125" width="260" height="56" rx="8"/>
+      <text class="d-text d-bold" x="695" y="145">MCP server (FastMCP)</text>
+      <text class="d-text d-small" x="695" y="166">127.0.0.1:8000 · OAuth · tools</text>
+      <rect class="d-box f-green" x="565" y="205" width="120" height="56" rx="8"/>
+      <text class="d-text d-bold" x="625" y="225">Portfolio</text>
+      <text class="d-text d-small" x="625" y="245">.xlsx (master)</text>
+      <rect class="d-box f-green" x="705" y="205" width="120" height="56" rx="8"/>
+      <text class="d-text d-bold" x="765" y="225">LibreOffice</text>
+      <text class="d-text d-small" x="765" y="245">headless recalc</text>
+      <rect class="d-box f-gray" x="565" y="285" width="260" height="40" rx="8"/>
+      <text class="d-text" x="695" y="305">backup.sh (nightly cron)</text>
+      <rect class="d-box f-gray" x="565" y="335" width="260" height="36" rx="8"/>
+      <text class="d-text d-small" x="695" y="353">logs/audit.log</text>
+      <!-- Arrows -->
+      <path class="d-line draw" pathLength="1" d="M145 200 H183" marker-end="url(#arr)"/>
+      <path class="d-line draw" pathLength="1" d="M325 200 H363" marker-end="url(#arr)"/>
+      <path class="d-line orange draw" pathLength="1" d="M505 200 C530 200 535 82 563 82" marker-end="url(#arrO)"/>
+      <path class="d-line draw" pathLength="1" d="M695 104 V123" marker-end="url(#arr)"/>
+      <path class="d-line green draw" pathLength="1" d="M650 181 V203" marker-end="url(#arrG)"/>
+      <path class="d-line green draw" pathLength="1" d="M685 233 H703" marker-end="url(#arrG)" marker-start="url(#arrG)"/>
+      <path class="d-line gray dash" d="M565 150 C530 150 530 58 507 58" marker-end="url(#arr)"/>
+      <path class="d-line gray dash" d="M565 305 C530 305 530 343 507 343" marker-end="url(#arr)"/>
+      <text class="d-text d-small" x="164" y="186">HTTPS</text>
+      <text class="d-text d-small" x="344" y="186">HTTPS</text>
+      <text class="d-text d-small" x="520" y="122">tunnel</text>
+    </svg>
+    <figcaption>Request path: phone → Claude cloud → Cloudflare → tunnel → MCP server → Excel. Dashed lines are outbound calls from the Pi.</figcaption>
+  </figure>
+
+  <div class="callout warn"><strong>Key point: the Pi never opens a port.</strong>cloudflared dials <i>out</i> to Cloudflare. Your router stays closed. The Pi still needs home internet; only your phone uses mobile data.</div>
+
+  <h2>One master copy</h2>
+  <p>Two editable copies (Drive and Pi) will drift. Pick one master:</p>
+  <ul>
+    <li><b>Master:</b> <code class="inline">~/pi-portfolio-mcp/data/Portfolio.xlsx</code> on the Pi.</li>
+    <li><b>Drive:</b> read-only backups in <code class="inline">Finance/backups/</code>.</li>
+    <li><b>Manual edits:</b> do them through Claude tools, or copy the file off, edit, and put it back while the server is stopped.</li>
+  </ul>
+
+  <h2>Design decisions</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Decision</th><th>Choice</th><th>Why</th></tr>
+    <tr><td>Language</td><td>Python 3.11+</td><td>Best Excel and finance libraries</td></tr>
+    <tr><td>MCP framework</td><td>FastMCP</td><td>Tools from plain functions; built-in OAuth</td></tr>
+    <tr><td>Transport</td><td>Streamable HTTP</td><td>Required for remote connectors</td></tr>
+    <tr><td>Excel read/write</td><td>openpyxl</td><td>Pure Python; keeps formulas</td></tr>
+    <tr><td>Recalculation</td><td>LibreOffice headless</td><td>openpyxl can't calculate formulas</td></tr>
+    <tr><td>Prices</td><td>yfinance (<code class="inline">.NS</code>)</td><td>Free; may be delayed. Upgrade to a broker API later</td></tr>
+    <tr><td>Remote access</td><td>Cloudflare Tunnel</td><td>Public HTTPS URL; no port forwarding</td></tr>
+    <tr><td>Auth</td><td>OAuth (GitHub or Google)</td><td>What the Claude app supports for custom connectors</td></tr>
+  </table></div>
+
+  <h2>Project structure</h2>
+  <div class="code-wrap" data-lang="bash" data-title="folder layout">
+<pre><code>pi-portfolio-mcp/
+├── server.py            # MCP server + tools
+├── workbook.py          # Excel helpers (rows, formulas)
+├── prices.py            # price fetcher
+├── recalc.py            # LibreOffice recalculation
+├── prepare_workbook.py  # one-time sheet conversion
+├── backup.sh            # nightly backup
+├── .env                 # secrets (chmod 600, never commit)
+├── data/
+│   ├── Portfolio.xlsx       # master copy
+│   └── Portfolio.prev.xlsx  # snapshot before each write
+├── backups/             # dated copies
+├── logs/                # audit.log, backup.log
+└── tests/               # pytest</code></pre>
+  </div>
+
+  <details class="collapsible" data-key="c1-sheets">
+    <summary>Alternative: why not just Google Sheets?</summary>
+    <div class="body">
+      <p>Google Sheets has <code class="inline">GOOGLEFINANCE("NSE:RELIANCE")</code>. It updates prices with no server at all.</p>
+      <p>The Pi build is still worth it if you want: full control of your data, MCP skills for your career, and a base for more home tools (net worth, alerts, sensors). Choose it for learning and ownership, not because Sheets can't do the price part.</p>
+    </div>
+  </details>
+
+  <div class="quiz">
+    <h3>Self-Check Quiz</h3>
+    <div class="quiz-question" data-key="q1-1">
+      <p><strong>Q1:</strong> Your phone is on 5G. Does the Pi also need mobile data?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer">No. The Pi uses home Wi-Fi/Ethernet. Only the phone uses mobile data. The tunnel connects them through Cloudflare.</div>
+    </div>
+    <div class="quiz-question" data-key="q1-2">
+      <p><strong>Q2:</strong> Why does the project need LibreOffice?</p>
+      <ol><li>To open the file on the phone</li><li>Because openpyxl writes formulas but can't calculate them</li><li>To fetch stock prices</li></ol>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer"><b>B.</b> openpyxl only stores formulas. LibreOffice recalculates them and saves the results, so the server can read real totals.</div>
+    </div>
+    <div class="quiz-question" data-key="q1-3">
+      <p><strong>Q3:</strong> Where is the master copy of the portfolio?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer">On the Pi. Google Drive holds dated backups only. One master avoids two copies drifting apart.</div>
+    </div>
+  </div>
+
+  <section class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>MCP exposes Python functions as tools that Claude can call.</li>
+      <li>Claude's cloud calls your server, so it needs a public HTTPS URL.</li>
+      <li>cloudflared tunnels out; no router ports open.</li>
+      <li>The Pi holds the master file; Drive is backup only.</li>
+    </ul>
+  </section>
+  <div class="nav-buttons"><button onclick="previousChapter()">← Previous</button><button onclick="nextChapter()">Next →</button></div>
+</section>
+
+<!-- ================= CHAPTER 2 ================= -->
+<section id="chapter-2" class="chapter">
+  <p class="eyebrow">Chapter 2 · ~15 min</p>
+  <h1>Pi Setup &amp; Excel Preparation</h1>
+
+  <h2>Hardware</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Item</th><th>Recommendation</th><th>Why</th></tr>
+    <tr><td>Board</td><td>Pi 5 or Pi 4, 4 GB+</td><td>LibreOffice needs memory</td></tr>
+    <tr><td>Storage</td><td>USB SSD, or A2-class SD card</td><td>Cheap SD cards corrupt on power cuts</td></tr>
+    <tr><td>Power</td><td>Official power supply</td><td>Under-voltage causes random crashes</td></tr>
+    <tr><td>Cooling</td><td>Case with fan or heatsink</td><td>24×7 in Bangalore/Hyderabad heat</td></tr>
+    <tr><td>Optional</td><td>UPS HAT or small UPS</td><td>Survives short power cuts cleanly</td></tr>
+    <tr><td>Network</td><td>Ethernet if possible</td><td>More stable than Wi-Fi</td></tr>
+  </table></div>
+
+  <h2>OS setup</h2>
+  <ol>
+    <li>Flash <b>Raspberry Pi OS Lite (64-bit)</b> with Raspberry Pi Imager.</li>
+    <li>In Imager settings: set hostname, user, Wi-Fi, and enable SSH with a public key.</li>
+    <li>Boot, then SSH in: <code class="inline">ssh pi@pi-portfolio.local</code>.</li>
+    <li>Run the setup script below.</li>
+  </ol>
+
+  <div class="code-wrap" data-lang="bash" data-title="setup.sh">
+<pre><code># 1. Update the OS
+sudo apt update &amp;&amp; sudo apt full-upgrade -y
+
+# 2. Timezone = IST (prices and logs)
+sudo timedatectl set-timezone Asia/Kolkata
+
+# 3. System packages (Calc only, no GUI)
+sudo apt install -y python3-venv libreoffice-calc-nogui ufw git unattended-upgrades
+
+# 4. Firewall: allow SSH only
+sudo ufw default deny incoming
+sudo ufw allow ssh
+sudo ufw enable
+
+# 5. Project and virtual environment
+mkdir -p ~/pi-portfolio-mcp/{data,backups,logs,tests}
+cd ~/pi-portfolio-mcp
+python3 -m venv .venv
+source .venv/bin/activate
+pip install fastmcp openpyxl yfinance filelock python-dotenv pytest
+
+# 6. Make LibreOffice always recalculate Excel files on load
+soffice --headless --terminate_after_init
+REG=~/.config/libreoffice/4/user/registrymodifications.xcu
+sed -i 's#&lt;/oor:items&gt;#&lt;item oor:path="/org.openoffice.Office.Calc/Formula/Load"&gt;&lt;prop oor:name="OOXMLRecalcMode" oor:op="fuse"&gt;&lt;value&gt;0&lt;/value&gt;&lt;/prop&gt;&lt;/item&gt;\n&lt;/oor:items&gt;#' "$REG"</code></pre>
+  </div>
+  <p>Copy the file from Drive to <code class="inline">data/Portfolio.xlsx</code> (for example with <code class="inline">scp</code>).</p>
+
+  <h2>Workbook design</h2>
+  <p>Your current file stores <b>fixed values</b> from the broker export. They must become formulas. Also, totals move to a new <b>Summary</b> sheet with fixed cells. Then adding or removing a stock never breaks the Dashboard.</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 860 300" role="img" aria-label="Holdings sheet columns: inputs, auto-updated, formulas">
+      <text class="d-text d-bold" x="430" y="20" style="fill:var(--primary)">Holdings sheet — columns A to K</text>
+      <g id="cols"></g>
+      <text class="d-text d-bold" x="430" y="185" style="fill:var(--primary)">Sheets (tabs)</text>
+      <rect class="d-box f-gray" x="40" y="205" width="120" height="44" rx="8"/><text class="d-text" x="100" y="227">Dashboard</text>
+      <rect class="d-box f-blue" x="175" y="205" width="120" height="44" rx="8"/><text class="d-text" x="235" y="227">Holdings</text>
+      <rect class="d-box f-green pulse" x="310" y="205" width="120" height="44" rx="8"/><text class="d-text d-bold" x="370" y="227">Summary ★</text>
+      <rect class="d-box f-bg" x="445" y="205" width="120" height="44" rx="8" stroke-dasharray="5 4"/><text class="d-text" x="505" y="227">Assets</text>
+      <rect class="d-box f-bg" x="580" y="205" width="120" height="44" rx="8" stroke-dasharray="5 4"/><text class="d-text" x="640" y="227">Debts</text>
+      <rect class="d-box f-bg" x="715" y="205" width="120" height="44" rx="8" stroke-dasharray="5 4"/><text class="d-text" x="775" y="227">NetWorth</text>
+      <text class="d-text d-small" x="370" y="270">new: fixed total cells</text>
+      <text class="d-text d-small" x="640" y="270">dashed = phase 5</text>
+      <path class="d-line green draw" pathLength="1" d="M310 227 H162" marker-end="url(#arrG2)"/>
+      <defs><marker id="arrG2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--secondary)"/></marker></defs>
+    </svg>
+    <div class="legend"><span><i style="background:var(--p-blue)"></i>You enter</span><span><i style="background:var(--p-orange)"></i>Server updates</span><span><i style="background:var(--p-green)"></i>Formula</span></div>
+    <figcaption>Dashboard links to Summary cells only. Summary sums whole column ranges, so the row count can change freely.</figcaption>
+  </figure>
+
+  <h3>Formulas per row</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Column</th><th>Meaning</th><th>Formula (row 3)</th></tr>
+    <tr><td>E</td><td>Invested</td><td><code class="inline">=B3*C3</code></td></tr>
+    <tr><td>F</td><td>Current value</td><td><code class="inline">=B3*D3</code></td></tr>
+    <tr><td>G</td><td>Overall G/L</td><td><code class="inline">=F3-E3</code></td></tr>
+    <tr><td>H</td><td>Overall G/L %</td><td><code class="inline">=IF(E3=0,0,G3/E3)</code></td></tr>
+    <tr><td>I</td><td>Day's G/L</td><td><code class="inline">=IF(K3="",0,B3*(D3-K3))</code></td></tr>
+    <tr><td>J</td><td>Day's G/L %</td><td><code class="inline">=IF(OR(K3="",K3=0),0,(D3-K3)/K3)</code></td></tr>
+    <tr><td>K</td><td>PrevClose <span class="tag n">new</span></td><td>written by server</td></tr>
+  </table></div>
+
+  <div class="code-wrap" data-lang="python" data-title="workbook.py">
+<pre><code>"""Excel helpers shared by the setup script and the server."""
+
+def header_row(ws):
+    for r in range(1, 20):
+        if ws.cell(r, 1).value == "Symbol":
+            return r
+    raise ValueError("Header row 'Symbol' not found")
+
+def holding_rows(ws):
+    """Yield row numbers of holdings (stops at first empty Symbol)."""
+    r = header_row(ws) + 1
+    while ws.cell(r, 1).value:
+        yield r
+        r += 1
+
+def apply_row_formulas(ws, r):
+    ws[f"E{r}"] = f"=B{r}*C{r}"
+    ws[f"F{r}"] = f"=B{r}*D{r}"
+    ws[f"G{r}"] = f"=F{r}-E{r}"
+    ws[f"H{r}"] = f"=IF(E{r}=0,0,G{r}/E{r})"
+    ws[f"I{r}"] = f'=IF(K{r}="",0,B{r}*(D{r}-K{r}))'
+    ws[f"J{r}"] = f'=IF(OR(K{r}="",K{r}=0),0,(D{r}-K{r})/K{r})'
+
+def reapply_all(ws):
+    """Call after deleting a row: openpyxl does not shift formulas."""
+    for r in holding_rows(ws):
+        apply_row_formulas(ws, r)</code></pre>
+  </div>
+
+  <div class="code-wrap" data-lang="python" data-title="prepare_workbook.py (run once)">
+<pre><code>"""Convert values to formulas, add PrevClose and a Summary sheet."""
+from openpyxl import load_workbook
+from workbook import header_row, apply_row_formulas
+
+PATH = "data/Portfolio.xlsx"
+wb = load_workbook(PATH)
+ws = wb["Holdings"]
+h = header_row(ws)
+ws.cell(h, 11, "PrevClose")
+
+r = h + 1
+while ws.cell(r, 1).value and ws.cell(r, 1).value != "TOTAL":
+    apply_row_formulas(ws, r)
+    r += 1
+if ws.cell(r, 1).value == "TOTAL":
+    ws.delete_rows(r, ws.max_row - r + 1)   # drop TOTAL + footnote
+
+s = wb["Summary"] if "Summary" in wb.sheetnames else wb.create_sheet("Summary")
+a, z = h + 1, h + 500                        # room for 500 holdings
+rows = [
+    ("Total Invested", f"=SUM(Holdings!E{a}:E{z})"),
+    ("Current Value",  f"=SUM(Holdings!F{a}:F{z})"),
+    ("Overall G/L",    "=B2-B1"),
+    ("Overall G/L %",  "=IF(B1=0,0,B3/B1)"),
+    ("Day's G/L",      f"=SUM(Holdings!I{a}:I{z})"),
+    ("Day's G/L %",    "=IF(B2-B5=0,0,B5/(B2-B5))"),
+    ("Last Updated",   None),
+]
+for i, (label, formula) in enumerate(rows, start=1):
+    s.cell(i, 1, label)
+    if formula:
+        s.cell(i, 2, formula)
+
+wb.save(PATH)
+print("Done. Now point Dashboard cells to Summary!B1:B6.")</code></pre>
+  </div>
+  <p>After running it, open the file once in Excel or LibreOffice. Change the Dashboard's four total cells to <code class="inline">=Summary!B1</code>, <code class="inline">=Summary!B2</code>, and so on. Rebuild the “best/worst performer” cells with <code class="inline">INDEX/MATCH</code> on columns H and J.</p>
+
+  <details class="collapsible" data-key="c2-corp">
+    <summary>Advanced: splits, bonuses and dividends</summary>
+    <div class="body">
+      <ul>
+        <li><b>Split or bonus:</b> quantity goes up, average price goes down. Total invested stays the same. Without this fix, G/L looks like a huge loss. Add an <code class="inline">update_holding</code> call after each corporate action.</li>
+        <li><b>Dividends:</b> not part of price G/L. Track them later in a separate <b>Income</b> sheet.</li>
+        <li><b>Sells:</b> reduce quantity; keep average price. Realised profit belongs in a separate sheet.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="quiz">
+    <h3>Self-Check Quiz</h3>
+    <div class="quiz-question" data-key="q2-1">
+      <p><strong>Q1:</strong> Why move totals from the Holdings TOTAL row to a Summary sheet?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer">The TOTAL row moves when stocks are added or removed, and openpyxl does not update references to it. Summary cells never move, and they sum a fixed range of 500 rows.</div>
+    </div>
+    <div class="quiz-question" data-key="q2-2">
+      <p><strong>Q2:</strong> What is the PrevClose column for?</p>
+      <ol><li>Average buy price</li><li>Yesterday's closing price, used for Day's G/L</li><li>52-week low</li></ol>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer"><b>B.</b> Day's G/L = quantity × (LTP − previous close).</div>
+    </div>
+    <div class="quiz-question" data-key="q2-3">
+      <p><strong>Q3:</strong> You delete row 5 with openpyxl. What else must you do?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer">Call <code class="inline">reapply_all(ws)</code>. Rows below shifted up, but their formulas still point to the old row numbers.</div>
+    </div>
+  </div>
+
+  <section class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>Use an SSD or good SD card, proper power and cooling.</li>
+      <li>Set timezone to IST and enable the firewall on day one.</li>
+      <li>Replace broker-export values with formulas; add PrevClose.</li>
+      <li>Keep totals in a fixed Summary sheet.</li>
+    </ul>
+  </section>
+  <div class="nav-buttons"><button onclick="previousChapter()">← Previous</button><button onclick="nextChapter()">Next →</button></div>
+</section>
+
+<!-- ================= CHAPTER 3 ================= -->
+<section id="chapter-3" class="chapter">
+  <p class="eyebrow">Chapter 3 · ~20 min</p>
+  <h1>Building the MCP Server</h1>
+
+  <h2>Tool list</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Tool</th><th>Type</th><th>What it does</th></tr>
+    <tr><td><code class="inline">get_summary</code></td><td><span class="tag r">read</span></td><td>Invested, value, overall and day's G/L</td></tr>
+    <tr><td><code class="inline">get_holdings</code></td><td><span class="tag r">read</span></td><td>All rows with calculated values</td></tr>
+    <tr><td><code class="inline">update_prices</code></td><td><span class="tag w">write</span></td><td>Fetch prices → write → recalc → verify</td></tr>
+    <tr><td><code class="inline">add_holding</code></td><td><span class="tag w">write</span></td><td>New symbol, quantity, average price</td></tr>
+    <tr><td><code class="inline">update_holding</code></td><td><span class="tag w">write</span></td><td>Change quantity/price (buys, splits)</td></tr>
+    <tr><td><code class="inline">remove_holding</code></td><td><span class="tag w">write</span></td><td>Delete a row, then reapply formulas</td></tr>
+    <tr><td><code class="inline">health</code></td><td><span class="tag r">read</span></td><td>File OK, last update time, disk space</td></tr>
+  </table></div>
+  <p>Mark read tools with <code class="inline">readOnlyHint</code> and delete tools with <code class="inline">destructiveHint</code>. Claude uses these hints to ask you before risky actions.</p>
+
+  <h2>The safe write flow</h2>
+  <p>Every write follows the same path. Step through it below, or press auto-demo.</p>
+
+  <figure class="diagram" id="smFigure">
+    <svg id="smSvg" viewBox="0 0 800 400" role="img" aria-label="update_prices state machine">
+      <defs>
+        <marker id="smArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+      </defs>
+      <g id="smTrans"></g>
+      <g id="smStates"></g>
+    </svg>
+    <div class="sm-status" id="smStatus" aria-live="polite">Current State: IDLE</div>
+    <p class="sm-desc" id="smDesc"></p>
+    <div class="sm-controls" id="smButtons"></div>
+    <div class="sm-controls" style="margin-top:.5rem">
+      <button class="main" id="smAuto">▶️ Start Auto-Demo</button>
+      <button id="smReset">↺ Reset</button>
+    </div>
+    <figcaption>update_prices as a state machine. Red paths are failures; both end with a rollback and unlock.</figcaption>
+  </figure>
+
+  <h2>Price fetcher</h2>
+  <div class="code-wrap" data-lang="python" data-title="prices.py">
+<pre><code>"""Fetch last price and previous close from Yahoo (NSE = .NS)."""
+import yfinance as yf
+
+ALIASES = {}   # e.g. {"MYSTOCK": "MYSTOCK-BE"} if Yahoo uses another code
+
+def fetch(symbols):
+    prices, errors = {}, {}
+    for sym in symbols:
+        try:
+            info = yf.Ticker(f"{ALIASES.get(sym, sym)}.NS").fast_info
+            ltp, prev = info.last_price, info.previous_close
+            if not ltp or ltp &lt;= 0:
+                raise ValueError("no price returned")
+            prices[sym] = (round(ltp, 2), round(prev, 2) if prev else None)
+        except Exception as e:
+            errors[sym] = str(e)       # old LTP stays in the sheet
+    return prices, errors</code></pre>
+  </div>
+
+  <h2>Recalculation</h2>
+  <div class="code-wrap" data-lang="python" data-title="recalc.py">
+<pre><code>"""Recalculate all formulas with headless LibreOffice."""
+import os, subprocess, tempfile
+from pathlib import Path
+
+def recalc(xlsx: Path, timeout: int = 120):
+    # temp dir on the same disk, so os.replace is atomic
+    with tempfile.TemporaryDirectory(dir=xlsx.parent) as tmp:
+        subprocess.run(
+            ["soffice", "--headless", "--norestore",
+             "--convert-to", "xlsx", "--outdir", tmp, str(xlsx)],
+            check=True, timeout=timeout, capture_output=True)
+        os.replace(Path(tmp) / xlsx.name, xlsx)</code></pre>
+  </div>
+
+  <h2>The server</h2>
+  <div class="code-wrap" data-lang="python" data-title="server.py">
+<pre><code>"""Pi Portfolio MCP server."""
+import os, shutil, logging, datetime as dt
+from pathlib import Path
+from dotenv import load_dotenv
+from filelock import FileLock
+from openpyxl import load_workbook
+from fastmcp import FastMCP
+
+from workbook import header_row, holding_rows, apply_row_formulas
+from prices import fetch
+from recalc import recalc
+
+load_dotenv()
+XLSX = Path(os.environ["PORTFOLIO_XLSX"])
+PREV = XLSX.with_suffix(".prev.xlsx")
+LOCK = FileLock(f"{XLSX}.lock", timeout=60)
+logging.basicConfig(filename="logs/audit.log", level=logging.INFO,
+                    format="%(asctime)s %(message)s")
+
+mcp = FastMCP("pi-portfolio")
+
+def read_summary():
+    s = load_workbook(XLSX, data_only=True)["Summary"]
+    return {s.cell(r, 1).value: s.cell(r, 2).value for r in range(1, 8)}
+
+def safe_write(change):
+    """Snapshot, apply change, recalc, verify. Roll back on any error."""
+    with LOCK:
+        shutil.copy2(XLSX, PREV)
+        try:
+            wb = load_workbook(XLSX)
+            result = change(wb)
+            wb.save(XLSX)
+            recalc(XLSX)
+            summary = read_summary()
+            if not isinstance(summary.get("Current Value"), (int, float)):
+                raise RuntimeError("recalc produced no values")
+            return result, summary
+        except Exception:
+            shutil.copy2(PREV, XLSX)        # rollback
+            raise
+
+@mcp.tool(annotations={"readOnlyHint": True})
+def get_summary() -&gt; dict:
+    """Portfolio totals: invested, current value, overall and day's gain/loss."""
+    return read_summary()
+
+@mcp.tool(annotations={"readOnlyHint": True})
+def get_holdings() -&gt; list[dict]:
+    """Every holding with quantity, avg price, LTP and gain/loss."""
+    ws = load_workbook(XLSX, data_only=True)["Holdings"]
+    keys = [c.value for c in ws[header_row(ws)]]
+    return [{k: ws.cell(r, i + 1).value for i, k in enumerate(keys) if k}
+            for r in holding_rows(ws)]
+
+@mcp.tool(annotations={"readOnlyHint": False, "idempotentHint": True})
+def update_prices() -&gt; dict:
+    """Fetch latest NSE prices, update LTP, recalculate, return totals."""
+    def change(wb):
+        ws = wb["Holdings"]
+        rows = {ws.cell(r, 1).value: r for r in holding_rows(ws)}
+        prices, errors = fetch(list(rows))
+        if not prices:
+            raise RuntimeError(f"no prices fetched: {errors}")
+        for sym, (ltp, prev) in prices.items():
+            ws.cell(rows[sym], 4, ltp)
+            if prev:
+                ws.cell(rows[sym], 11, prev)
+        wb["Summary"]["B7"] = dt.datetime.now().strftime("%d-%b-%Y %H:%M IST")
+        return {"updated": len(prices), "failed": errors}
+    result, summary = safe_write(change)
+    logging.info("update_prices %s", result)
+    return {**result, "summary": summary}
+
+@mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": False})
+def add_holding(symbol: str, quantity: float, avg_price: float) -&gt; dict:
+    """Add a new NSE stock, e.g. INFY. Use update_holding for existing ones."""
+    symbol = symbol.strip().upper()
+    def change(wb):
+        ws = wb["Holdings"]
+        rows = list(holding_rows(ws))
+        if any(ws.cell(r, 1).value == symbol for r in rows):
+            raise ValueError(f"{symbol} already exists")
+        r = (rows[-1] if rows else header_row(ws)) + 1
+        ws.cell(r, 1, symbol); ws.cell(r, 2, quantity); ws.cell(r, 3, avg_price)
+        apply_row_formulas(ws, r)
+        return {"added": symbol}
+    result, summary = safe_write(change)
+    logging.info("add_holding %s qty=%s avg=%s", symbol, quantity, avg_price)
+    return {**result, "summary": summary}
+
+if __name__ == "__main__":
+    mcp.run(transport="http", host="127.0.0.1", port=8000)</code></pre>
+  </div>
+  <p><code class="inline">update_holding</code> and <code class="inline">remove_holding</code> follow the same <code class="inline">safe_write</code> pattern. For remove, call <code class="inline">reapply_all(ws)</code> after <code class="inline">ws.delete_rows(r)</code>.</p>
+
+  <h2>Test locally</h2>
+  <div class="code-wrap" data-lang="bash" data-title="terminal">
+<pre><code># Terminal 1 (on the Pi)
+source .venv/bin/activate
+echo "PORTFOLIO_XLSX=$PWD/data/Portfolio.xlsx" &gt; .env
+python server.py
+
+# Terminal 2 (on the Pi, or tunnel port 8000 over SSH)
+npx @modelcontextprotocol/inspector
+# Connect to http://127.0.0.1:8000/mcp and call get_summary, then update_prices</code></pre>
+  </div>
+
+  <details class="collapsible" data-key="c3-market">
+    <summary>Advanced: market hours, delays and rate limits</summary>
+    <div class="body">
+      <ul>
+        <li>NSE trades 9:15–15:30 IST on weekdays. Outside those hours you get the last close. That is fine; the “Last Updated” cell tells you when.</li>
+        <li>yfinance prices may be delayed. Don't use them for trading decisions.</li>
+        <li>Yahoo may throttle heavy use. Update on request or a few times a day, not every minute.</li>
+        <li>For real-time data, a broker API (for example Upstox or Zerodha Kite Connect) can replace <code class="inline">prices.py</code> later. Only that one file changes.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="quiz">
+    <h3>Self-Check Quiz</h3>
+    <div class="quiz-question" data-key="q3-1">
+      <p><strong>Q1:</strong> Yahoo returns no price for one symbol. What happens?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer">The old LTP stays. The symbol appears under <code class="inline">failed</code> in the reply, so Claude can tell you. Only if <i>all</i> symbols fail does the update abort.</div>
+    </div>
+    <div class="quiz-question" data-key="q3-2">
+      <p><strong>Q2:</strong> Why take a <code class="inline">.prev.xlsx</code> snapshot before every write?</p>
+      <ol><li>Faster reads</li><li>To roll back if save or recalc fails midway</li><li>To keep Drive in sync</li></ol>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer"><b>B.</b> A crash during save or recalc could leave a broken file. The snapshot restores the last good state.</div>
+    </div>
+    <div class="quiz-question" data-key="q3-3">
+      <p><strong>Q3:</strong> Why bind the server to <code class="inline">127.0.0.1</code> and not <code class="inline">0.0.0.0</code>?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer">So only local programs (cloudflared) can reach it. Other devices on your Wi-Fi can't bypass the tunnel and its login.</div>
+    </div>
+  </div>
+
+  <section class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>Tools are plain Python functions; docstrings tell Claude when to use them.</li>
+      <li>All writes go through one <code class="inline">safe_write</code>: lock, snapshot, change, recalc, verify, rollback.</li>
+      <li>Failed symbols keep old prices and are reported.</li>
+      <li>Test with MCP Inspector before going remote.</li>
+    </ul>
+  </section>
+  <div class="nav-buttons"><button onclick="previousChapter()">← Previous</button><button onclick="nextChapter()">Next →</button></div>
+</section>
+
+<!-- ================= CHAPTER 4 ================= -->
+<section id="chapter-4" class="chapter">
+  <p class="eyebrow">Chapter 4 · ~15 min</p>
+  <h1>Remote Access &amp; Security</h1>
+
+  <h2>Why not port forwarding?</h2>
+  <ul>
+    <li>Many Indian ISPs use <b>CGNAT</b>. Your router has no public IP, so forwarding won't work.</li>
+    <li>An open port gets scanned within hours.</li>
+    <li>You'd need to manage certificates yourself.</li>
+  </ul>
+  <p>Tunnels solve all three. Compare the two options:</p>
+
+  <figure class="diagram">
+    <div class="seg" role="group" aria-label="Remote access option">
+      <button data-mode="cf" aria-pressed="true">Cloudflare Tunnel</button>
+      <button data-mode="ts" aria-pressed="false">Tailscale</button>
+    </div>
+    <svg id="netSvg" data-mode="cf" viewBox="0 0 860 250" role="img" aria-label="Network path comparison">
+      <defs>
+        <marker id="nArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--primary)"/></marker>
+        <marker id="nArrO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+      </defs>
+      <!-- Cloudflare mode -->
+      <g class="mode-cf">
+        <rect class="d-box f-blue" x="15" y="80" width="140" height="70" rx="10"/><text class="d-text d-bold" x="85" y="106">Phone</text><text class="d-text d-small" x="85" y="128">Claude app</text>
+        <rect class="d-box f-blue" x="215" y="80" width="140" height="70" rx="10"/><text class="d-text d-bold" x="285" y="106">Claude cloud</text><text class="d-text d-small" x="285" y="128">calls your URL</text>
+        <rect class="d-box f-orange" x="415" y="80" width="170" height="70" rx="10"/><text class="d-text d-bold" x="500" y="106">Cloudflare</text><text class="d-text d-small" x="500" y="128">mcp.yourdomain.com</text>
+        <rect class="d-box f-green" x="665" y="80" width="180" height="70" rx="10"/><text class="d-text d-bold" x="755" y="106">Pi</text><text class="d-text d-small" x="755" y="128">cloudflared → :8000</text>
+        <path class="d-line" d="M155 115 H213" marker-end="url(#nArr)"/>
+        <path class="d-line" d="M355 115 H413" marker-end="url(#nArr)"/>
+        <path class="d-line orange" d="M663 115 H587" marker-end="url(#nArrO)"/>
+        <text class="d-text d-small" x="625" y="100">outbound</text>
+        <text class="d-text" x="430" y="195">✅ Works with the Claude phone app (custom connector)</text>
+        <text class="d-text d-small" x="430" y="222">Needs: a domain on Cloudflare + OAuth login on the server</text>
+      </g>
+      <!-- Tailscale mode -->
+      <g class="mode-ts">
+        <rect class="d-box f-blue" x="15" y="80" width="170" height="70" rx="10"/><text class="d-text d-bold" x="100" y="106">Laptop / phone</text><text class="d-text d-small" x="100" y="128">Tailscale app on</text>
+        <rect class="d-box f-gray" x="300" y="20" width="160" height="54" rx="10" stroke-dasharray="5 4"/><text class="d-text d-bold" x="380" y="40">Claude cloud</text><text class="d-text d-small" x="380" y="60">can't reach 100.x IP ✗</text>
+        <rect class="d-box f-green" x="665" y="80" width="180" height="70" rx="10"/><text class="d-text d-bold" x="755" y="106">Pi</text><text class="d-text d-small" x="755" y="128">100.x.y.z (tailnet)</text>
+        <path class="d-line green" d="M185 115 H663" marker-end="url(#nArr)" stroke-width="3"/>
+        <text class="d-text d-small" x="425" y="104">WireGuard encrypted, private</text>
+        <text class="d-text" x="430" y="195">✅ Great for Claude Desktop / Claude Code on your own devices</text>
+        <text class="d-text d-small" x="430" y="222">❌ Not for the Claude app's custom connectors (unless you use Tailscale Funnel)</text>
+      </g>
+    </svg>
+    <figcaption id="netCap">Cloudflare Tunnel: public HTTPS URL, protected by OAuth.</figcaption>
+  </figure>
+
+  <div class="callout"><strong>Recommendation</strong>Start with Tailscale in phase 2 (private, 5-minute setup) for testing. Move to Cloudflare Tunnel + OAuth in phase 3 for the phone app.</div>
+
+  <h2>Cloudflare Tunnel setup</h2>
+  <p>You need a domain whose DNS is on Cloudflare (free plan is fine).</p>
+  <div class="code-wrap" data-lang="bash" data-title="terminal">
+<pre><code># Install cloudflared (add Cloudflare's apt repo first; see their docs)
+sudo apt install -y cloudflared
+
+cloudflared tunnel login                  # opens a browser link
+cloudflared tunnel create pi-portfolio
+cloudflared tunnel route dns pi-portfolio mcp.yourdomain.com
+
+sudo mkdir -p /etc/cloudflared
+sudo cp config.yml /etc/cloudflared/config.yml
+sudo cloudflared service install          # runs on boot</code></pre>
+  </div>
+  <div class="code-wrap" data-lang="yaml" data-title="config.yml">
+<pre><code>tunnel: pi-portfolio
+credentials-file: /home/pi/.cloudflared/&lt;TUNNEL-ID&gt;.json
+ingress:
+  - hostname: mcp.yourdomain.com
+    service: http://127.0.0.1:8000
+  - service: http_status:404</code></pre>
+  </div>
+
+  <h2>Add OAuth login</h2>
+  <p>FastMCP includes OAuth providers. With GitHub: create an OAuth app, set its callback to your server URL, then:</p>
+  <div class="code-wrap" data-lang="python" data-title="server.py (auth part)">
+<pre><code>from fastmcp.server.auth.providers.github import GitHubProvider
+from fastmcp.server.dependencies import get_access_token
+
+auth = GitHubProvider(
+    client_id=os.environ["GITHUB_CLIENT_ID"],
+    client_secret=os.environ["GITHUB_CLIENT_SECRET"],
+    base_url="https://mcp.yourdomain.com",
+)
+mcp = FastMCP("pi-portfolio", auth=auth)
+
+OWNER = os.environ["ALLOWED_GITHUB_USER"]
+
+def require_owner():
+    """Call at the start of every tool: only your account gets in."""
+    token = get_access_token()
+    if not token or token.claims.get("login") != OWNER:
+        raise PermissionError("not allowed")</code></pre>
+  </div>
+  <div class="callout warn"><strong>Check the docs for your version</strong>FastMCP's auth API changes between releases. Confirm the provider name, callback path and claim names in the FastMCP docs before deploying. Test that a second GitHub account is rejected.</div>
+
+  <h2>Run as a service</h2>
+  <div class="code-wrap" data-lang="ini" data-title="/etc/systemd/system/pi-portfolio.service">
+<pre><code>[Unit]
+Description=Pi Portfolio MCP server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/pi-portfolio-mcp
+EnvironmentFile=/home/pi/pi-portfolio-mcp/.env
+ExecStart=/home/pi/pi-portfolio-mcp/.venv/bin/python server.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+  </div>
+  <p>Enable it: <code class="inline">sudo systemctl enable --now pi-portfolio</code>. Logs: <code class="inline">journalctl -u pi-portfolio -f</code>.</p>
+
+  <h2>Security checklist</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Area</th><th>Action</th></tr>
+    <tr><td>SSH</td><td>Keys only; set <code class="inline">PasswordAuthentication no</code></td></tr>
+    <tr><td>Firewall</td><td>ufw: deny incoming, allow SSH (LAN only if possible)</td></tr>
+    <tr><td>Server</td><td>Bind to 127.0.0.1; only cloudflared reaches it</td></tr>
+    <tr><td>Login</td><td>OAuth + owner check on every tool</td></tr>
+    <tr><td>Secrets</td><td><code class="inline">.env</code> with <code class="inline">chmod 600</code>; never in git</td></tr>
+    <tr><td>Updates</td><td>unattended-upgrades on; update pip packages monthly</td></tr>
+    <tr><td>Tools</td><td>No “download file” or “run command” tool; only narrow actions</td></tr>
+    <tr><td>Audit</td><td>Log every write with time and arguments</td></tr>
+    <tr><td>Kill switch</td><td><code class="inline">sudo systemctl stop cloudflared</code> cuts all remote access</td></tr>
+  </table></div>
+
+  <details class="collapsible" data-key="c4-inject">
+    <summary>Advanced: prompt injection and write confirmations</summary>
+    <div class="body">
+      <p>Tool results go back into Claude's context. Keep them to numbers and symbols. Don't return free text from untrusted sources (news, emails) in the same tools.</p>
+      <p>In the Claude app, set write tools to “ask before use”. Then every add/remove needs your tap.</p>
+    </div>
+  </details>
+
+  <div class="quiz">
+    <h3>Self-Check Quiz</h3>
+    <div class="quiz-question" data-key="q4-1">
+      <p><strong>Q1:</strong> Why can't the Claude phone app use your Pi's Tailscale IP?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer">For custom connectors, Claude's cloud servers make the call, not your phone. Those servers aren't on your tailnet, so the 100.x address is unreachable.</div>
+    </div>
+    <div class="quiz-question" data-key="q4-2">
+      <p><strong>Q2:</strong> Your phone is stolen. What's the fastest way to block access?</p>
+      <ol><li>Unplug the router</li><li>Revoke the GitHub OAuth grant (or stop cloudflared)</li><li>Delete the Excel file</li></ol>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer"><b>B.</b> Revoke the app's authorization in GitHub settings and sign out of Claude. For an instant stop, run <code class="inline">systemctl stop cloudflared</code>.</div>
+    </div>
+  </div>
+
+  <section class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>CGNAT makes port forwarding unreliable; tunnels avoid it.</li>
+      <li>Claude app → needs public HTTPS (Cloudflare) + OAuth.</li>
+      <li>Tailscale is ideal for private testing and desktop clients.</li>
+      <li>systemd keeps the server running; the checklist keeps it safe.</li>
+    </ul>
+  </section>
+  <div class="nav-buttons"><button onclick="previousChapter()">← Previous</button><button onclick="nextChapter()">Next →</button></div>
+</section>
+
+<!-- ================= CHAPTER 5 ================= -->
+<section id="chapter-5" class="chapter">
+  <p class="eyebrow">Chapter 5 · ~15 min</p>
+  <h1>Operations, Testing &amp; Roadmap</h1>
+
+  <h2>Backups</h2>
+  <p>Three layers protect the file:</p>
+  <ol>
+    <li><b>Per write:</b> <code class="inline">Portfolio.prev.xlsx</code> (Chapter 3).</li>
+    <li><b>Nightly:</b> dated copy on the Pi, kept 30 days.</li>
+    <li><b>Off-site:</b> the same copy uploaded to Google Drive with rclone.</li>
+  </ol>
+  <div class="code-wrap" data-lang="bash" data-title="backup.sh">
+<pre><code>#!/usr/bin/env bash
+# Nightly snapshot: keep 30 days locally, copy to Google Drive.
+set -euo pipefail
+cd /home/pi/pi-portfolio-mcp
+ts=$(date +%F)
+
+# flock waits for any running write (same lock file as the server)
+flock data/Portfolio.xlsx.lock cp data/Portfolio.xlsx "backups/Portfolio-$ts.xlsx"
+find backups -name 'Portfolio-*.xlsx' -mtime +30 -delete
+rclone copy "backups/Portfolio-$ts.xlsx" gdrive:Finance/backups/</code></pre>
+  </div>
+  <div class="code-wrap" data-lang="bash" data-title="crontab -e">
+<pre><code># Every night at 23:30 IST
+30 23 * * * /home/pi/pi-portfolio-mcp/backup.sh &gt;&gt; /home/pi/pi-portfolio-mcp/logs/backup.log 2&gt;&amp;1</code></pre>
+  </div>
+  <div class="callout warn"><strong>Do a restore drill</strong>A backup you never restored is a guess. Once a month: stop the service, copy a backup over the master, start the service, call <code class="inline">get_summary</code>.</div>
+
+  <h2>Testing</h2>
+  <p>Test the Excel logic without the network. Mock prices; never hit Yahoo in tests.</p>
+  <div class="code-wrap" data-lang="python" data-title="tests/test_workbook.py">
+<pre><code>from openpyxl import Workbook
+from workbook import apply_row_formulas, holding_rows, reapply_all
+
+def sheet():
+    ws = Workbook().active
+    ws.title = "Holdings"
+    ws.append(["Symbol", "Quantity", "Avg. Price", "LTP"])
+    ws.append(["AAA", 10, 100, 110])
+    ws.append(["BBB", 5, 200, 190])
+    return ws
+
+def test_rows_found():
+    assert list(holding_rows(sheet())) == [2, 3]
+
+def test_formulas_written():
+    ws = sheet()
+    apply_row_formulas(ws, 2)
+    assert ws["E2"].value == "=B2*C2"
+    assert ws["G2"].value == "=F2-E2"
+
+def test_delete_then_reapply():
+    ws = sheet()
+    reapply_all(ws)
+    ws.delete_rows(2)
+    reapply_all(ws)
+    assert ws["A2"].value == "BBB"
+    assert ws["E2"].value == "=B2*C2"   # not =B3*C3</code></pre>
+  </div>
+  <p>Run with <code class="inline">pytest -q</code>. Add one end-to-end test that copies a sample workbook, calls <code class="inline">recalc</code>, and checks Summary!B2 is a number.</p>
+
+  <h2>Monitoring</h2>
+  <ul>
+    <li><code class="inline">health</code> tool: file readable, last update time, free disk.</li>
+    <li>systemd restarts the server if it crashes.</li>
+    <li>Watch Pi temperature: <code class="inline">vcgencmd measure_temp</code>.</li>
+    <li>Optional: a free uptime ping service that alerts you if the URL goes down.</li>
+  </ul>
+
+  <h2>Roadmap</h2>
+  <figure class="diagram">
+    <svg viewBox="0 0 860 190" role="img" aria-label="Roadmap with six phases">
+      <path class="d-line draw" pathLength="1" d="M70 90 H790" stroke-width="3"/>
+      <g id="roadmapNodes"></g>
+    </svg>
+    <figcaption>Six phases. Click a phase to highlight its row below.</figcaption>
+  </figure>
+
+  <div class="table-wrap"><table id="roadmapTable">
+    <tr><th>Phase</th><th>Build</th><th>Done when…</th></tr>
+    <tr data-p="1"><td><b>1. Foundation</b><br><small>Week 1</small></td><td>Pi OS, firewall, venv, LibreOffice; workbook converted</td><td>Change an LTP by hand, run <code class="inline">recalc</code>, totals update on the Pi</td></tr>
+    <tr data-p="2"><td><b>2. Core MCP</b><br><small>Week 2</small></td><td>get_summary, get_holdings, update_prices; Tailscale for testing</td><td>MCP Inspector (or Claude Desktop on tailnet) updates prices</td></tr>
+    <tr data-p="3"><td><b>3. Remote</b><br><small>Week 3</small></td><td>Cloudflare Tunnel, OAuth, owner check</td><td>On 4G/5G, the Claude app updates prices; a second account is refused</td></tr>
+    <tr data-p="4"><td><b>4. Hardening</b><br><small>Week 4</small></td><td>systemd, backups, audit log, tests, health tool</td><td>Pi reboot → server back by itself; restore drill passes</td></tr>
+    <tr data-p="5"><td><b>5. Expand</b><br><small>Weeks 5–6</small></td><td>Assets, Debts, NetWorth sheets; add/update/remove tools; monthly snapshot</td><td>“What's my net worth?” returns assets − debts</td></tr>
+    <tr data-p="6"><td><b>6. Extras</b><br><small>Later</small></td><td>Scheduled 15:45 IST update, price alerts, mutual fund NAV (AMFI), XIRR, broker API</td><td>Pick one per month; each has its own test</td></tr>
+  </table></div>
+
+  <details class="collapsible" data-key="c5-networth">
+    <summary>Phase 5 preview: assets, debts and net worth</summary>
+    <div class="body">
+      <ul>
+        <li><b>Assets sheet:</b> Name, Type (FD, PF, gold, property, cash), Value, Last Updated.</li>
+        <li><b>Debts sheet:</b> Name, Outstanding, Interest %, EMI.</li>
+        <li><b>NetWorth sheet:</b> one row per month: equity (Summary!B2) + assets − debts.</li>
+        <li><b>New tools:</b> <code class="inline">get_net_worth</code>, <code class="inline">update_asset</code>, <code class="inline">update_debt</code>, <code class="inline">save_snapshot</code>.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="callout"><strong>Note</strong>This is a personal tracking tool. Figures depend on delayed free data. It is not investment advice.</div>
+
+  <div class="quiz">
+    <h3>Self-Check Quiz</h3>
+    <div class="quiz-question" data-key="q5-1">
+      <p><strong>Q1:</strong> Why does backup.sh use <code class="inline">flock</code> on the same lock file?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer">So the copy waits if a price update is writing at that moment. Without it, you could back up a half-written file.</div>
+    </div>
+    <div class="quiz-question" data-key="q5-2">
+      <p><strong>Q2:</strong> Phase 3 is “done” when…?</p>
+      <ol><li>cloudflared is installed</li><li>The Claude app updates prices over mobile data, and another account is refused</li><li>The domain is bought</li></ol>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer"><b>B.</b> “Done” means an outcome you can test end to end, including the negative case.</div>
+    </div>
+    <div class="quiz-question" data-key="q5-3">
+      <p><strong>Q3:</strong> Why mock prices in unit tests?</p>
+      <button class="reveal-btn">Reveal Answer</button>
+      <div class="answer">Real prices change and the network can fail. Tests must give the same result every run.</div>
+    </div>
+  </div>
+
+  <section class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>Three backup layers: per-write snapshot, nightly local, off-site Drive.</li>
+      <li>Test restores, not just backups.</li>
+      <li>Unit-test the Excel logic with mocked prices.</li>
+      <li>Every roadmap phase has a testable “done when”.</li>
+    </ul>
+  </section>
+  <div class="nav-buttons"><button onclick="previousChapter()">← Previous</button><button onclick="goToChapter(0)">Back to Overview ↺</button></div>
+</section>
+
+  </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  /* ---------- storage (guarded) ---------- */
+  const store = {
+    get(k){ try { return sessionStorage.getItem(k); } catch(e){ return null; } },
+    set(k,v){ try { sessionStorage.setItem(k,v); } catch(e){} }
+  };
+  try { const t = localStorage.getItem('pp-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch(e){}
+
+  /* ---------- chapters ---------- */
+  const ids = ['intro','chapter-1','chapter-2','chapter-3','chapter-4','chapter-5'];
+  const TOTAL = 5;
+  let current = 0;
+  let visited = new Set();
+  try { visited = new Set(JSON.parse(store.get('pp-visited') || '[]')); } catch(e){}
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+
+  function updateProgress(){
+    const n = [...visited].filter(i => i >= 1).length;
+    document.getElementById('progressFill').style.width = (n / TOTAL * 100) + '%';
+    document.getElementById('chapterCount').textContent = n + '/' + TOTAL + ' chapters visited';
+    tocLinks.forEach(a => {
+      const i = +a.dataset.idx;
+      a.classList.toggle('active', i === current);
+      a.querySelector('.tick').textContent = (i >= 1 && visited.has(i)) ? '✓' : '';
+      if (i === current) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
+    });
+  }
+  function show(idx, push){
+    idx = Math.max(0, Math.min(ids.length - 1, idx));
+    current = idx;
+    document.querySelectorAll('.chapter').forEach((s,i) => s.classList.toggle('visible', i === idx));
+    visited.add(idx); store.set('pp-visited', JSON.stringify([...visited]));
+    updateProgress();
+    if (push !== false && location.hash !== '#' + ids[idx]) history.replaceState(null, '', '#' + ids[idx]);
+    window.scrollTo({top:0, behavior:'auto'});
+    closeMenu();
+    observeDiagrams();
+  }
+  window.goToChapter = i => show(i);
+  window.nextChapter = () => show(current + 1);
+  window.previousChapter = () => show(current - 1);
+  tocLinks.forEach(a => a.addEventListener('click', e => { e.preventDefault(); show(+a.dataset.idx); }));
+  window.addEventListener('hashchange', () => { const i = ids.indexOf(location.hash.slice(1)); if (i >= 0 && i !== current) show(i, false); });
+  document.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (['input','textarea','select'].includes(tag) || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === 'ArrowRight') nextChapter();
+    if (e.key === 'ArrowLeft') previousChapter();
+  });
+
+  /* ---------- mobile menu + theme ---------- */
+  const sidebar = document.getElementById('sidebar'), scrim = document.getElementById('scrim');
+  function closeMenu(){ sidebar.classList.remove('open'); scrim.classList.remove('show'); }
+  document.getElementById('menuBtn').addEventListener('click', () => { sidebar.classList.add('open'); scrim.classList.add('show'); });
+  scrim.addEventListener('click', closeMenu);
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    const root = document.documentElement;
+    const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('pp-theme', next); } catch(e){}
+  });
+
+  /* ---------- quizzes ---------- */
+  document.querySelectorAll('.quiz-question').forEach(q => {
+    const btn = q.querySelector('.reveal-btn'), ans = q.querySelector('.answer'), key = 'pp-q-' + q.dataset.key;
+    btn.setAttribute('aria-expanded','false');
+    const set = open => { ans.classList.toggle('show', open); btn.textContent = open ? 'Hide Answer' : 'Reveal Answer'; btn.setAttribute('aria-expanded', String(open)); store.set(key, open ? '1' : '0'); };
+    if (store.get(key) === '1') set(true);
+    btn.addEventListener('click', () => set(!ans.classList.contains('show')));
+  });
+
+  /* ---------- collapsibles ---------- */
+  document.querySelectorAll('details.collapsible').forEach(d => {
+    const key = 'pp-d-' + d.dataset.key;
+    if (store.get(key) === '1') d.open = true;
+    d.addEventListener('toggle', () => store.set(key, d.open ? '1' : '0'));
+  });
+
+  /* ---------- syntax highlighting ---------- */
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const kw = s => new Set(s.split(' '));
+  const LANGS = {
+    python:{ re:/(#.*$)|((?:rf|fr|[rfb])?(?:"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'))|(@[\w.]+)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)/g,
+             cls:['c','s','d','n','w'],
+             kw:kw('def return if elif else for while in not and or is None True False import from as with try except finally raise class lambda yield pass break continue global async await') },
+    bash:{ re:/(#.*$)|("(?:\\.|[^"\\])*"|'[^']*')|(\$\{?[\w@#?]+\}?|\$\()|(\b\d+\b)|([A-Za-z_][\w-]*)/g,
+           cls:['c','s','d','n','w'],
+           kw:kw('if then else fi for do done while case esac set export source cd sudo echo mkdir cp mv find apt pip python python3 curl sed flock rclone cloudflared systemctl npx soffice ssh chmod') },
+    yaml:{ re:/(#.*$)|(^\s*-?\s*[\w.-]+(?=:))|("[^"]*"|'[^']*')|(\b\d+\b)/g, cls:['c','k','s','n'], kw:new Set() },
+    ini:{ re:/(^\s*[#;].*$)|(^\s*\[[^\]]*\])|(^\s*[\w.-]+(?=\s*=))|(\b\d+\b)/g, cls:['c','d','k','n'], kw:new Set() }
+  };
+  function hlLine(line, lang){
+    const L = LANGS[lang]; if (!L) return esc(line);
+    L.re.lastIndex = 0;
+    let out = '', last = 0, m;
+    while ((m = L.re.exec(line))){
+      if (m[0] === ''){ L.re.lastIndex++; continue; }
+      out += esc(line.slice(last, m.index));
+      let gi = 1; while (gi < m.length && m[gi] === undefined) gi++;
+      let c = L.cls[gi - 1];
+      if (c === 'w') c = L.kw.has(m[0]) ? 'k' : null;
+      out += c ? '<span class="t-' + c + '">' + esc(m[0]) + '</span>' : esc(m[0]);
+      last = m.index + m[0].length;
+    }
+    return out + esc(line.slice(last));
+  }
+  document.querySelectorAll('.code-wrap').forEach(w => {
+    const code = w.querySelector('code');
+    const raw = code.textContent.replace(/^\n/, '').replace(/\s+$/, '');
+    const lang = w.dataset.lang;
+    code.innerHTML = raw.split('\n').map(l => '<span class="line">' + (hlLine(l, lang) || ' ') + '</span>').join('');
+    const head = document.createElement('div');
+    head.className = 'code-head';
+    const title = document.createElement('span'); title.textContent = (w.dataset.title || lang);
+    const btn = document.createElement('button'); btn.className = 'copy-btn'; btn.textContent = 'Copy'; btn.setAttribute('aria-label','Copy code to clipboard');
+    btn.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(raw); }
+      catch(e){ const ta = document.createElement('textarea'); ta.value = raw; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(_){} ta.remove(); }
+      btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+    head.append(title, btn); w.prepend(head);
+  });
+
+  /* ---------- diagram entrance ---------- */
+  let io = null;
+  function observeDiagrams(){
+    const figs = document.querySelectorAll('.chapter.visible figure.diagram:not(.in)');
+    if (!('IntersectionObserver' in window)){ figs.forEach(f => f.classList.add('in')); return; }
+    if (!io) io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } }), {threshold:.15});
+    figs.forEach(f => io.observe(f));
+  }
+
+  /* ---------- SVG helpers ---------- */
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+
+  /* Holdings columns diagram */
+  (function(){
+    const g = document.getElementById('cols');
+    const cols = [['A','Symbol','f-blue'],['B','Qty','f-blue'],['C','Avg','f-blue'],['D','LTP','f-orange'],['E','Invested','f-green'],['F','Value','f-green'],['G','G/L','f-green'],['H','G/L %','f-green'],['I','Day G/L','f-green'],['J','Day %','f-green'],['K','PrevClose','f-orange']];
+    const w = 72, x0 = (860 - cols.length * w) / 2;
+    cols.forEach((c,i) => {
+      const x = x0 + i * w;
+      g.append(el('rect', {class:'d-box ' + c[2], x:x+2, y:40, width:w-4, height:70, rx:6}));
+      g.append(el('text', {class:'d-text d-bold', x:x+w/2, y:62}, c[0]));
+      g.append(el('text', {class:'d-text d-small', x:x+w/2, y:88}, c[1]));
+    });
+    g.append(el('text', {class:'d-text d-small', x:x0 + 1.5*w, y:132}, 'you enter'));
+    g.append(el('text', {class:'d-text d-small', x:x0 + 3.5*w, y:132}, 'server'));
+    g.append(el('text', {class:'d-text d-small', x:x0 + 7*w, y:132}, 'formulas (auto)'));
+    g.append(el('text', {class:'d-text d-small', x:x0 + 10.5*w, y:132}, 'server · new'));
+  })();
+
+  /* ---------- State machine ---------- */
+  (function(){
+    const R = 36;
+    const S = {
+      IDLE:[70,230,'', 'Waiting for Claude to call update_prices.'],
+      LOCK:[200,80,'', 'Acquire the file lock and save Portfolio.prev.xlsx as a snapshot.'],
+      FETCH:[360,80,'', 'Ask Yahoo for LTP and previous close of every symbol.'],
+      WRITE:[520,80,'', 'Write LTP (col D), PrevClose (col K) and Last Updated; save.'],
+      RECALC:[680,80,'', 'Headless LibreOffice recalculates all formulas.'],
+      VERIFY:[680,240,'', 'Read Summary with data_only=True; totals must be numbers.'],
+      DONE:[440,240,'ok', 'Release lock, log to audit.log, return totals + failed symbols.'],
+      ERROR:[360,350,'err', 'Restore Portfolio.prev.xlsx, release lock, report the error.']
+    };
+    const T = [
+      {id:'t1', f:'IDLE',  t:'LOCK',  l:'request'},
+      {id:'t2', f:'LOCK',  t:'FETCH', l:'locked'},
+      {id:'t3', f:'FETCH', t:'WRITE', l:'prices ok'},
+      {id:'t4', f:'WRITE', t:'RECALC',l:'saved'},
+      {id:'t5', f:'RECALC',t:'VERIFY',l:'recalc done'},
+      {id:'t6', f:'VERIFY',t:'DONE',  l:'totals valid'},
+      {id:'t7', f:'DONE',  t:'IDLE',  l:'unlock'},
+      {id:'e1', f:'FETCH', t:'ERROR', l:'all failed', c:[330,230], err:true},
+      {id:'e2', f:'VERIFY',t:'ERROR', l:'no values', c:[600,370], err:true},
+      {id:'e3', f:'ERROR', t:'IDLE',  l:'rollback', c:[110,360], err:true}
+    ];
+    const gT = document.getElementById('smTrans'), gS = document.getElementById('smStates');
+    const toward = (a,b,r) => { const dx=b[0]-a[0], dy=b[1]-a[1], d=Math.hypot(dx,dy); return [a[0]+dx/d*r, a[1]+dy/d*r]; };
+    const paths = {};
+    T.forEach(tr => {
+      const A = S[tr.f], B = S[tr.t];
+      let d, lx, ly;
+      if (tr.c){
+        const s = toward(A, tr.c, R), e = toward(B, tr.c, R + 3);
+        d = `M${s[0]},${s[1]} Q${tr.c[0]},${tr.c[1]} ${e[0]},${e[1]}`;
+        lx = .25*A[0] + .5*tr.c[0] + .25*B[0]; ly = .25*A[1] + .5*tr.c[1] + .25*B[1];
+      } else {
+        const s = toward(A, B, R), e = toward(B, A, R + 3);
+        d = `M${s[0]},${s[1]} L${e[0]},${e[1]}`;
+        lx = (A[0]+B[0])/2; ly = (A[1]+B[1])/2;
+      }
+      const p = el('path', {d, class:'sm-tr' + (tr.err ? ' err' : ''), 'marker-end':'url(#smArr)', pathLength:'1'});
+      paths[tr.id] = p; gT.append(p);
+      const vertical = !tr.c && Math.abs(A[0]-B[0]) < 5;
+      gT.append(el('text', {class:'sm-lbl', x: lx + (vertical ? 44 : 0), y: ly - (vertical ? 0 : 8)}, tr.l));
+    });
+    const nodes = {};
+    Object.entries(S).forEach(([name, v]) => {
+      const g = el('g', {class:'sm-state ' + v[2]});
+      g.append(el('circle', {cx:v[0], cy:v[1], r:R}));
+      g.append(el('text', {class:'d-text d-bold', x:v[0], y:v[1], style:'font-size:12.5px'}, name));
+      nodes[name] = g; gS.append(g);
+    });
+    const btnWrap = document.getElementById('smButtons');
+    const btns = {};
+    T.forEach(tr => {
+      const b = document.createElement('button');
+      b.textContent = tr.f + ' → ' + tr.t + ' (' + tr.l + ')';
+      b.addEventListener('click', () => { stopAuto(); fire(tr.id); });
+      btns[tr.id] = b; btnWrap.append(b);
+    });
+    let state = 'IDLE';
+    function render(){
+      Object.entries(nodes).forEach(([n,g]) => g.classList.toggle('active', n === state));
+      T.forEach(tr => btns[tr.id].disabled = tr.f !== state);
+      document.getElementById('smStatus').textContent = 'Current State: ' + state;
+      document.getElementById('smDesc').textContent = S[state][3];
+    }
+    function fire(id){
+      const tr = T.find(x => x.id === id);
+      if (!tr || tr.f !== state) return;
+      Object.values(paths).forEach(p => p.classList.remove('fire'));
+      const p = paths[id]; void p.getBoundingClientRect(); p.classList.add('fire');
+      state = tr.t; render();
+    }
+    const seq = ['t1','t2','t3','t4','t5','t6','t7','t1','t2','e1','e3','t1','t2','t3','t4','t5','e2','e3'];
+    let timer = null, pos = 0;
+    const autoBtn = document.getElementById('smAuto');
+    function stopAuto(){ if (timer){ clearInterval(timer); timer = null; autoBtn.textContent = '▶️ Start Auto-Demo'; } }
+    autoBtn.addEventListener('click', () => {
+      if (timer){ stopAuto(); return; }
+      state = 'IDLE'; pos = 0; render();
+      autoBtn.textContent = '⏸️ Stop Auto-Demo';
+      timer = setInterval(() => { fire(seq[pos]); pos = (pos + 1) % seq.length; }, 2000);
+    });
+    document.getElementById('smReset').addEventListener('click', () => { stopAuto(); state = 'IDLE'; Object.values(paths).forEach(p => p.classList.remove('fire')); render(); });
+    render();
+  })();
+
+  /* ---------- Network toggle ---------- */
+  (function(){
+    const svg = document.getElementById('netSvg'), cap = document.getElementById('netCap');
+    const text = { cf:'Cloudflare Tunnel: public HTTPS URL, protected by OAuth.', ts:'Tailscale: private encrypted network between your own devices.' };
+    document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+      svg.setAttribute('data-mode', b.dataset.mode);
+      document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      cap.textContent = text[b.dataset.mode];
+    }));
+  })();
+
+  /* ---------- Roadmap ---------- */
+  (function(){
+    const g = document.getElementById('roadmapNodes');
+    const phases = [['Foundation','Wk 1'],['Core MCP','Wk 2'],['Remote','Wk 3'],['Hardening','Wk 4'],['Expand','Wk 5–6'],['Extras','Later']];
+    const rows = document.querySelectorAll('#roadmapTable tr[data-p]');
+    phases.forEach((p,i) => {
+      const x = 70 + i * 144;
+      const node = el('g', {tabindex:'0', role:'button', 'aria-label':'Phase ' + (i+1) + ': ' + p[0], style:'cursor:pointer'});
+      node.append(el('circle', {class:'d-box ' + (i < 4 ? 'f-blue' : 'f-green'), cx:x, cy:90, r:24}));
+      node.append(el('text', {class:'d-text d-bold', x, y:90}, String(i+1)));
+      node.append(el('text', {class:'d-text d-bold', x, y:45}, p[0]));
+      node.append(el('text', {class:'d-text d-small', x, y:138}, p[1]));
+      const pick = () => rows.forEach(r => r.style.background = (+r.dataset.p === i+1) ? 'var(--p-orange)' : '');
+      node.addEventListener('click', pick);
+      node.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); pick(); } });
+      g.append(node);
+    });
+  })();
+
+  /* ---------- start ---------- */
+  const start = ids.indexOf(location.hash.slice(1));
+  show(start >= 0 ? start : 0, false);
+})();
+</script>
+</body>
+</html>
