@@ -1,0 +1,323 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Async FIFO Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Kalam:wght@300;400;700&family=Courier+Prime:wght@400;700&display=swap">
+<style>
+:root{
+  --paper:#fcfcf7; --rule:#cfe0f0; --margin:#eaa4a4;
+  --ink:#1d3a8a; --pencil:#2a2a2a; --red:#c2331f; --green:#1d7a4a;
+  --hl:rgba(255,226,70,.6); --hl2:rgba(120,210,255,.4);
+  --note:#fff3a8; --note-ink:#4a3b00; --shadow:rgba(0,0,0,.12);
+  --code-bg:rgba(29,58,138,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#1b2030; --rule:#2a3452; --margin:#6a3440;
+    --ink:#bcd3ff; --pencil:#e4e4e4; --red:#ff8f7e; --green:#7ee0a8;
+    --hl:rgba(255,214,0,.28); --hl2:rgba(90,190,255,.25);
+    --note:#4a4420; --note-ink:#fff1a0; --shadow:rgba(0,0,0,.4);
+    --code-bg:rgba(188,211,255,.06);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#1b2030; --rule:#2a3452; --margin:#6a3440;
+  --ink:#bcd3ff; --pencil:#e4e4e4; --red:#ff8f7e; --green:#7ee0a8;
+  --hl:rgba(255,214,0,.28); --hl2:rgba(90,190,255,.25);
+  --note:#4a4420; --note-ink:#fff1a0; --shadow:rgba(0,0,0,.4);
+  --code-bg:rgba(188,211,255,.06);
+}
+html,body{background:var(--paper)}
+body{
+  font-family:"Kalam","Comic Neue","Segoe Print",cursive;
+  color:var(--ink); font-size:19px; line-height:32px; font-weight:400;
+  padding-inline:16px; padding-block:0 48px;
+}
+.sheet{
+  max-width:860px; margin:0 auto; position:relative;
+  background-image:repeating-linear-gradient(to bottom, transparent 0, transparent 31px, var(--rule) 31px, var(--rule) 32px);
+  background-position:0 8px;
+  padding:40px 20px 40px 76px;
+}
+.sheet::before{content:"";position:absolute;top:0;bottom:0;left:56px;width:2px;background:var(--margin)}
+h1,h2{font-family:"Caveat","Segoe Print",cursive;font-weight:700;margin:0;text-wrap:balance}
+h1{font-size:54px;line-height:64px;color:var(--pencil);transform:rotate(-1deg);transform-origin:left}
+h1 .u{background:linear-gradient(transparent 60%, var(--hl) 60%)}
+.meta{font-family:"Caveat",cursive;font-size:22px;color:var(--red);margin:0 0 32px}
+h2{font-size:34px;line-height:64px;color:var(--pencil);margin-top:32px;display:flex;gap:10px;align-items:baseline}
+h2 .n{font-size:26px;color:var(--red);border:2px solid var(--red);border-radius:50%;width:38px;height:38px;display:inline-grid;place-items:center;line-height:1;flex:none;transform:rotate(-6deg)}
+p{margin:0 0 32px;max-width:66ch}
+ul{margin:0 0 32px;padding-left:22px;max-width:66ch}
+li{margin:0}
+li::marker{content:"→  ";color:var(--red)}
+.hl{background:linear-gradient(transparent 55%, var(--hl) 55%);padding:0 2px}
+.hb{background:linear-gradient(transparent 55%, var(--hl2) 55%);padding:0 2px}
+.red{color:var(--red)} .grn{color:var(--green)}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 8px}
+.pencil{color:var(--pencil)}
+.fig{overflow-x:auto;margin:8px 0 32px}
+.fig svg{display:block;min-width:620px;width:100%;height:auto}
+.fig svg text{font-family:"Caveat","Segoe Print",cursive}
+.cap{font-family:"Caveat",cursive;font-size:21px;color:var(--red);margin:-24px 0 32px;transform:rotate(-.5deg)}
+.math{font-family:"Kalam",cursive;padding:0 0 0 18px;border-left:3px solid var(--hl2);margin:0 0 32px;max-width:60ch}
+.math div{white-space:nowrap;overflow-x:auto}
+pre{
+  font-family:"Courier Prime","Courier New",monospace;font-size:15px;line-height:24px;
+  color:var(--pencil);background:var(--code-bg);border:1.5px dashed var(--ink);
+  border-radius:6px 14px 8px 12px;padding:16px 18px;margin:0 0 32px;overflow-x:auto;
+}
+pre .c{color:var(--red);font-style:italic}
+pre .k{color:var(--ink);font-weight:700}
+.sticky{
+  background:var(--note);color:var(--note-ink);padding:18px 22px 22px;margin:8px 0 40px;
+  max-width:560px;transform:rotate(1.2deg);box-shadow:3px 6px 14px var(--shadow);
+  font-size:18px;line-height:28px;
+}
+.sticky h3{font-family:"Caveat",cursive;font-size:30px;margin:0 0 6px;font-weight:700}
+.sticky ul{margin:0;padding-left:20px}
+.sticky li::marker{content:"✗  ";color:var(--note-ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+.two p{margin:0}
+.box{border:2px solid var(--pencil);border-radius:14px 6px 16px 8px;padding:10px 16px}
+.box b{font-family:"Caveat",cursive;font-size:26px;color:var(--red)}
+@media (max-width:620px){
+  .sheet{padding:32px 4px 32px 34px}
+  .sheet::before{left:20px}
+  h1{font-size:42px;line-height:48px}
+  .two{grid-template-columns:1fr}
+  body{font-size:18px}
+}
+.gt{border-collapse:collapse;font-size:18px;margin:0 0 32px;font-variant-numeric:tabular-nums}
+.gt th,.gt td{border:1.5px solid var(--pencil);padding:0 14px;text-align:center;line-height:30px}
+.gt th{font-family:"Caveat",cursive;font-size:22px;color:var(--red)}
+.gt td.g{font-family:"Courier Prime",monospace;font-size:16px}
+.gt tr.pair td{background:var(--hl)}
+.gtw{overflow-x:auto}
+.qa{margin:0 0 28px;max-width:70ch}
+.qa .q{color:var(--red);font-weight:700;margin:0}
+.qa .q b{font-family:"Caveat",cursive;font-size:26px;margin-right:6px}
+.qa .a{margin:0;padding-left:30px;color:var(--ink)}
+.qa .a b.al{font-family:"Caveat",cursive;font-size:26px;color:var(--green);margin-left:-30px;margin-right:8px}
+code{font-family:"Courier Prime","Courier New",monospace;font-size:.88em}
+</style>
+
+<div class="sheet">
+  <h1>The <span class="u">asynchronous FIFO</span></h1>
+  <p class="meta">notes · multi-bit CDC · design + interview Q&amp;A · 27 Sep 2026</p>
+
+  <h2><span class="n">1</span>Why we need it</h2>
+  <p>Writer runs on <b>wclk</b>, reader on <b>rclk</b>. The clocks are unrelated (different frequency, unknown phase). You cannot pass a multi-bit bus through 2-FF synchronizers: each bit can resolve differently, so the receiver sees a <span class="red">value that never existed</span>.</p>
+  <ul>
+    <li>Data itself never gets synchronized. It sits in a <span class="hl">dual-port RAM</span> and is only read once it is stable.</li>
+    <li>Only the <span class="hb">pointers</span> cross domains, and they cross as <b>gray code</b>.</li>
+    <li>Each side makes its own flag: <b>full</b> in wclk, <b>empty</b> in rclk.</li>
+  </ul>
+
+  <h2><span class="n">2</span>Block diagram</h2>
+  <div class="fig">
+  <svg viewBox="0 0 760 420" role="img" aria-label="Async FIFO block diagram: write control with full flag in wclk domain, dual-port RAM, read control with empty flag in rclk domain, and two gray-pointer synchronizers crossing between them.">
+    <defs>
+      <filter id="wob" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4"/>
+        <feDisplacementMap in="SourceGraphic" scale="3.2"/>
+      </filter>
+      <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M1 1 L9 5 L1 9" fill="none" stroke="var(--pencil)" stroke-width="1.6" stroke-linecap="round"/>
+      </marker>
+    </defs>
+    <g filter="url(#wob)">
+      <path d="M380 20 L380 66 M380 214 L380 242 M380 306 L380 332 M380 396 L380 410" stroke="var(--red)" stroke-width="2" stroke-dasharray="10 8" fill="none"/>
+      <rect x="18" y="14" width="150" height="32" rx="6" fill="var(--hl)"/>
+      <rect x="592" y="14" width="150" height="32" rx="6" fill="var(--hl2)"/>
+    </g>
+    <text x="93" y="37" font-size="24" text-anchor="middle" fill="var(--pencil)">wclk domain</text>
+    <text x="667" y="37" font-size="24" text-anchor="middle" fill="var(--pencil)">rclk domain</text>
+
+    <g filter="url(#wob)" fill="none" stroke="var(--pencil)" stroke-width="2.2">
+      <rect x="30" y="84" width="200" height="80" rx="10"/>
+      <rect x="530" y="84" width="200" height="80" rx="10"/>
+      <rect x="290" y="70" width="180" height="110" rx="6"/>
+      <path d="M290 92 L470 92 M290 114 L470 114 M290 136 L470 136 M290 158 L470 158" stroke-width="1.2"/>
+      <rect x="300" y="246" width="160" height="56" rx="10"/>
+      <rect x="300" y="336" width="160" height="56" rx="10"/>
+    </g>
+    <g filter="url(#wob)"><rect x="292" y="116" width="176" height="40" fill="var(--hl)"/></g>
+
+    <text x="130" y="116" font-size="26" text-anchor="middle" fill="var(--ink)" font-weight="700">write ctrl</text>
+    <text x="130" y="144" font-size="20" text-anchor="middle" fill="var(--pencil)">wbin, wgray, wfull</text>
+    <text x="630" y="116" font-size="26" text-anchor="middle" fill="var(--ink)" font-weight="700">read ctrl</text>
+    <text x="630" y="144" font-size="20" text-anchor="middle" fill="var(--pencil)">rbin, rgray, rempty</text>
+    <text x="380" y="204" font-size="22" text-anchor="middle" fill="var(--pencil)">dual-port RAM, 2^AW words</text>
+    <text x="380" y="270" font-size="23" text-anchor="middle" fill="var(--ink)" font-weight="700">2-FF sync</text>
+    <text x="380" y="292" font-size="18" text-anchor="middle" fill="var(--pencil)">wgray → rclk</text>
+    <text x="380" y="360" font-size="23" text-anchor="middle" fill="var(--ink)" font-weight="700">2-FF sync</text>
+    <text x="380" y="382" font-size="18" text-anchor="middle" fill="var(--pencil)">rgray → wclk</text>
+
+    <g filter="url(#wob)" fill="none" stroke="var(--pencil)" stroke-width="2">
+      <path d="M130 56 L130 82" marker-end="url(#ah)"/>
+      <path d="M630 82 L630 56" marker-end="url(#ah)"/>
+      <path d="M232 124 L288 124" marker-end="url(#ah)"/>
+      <path d="M472 124 L528 124" marker-end="url(#ah)"/>
+      <path d="M170 166 L170 274 L298 274" marker-end="url(#ah)"/>
+      <path d="M462 274 L590 274 L590 166" marker-end="url(#ah)"/>
+      <path d="M690 166 L690 364 L462 364" marker-end="url(#ah)"/>
+      <path d="M298 364 L70 364 L70 166" marker-end="url(#ah)"/>
+    </g>
+    <text x="140" y="70" font-size="18" fill="var(--pencil)">wdata, winc</text>
+    <text x="620" y="70" font-size="18" text-anchor="end" fill="var(--pencil)">rdata, rinc</text>
+    <text x="260" y="116" font-size="17" text-anchor="middle" fill="var(--pencil)">waddr</text>
+    <text x="500" y="116" font-size="17" text-anchor="middle" fill="var(--pencil)">raddr</text>
+    <text x="178" y="226" font-size="18" fill="var(--pencil)">wptr (gray)</text>
+    <text x="582" y="226" font-size="18" text-anchor="end" fill="var(--pencil)">rq2_wptr</text>
+    <text x="682" y="320" font-size="18" text-anchor="end" fill="var(--pencil)">rptr (gray)</text>
+    <text x="78" y="320" font-size="18" fill="var(--pencil)">wq2_rptr</text>
+  </svg>
+  </div>
+  <p class="cap">only gray pointers cross the red line. RAM is written in wclk, read in rclk</p>
+
+  <h2><span class="n">3</span>Pointers: AW+1 bits, gray coded</h2>
+  <p>Address = low <b>AW</b> bits. The extra MSB is a <span class="hl">wrap bit</span>: it flips each time the pointer goes round the RAM. Without it, <code>wptr == rptr</code> means both full and empty.</p>
+  <div class="two">
+    <p class="box"><b>bin→gray</b><br><code>g = b ^ (b &gt;&gt; 1)</code></p>
+    <p class="box"><b>gray→bin</b><br><code>b[i] = ^g[AW:i]</code> (XOR from MSB down)</p>
+  </div>
+  <p>Gray changes <span class="circ">one bit</span> per increment. A synchronizer that catches it mid-change returns either the old or new value. Worst case the other side sees a pointer <b>one step stale</b>, which is safe.</p>
+
+  <h2><span class="n">4</span>Full &amp; empty (the heart of it)</h2>
+  <p><b class="grn">Empty</b> (rclk): read pointer caught up with the write pointer.</p>
+  <p class="math"><code>rempty = (rgray_next == rq2_wptr)</code></p>
+  <p><b class="red">Full</b> (wclk): write pointer is exactly one lap ahead. In binary: MSB differs, rest equal. In gray the <span class="hl">top two bits</span> must differ, because gray code is reflected around the halfway point.</p>
+  <p class="math"><code>wfull = (wgray_next == {~wq2_rptr[AW:AW-1], wq2_rptr[AW-2:0]})</code></p>
+  <div class="gtw">
+  <table class="gt" aria-label="3-bit binary and gray code for a depth-4 FIFO">
+    <tr><th>ptr</th><th>binary</th><th>gray</th><th></th><th>ptr+4</th><th>binary</th><th>gray</th></tr>
+    <tr><td>0</td><td class="g">000</td><td class="g">000</td><td>↔</td><td>4</td><td class="g">100</td><td class="g">110</td></tr>
+    <tr class="pair"><td>1</td><td class="g">001</td><td class="g">001</td><td>↔</td><td>5</td><td class="g">101</td><td class="g">111</td></tr>
+    <tr><td>2</td><td class="g">010</td><td class="g">011</td><td>↔</td><td>6</td><td class="g">110</td><td class="g">101</td></tr>
+    <tr><td>3</td><td class="g">011</td><td class="g">010</td><td>↔</td><td>7</td><td class="g">111</td><td class="g">100</td></tr>
+  </table>
+  </div>
+  <p class="cap">depth 4 (AW=2): ptr vs ptr+4 → top 2 gray bits inverted, LSB same. That's "full".</p>
+  <p>Both flags are <span class="hb">pessimistic</span>. They <b>assert</b> immediately (driven by the local pointer) and <b>de-assert</b> 2–3 cycles late (the remote pointer is stale). So the FIFO can look full/empty slightly too long, but it can never overflow or underflow.</p>
+
+  <h2><span class="n">5</span>RTL (Cummings style, registered flags)</h2>
+<pre><span class="k">module</span> afifo #(<span class="k">parameter</span> DW=8, AW=4) (
+  <span class="k">input</span>  wclk, wrst_n, winc,  <span class="k">input</span> [DW-1:0] wdata, <span class="k">output reg</span> wfull,
+  <span class="k">input</span>  rclk, rrst_n, rinc,  <span class="k">output</span> [DW-1:0] rdata, <span class="k">output reg</span> rempty);
+
+  <span class="k">reg</span> [DW-1:0] mem [0:(1&lt;&lt;AW)-1];
+  <span class="k">reg</span> [AW:0] wbin, wptr, wq1_rptr, wq2_rptr;   <span class="c">// wclk</span>
+  <span class="k">reg</span> [AW:0] rbin, rptr, rq1_wptr, rq2_wptr;   <span class="c">// rclk</span>
+
+  <span class="c">// ---------------- write side ----------------</span>
+  <span class="k">wire</span> [AW:0] wbin_n  = wbin + (winc &amp; ~wfull);
+  <span class="k">wire</span> [AW:0] wgray_n = (wbin_n &gt;&gt; 1) ^ wbin_n;
+  <span class="k">wire</span> wfull_n = (wgray_n == {~wq2_rptr[AW:AW-1], wq2_rptr[AW-2:0]});
+
+  <span class="k">always</span> @(<span class="k">posedge</span> wclk <span class="k">or negedge</span> wrst_n)
+    <span class="k">if</span> (!wrst_n) {wbin, wptr, wfull} &lt;= '0;
+    <span class="k">else</span>         {wbin, wptr, wfull} &lt;= {wbin_n, wgray_n, wfull_n};
+
+  <span class="k">always</span> @(<span class="k">posedge</span> wclk)
+    <span class="k">if</span> (winc &amp;&amp; !wfull) mem[wbin[AW-1:0]] &lt;= wdata;
+
+  <span class="k">always</span> @(<span class="k">posedge</span> wclk <span class="k">or negedge</span> wrst_n)   <span class="c">// rptr → wclk</span>
+    <span class="k">if</span> (!wrst_n) {wq2_rptr, wq1_rptr} &lt;= '0;
+    <span class="k">else</span>         {wq2_rptr, wq1_rptr} &lt;= {wq1_rptr, rptr};
+
+  <span class="c">// ---------------- read side -----------------</span>
+  <span class="k">wire</span> [AW:0] rbin_n  = rbin + (rinc &amp; ~rempty);
+  <span class="k">wire</span> [AW:0] rgray_n = (rbin_n &gt;&gt; 1) ^ rbin_n;
+  <span class="k">wire</span> rempty_n = (rgray_n == rq2_wptr);
+
+  <span class="k">always</span> @(<span class="k">posedge</span> rclk <span class="k">or negedge</span> rrst_n)
+    <span class="k">if</span> (!rrst_n) <span class="k">begin</span> rbin &lt;= '0; rptr &lt;= '0; rempty &lt;= 1'b1; <span class="k">end</span>
+    <span class="k">else begin</span> rbin &lt;= rbin_n; rptr &lt;= rgray_n; rempty &lt;= rempty_n; <span class="k">end</span>
+
+  <span class="k">always</span> @(<span class="k">posedge</span> rclk <span class="k">or negedge</span> rrst_n)   <span class="c">// wptr → rclk</span>
+    <span class="k">if</span> (!rrst_n) {rq2_wptr, rq1_wptr} &lt;= '0;
+    <span class="k">else</span>         {rq2_wptr, rq1_wptr} &lt;= {rq1_wptr, wptr};
+
+  <span class="k">assign</span> rdata = mem[rbin[AW-1:0]];               <span class="c">// FWFT-style read</span>
+<span class="k">endmodule</span></pre>
+  <p class="cap">note: wptr/rptr are flops. never feed comb logic into a synchronizer (glitches get sampled)</p>
+
+  <h2><span class="n">6</span>Sizing the depth</h2>
+  <p>FIFO only has to absorb the <span class="hl">worst burst</span>. Depth = words written during the burst − words read in the same time.</p>
+  <div class="math">
+    <div><b>Ex 1</b>: fW = 100 MHz, fR = 50 MHz, burst = 120, no idle cycles</div>
+    <div>burst time = 120 × 10 ns = 1200 ns</div>
+    <div>reads in 1200 ns = 1200 / 20 = 60</div>
+    <div>depth = 120 − 60 = <span class="hl">60</span> → round up to 64</div>
+  </div>
+  <div class="math">
+    <div><b>Ex 2</b>: fW = 80 MHz, 1 write every 2 clk; fR = 50 MHz, 1 read every 3 clk; burst = 120</div>
+    <div>write rate: 1 per 25 ns → burst time = 3000 ns</div>
+    <div>read rate: 1 per 60 ns → reads = 3000 / 60 = 50</div>
+    <div>depth = 120 − 50 = <span class="hl">70</span> → 128 (or 72 with non-pow-2 tricks)</div>
+  </div>
+  <p class="pencil">Trap: "80 writes in any 100 clocks" → worst case is back-to-back <b>160</b> writes (last 80 of one window + first 80 of the next). Size for that burst, then add ~2–3 entries for sync latency.</p>
+
+  <h2><span class="n">7</span>Interview questions</h2>
+
+  <div class="qa"><p class="q"><b>Q1</b>Why not just synchronize the binary pointer with 2 flops per bit?</p>
+  <p class="a"><b class="al">A</b>Several bits change at once (0111→1000). Each bit resolves independently, so the receiver can see any mix, e.g. 1111. That pointer is wrong by a lot and breaks full/empty.</p></div>
+
+  <div class="qa"><p class="q"><b>Q2</b>Why is gray code safe to sync?</p>
+  <p class="a"><b class="al">A</b>Only one bit changes per increment. The sampled value is either the old or the new pointer, both of which are real. At worst the flag is computed from a slightly stale pointer, which is conservative.</p></div>
+
+  <div class="qa"><p class="q"><b>Q3</b>Why is the pointer AW+1 bits wide?</p>
+  <p class="a"><b class="al">A</b>To tell full from empty. Equal pointers with the same wrap bit = empty. Same address but different wrap bit = full.</p></div>
+
+  <div class="qa"><p class="q"><b>Q4</b>Why invert the top <i>two</i> bits for full in gray?</p>
+  <p class="a"><b class="al">A</b>Gray code mirrors around the midpoint. ptr and ptr+2^AW differ in the binary MSB only; after the XOR conversion that becomes the top two gray bits differing. (See the table above.)</p></div>
+
+  <div class="qa"><p class="q"><b>Q5</b>Can the FIFO overflow because the full flag is late?</p>
+  <p class="a"><b class="al">A</b>No. Full asserts from the <i>local</i> write pointer, so it is on time. Only de-assertion is late (waits for the synced read pointer). Late de-assert costs throughput, never data.</p></div>
+
+  <div class="qa"><p class="q"><b>Q6</b>wclk is 10× faster than rclk. The gray pointer changes many times between rclk edges. Is that a problem?</p>
+  <p class="a"><b class="al">A</b>No. The sync doesn't need every value, just any recent valid one. At the moment rclk samples, only one bit can be in transition. Requirement: bit-to-bit skew on the crossing must be under one destination period, so constrain it with <code>set_max_delay -datapath_only</code> / <code>set_bus_skew</code>, not a blanket false path.</p></div>
+
+  <div class="qa"><p class="q"><b>Q7</b>How do you make a non-power-of-2 depth (e.g. 6)?</p>
+  <p class="a"><b class="al">A</b>Plain gray breaks at the wrap (more than 1 bit changes). Options: use an even depth with a symmetric slice of the gray sequence (start at 2^N/2 − D/2 so the wrap is still 1-bit), use a Johnson/one-hot style counter, or send pointers with a req/ack handshake. Most teams just round up to a power of 2.</p></div>
+
+  <div class="qa"><p class="q"><b>Q8</b>How do you generate almost-full / almost-empty?</p>
+  <p class="a"><b class="al">A</b>Convert the synced gray pointer back to binary, subtract (<code>wbin − wq2_rptr_bin</code>), compare to a threshold. Result is still pessimistic, good enough for flow control.</p></div>
+
+  <div class="qa"><p class="q"><b>Q9</b>How do you reset an async FIFO?</p>
+  <p class="a"><b class="al">A</b>Each side gets its own reset: asynchronous assert, synchronous de-assert in its own clock. Reset both sides together. Keep full asserted during write-side reset if the writer might push early. Empty resets to 1.</p></div>
+
+  <div class="qa"><p class="q"><b>Q10</b>2 flops or 3?</p>
+  <p class="a"><b class="al">A</b>Driven by MTBF = e^(t_r/τ) / (T0 · f_clk · f_data). At high frequency or advanced nodes, the settling time t_r in one cycle gets too small, so add a third flop. It costs one more cycle of flag latency.</p></div>
+
+  <div class="qa"><p class="q"><b>Q11</b>What's the latency from write to not-empty?</p>
+  <p class="a"><b class="al">A</b>~1 wclk (wptr register) + 2 rclk (sync) + 1 rclk (rempty register) ≈ 3–4 rclk after the write.</p></div>
+
+  <div class="qa"><p class="q"><b>Q12</b>Async FIFO vs. handshake (req/ack) synchronizer?</p>
+  <p class="a"><b class="al">A</b>Handshake: tiny, but one transfer per ~4–6 cycles of round-trip. Async FIFO: full throughput and bursts, but costs RAM and pointer logic. Pick handshake for occasional config/status data, FIFO for streams.</p></div>
+
+  <div class="qa"><p class="q"><b>Q13</b>Clocks are the same frequency but unknown phase. Still need it?</p>
+  <p class="a"><b class="al">A</b>Yes, an async FIFO works and is the safe default. A shallow one (4–8 deep) is enough since there's no rate difference to absorb. If the frequencies differ slightly with no flow control, you need an elastic buffer instead.</p></div>
+
+  <div class="qa"><p class="q"><b>Q14</b>How would you verify it?</p>
+  <p class="a"><b class="al">A</b>Random clock ratios and phase drift, random winc/rinc, scoreboard for order + data. SVA: no write accepted while full, no read while empty, gray pointer changes by exactly 1 bit per cycle. Structural CDC tool (Spyglass / Questa CDC) plus metastability injection in simulation.</p></div>
+
+  <div class="qa"><p class="q"><b>Q15</b>Why is <code>rdata</code> read from <code>rbin</code> and not from the synced pointer?</p>
+  <p class="a"><b class="al">A</b>The read address is local to rclk, so no CDC. The RAM slot is safe to read because empty guarantees the writer finished that entry at least 2 rclk earlier.</p></div>
+
+  <div class="sticky">
+    <h3>Gotchas that fail silicon</h3>
+    <ul>
+      <li>Gray pointer driven from comb logic → glitch captured by the sync</li>
+      <li><code>set_false_path</code> on the crossing → skew unbounded, gray guarantee lost</li>
+      <li>Using the synced pointer as-is for depth math. Convert gray → bin first.</li>
+      <li>Non-power-of-2 depth with plain gray wrap</li>
+      <li>Resetting only one side → phantom full or empty</li>
+      <li>Forgetting sync latency when sizing depth</li>
+    </ul>
+  </div>
+</div>
+
+</body></html>

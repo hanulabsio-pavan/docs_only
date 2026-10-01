@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Design Interview Questions</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #0066cc;
+      --secondary: #00b359;
+      --accent: #ff6b35;
+      --bg-main: #ffffff;
+      --bg-sidebar: #f8f8f8;
+      --text-dark: #1a1a1a;
+      --text-light: #666666;
+      --border: #ddd;
+      --code-bg: #fff3e0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-dark);
+      line-height: 1.6;
+      letter-spacing: 0.3px;
+    }
+
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ===== SIDEBAR ===== */
+    aside.sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 280px;
+      height: 100vh;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    aside.sidebar h2 {
+      font-size: 18px;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background-color: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background-color: var(--secondary);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .chapter-count {
+      font-size: 12px;
+      color: var(--text-light);
+      text-align: right;
+      margin-bottom: 1.5rem;
+    }
+
+    .toc {
+      margin-bottom: 2rem;
+    }
+
+    .toc ul {
+      list-style: none;
+    }
+
+    .toc li {
+      margin-bottom: 0.75rem;
+    }
+
+    .toc a {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .toc a:hover {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .toc a.active {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    main.content {
+      margin-left: 280px;
+      padding: 3rem 2rem;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .chapter {
+      display: none;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    .chapter.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .intro-page {
+      text-align: center;
+    }
+
+    .intro-page h1 {
+      font-size: 42px;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .intro-page .subtitle {
+      font-size: 20px;
+      color: var(--text-light);
+      margin-bottom: 2rem;
+    }
+
+    .intro-content {
+      background-color: var(--bg-sidebar);
+      padding: 2.5rem;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary);
+      text-align: left;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .intro-content p {
+      margin-bottom: 1rem;
+      font-size: 16px;
+    }
+
+    .intro-content ul {
+      margin: 1.5rem 0 2rem 1.5rem;
+    }
+
+    .intro-content li {
+      margin-bottom: 0.5rem;
+    }
+
+    .start-btn {
+      background-color: var(--primary);
+      color: white;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .start-btn:hover {
+      background-color: #0052a3;
+    }
+
+    /* ===== CHAPTER CONTENT ===== */
+    .chapter h1 {
+      font-size: 28px;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .chapter h2 {
+      font-size: 22px;
+      color: var(--primary);
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .chapter h3 {
+      font-size: 18px;
+      color: var(--text-dark);
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .chapter p {
+      margin-bottom: 1rem;
+      line-height: 1.7;
+    }
+
+    .chapter ul, .chapter ol {
+      margin: 1rem 0 1rem 2rem;
+    }
+
+    .chapter li {
+      margin-bottom: 0.5rem;
+    }
+
+    /* ===== DIAGRAMS ===== */
+    figure.diagram {
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    figure.diagram svg {
+      max-width: 100%;
+      height: auto;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+      animation: diagramFadeIn 0.8s ease-in;
+    }
+
+    @keyframes diagramFadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    figcaption {
+      font-size: 14px;
+      color: var(--text-light);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+
+    /* ===== CODE BLOCKS ===== */
+    .code-block {
+      background-color: var(--code-bg);
+      border-left: 4px solid var(--accent);
+      padding: 1rem;
+      border-radius: 4px;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .code-block code {
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-dark);
+      display: block;
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .code-copy-btn {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 4px 12px;
+      border-radius: 3px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .code-copy-btn:hover {
+      background-color: #e55a2b;
+    }
+
+    /* ===== COLLAPSIBLE ===== */
+    .collapsible {
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .collapsible summary {
+      padding: 1rem;
+      background-color: var(--bg-sidebar);
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--primary);
+      user-select: none;
+      transition: background-color 0.2s;
+    }
+
+    .collapsible summary:hover {
+      background-color: #f0f0f0;
+    }
+
+    .collapsible[open] summary {
+      background-color: #f0f0f0;
+    }
+
+    .collapsible-content {
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ===== QUIZ ===== */
+    .quiz {
+      background-color: var(--bg-sidebar);
+      padding: 1.5rem;
+      border-radius: 6px;
+      margin: 2rem 0;
+      border-left: 4px solid var(--primary);
+    }
+
+    .quiz h3 {
+      color: var(--primary);
+      margin-top: 0;
+    }
+
+    .quiz-question {
+      margin: 1.5rem 0;
+      padding: 1rem;
+      background-color: white;
+      border-radius: 4px;
+    }
+
+    .quiz-question p {
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .reveal-btn {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-bottom: 0.75rem;
+    }
+
+    .reveal-btn:hover {
+      background-color: #e55a2b;
+    }
+
+    .answer {
+      background-color: #f0f9f4;
+      padding: 1rem;
+      border-left: 4px solid var(--secondary);
+      border-radius: 4px;
+      margin-top: 0.75rem;
+      animation: slideIn 0.4s ease-in;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        max-height: 0;
+      }
+      to {
+        opacity: 1;
+        max-height: 500px;
+      }
+    }
+
+    /* ===== KEY TAKEAWAYS ===== */
+    .key-takeaways {
+      background-color: #f0f9f4;
+      padding: 1.5rem;
+      border-radius: 6px;
+      margin: 2rem 0;
+      border-left: 4px solid var(--secondary);
+    }
+
+    .key-takeaways h3 {
+      color: var(--secondary);
+      margin-top: 0;
+    }
+
+    .key-takeaways ul {
+      margin-left: 1.5rem;
+    }
+
+    .key-takeaways li {
+      margin-bottom: 0.75rem;
+      color: var(--text-dark);
+    }
+
+    /* ===== NAVIGATION ===== */
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 3rem;
+      gap: 1rem;
+    }
+
+    .nav-buttons button {
+      flex: 1;
+      padding: 12px 20px;
+      border: 1px solid var(--border);
+      background-color: white;
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-buttons button:hover {
+      background-color: var(--bg-sidebar);
+      border-color: var(--primary);
+    }
+
+    .nav-buttons button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      aside.sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 1.5rem;
+      }
+
+      main.content {
+        margin-left: 0;
+        padding: 2rem 1rem;
+      }
+
+      .chapter h1 {
+        font-size: 24px;
+      }
+
+      .intro-page h1 {
+        font-size: 32px;
+      }
+    }
+
+    /* Interview Q&A Box */
+    .interview-qa {
+      background-color: #f5f5f5;
+      padding: 1.5rem;
+      border-radius: 6px;
+      margin: 1.5rem 0;
+      border-left: 4px solid var(--primary);
+    }
+
+    .interview-qa strong {
+      color: var(--primary);
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .interview-qa .answer-text {
+      color: var(--text-dark);
+      line-height: 1.7;
+    }
+
+    /* Keyword highlighting */
+    .keyword { color: var(--primary); font-weight: 600; }
+    .string { color: var(--secondary); }
+    .comment { color: #999; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar">
+      <h2>Interview Prep</h2>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="chapter-count" id="chapterCount">0/4</div>
+      <nav class="toc">
+        <ul>
+          <li><a href="#" onclick="goToChapter(0)">Introduction</a></li>
+          <li><a href="#" onclick="goToChapter(1)">Ch 1: Fundamentals</a></li>
+          <li><a href="#" onclick="goToChapter(2)">Ch 2: RTL & Logic</a></li>
+          <li><a href="#" onclick="goToChapter(3)">Ch 3: Advanced Topics</a></li>
+          <li><a href="#" onclick="goToChapter(4)">Ch 4: Problem-Solving</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="content">
+      <!-- INTRO PAGE -->
+      <section id="chapter-0" class="chapter intro-page active">
+        <h1>Digital Design Interview Questions</h1>
+        <p class="subtitle">Master Core Concepts & Common Interview Scenarios</p>
+        <div class="intro-content">
+          <p><strong>Estimated reading time:</strong> 70–90 minutes (4 chapters)</p>
+          <p><strong>What you'll learn:</strong></p>
+          <ul>
+            <li>Core digital design fundamentals (logic, timing, state machines)</li>
+            <li>RTL design best practices and common pitfalls</li>
+            <li>Advanced topics (pipelining, power, optimization)</li>
+            <li>How to approach design problems and communicate solutions</li>
+          </ul>
+          <p><strong>Who this is for:</strong> Digital design engineers preparing for technical interviews at chip design companies</p>
+          <p><strong>Prerequisites:</strong> Basic familiarity with RTL (Verilog/VHDL), logic design, and microarchitecture</p>
+          <button class="start-btn" onclick="goToChapter(1)">Start Learning →</button>
+        </div>
+      </section>
+
+      <!-- CHAPTER 1: FUNDAMENTALS -->
+      <section id="chapter-1" class="chapter">
+        <h1>Chapter 1: Digital Design Fundamentals</h1>
+
+        <h2>Core Concepts Revisited</h2>
+        <p>During interviews, foundational knowledge often surfaces indirectly. Interviewers may ask:</p>
+
+        <div class="interview-qa">
+          <strong>Q: "Explain setup and hold time violations. Why do they happen?"</strong>
+          <div class="answer-text">
+            <p><strong>Setup Time:</strong> Minimum time data must be stable <em>before</em> clock edge. Violation = data arrives too late to settle before flip-flop captures it.</p>
+            <p><strong>Hold Time:</strong> Minimum time data must remain stable <em>after</em> clock edge. Violation = data changes too quickly after capture.</p>
+            <p><strong>Root cause:</strong> Flip-flop internals (cross-coupled latches) need time to resolve data and propagate to outputs.</p>
+            <p><strong>Interview tip:</strong> Mention metastability risk if domain crossings are involved.</p>
+          </div>
+        </div>
+
+        <h2>Timing Diagram Example</h2>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg">
+            <rect width="700" height="300" fill="#ffffff"/>
+            <text x="350" y="25" font-size="16" font-weight="bold" text-anchor="middle" fill="#0066cc">Setup & Hold Time Violations</text>
+
+            <!-- Clock signal -->
+            <polyline points="50,80 70,80 70,60 90,60 90,80 110,80 110,60 130,60 130,80 150,80 150,60 170,60 170,80 190,80 190,60 210,60 210,80 230,80 230,60 250,60 250,80" 
+                      stroke="#0066cc" stroke-width="2" fill="none"/>
+            <text x="30" y="85" font-size="12" font-weight="600" fill="#1a1a1a">CLK</text>
+
+            <!-- Data signal (setup violation) -->
+            <polyline points="50,140 100,140 100,130 150,130 150,140 200,140" 
+                      stroke="#ff6b35" stroke-width="2" fill="none"/>
+            <text x="30" y="145" font-size="12" font-weight="600" fill="#1a1a1a">Data</text>
+            <text x="120" y="160" font-size="11" fill="#d9534f" font-weight="600">Setup Violation</text>
+            <line x1="115" y1="155" x2="115" y2="135" stroke="#d9534f" stroke-width="1" stroke-dasharray="3,3"/>
+
+            <!-- Safe setup region -->
+            <rect x="270" y="130" width="50" height="20" fill="#e6f2ff" stroke="#0066cc" stroke-width="1" opacity="0.5"/>
+            <text x="295" y="150" font-size="10" fill="#0066cc" text-anchor="middle">Setup OK</text>
+
+            <!-- Hold violation -->
+            <polyline points="350,140 400,140 400,130 450,130" 
+                      stroke="#00b359" stroke-width="2" fill="none"/>
+            <text x="420" y="160" font-size="11" fill="#d9534f" font-weight="600">Hold Violation</text>
+            <line x1="415" y1="155" x2="415" y2="135" stroke="#d9534f" stroke-width="1" stroke-dasharray="3,3"/>
+
+            <!-- Legend -->
+            <text x="50" y="250" font-size="12" font-weight="bold" fill="#1a1a1a">Key Points:</text>
+            <text x="50" y="275" font-size="11" fill="#666">• Setup: Data must settle BEFORE clock edge</text>
+            <text x="50" y="295" font-size="11" fill="#666">• Hold: Data must remain stable AFTER clock edge</text>
+          </svg>
+          <figcaption>Setup and hold time windows relative to clock edge</figcaption>
+        </figure>
+
+        <h2>Common Interview Questions</h2>
+
+        <div class="interview-qa">
+          <strong>Q: "What causes metastability in a flip-flop?"</strong>
+          <div class="answer-text">
+            <p>Metastability occurs when setup/hold time is violated. The flip-flop's cross-coupled latch enters an <em>undefined state</em> where output oscillates briefly before settling to 0 or 1.</p>
+            <p><strong>Practical impact:</strong> In CDC (clock domain crossing) circuits, use synchronizers (double-flop stage) to reduce MTBF (mean time between failures).</p>
+          </div>
+        </div>
+
+        <div class="interview-qa">
+          <strong>Q: "How do you fix a timing violation in RTL?"</strong>
+          <div class="answer-text">
+            <p><strong>Options (in order of preference):</strong></p>
+            <ol>
+              <li>Increase clock period (reduce frequency) — simple, but may not be acceptable</li>
+              <li>Add pipeline stages — breaks path into smaller chunks; increases latency but throughput improves</li>
+              <li>Optimize logic — remove unnecessary gates, use faster cells, or restructure logic</li>
+              <li>Re-time — move flip-flops to balance delay across stages (compiler-assisted, often automatic)</li>
+              <li>Parallel processing — increase data width instead of speed</li>
+            </ol>
+          </div>
+        </div>
+
+        <h2>RTL Code Example: Synchronizer</h2>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span>Verilog: CDC Synchronizer (2-stage)</span>
+            <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <code><span class="comment">// Clock domain crossing synchronizer</span>
+module cdc_sync (
+  input clk_dst,
+  input async_in,
+  output reg sync_out
+);
+
+  reg meta_ff;
+  <span class="comment">// Prevent synthesis from collapsing stages</span>
+  (* DONT_TOUCH = "TRUE" *) reg stage1, stage2;
+
+  always @(posedge clk_dst) begin
+    stage1 <= async_in;   <span class="comment">// Catch metastability here</span>
+    stage2 <= stage1;     <span class="comment">// Clean output</span>
+    sync_out <= stage2;
+  end
+
+endmodule</code>
+        </div>
+
+        <div class="quiz">
+          <h3>Self-Check Quiz</h3>
+          <div class="quiz-question">
+            <p><strong>Q1:</strong> If setup time is violated, what happens internally?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">The flip-flop's cross-coupled latch may not settle in time, causing metastability. Output could be undefined briefly before settling to 0 or 1, or could oscillate.</p>
+          </div>
+          <div class="quiz-question">
+            <p><strong>Q2:</strong> Why use a 2-stage synchronizer instead of 1 stage in CDC circuits?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">Two stages reduce the probability of metastability propagating. Stage 1 may catch metastability; Stage 2 ensures a clean output. MTBF increases exponentially with more stages.</p>
+          </div>
+        </div>
+
+        <section class="key-takeaways">
+          <h3>Key Takeaways</h3>
+          <ul>
+            <li><strong>Setup Time:</strong> Data must be stable before clock edge</li>
+            <li><strong>Hold Time:</strong> Data must be stable after clock edge</li>
+            <li><strong>Metastability:</strong> Flip-flop undefined state when timing violated; use synchronizers for CDC</li>
+            <li><strong>Fix violations:</strong> Pipeline, optimize logic, or reduce frequency</li>
+            <li><strong>CDC:</strong> Always use synchronizers (double-flop minimum) for clock domain crossings</li>
+          </ul>
+        </section>
+
+        <div class="nav-buttons">
+          <button onclick="previousChapter()" disabled>← Previous</button>
+          <button onclick="nextChapter()">Next →</button>
+        </div>
+      </section>
+
+      <!-- CHAPTER 2: RTL & LOGIC DESIGN -->
+      <section id="chapter-2" class="chapter">
+        <h1>Chapter 2: RTL Design & Logic Best Practices</h1>
+
+        <h2>Common RTL Pitfalls</h2>
+
+        <div class="interview-qa">
+          <strong>Q: "Write a Verilog always block for a counter. How do you avoid mistakes?"</strong>
+          <div class="answer-text">
+            <p><strong>Common mistakes:</strong></p>
+            <ul>
+              <li>Using blocking assignments (=) in sequential logic → causes race conditions</li>
+              <li>Mixing blocking & non-blocking assignments → undefined behavior</li>
+              <li>Over-sensitive sensitivity list → unnecessary re-evaluation</li>
+              <li>Using for-loops with variable iteration counts → synthesizes to large muxes</li>
+            </ul>
+          </div>
+        </div>
+
+        <h2>Counter Design Example</h2>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span>Verilog: 4-bit Counter (Best Practice)</span>
+            <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <code><span class="comment">// Good: Uses non-blocking assignments</span>
+module counter_4bit (
+  input clk, reset, enable,
+  output reg [3:0] count
+);
+
+  always @(posedge clk) begin
+    if (reset)
+      count <= 4'b0000;
+    else if (enable)
+      count <= count + 1;  <span class="comment">// Non-blocking!</span>
+  end
+
+endmodule
+
+<span class="comment">// Bad: Blocking assignment (DON'T USE)</span>
+<span class="comment">// always @(posedge clk) begin</span>
+<span class="comment">//   if (reset) count = 4'b0000;  // Blocking!</span>
+<span class="comment">//   else count = count + 1;       // May cause race</span>
+<span class="comment">// end</span></code>
+        </div>
+
+        <details class="collapsible">
+          <summary>Advanced: Blocking vs. Non-Blocking Assignments</summary>
+          <div class="collapsible-content">
+            <p><strong>Blocking (=):</strong> Assignment completes immediately; next statement executes right away. Suitable for combinational logic (always @* blocks).</p>
+            <p><strong>Non-Blocking (<=):</strong> Assignment deferred until end of time step; all assignments evaluate in parallel. Essential for sequential logic (always @posedge/negedge).</p>
+            <p><strong>Why it matters:</strong> Using blocking in sequential logic simulates differently from synthesis (simulators = race conditions, synthesis = unpredictable behavior).</p>
+          </div>
+        </details>
+
+        <div class="interview-qa">
+          <strong>Q: "How do you design a finite state machine (FSM) in RTL?"</strong>
+          <div class="answer-text">
+            <p><strong>Best practice (3-stage approach):</strong></p>
+            <ol>
+              <li><strong>State register:</strong> Holds current state; updates on clock</li>
+              <li><strong>Combinational next-state logic:</strong> Determines next state based on current state + inputs</li>
+              <li><strong>Combinational output logic:</strong> Produces outputs based on current state + inputs (Moore or Mealy)</li>
+            </ol>
+            <p><strong>Advantage:</strong> Clean separation; easy to debug. Compare to 2-stage (combines 2 + 3) which is faster but less readable.</p>
+          </div>
+        </div>
+
+        <h2>FSM State Diagram</h2>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 650 350" xmlns="http://www.w3.org/2000/svg">
+            <rect width="650" height="350" fill="#ffffff"/>
+            <text x="325" y="25" font-size="16" font-weight="bold" text-anchor="middle" fill="#0066cc">Simple FSM: Request-Acknowledge Handshake</text>
+
+            <!-- States -->
+            <circle cx="100" cy="150" r="40" fill="#e6f2ff" stroke="#0066cc" stroke-width="2"/>
+            <text x="100" y="155" font-size="14" font-weight="bold" text-anchor="middle" fill="#1a1a1a">IDLE</text>
+
+            <circle cx="325" cy="150" r="40" fill="#fff3e0" stroke="#ff6b35" stroke-width="2"/>
+            <text x="325" y="155" font-size="14" font-weight="bold" text-anchor="middle" fill="#1a1a1a">WAIT</text>
+
+            <circle cx="550" cy="150" r="40" fill="#f0f9f4" stroke="#00b359" stroke-width="2"/>
+            <text x="550" y="155" font-size="14" font-weight="bold" text-anchor="middle" fill="#1a1a1a">DONE</text>
+
+            <!-- Transitions -->
+            <!-- IDLE to WAIT -->
+            <path d="M 140 150 L 285 150" stroke="#0066cc" stroke-width="2" fill="none" marker-end="url(#arrowblue)"/>
+            <text x="210" y="135" font-size="11" fill="#0066cc" font-weight="600">req=1</text>
+
+            <!-- WAIT to DONE -->
+            <path d="M 365 150 L 510 150" stroke="#ff6b35" stroke-width="2" fill="none" marker-end="url(#arroworange)"/>
+            <text x="437" y="135" font-size="11" fill="#ff6b35" font-weight="600">ack=1</text>
+
+            <!-- DONE back to IDLE -->
+            <path d="M 530 190 Q 325 280 120 190" stroke="#00b359" stroke-width="2" fill="none" marker-end="url(#arrowgreen)"/>
+            <text x="325" y="310" font-size="11" fill="#00b359" font-weight="600">timeout / clear</text>
+
+            <!-- Output annotations -->
+            <text x="100" y="220" font-size="10" text-anchor="middle" fill="#666">out=0</text>
+            <text x="325" y="220" font-size="10" text-anchor="middle" fill="#666">out=0</text>
+            <text x="550" y="220" font-size="10" text-anchor="middle" fill="#666">out=1</text>
+
+            <!-- Legend -->
+            <text x="30" y="280" font-size="11" font-weight="bold" fill="#1a1a1a">Legend:</text>
+            <text x="30" y="305" font-size="10" fill="#666">• Nodes: States (IDLE, WAIT, DONE)</text>
+            <text x="30" y="325" font-size="10" fill="#666">• Edges: Transitions (labeled with conditions)</text>
+
+            <!-- Arrow markers -->
+            <defs>
+              <marker id="arrowblue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#0066cc"/>
+              </marker>
+              <marker id="arroworange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#ff6b35"/>
+              </marker>
+              <marker id="arrowgreen" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#00b359"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>Typical FSM with three states and conditional transitions</figcaption>
+        </figure>
+
+        <div class="quiz">
+          <h3>Self-Check Quiz</h3>
+          <div class="quiz-question">
+            <p><strong>Q1:</strong> Why use non-blocking (<=) assignments in sequential always blocks?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">Non-blocking ensures all assignments update in parallel at the end of the time step. This matches hardware behavior where flip-flops update simultaneously. Blocking assignments can cause race conditions in simulation.</p>
+          </div>
+          <div class="quiz-question">
+            <p><strong>Q2:</strong> What's the difference between a Moore FSM and a Mealy FSM?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;"><strong>Moore:</strong> Output depends only on current state (registered output). <strong>Mealy:</strong> Output depends on current state AND inputs (combinational output). Mealy is faster (reacts immediately to input) but more complex; Moore is slower but safer (no output glitches).</p>
+          </div>
+        </div>
+
+        <section class="key-takeaways">
+          <h3>Key Takeaways</h3>
+          <ul>
+            <li><strong>Always use non-blocking (<=) in sequential logic;</strong> blocking (=) in combinational</li>
+            <li><strong>FSM best practice:</strong> 3-stage design (state register + next-state logic + output logic)</li>
+            <li><strong>Sensitivity lists:</strong> Use @* in combinational blocks; @posedge/negedge in sequential</li>
+            <li><strong>CDC synchronizers:</strong> Mandatory for clock domain crossings</li>
+            <li><strong>Testability:</strong> Design FSMs to be easily observable and controllable</li>
+          </ul>
+        </section>
+
+        <div class="nav-buttons">
+          <button onclick="previousChapter()">← Previous</button>
+          <button onclick="nextChapter()">Next →</button>
+        </div>
+      </section>
+
+      <!-- CHAPTER 3: ADVANCED TOPICS -->
+      <section id="chapter-3" class="chapter">
+        <h1>Chapter 3: Advanced Topics in Digital Design</h1>
+
+        <h2>Pipeline Design & Hazards</h2>
+
+        <div class="interview-qa">
+          <strong>Q: "Explain the three types of pipeline hazards."</strong>
+          <div class="answer-text">
+            <p><strong>1. Structural Hazard:</strong> Hardware cannot support simultaneous operations (e.g., two instructions need ALU at same cycle). Solution: Add more hardware (dual ALUs) or stall.</p>
+            <p><strong>2. Data Hazard:</strong> Instruction depends on result of prior instruction that hasn't completed. Example: ADD r1, r2, r3 / SUB r4, r1, r5 (r1 not ready). Solution: Forwarding/bypassing or stalls.</p>
+            <p><strong>3. Control Hazard:</strong> Branch outcome unknown until later stages. Solution: Branch prediction, branch delay slots, or speculative execution.</p>
+          </div>
+        </div>
+
+        <h2>Power Optimization Strategies</h2>
+
+        <div class="interview-qa">
+          <strong>Q: "How do you reduce power consumption in an RTL design?"</strong>
+          <div class="answer-text">
+            <p><strong>Techniques (in order of impact):</strong></p>
+            <ol>
+              <li><strong>Dynamic power (P = CV²f):</strong> Clock gating (disable unused blocks), voltage scaling, frequency scaling</li>
+              <li><strong>Leakage power:</strong> Power gating (turn off blocks), use high-Vth cells in non-critical paths</li>
+              <li><strong>Logic optimization:</strong> Reduce gate count, minimize switching activity</li>
+              <li><strong>Memory power:</strong> Use SRAM (low power) vs. DRAM; enable memory power-down modes</li>
+              <li><strong>Data path width:</strong> Narrower buses = less switching; use sub-word techniques</li>
+            </ol>
+          </div>
+        </div>
+
+        <details class="collapsible">
+          <summary>Advanced: DVFS (Dynamic Voltage & Frequency Scaling)</summary>
+          <div class="collapsible-content">
+            <p><strong>DVFS reduces power by adjusting voltage and frequency at runtime:</strong></p>
+            <p>• Lower frequency → lower voltage needed (respects setup time margins)</p>
+            <p>• Power ∝ V²: Voltage reduction is quadratic, huge power savings</p>
+            <p>• Trade-off: Latency increases; suitable for throughput-oriented workloads</p>
+            <p>• Common in mobile/server CPUs to balance performance and battery life</p>
+          </div>
+        </details>
+
+        <h2>Verification Mindset</h2>
+
+        <div class="interview-qa">
+          <strong>Q: "How would you verify a 32-bit multiplier design?"</strong>
+          <div class="answer-text">
+            <p><strong>Verification strategy:</strong></p>
+            <ol>
+              <li><strong>Sanity checks:</strong> Small inputs (2x2, 3x3) verify basic functionality</li>
+              <li><strong>Boundary conditions:</strong> Zero, max value (all 1s), sign alternations</li>
+              <li><strong>Random testing:</strong> Generate thousands of random pairs; compare RTL output to reference model</li>
+              <li><strong>Coverage analysis:</strong> Ensure all code paths, branch conditions, state transitions exercised</li>
+              <li><strong>Formal verification:</strong> Prove equivalence to golden model or math spec</li>
+              <li><strong>Post-synthesis simulation:</strong> Verify timing, gate-level effects</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span>Testbench Snippet: Multiplier Verification</span>
+            <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <code><span class="comment">// Simple testbench for 32-bit multiplier</span>
+module tb_multiplier;
+  reg [31:0] a, b;
+  wire [63:0] result;
+  multiplier dut (.a(a), .b(b), .product(result));
+
+  initial begin
+    <span class="comment">// Test 1: Small values</span>
+    a = 32'd5; b = 32'd7;
+    #10; assert(result == 64'd35);
+
+    <span class="comment">// Test 2: Maximum values</span>
+    a = 32'hFFFFFFFF; b = 32'hFFFFFFFF;
+    #10; assert(result == 64'hFFFFFFFE00000001);
+
+    <span class="comment">// Test 3: Random 1000 iterations</span>
+    repeat(1000) begin
+      a = $random; b = $random;
+      #10;
+      golden = a * b;  <span class="comment">// Reference calc</span>
+      assert(result == golden);
+    end
+  end
+endmodule</code>
+        </div>
+
+        <div class="quiz">
+          <h3>Self-Check Quiz</h3>
+          <div class="quiz-question">
+            <p><strong>Q1:</strong> What is the primary advantage of forwarding to prevent data hazards?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">Forwarding (bypassing) routes the result of a prior instruction directly to the next instruction's ALU input, avoiding stalls. This allows the pipeline to continue operating at full throughput despite dependencies.</p>
+          </div>
+          <div class="quiz-question">
+            <p><strong>Q2:</strong> In power equation P = CV²f, which factor has the greatest leverage for power reduction?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">Voltage (V) has quadratic impact. Reducing voltage by 10% reduces power by ~19%. Frequency (f) is linear; reducing by 10% reduces power by 10%. So voltage scaling is most effective.</p>
+          </div>
+        </div>
+
+        <section class="key-takeaways">
+          <h3>Key Takeaways</h3>
+          <ul>
+            <li><strong>Pipeline hazards:</strong> Structural, data (forwarding needed), control (branch prediction)</li>
+            <li><strong>Power reduction:</strong> Clock gating most effective; voltage scaling quadratic impact</li>
+            <li><strong>DVFS:</strong> Adjust voltage + frequency at runtime for energy efficiency</li>
+            <li><strong>Verification:</strong> Sanity tests → random → formal verification → post-synthesis</li>
+            <li><strong>Coverage matters:</strong> 100% code coverage ≠ functional correctness; aim for high quality coverage metrics</li>
+          </ul>
+        </section>
+
+        <div class="nav-buttons">
+          <button onclick="previousChapter()">← Previous</button>
+          <button onclick="nextChapter()">Next →</button>
+        </div>
+      </section>
+
+      <!-- CHAPTER 4: PROBLEM-SOLVING -->
+      <section id="chapter-4" class="chapter">
+        <h1>Chapter 4: Problem-Solving & Communication</h1>
+
+        <h2>How Interviewers Evaluate</h2>
+
+        <div class="interview-qa">
+          <strong>What interviewers look for:</strong>
+          <div class="answer-text">
+            <ol>
+              <li><strong>Problem decomposition:</strong> Can you break complex problems into manageable pieces?</li>
+              <li><strong>Clear communication:</strong> Can you explain design choices? Draw diagrams?</li>
+              <li><strong>Trade-off analysis:</strong> Understand speed vs. power vs. area vs. complexity</li>
+              <li><strong>Edge cases:</strong> Do you think about corner cases (overflow, underflow, boundary conditions)?</li>
+              <li><strong>Testability:</strong> Can your design be verified?</li>
+              <li><strong>Practical knowledge:</strong> Familiarity with EDA tools, simulators, design methodologies</li>
+            </ol>
+          </div>
+        </div>
+
+        <h2>Example Interview Problem</h2>
+
+        <div class="interview-qa">
+          <strong>Q: "Design a FIFO queue (first-in, first-out) for 32-bit data, depth 16. What are the tradeoffs?"</strong>
+          <div class="answer-text">
+            <p><strong>My approach (problem-solving framework):</strong></p>
+            <p><strong>Step 1: Clarify requirements</strong></p>
+            <ul>
+              <li>Clock domain? (Synchronous or async CDC?)</li>
+              <li>Read/write on same clock or different?</li>
+              <li>Pipelining? (Ready/valid handshake?)</li>
+              <li>Error flags needed? (Empty, full, almost-full?)</li>
+            </ul>
+
+            <p><strong>Step 2: High-level architecture</strong></p>
+            <ul>
+              <li>Dual-port SRAM (32-bit width, 16-entry depth) for data storage</li>
+              <li>Write pointer (4-bit counter, wraps at 16)</li>
+              <li>Read pointer (4-bit counter, wraps at 16)</li>
+              <li>Empty/full logic (compare pointers)</li>
+            </ul>
+
+            <p><strong>Step 3: Trade-offs</strong></p>
+            <ul>
+              <li><strong>Async FIFO:</strong> Different clock domains; requires Gray-coded pointers + CDC synchronizers (complexity++)</li>
+              <li><strong>Registered output:</strong> Adds latency but improves timing (pipelined)</li>
+              <li><strong>Depth:</strong> Larger = more memory; shallower = simpler control logic</li>
+              <li><strong>Full/empty flags:</strong> Can almost-full reduce worst-case latency for back-pressure?</li>
+            </ul>
+
+            <p><strong>Step 4: Key implementation detail</strong></p>
+            <ul>
+              <li>FIFO full when: (write_ptr + 1) == read_ptr (mod 16)</li>
+              <li>FIFO empty when: write_ptr == read_ptr</li>
+              <li>For async FIFO, convert pointers to Gray code to reduce CDC metastability</li>
+            </ul>
+          </div>
+        </div>
+
+        <h2>Communication Tips for Interviews</h2>
+
+        <details class="collapsible">
+          <summary>Drawing & Explaining During Interviews</summary>
+          <div class="collapsible-content">
+            <p><strong>Best practices:</strong></p>
+            <ul>
+              <li><strong>Start with a block diagram:</strong> Show main components (SRAM, pointers, control logic)</li>
+              <li><strong>Annotate with signal names:</strong> write_ptr, read_ptr, empty, full, data_in, data_out</li>
+              <li><strong>Explain state transitions:</strong> "When empty & read request arrives, no data flows"</li>
+              <li><strong>Discuss corner cases out loud:</strong> "What if write & read simultaneous? Both increment pointers."</li>
+              <li><strong>Mention verification:</strong> "I'd test empty-to-full, full-to-empty transitions, simultaneous read/write"</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="collapsible">
+          <summary>Common Phrases to Increase Credibility</summary>
+          <div class="collapsible-content">
+            <p><strong>Avoid these (red flags):</strong></p>
+            <ul>
+              <li>"I'm not sure" repeated too often → lack of confidence</li>
+              <li>"I'll just memorize it" → no depth</li>
+              <li>"That's too hard" → gives up easily</li>
+            </ul>
+
+            <p><strong>Use these (confidence builders):</strong></p>
+            <ul>
+              <li>"Let me think through this step-by-step..."</li>
+              <li>"There's a trade-off here between speed and area..."</li>
+              <li>"This relates to CDC concerns..." (shows deep knowledge)</li>
+              <li>"In production, we'd also consider XYZ tool flow..."</li>
+              <li>"Let me draw that out to clarify..."</li>
+            </ul>
+          </div>
+        </details>
+
+        <h2>Post-Interview Checklist</h2>
+
+        <div class="interview-qa">
+          <strong>After you solve a problem, verify:</strong>
+          <div class="answer-text">
+            <ul>
+              <li>✅ Functional correctness: Does design meet spec?</li>
+              <li>✅ Timing: Can it meet target frequency?</li>
+              <li>✅ Area efficiency: Is SRAM/logic sized appropriately?</li>
+              <li>✅ Edge cases: Empty, full, overflow, underflow, simultaneous operations?</li>
+              <li>✅ CDC safety: Any clock domain crossings handled correctly?</li>
+              <li>✅ Testability: How would you verify this in simulation/post-silicon?</li>
+              <li>✅ Clear communication: Did you explain rationale, not just code?</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="quiz">
+          <h3>Self-Check Quiz</h3>
+          <div class="quiz-question">
+            <p><strong>Q1:</strong> When designing an async FIFO, why convert pointers to Gray code?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">Gray code ensures only one bit changes at a time during pointer increment. When synchronizing pointers across clock domains, if only one bit is in flight, metastability risk is limited to that one bit. Binary counters can have multiple bits changing, increasing CDC hazard.</p>
+          </div>
+          <div class="quiz-question">
+            <p><strong>Q2:</strong> What would you mention to show you understand practical design work?</p>
+            <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+            <p class="answer" style="display:none;">Mention tools/flows: synthesis, P&R, timing closure, formal verification, design reviews, lint checking, or post-silicon validation. Also reference realistic constraints: power budgets, area targets, design complexity, NRE cost.</p>
+          </div>
+        </div>
+
+        <section class="key-takeaways">
+          <h3>Key Takeaways</h3>
+          <ul>
+            <li><strong>Problem-solving:</strong> Clarify → decompose → architect → implement → verify</li>
+            <li><strong>Communication:</strong> Draw diagrams, explain rationale, discuss trade-offs</li>
+            <li><strong>Edge cases:</strong> Empty/full, simultaneous access, boundary conditions matter</li>
+            <li><strong>Depth signals confidence:</strong> Mention tools, flows, CDC concerns, verification strategies</li>
+            <li><strong>Post-problem checklist:</strong> Verify correctness, timing, area, CDC, testability</li>
+          </ul>
+        </section>
+
+        <div class="nav-buttons">
+          <button onclick="previousChapter()">← Previous</button>
+          <button onclick="nextChapter()" disabled>Next →</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const chapters = [
+      'chapter-0', 'chapter-1', 'chapter-2', 'chapter-3', 'chapter-4'
+    ];
+    let currentChapter = 0;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      showChapter(0);
+      updateProgress();
+    });
+
+    function showChapter(index) {
+      chapters.forEach((ch, i) => {
+        const el = document.getElementById(ch);
+        if (i === index) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+      currentChapter = index;
+      updateProgress();
+      window.scrollTo(0, 0);
+    }
+
+    function goToChapter(index) {
+      showChapter(index);
+    }
+
+    function nextChapter() {
+      if (currentChapter < chapters.length - 1) {
+        showChapter(currentChapter + 1);
+      }
+    }
+
+    function previousChapter() {
+      if (currentChapter > 0) {
+        showChapter(currentChapter - 1);
+      }
+    }
+
+    function updateProgress() {
+      const progress = ((currentChapter) / (chapters.length - 1)) * 100;
+      document.getElementById('progressFill').style.width = progress + '%';
+      document.getElementById('chapterCount').textContent = currentChapter + '/' + (chapters.length - 1);
+    }
+
+    function toggleAnswer(btn) {
+      const answer = btn.nextElementSibling;
+      if (answer.style.display === 'none') {
+        answer.style.display = 'block';
+        btn.textContent = 'Hide Answer';
+      } else {
+        answer.style.display = 'none';
+        btn.textContent = 'Reveal Answer';
+      }
+    }
+
+    function copyCode(btn) {
+      const codeBlock = btn.closest('.code-block').querySelector('code');
+      const text = codeBlock.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowRight') nextChapter();
+      if (e.key === 'ArrowLeft') previousChapter();
+    });
+  </script>
+</body>
+</html>
