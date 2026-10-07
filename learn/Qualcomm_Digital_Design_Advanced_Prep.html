@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Digital Design Interview Prep - Qualcomm</title>
+    <style>
+        :root {
+            --qc-red: #d32f2f;
+            --qc-blue: #005eb8;
+            --qc-dark: #121c2d;
+            --light-bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #555555;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        header {
+            background: linear-gradient(135deg, var(--qc-dark), #1a2a42);
+            color: white;
+            padding: 3rem 1rem;
+            text-align: center;
+            border-bottom: 4px solid var(--qc-blue);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            letter-spacing: 1px;
+        }
+        header p {
+            margin-top: 0.75rem;
+            font-size: 1.2rem;
+            color: #b0c4de;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .section-title {
+            color: var(--qc-dark);
+            font-size: 1.8rem;
+            border-bottom: 2px solid #e1e4e8;
+            padding-bottom: 0.5rem;
+            margin-top: 3rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        .qa-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 4px solid var(--qc-blue);
+            transition: all 0.3s ease;
+        }
+        .qa-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .question {
+            font-weight: 600;
+            font-size: 1.15rem;
+            color: var(--qc-dark);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .question::after {
+            content: '+';
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--qc-blue);
+            transition: transform 0.3s;
+        }
+        .qa-card.active .question::after {
+            content: '−';
+            transform: rotate(180deg);
+        }
+        .answer {
+            display: none;
+            color: var(--text-muted);
+            border-top: 1px solid #f0f0f0;
+            padding-top: 1.2rem;
+            margin-top: 1rem;
+            font-size: 1.05rem;
+        }
+        .qa-card.active .answer {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+        .tags {
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .tag {
+            display: inline-block;
+            background: #e6f0fa;
+            color: var(--qc-blue);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            margin-right: 0.5rem;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Advanced Digital Design Prep</h1>
+    <p>Targeted Core Logic & Timing Concepts for Qualcomm</p>
+</header>
+
+<div class="container">
+
+    <h2 class="section-title">⏱️ Clock Domain Crossing (CDC) & Synchronization</h2>
+    
+    <div class="qa-card">
+        <div class="question">How do you synchronize a pulse generated in a 10 MHz clock domain into a 1 MHz clock domain without data loss?</div>
+        <div class="answer">
+            <div class="tags"><span class="tag">CDC</span><span class="tag">Fast-to-Slow</span><span class="tag">Pulse Extender</span></div>
+            <p>Because the source clock operates at 10 MHz and the destination clock at 1 MHz, a standard 2-flop synchronizer will fail to capture the fast pulse. The correct technique is to use a <strong>toggle synchronizer (pulse extender)</strong>:</p>
+            <ol>
+                <li>The fast pulse toggles a register in the 10 MHz domain, converting the single-cycle pulse into a stable level signal.</li>
+                <li>This level signal is safely passed through a 2-flop synchronizer in the 1 MHz domain.</li>
+                <li>An edge detector in the 1 MHz domain compares the current synchronized value with its previous state to convert the level transition back into a single clock pulse.</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="qa-card">
+        <div class="question">What is Mean Time Between Failures (MTBF) in synchronizer design, and why are 3-flop synchronizers rarely needed?</div>
+        <div class="answer">
+            <div class="tags"><span class="tag">MTBF</span><span class="tag">Metastability</span></div>
+            <p><strong>MTBF</strong> quantifies how often a synchronizer allows a metastable signal to propagate into the destination domain. When a flip-flop goes metastable, it has a specific <em>resolution time</em> (roughly the clock period minus the clock-to-Q and setup time) to settle before the next clock edge.</p>
+            <p>Because metastability resolution improves exponentially with time, a standard 2-flop synchronizer on a modern 7nm process running at 1 GHz provides enough resolution time (around 500ps) to achieve a safe MTBF (often spanning decades or centuries). A 3-flop synchronizer adds latency and is generally only required for exceptionally high clock frequencies where a single cycle does not provide adequate physical time for the silicon to settle.</p>
+        </div>
+    </div>
+
+    <h2 class="section-title">📏 Timing & Static Timing Analysis (STA)</h2>
+
+    <div class="qa-card">
+        <div class="question">After place-and-route, a single critical path exhibits both a setup and a hold violation. How is this resolved?</div>
+        <div class="answer">
+            <div class="tags"><span class="tag">STA</span><span class="tag">Setup/Hold</span><span class="tag">Clock Skew</span></div>
+            <p>A simultaneous setup and hold violation on the exact same path indicates that the combinational delay window is too narrow—the data arrives fast enough to violate hold time, but the overall logic depth prevents it from meeting setup time.</p>
+            <p><strong>Resolution involves:</strong></p>
+            <ul>
+                <li><strong>Clock Skew Injection:</strong> Adjusting the clock routing by intentionally injecting clock skew. Delaying the launch clock aids the setup time, while delaying the capture clock aids the hold time.</li>
+                <li><strong>Logic Restructuring:</strong> Restructure the combinational logic to reduce the maximum depth for setup compliance, while simultaneously inserting delay buffers (padding) immediately before the capture flip-flop to fix the hold violation.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="qa-card">
+        <div class="question">Differentiate between false paths and multi-cycle paths in SDC constraints.</div>
+        <div class="answer">
+            <div class="tags"><span class="tag">SDC</span><span class="tag">False Path</span><span class="tag">Multi-Cycle Path</span></div>
+            <p><strong>False Path:</strong> Instructs the timing analyzer to ignore a specific path entirely. It is commonly used for static test-mode logic, completely asynchronous clock domain crossings, or reset synchronizers where single-cycle timing is not functionally critical.</p>
+            <p><strong>Multi-Cycle Path (MCP):</strong> Relaxes the timing requirement by allowing the data more than one clock cycle to propagate between the launch and capture registers. This is typical in complex arithmetic operations (like multipliers or deep adders) where the logic depth cannot execute in a single cycle, but the architecture guarantees the capture register won't sample the data until multiple cycles have passed.</p>
+        </div>
+    </div>
+
+    <h2 class="section-title">⚡ Clocking & Power Architecture</h2>
+
+    <div class="qa-card">
+        <div class="question">Why is a simple AND gate insufficient for clock gating, and how does an Integrated Clock Gating (ICG) cell solve the problem?</div>
+        <div class="answer">
+            <div class="tags"><span class="tag">Low Power</span><span class="tag">ICG</span><span class="tag">Clock Gating</span></div>
+            <p>A simple combinational AND gate causes dangerous clock glitches if the enable signal transitions while the clock is in the high state. Since the clock network can account for 30–40% of the total dynamic power in an SoC, gating is required, but it must be glitch-free.</p>
+            <p>An <strong>ICG cell</strong> prevents glitches by placing a low-level transparent latch before the AND gate. This latch captures and holds the enable signal steady while the clock is high, ensuring that the clock is only gated or ungated while it is safely in the low phase.</p>
+        </div>
+    </div>
+
+    <div class="qa-card">
+        <div class="question">How do you design a glitch-free clock multiplexer for two asynchronous clocks?</div>
+        <div class="answer">
+            <div class="tags"><span class="tag">Clock Mux</span><span class="tag">Glitch-Free</span></div>
+            <p>A standard multiplexer produces truncated or merged clock pulses when the select line toggles asynchronously to the clocks. A glitch-free multiplexer requires:</p>
+            <ol>
+                <li><strong>Synchronization:</strong> Synchronizing the select signal independently into both clock domains using 2-flop synchronizers.</li>
+                <li><strong>Feedback / Handshaking:</strong> Cross-coupled feedback between the two selection paths to ensure the currently active clock is entirely gated off before the new clock is enabled.</li>
+                <li><strong>Negative-Edge Flops:</strong> Negative-edge triggered flip-flops are utilized in the final gating stage to ensure the clock is cut only during its low phase, completely preventing glitches.</li>
+            </ol>
+        </div>
+    </div>
+
+    <h2 class="section-title">🛠️ RTL Synthesis & Microarchitecture</h2>
+
+    <div class="qa-card">
+        <div class="question">What is the danger of using full_case and parallel_case directives during synthesis?</div>
+        <div class="answer">
+            <div class="tags"><span class="tag">Synthesis</span><span class="tag">Verilog Pragmas</span></div>
+            <p><code>full_case</code> forces the synthesis tool to treat unspecified state transitions as "don't cares" to avoid latch inference, while <code>parallel_case</code> forces the tool to build a mutually exclusive multiplexer rather than a priority encoder.</p>
+            <p>The danger lies in <strong>simulation-synthesis mismatch</strong>. Because these are pragmas (comments), the simulator ignores them. If an unhandled condition occurs, the simulation may latch the old value or evaluate to an unknown state, while the synthesized hardware evaluates to whatever arbitrary logic the tool heavily optimized. This hides critical functional bugs until gate-level simulation or post-silicon validation.</p>
+        </div>
+    </div>
+
+    <div class="qa-card">
+        <div class="question">Design a divide-by-3 clock divider with a 33% duty cycle.</div>
+        <div class="answer">
+            <div class="tags"><span class="tag">Clock Divider</span><span class="tag">FSM</span></div>
+            <p>A standard divide-by-3 circuit requires a 2-bit counter operating as a state machine with three states (e.g., <code>00</code>, <code>01</code>, <code>10</code>).</p>
+            <p>To achieve exactly a <strong>33% duty cycle</strong> using only positive-edge triggered flip-flops, the output logic must be asserted high for only one of the three states (e.g., <code>00</code>) and held low for the remaining two states (<code>01</code> and <code>10</code>). This naturally yields a waveform that is high for one clock period and low for two clock periods.</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.querySelectorAll('.qa-card').forEach(card => {
+        card.querySelector('.question').addEventListener('click', () => {
+            card.classList.toggle('active');
+        });
+    });
+</script>
+
+</body>
+</html>

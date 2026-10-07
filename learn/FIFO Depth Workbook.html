@@ -1,0 +1,255 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>FIFO Depth Workbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Kalam:wght@300;400;700&family=Courier+Prime:wght@400;700&display=swap">
+<style>
+:root{
+  --paper:#fcfcf7; --rule:#cfe0f0; --margin:#eaa4a4;
+  --ink:#1d3a8a; --pencil:#2a2a2a; --red:#c2331f; --green:#1d7a4a;
+  --hl:rgba(255,226,70,.6); --hl2:rgba(120,210,255,.4);
+  --note:#fff3a8; --note-ink:#4a3b00; --shadow:rgba(0,0,0,.12);
+  --code-bg:rgba(29,58,138,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#1b2030; --rule:#2a3452; --margin:#6a3440;
+    --ink:#bcd3ff; --pencil:#e4e4e4; --red:#ff8f7e; --green:#7ee0a8;
+    --hl:rgba(255,214,0,.28); --hl2:rgba(90,190,255,.25);
+    --note:#4a4420; --note-ink:#fff1a0; --shadow:rgba(0,0,0,.4);
+    --code-bg:rgba(188,211,255,.06);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#1b2030; --rule:#2a3452; --margin:#6a3440;
+  --ink:#bcd3ff; --pencil:#e4e4e4; --red:#ff8f7e; --green:#7ee0a8;
+  --hl:rgba(255,214,0,.28); --hl2:rgba(90,190,255,.25);
+  --note:#4a4420; --note-ink:#fff1a0; --shadow:rgba(0,0,0,.4);
+  --code-bg:rgba(188,211,255,.06);
+}
+html,body{background:var(--paper)}
+body{
+  font-family:"Kalam","Comic Neue","Segoe Print",cursive;
+  color:var(--ink); font-size:19px; line-height:32px; font-weight:400;
+  padding-inline:16px; padding-block:0 48px;
+}
+.sheet{
+  max-width:860px; margin:0 auto; position:relative;
+  background-image:repeating-linear-gradient(to bottom, transparent 0, transparent 31px, var(--rule) 31px, var(--rule) 32px);
+  background-position:0 8px;
+  padding:40px 20px 40px 76px;
+}
+.sheet::before{content:"";position:absolute;top:0;bottom:0;left:56px;width:2px;background:var(--margin)}
+h1,h2{font-family:"Caveat","Segoe Print",cursive;font-weight:700;margin:0;text-wrap:balance}
+h1{font-size:54px;line-height:64px;color:var(--pencil);transform:rotate(-1deg);transform-origin:left}
+h1 .u{background:linear-gradient(transparent 60%, var(--hl) 60%)}
+.meta{font-family:"Caveat",cursive;font-size:22px;color:var(--red);margin:0 0 32px}
+h2{font-size:34px;line-height:64px;color:var(--pencil);margin-top:32px;display:flex;gap:10px;align-items:baseline}
+h2 .n{font-size:26px;color:var(--red);border:2px solid var(--red);border-radius:50%;width:38px;height:38px;display:inline-grid;place-items:center;line-height:1;flex:none;transform:rotate(-6deg)}
+p{margin:0 0 32px;max-width:66ch}
+ul{margin:0 0 32px;padding-left:22px;max-width:66ch}
+li{margin:0}
+li::marker{content:"→  ";color:var(--red)}
+.hl{background:linear-gradient(transparent 55%, var(--hl) 55%);padding:0 2px}
+.hb{background:linear-gradient(transparent 55%, var(--hl2) 55%);padding:0 2px}
+.red{color:var(--red)} .grn{color:var(--green)}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 8px}
+.pencil{color:var(--pencil)}
+.fig{overflow-x:auto;margin:8px 0 32px}
+.fig svg{display:block;min-width:620px;width:100%;height:auto}
+.fig svg text{font-family:"Caveat","Segoe Print",cursive}
+.cap{font-family:"Caveat",cursive;font-size:21px;color:var(--red);margin:-24px 0 32px;transform:rotate(-.5deg)}
+.math{font-family:"Kalam",cursive;padding:0 0 0 18px;border-left:3px solid var(--hl2);margin:0 0 32px;max-width:60ch}
+.math div{white-space:nowrap;overflow-x:auto}
+pre{
+  font-family:"Courier Prime","Courier New",monospace;font-size:15px;line-height:24px;
+  color:var(--pencil);background:var(--code-bg);border:1.5px dashed var(--ink);
+  border-radius:6px 14px 8px 12px;padding:16px 18px;margin:0 0 32px;overflow-x:auto;
+}
+pre .c{color:var(--red);font-style:italic}
+pre .k{color:var(--ink);font-weight:700}
+.sticky{
+  background:var(--note);color:var(--note-ink);padding:18px 22px 22px;margin:8px 0 40px;
+  max-width:560px;transform:rotate(1.2deg);box-shadow:3px 6px 14px var(--shadow);
+  font-size:18px;line-height:28px;
+}
+.sticky h3{font-family:"Caveat",cursive;font-size:30px;margin:0 0 6px;font-weight:700}
+.sticky ul{margin:0;padding-left:20px}
+.sticky li::marker{content:"✗  ";color:var(--note-ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+.two p{margin:0}
+.box{border:2px solid var(--pencil);border-radius:14px 6px 16px 8px;padding:10px 16px}
+.box b{font-family:"Caveat",cursive;font-size:26px;color:var(--red)}
+@media (max-width:620px){
+  .sheet{padding:32px 4px 32px 34px}
+  .sheet::before{left:20px}
+  h1{font-size:42px;line-height:48px}
+  .two{grid-template-columns:1fr}
+  body{font-size:18px}
+}
+.gt{border-collapse:collapse;font-size:18px;margin:0 0 32px;font-variant-numeric:tabular-nums}
+.gt th,.gt td{border:1.5px solid var(--pencil);padding:0 14px;text-align:center;line-height:30px}
+.gt th{font-family:"Caveat",cursive;font-size:22px;color:var(--red)}
+.gt td.g{font-family:"Courier Prime",monospace;font-size:16px}
+.gt tr.pair td{background:var(--hl)}
+.gtw{overflow-x:auto}
+.qa{margin:0 0 28px;max-width:70ch}
+.qa .q{color:var(--red);font-weight:700;margin:0}
+.qa .q b{font-family:"Caveat",cursive;font-size:26px;margin-right:6px}
+.qa .a{margin:0;padding-left:30px;color:var(--ink)}
+.qa .a b.al{font-family:"Caveat",cursive;font-size:26px;color:var(--green);margin-left:-30px;margin-right:8px}
+code{font-family:"Courier Prime","Courier New",monospace;font-size:.88em}
+.case{margin:0 0 36px}
+.case .q{margin:0}
+.given{font-size:18px;color:var(--pencil);margin:0 0 8px}
+.given b{color:var(--red)}
+.ans{font-family:"Caveat",cursive;font-size:30px;color:var(--green);margin:0 0 8px}
+.ans span{border:2px solid var(--green);border-radius:40% 45% 42% 48%;padding:0 12px}
+</style>
+
+<div class="sheet">
+  <h1>FIFO <span class="u">depth calculation</span></h1>
+  <p class="meta">notes · worked cases, interview style · 27 Sep 2026</p>
+
+  <h2><span class="n">1</span>The one idea</h2>
+  <p>A FIFO only has to hold what the reader <b>can't drain during the worst burst</b>.</p>
+  <p class="math"><code>depth = B − ⌊ B × (R<sub>rd</sub> / R<sub>wr</sub>) ⌋</code></p>
+  <ul>
+    <li><b>B</b> = burst length (words written back to back, worst case)</li>
+    <li><b>R<sub>wr</sub></b> = f<sub>wclk</sub> × (fraction of cycles that write)</li>
+    <li><b>R<sub>rd</sub></b> = f<sub>rclk</sub> × (fraction of cycles that read)</li>
+    <li>floor the reads: a half-finished read hasn't freed a slot</li>
+  </ul>
+  <p><span class="red">Sanity check first:</span> long-term average write rate must be ≤ read rate. If not, <span class="circ">no finite depth</span> works; you need back-pressure.</p>
+
+  <div class="fig">
+  <svg viewBox="0 0 760 310" role="img" aria-label="FIFO occupancy versus time: level rises at write minus read rate during the burst, peaks at 45 words at 1500 ns, then drains to zero by 2400 ns.">
+    <defs>
+      <filter id="wob" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="9"/>
+        <feDisplacementMap in="SourceGraphic" scale="3"/>
+      </filter>
+      <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M1 1 L9 5 L1 9" fill="none" stroke="var(--pencil)" stroke-width="1.6" stroke-linecap="round"/>
+      </marker>
+    </defs>
+    <g filter="url(#wob)">
+      <path d="M70 250 L420 70 L630 250 Z" fill="var(--hl)" stroke="none"/>
+      <path d="M70 262 L70 30" stroke="var(--pencil)" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+      <path d="M58 250 L720 250" stroke="var(--pencil)" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+      <path d="M70 250 L420 70" stroke="var(--ink)" stroke-width="3" fill="none"/>
+      <path d="M420 70 L630 250" stroke="var(--red)" stroke-width="3" fill="none"/>
+      <path d="M70 70 L412 70" stroke="var(--pencil)" stroke-width="1.2" stroke-dasharray="6 6" fill="none"/>
+      <path d="M420 78 L420 250" stroke="var(--pencil)" stroke-width="1.2" stroke-dasharray="6 6" fill="none"/>
+    </g>
+    <text x="60" y="76" font-size="20" text-anchor="end" fill="var(--pencil)">45</text>
+    <text x="60" y="256" font-size="20" text-anchor="end" fill="var(--pencil)">0</text>
+    <text x="80" y="36" font-size="21" fill="var(--pencil)">words in FIFO</text>
+    <text x="712" y="280" font-size="21" text-anchor="end" fill="var(--pencil)">time</text>
+    <text x="420" y="276" font-size="19" text-anchor="middle" fill="var(--pencil)">1500 ns</text>
+    <text x="630" y="276" font-size="19" text-anchor="middle" fill="var(--pencil)">2400 ns</text>
+    <text x="420" y="56" font-size="24" text-anchor="middle" fill="var(--red)">peak = depth = 45</text>
+    <text x="290" y="186" font-size="21" fill="var(--ink)">fills at R<tspan font-size="15" dy="4">wr</tspan><tspan dy="-4"> − R</tspan><tspan font-size="15" dy="4">rd</tspan></text>
+    <text x="290" y="210" font-size="18" fill="var(--pencil)">80 − 50 = 30 M words/s</text>
+    <text x="540" y="140" font-size="21" fill="var(--red)">drains at R<tspan font-size="15" dy="4">rd</tspan></text>
+    <text x="150" y="238" font-size="19" fill="var(--pencil)">burst of 120 writes</text>
+  </svg>
+  </div>
+  <p class="cap">case 1 drawn out: the peak of this triangle is the depth you need</p>
+
+  <h2><span class="n">2</span>The standard cases</h2>
+
+  <div class="case">
+    <p class="q red"><b>Case 1</b> · f<sub>W</sub> &gt; f<sub>R</sub>, no idle cycles</p>
+    <p class="given">given: <b>f<sub>W</sub> = 80 MHz</b>, <b>f<sub>R</sub> = 50 MHz</b>, <b>B = 120</b></p>
+    <div class="math">
+      <div>write time = 120 × 12.5 ns = 1500 ns</div>
+      <div>reads in 1500 ns = 1500 / 20 = 75</div>
+      <div>depth = 120 − 75</div>
+    </div>
+    <p class="ans">→ <span>45</span></p>
+  </div>
+
+  <div class="case">
+    <p class="q red"><b>Case 2</b> · f<sub>W</sub> &gt; f<sub>R</sub>, both sides have idle cycles</p>
+    <p class="given">given: f<sub>W</sub> = 80 MHz, <b>1 idle</b> between writes; f<sub>R</sub> = 50 MHz, <b>3 idle</b> between reads; B = 120</p>
+    <div class="math">
+      <div>1 write every 2 clk → 25 ns per word</div>
+      <div>write time = 120 × 25 = 3000 ns</div>
+      <div>1 read every 4 clk → 80 ns per word</div>
+      <div>reads = ⌊3000 / 80⌋ = ⌊37.5⌋ = 37</div>
+      <div>depth = 120 − 37</div>
+    </div>
+    <p class="ans">→ <span>83</span></p>
+  </div>
+
+  <div class="case">
+    <p class="q red"><b>Case 3</b> · f<sub>W</sub> &lt; f<sub>R</sub>, no idle cycles</p>
+    <p class="given">given: f<sub>W</sub> = 50 MHz, f<sub>R</sub> = 80 MHz</p>
+    <p>Reader is always faster. Nothing piles up. Depth <b>1</b> in theory. An async FIFO still needs a few entries for pointer-sync latency, so use <b>2–4</b>.</p>
+  </div>
+
+  <div class="case">
+    <p class="q red"><b>Case 4</b> · f<sub>W</sub> &lt; f<sub>R</sub>, but the reader is slow because of idle cycles</p>
+    <p class="given">given: f<sub>W</sub> = 30 MHz, no idle; f<sub>R</sub> = 50 MHz, reads <b>1 in 4</b> cycles; B = 120</p>
+    <div class="math">
+      <div>write time = 120 × 33.33 ns = 4000 ns</div>
+      <div>1 read per 80 ns → reads = 4000 / 80 = 50</div>
+      <div>depth = 120 − 50</div>
+    </div>
+    <p class="ans">→ <span>70</span></p>
+    <p class="pencil">Lesson: compare <b>rates</b> (words/s), not clock frequencies.</p>
+  </div>
+
+  <div class="case">
+    <p class="q red"><b>Case 5</b> · same frequency, no idle</p>
+    <p>R<sub>wr</sub> = R<sub>rd</sub>. Depth <b>1</b> for a sync FIFO (or none, just a register). If the clocks are async, the phases differ, so still use an async FIFO of ~<b>4</b> for the sync delay.</p>
+  </div>
+
+  <div class="case">
+    <p class="q red"><b>Case 6</b> · duty-cycle spec (the favourite trap)</p>
+    <p class="given">given: both 100 MHz · writer: <b>80 writes in any 100 clk</b> · reader: <b>8 reads in any 10 clk</b></p>
+    <div class="math">
+      <div>worst burst: last 80 of window 1 + first 80 of window 2</div>
+      <div>→ <span class="hl">B = 160</span> writes in 160 clk</div>
+      <div>reads in 160 clk = 160 × 8/10 = 128</div>
+      <div>depth = 160 − 128</div>
+    </div>
+    <p class="ans">→ <span>32</span></p>
+    <p class="pencil">Most people answer 16 (80 − 64) by using one window. The back-to-back case is the real worst case.</p>
+  </div>
+
+  <div class="case">
+    <p class="q red"><b>Case 7</b> · trick question</p>
+    <p class="given">given: f<sub>W</sub> = 100 MHz, 80 writes in any 100 clk · f<sub>R</sub> = 50 MHz, reads every clk</p>
+    <div class="math">
+      <div>average write rate = 100 × 0.8 = 80 M words/s</div>
+      <div>average read rate = 50 × 1 = 50 M words/s</div>
+      <div>80 &gt; 50 → the FIFO fills forever</div>
+    </div>
+    <p class="ans">→ <span>no finite depth</span></p>
+    <p class="pencil">Say this out loud in the interview. Then offer: throttle the writer with full / almost-full back-pressure.</p>
+  </div>
+
+  <h2><span class="n">3</span>Finish the answer</h2>
+  <ul>
+    <li><b>Async FIFO:</b> add ~2–4 entries. The full flag clears 2–3 cycles late (pointer sync), and without slack the writer stalls.</li>
+    <li><b>Round up to a power of 2</b> so the gray-code pointers wrap cleanly (45 → 64, 83 → 128, 70 → 128, 32 → 32 + margin → 64).</li>
+    <li>Using almost-full for back-pressure? Add the <b>round-trip latency</b> (writer's reaction time × write rate) above the threshold.</li>
+  </ul>
+
+  <div class="sticky">
+    <h3>Interview checklist</h3>
+    <ul>
+      <li>Ask: burst length? idle cycles on each side? clocks related?</li>
+      <li>Check average rates first (case 7)</li>
+      <li>Find the worst back-to-back burst (case 6)</li>
+      <li>Convert everything to words per second, then subtract</li>
+      <li>Floor the reads, add sync margin, round to 2<sup>n</sup></li>
+    </ul>
+  </div>
+</div>
+
+</body></html>

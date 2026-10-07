@@ -1,0 +1,307 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Elastic Buffer Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Kalam:wght@300;400;700&family=Courier+Prime:wght@400;700&display=swap">
+<style>
+:root{
+  --paper:#fcfcf7; --rule:#cfe0f0; --margin:#eaa4a4;
+  --ink:#1d3a8a; --pencil:#2a2a2a; --red:#c2331f; --green:#1d7a4a;
+  --hl:rgba(255,226,70,.6); --hl2:rgba(120,210,255,.4);
+  --note:#fff3a8; --note-ink:#4a3b00; --shadow:rgba(0,0,0,.12);
+  --code-bg:rgba(29,58,138,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#1b2030; --rule:#2a3452; --margin:#6a3440;
+    --ink:#bcd3ff; --pencil:#e4e4e4; --red:#ff8f7e; --green:#7ee0a8;
+    --hl:rgba(255,214,0,.28); --hl2:rgba(90,190,255,.25);
+    --note:#4a4420; --note-ink:#fff1a0; --shadow:rgba(0,0,0,.4);
+    --code-bg:rgba(188,211,255,.06);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#1b2030; --rule:#2a3452; --margin:#6a3440;
+  --ink:#bcd3ff; --pencil:#e4e4e4; --red:#ff8f7e; --green:#7ee0a8;
+  --hl:rgba(255,214,0,.28); --hl2:rgba(90,190,255,.25);
+  --note:#4a4420; --note-ink:#fff1a0; --shadow:rgba(0,0,0,.4);
+  --code-bg:rgba(188,211,255,.06);
+}
+html,body{background:var(--paper)}
+body{
+  font-family:"Kalam","Comic Neue","Segoe Print",cursive;
+  color:var(--ink); font-size:19px; line-height:32px; font-weight:400;
+  padding-inline:16px; padding-block:0 48px;
+}
+.sheet{
+  max-width:860px; margin:0 auto; position:relative;
+  background-image:repeating-linear-gradient(to bottom, transparent 0, transparent 31px, var(--rule) 31px, var(--rule) 32px);
+  background-position:0 8px;
+  padding:40px 20px 40px 76px;
+}
+.sheet::before{content:"";position:absolute;top:0;bottom:0;left:56px;width:2px;background:var(--margin)}
+h1,h2{font-family:"Caveat","Segoe Print",cursive;font-weight:700;margin:0;text-wrap:balance}
+h1{font-size:54px;line-height:64px;color:var(--pencil);transform:rotate(-1deg);transform-origin:left}
+h1 .u{background:linear-gradient(transparent 60%, var(--hl) 60%)}
+.meta{font-family:"Caveat",cursive;font-size:22px;color:var(--red);margin:0 0 32px}
+h2{font-size:34px;line-height:64px;color:var(--pencil);margin-top:32px;display:flex;gap:10px;align-items:baseline}
+h2 .n{font-size:26px;color:var(--red);border:2px solid var(--red);border-radius:50%;width:38px;height:38px;display:inline-grid;place-items:center;line-height:1;flex:none;transform:rotate(-6deg)}
+p{margin:0 0 32px;max-width:66ch}
+ul{margin:0 0 32px;padding-left:22px;max-width:66ch}
+li{margin:0}
+li::marker{content:"→  ";color:var(--red)}
+.hl{background:linear-gradient(transparent 55%, var(--hl) 55%);padding:0 2px}
+.hb{background:linear-gradient(transparent 55%, var(--hl2) 55%);padding:0 2px}
+.red{color:var(--red)} .grn{color:var(--green)}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 8px}
+.pencil{color:var(--pencil)}
+.fig{overflow-x:auto;margin:8px 0 32px}
+.fig svg{display:block;min-width:620px;width:100%;height:auto}
+.fig svg text{font-family:"Caveat","Segoe Print",cursive}
+.cap{font-family:"Caveat",cursive;font-size:21px;color:var(--red);margin:-24px 0 32px;transform:rotate(-.5deg)}
+.math{font-family:"Kalam",cursive;padding:0 0 0 18px;border-left:3px solid var(--hl2);margin:0 0 32px;max-width:60ch}
+.math div{white-space:nowrap;overflow-x:auto}
+pre{
+  font-family:"Courier Prime","Courier New",monospace;font-size:15px;line-height:24px;
+  color:var(--pencil);background:var(--code-bg);border:1.5px dashed var(--ink);
+  border-radius:6px 14px 8px 12px;padding:16px 18px;margin:0 0 32px;overflow-x:auto;
+}
+pre .c{color:var(--red);font-style:italic}
+pre .k{color:var(--ink);font-weight:700}
+.sticky{
+  background:var(--note);color:var(--note-ink);padding:18px 22px 22px;margin:8px 0 40px;
+  max-width:560px;transform:rotate(1.2deg);box-shadow:3px 6px 14px var(--shadow);
+  font-size:18px;line-height:28px;
+}
+.sticky h3{font-family:"Caveat",cursive;font-size:30px;margin:0 0 6px;font-weight:700}
+.sticky ul{margin:0;padding-left:20px}
+.sticky li::marker{content:"✗  ";color:var(--note-ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+.two p{margin:0}
+.box{border:2px solid var(--pencil);border-radius:14px 6px 16px 8px;padding:10px 16px}
+.box b{font-family:"Caveat",cursive;font-size:26px;color:var(--red)}
+@media (max-width:620px){
+  .sheet{padding:32px 4px 32px 34px}
+  .sheet::before{left:20px}
+  h1{font-size:42px;line-height:48px}
+  .two{grid-template-columns:1fr}
+  body{font-size:18px}
+}
+</style>
+
+<div class="sheet">
+  <h1>The <span class="u">elastic buffer</span></h1>
+  <p class="meta">notes · CDC in serial links (PCIe / USB3 / SATA PHY) · 27 Sep 2026</p>
+
+  <h2><span class="n">1</span>The problem</h2>
+  <p>Transmitter and receiver run off <span class="hl">separate reference clocks</span>. CDR recovers the Tx clock (<b>rclk</b>) from the data, but the Rx core runs on its own local clock (<b>lclk</b>). Same nominal frequency, never exactly equal.</p>
+  <ul>
+    <li>PCIe allows <span class="circ">±300 ppm</span> per side → worst case <span class="hl">600 ppm</span> apart</li>
+    <li>600 ppm = one symbol slips every 1/600e-6 ≈ <b>1667 symbols</b></li>
+    <li>Plain async FIFO would drift → <span class="red">overflow</span> if rclk faster, <span class="red">underflow</span> if lclk faster</li>
+  </ul>
+  <p><span class="pencil">Fix:</span> protocol sends <span class="hb">SKP ordered sets</span> periodically. SKP symbols carry no data, so receiver may <b>add</b> or <b>drop</b> them to soak up the rate difference. The buffer "stretches" → <i>elastic</i>.</p>
+
+  <h2><span class="n">2</span>Block diagram</h2>
+  <div class="fig">
+  <svg viewBox="0 0 760 430" role="img" aria-label="Elastic buffer block diagram: write control in recovered clock domain, circular RAM, read control in local clock domain, gray-code pointer synchronizer and fill-level comparator.">
+    <defs>
+      <filter id="wob" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7"/>
+        <feDisplacementMap in="SourceGraphic" scale="3.2"/>
+      </filter>
+      <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M1 1 L9 5 L1 9" fill="none" stroke="var(--pencil)" stroke-width="1.6" stroke-linecap="round"/>
+      </marker>
+      <marker id="ahr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M1 1 L9 5 L1 9" fill="none" stroke="var(--red)" stroke-width="1.6" stroke-linecap="round"/>
+      </marker>
+    </defs>
+
+    <!-- domain split -->
+    <g filter="url(#wob)">
+      <path d="M380 20 L380 410" stroke="var(--red)" stroke-width="2" stroke-dasharray="10 8" fill="none"/>
+      <rect x="18" y="18" width="190" height="34" rx="6" fill="var(--hl)" stroke="none"/>
+      <rect x="552" y="18" width="190" height="34" rx="6" fill="var(--hl2)" stroke="none"/>
+    </g>
+    <text x="113" y="42" font-size="24" text-anchor="middle" fill="var(--pencil)">rclk domain (CDR)</text>
+    <text x="647" y="42" font-size="24" text-anchor="middle" fill="var(--pencil)">lclk domain (core)</text>
+
+    <!-- boxes -->
+    <g filter="url(#wob)" fill="none" stroke="var(--pencil)" stroke-width="2.2">
+      <rect x="30" y="90" width="170" height="80" rx="10"/>
+      <rect x="560" y="90" width="170" height="80" rx="10"/>
+      <rect x="30" y="270" width="170" height="80" rx="10"/>
+      <rect x="560" y="270" width="170" height="80" rx="10"/>
+      <circle cx="380" cy="150" r="72"/>
+      <circle cx="380" cy="150" r="40"/>
+      <path d="M380 78 L380 110 M431 99 L408 122 M452 150 L420 150 M431 201 L408 178 M380 222 L380 190 M329 201 L352 178 M308 150 L340 150 M329 99 L352 122"/>
+    </g>
+    <!-- fill level in RAM ring (half full) -->
+    <g filter="url(#wob)">
+      <path d="M380 78 A72 72 0 0 1 380 222 L380 190 A40 40 0 0 0 380 110 Z" fill="var(--hl)" stroke="none"/>
+    </g>
+
+    <text x="115" y="124" font-size="26" text-anchor="middle" fill="var(--ink)" font-weight="700">write ctrl</text>
+    <text x="115" y="152" font-size="20" text-anchor="middle" fill="var(--pencil)">wr_ptr++ , bin→gray</text>
+    <text x="645" y="124" font-size="26" text-anchor="middle" fill="var(--ink)" font-weight="700">read ctrl</text>
+    <text x="645" y="152" font-size="20" text-anchor="middle" fill="var(--pencil)">rd_ptr, add/drop SKP</text>
+    <text x="115" y="304" font-size="26" text-anchor="middle" fill="var(--ink)" font-weight="700">2-FF sync</text>
+    <text x="115" y="332" font-size="20" text-anchor="middle" fill="var(--pencil)">gray wr_ptr → lclk</text>
+    <text x="645" y="304" font-size="26" text-anchor="middle" fill="var(--ink)" font-weight="700">level compare</text>
+    <text x="645" y="332" font-size="20" text-anchor="middle" fill="var(--pencil)">wr − rd vs HI / LO</text>
+    <text x="380" y="245" font-size="22" text-anchor="middle" fill="var(--pencil)">circular RAM (N=8..16)</text>
+    <text x="380" y="266" font-size="19" text-anchor="middle" fill="var(--red)">start half-full</text>
+
+    <!-- arrows -->
+    <g filter="url(#wob)" fill="none" stroke="var(--pencil)" stroke-width="2">
+      <path d="M200 130 L306 138" marker-end="url(#ah)"/>
+      <path d="M454 138 L558 130" marker-end="url(#ah)"/>
+      <path d="M115 172 L115 268" marker-end="url(#ah)"/>
+      <path d="M200 310 L558 310" marker-end="url(#ah)"/>
+      <path d="M600 172 L600 268" marker-end="url(#ah)"/>
+    </g>
+    <g filter="url(#wob)" fill="none" stroke="var(--red)" stroke-width="2">
+      <path d="M690 268 L690 172" marker-end="url(#ahr)"/>
+    </g>
+    <text x="250" y="122" font-size="19" text-anchor="middle" fill="var(--pencil)">rx_data</text>
+    <text x="506" y="122" font-size="19" text-anchor="middle" fill="var(--pencil)">q</text>
+    <text x="125" y="222" font-size="19" fill="var(--pencil)">wr_ptr (gray)</text>
+    <text x="380" y="300" font-size="19" text-anchor="middle" fill="var(--pencil)">wr_ptr_sync</text>
+    <text x="560" y="222" font-size="19" text-anchor="end" fill="var(--pencil)">rd_ptr</text>
+    <text x="686" y="222" font-size="19" text-anchor="end" fill="var(--red)">add / drop</text>
+    <text x="380" y="395" font-size="22" text-anchor="middle" fill="var(--red)">only the gray pointer crosses the red line</text>
+  </svg>
+  </div>
+
+  <h2><span class="n">3</span>Why gray-coded pointers</h2>
+  <p>Gray code changes <span class="hl">exactly one bit</span> per increment. If the lclk flop samples mid-transition, it gets either the old or the new value. Never a garbage pointer. Binary 0111→1000 flips 4 bits, so a sampled value could be anything.</p>
+  <div class="two">
+    <p class="box"><b>bin→gray</b><br><code>g = b ^ (b &gt;&gt; 1)</code></p>
+    <p class="box"><b>gray→bin</b><br><code>b[i] = ^g[W-1:i]</code> (XOR from MSB down)</p>
+  </div>
+  <p>Pointers are <span class="pencil">one bit wider</span> than the address, so full vs empty can be told apart. Sync delay (2–3 lclk) means the read side sees a slightly stale level. That only costs margin, never correctness.</p>
+
+  <h2><span class="n">4</span>The add / drop rule</h2>
+  <p>In lclk: <span class="hb">level = wr_ptr_sync − rd_ptr</span>. Only act when a <b>SKP</b> is at the read head.</p>
+  <div class="fig">
+  <svg viewBox="0 0 760 290" role="img" aria-label="Symbol stream example: dropping a SKP when level is high, inserting a SKP when level is low.">
+    <defs>
+      <filter id="wob2" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="11"/>
+        <feDisplacementMap in="SourceGraphic" scale="2.6"/>
+      </filter>
+    </defs>
+    <text x="10" y="34" font-size="24" fill="var(--pencil)" font-weight="700">rclk fast → level &gt; HI → drop SKP</text>
+    <text x="10" y="164" font-size="24" fill="var(--pencil)" font-weight="700">lclk fast → level &lt; LO → insert SKP</text>
+
+    <g filter="url(#wob2)" fill="none" stroke="var(--pencil)" stroke-width="2">
+      <rect x="20"  y="50" width="56" height="40" rx="4"/>
+      <rect x="84"  y="50" width="56" height="40" rx="4"/>
+      <rect x="148" y="50" width="56" height="40" rx="4"/>
+      <rect x="212" y="50" width="56" height="40" rx="4"/>
+      <rect x="276" y="50" width="56" height="40" rx="4"/>
+      <rect x="430" y="50" width="56" height="40" rx="4"/>
+      <rect x="494" y="50" width="56" height="40" rx="4"/>
+      <rect x="558" y="50" width="56" height="40" rx="4"/>
+      <rect x="622" y="50" width="56" height="40" rx="4"/>
+      <path d="M346 70 L412 70" stroke-width="2.4"/>
+      <path d="M402 62 L414 70 L402 78"/>
+
+      <rect x="20"  y="180" width="56" height="40" rx="4"/>
+      <rect x="84"  y="180" width="56" height="40" rx="4"/>
+      <rect x="148" y="180" width="56" height="40" rx="4"/>
+      <rect x="212" y="180" width="56" height="40" rx="4"/>
+      <rect x="276" y="180" width="56" height="40" rx="4"/>
+      <rect x="430" y="180" width="50" height="40" rx="4"/>
+      <rect x="484" y="180" width="50" height="40" rx="4"/>
+      <rect x="538" y="180" width="50" height="40" rx="4"/>
+      <rect x="592" y="180" width="50" height="40" rx="4"/>
+      <rect x="646" y="180" width="50" height="40" rx="4"/>
+      <rect x="700" y="180" width="50" height="40" rx="4"/>
+      <path d="M346 200 L412 200" stroke-width="2.4"/>
+      <path d="M402 192 L414 200 L402 208"/>
+    </g>
+    <g filter="url(#wob2)">
+      <rect x="150" y="52" width="52" height="36" fill="var(--hl2)"/>
+      <rect x="214" y="52" width="52" height="36" fill="var(--hl2)"/>
+      <rect x="558" y="52" width="56" height="40" fill="var(--hl2)"/>
+      <path d="M216 54 L264 88 M264 54 L216 88" stroke="var(--red)" stroke-width="3" fill="none"/>
+      <rect x="150" y="182" width="52" height="36" fill="var(--hl2)"/>
+      <rect x="214" y="182" width="52" height="36" fill="var(--hl2)"/>
+      <rect x="538" y="182" width="50" height="40" fill="var(--hl2)"/>
+      <rect x="592" y="182" width="50" height="40" fill="var(--hl2)"/>
+      <rect x="646" y="182" width="50" height="40" fill="var(--hl)"/>
+    </g>
+    <g font-size="22" text-anchor="middle" fill="var(--ink)">
+      <text x="48" y="77">D0</text><text x="112" y="77">COM</text><text x="176" y="77">SKP</text><text x="240" y="77">SKP</text><text x="304" y="77">D1</text>
+      <text x="458" y="77">D0</text><text x="522" y="77">COM</text><text x="586" y="77">SKP</text><text x="650" y="77">D1</text>
+      <text x="48" y="207">D0</text><text x="112" y="207">COM</text><text x="176" y="207">SKP</text><text x="240" y="207">SKP</text><text x="304" y="207">D1</text>
+      <text x="455" y="207">D0</text><text x="509" y="207">COM</text><text x="563" y="207">SKP</text><text x="617" y="207">SKP</text><text x="671" y="207">SKP</text><text x="725" y="207">D1</text>
+    </g>
+    <text x="176" y="118" font-size="19" text-anchor="middle" fill="var(--pencil)">in (rclk)</text>
+    <text x="554" y="118" font-size="19" text-anchor="middle" fill="var(--pencil)">out (lclk): rd_ptr += 2</text>
+    <text x="176" y="248" font-size="19" text-anchor="middle" fill="var(--pencil)">in (rclk)</text>
+    <text x="590" y="248" font-size="19" text-anchor="middle" fill="var(--pencil)">out (lclk): rd_ptr held, SKP repeated</text>
+    <text x="380" y="282" font-size="20" text-anchor="middle" fill="var(--red)">never touch COM or data. only SKP symbols are elastic</text>
+  </svg>
+  </div>
+  <ul>
+    <li><b>level &gt; HI</b> and head is SKP → skip it (<code>rd_ptr += 2</code>)</li>
+    <li><b>level &lt; LO</b> and head is SKP → emit it again, hold <code>rd_ptr</code></li>
+    <li>otherwise → normal read, <code>rd_ptr += 1</code></li>
+    <li>report each add/drop to the MAC (PIPE <code>RxStatus</code> = SKP added / removed)</li>
+  </ul>
+  <p class="pencil">Variant: drop on the <b>write</b> side (just don't write the SKP), insert on the read side. Then <code>rd_ptr</code> must also be synced into rclk.</p>
+
+  <h2><span class="n">5</span>Sizing the depth</h2>
+  <div class="math">
+    <div>drift between SKPs = interval × Δf</div>
+    <div>= 1538 symbols × 600e-6 ≈ <span class="hl">0.92 symbol</span></div>
+    <div>→ at most 1 add/drop per SKP OS ✓</div>
+  </div>
+  <p>So drift alone needs ~1 entry each way. Real depth comes from everything else:</p>
+  <ul>
+    <li>sync latency in the level compare (2–3 lclk)</li>
+    <li>add/drop granularity (Gen3+ 128b/130b adjusts in <b>4-symbol</b> chunks)</li>
+    <li>SKP not arriving during a long TLP → worst gap between SKPs</li>
+    <li>SSC / <b>SRIS</b> (one side spread, one not) → up to ~5600 ppm, needs deeper buffer + more frequent SKP</li>
+  </ul>
+  <p>Rule of thumb: <span class="circ">depth ≥ 2 × (max drift + sync lag) + margin</span> → typically <b>8–16 entries</b>, preloaded to <b>N/2</b> so it can absorb both directions.</p>
+
+  <h2><span class="n">6</span>RTL sketch (read side)</h2>
+<pre><span class="c">// lclk domain</span>
+<span class="k">always</span> @(<span class="k">posedge</span> lclk) <span class="k">begin</span>
+  wr_g_s1 &lt;= wr_ptr_gray;      <span class="c">// 2-FF sync</span>
+  wr_g_s2 &lt;= wr_g_s1;
+<span class="k">end</span>
+
+<span class="k">wire</span> [AW:0] wr_b   = gray2bin(wr_g_s2);
+<span class="k">wire</span> [AW:0] level  = wr_b - rd_ptr;
+<span class="k">wire</span>        is_skp = (ram[rd_ptr[AW-1:0]] == SKP);
+
+<span class="k">always</span> @(<span class="k">posedge</span> lclk <span class="k">or negedge</span> rst_n) <span class="k">begin</span>
+  <span class="k">if</span> (!rst_n)                        rd_ptr &lt;= '0;
+  <span class="k">else if</span> (rd_en) <span class="k">begin</span>
+    <span class="k">if</span>      (is_skp &amp;&amp; level &gt; HI_TH) rd_ptr &lt;= rd_ptr + 2; <span class="c">// drop</span>
+    <span class="k">else if</span> (is_skp &amp;&amp; level &lt; LO_TH) rd_ptr &lt;= rd_ptr;     <span class="c">// insert</span>
+    <span class="k">else</span>                              rd_ptr &lt;= rd_ptr + 1; <span class="c">// normal</span>
+  <span class="k">end</span>
+<span class="k">end</span></pre>
+  <p class="cap">+ write side: wr_ptr++ every rclk symbol, register the gray version before it leaves the domain (no comb logic into the sync flop!)</p>
+
+  <div class="sticky">
+    <h3>Gotchas (interview traps)</h3>
+    <ul>
+      <li>Gray pointer must come straight from a flop. Comb logic can glitch into the synchronizer.</li>
+      <li>Drop only if a second SKP remains. PCIe needs at least 1 SKP left in the set.</li>
+      <li>Hold reads until preload reaches N/2 after reset / CDR lock.</li>
+      <li>One buffer per lane. Lane-to-lane deskew is a separate stage after it.</li>
+      <li>Over/underflow still possible (bad link) → flag it in RxStatus, don't hide it.</li>
+    </ul>
+  </div>
+</div>
+
+</body></html>
