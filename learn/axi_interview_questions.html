@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMBA AXI Protocol — Senior & Staff NoC Design Interview Question Bank</title>
+<style>
+  :root {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #131a29;
+    --bg-tertiary: #1c263c;
+    --accent-blue: #2563eb;
+    --accent-cyan: #06b6d4;
+    --accent-emerald: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border-color: #24344d;
+    --card-hover: #172338;
+    --code-bg: #070b12;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .badge-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .badge {
+    padding: 0.25rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+  }
+  .badge-blue { background: rgba(37, 99, 235, 0.2); color: #60a5fa; border: 1px solid rgba(37, 99, 235, 0.4); }
+  .badge-cyan { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.4); }
+  .badge-emerald { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    max-width: 900px;
+  }
+
+  /* Control Panel */
+  .control-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    .control-panel { grid-template-columns: 1fr; }
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-box input:focus { border-color: var(--accent-cyan); }
+
+  .stats-tracker {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    background: var(--bg-tertiary);
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+
+  .stat-item { text-align: center; }
+  .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); }
+  .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+
+  /* Filters */
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .filter-btn {
+    padding: 0.45rem 0.9rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+  .filter-btn.active {
+    background: var(--accent-blue);
+    color: #ffffff;
+    border-color: var(--accent-blue);
+  }
+
+  /* Question Cards */
+  .questions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .q-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  .q-card:hover { border-color: #3b4e6b; background-color: var(--card-hover); }
+
+  .q-header {
+    padding: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    user-select: none;
+  }
+
+  .q-title-wrap { flex: 1; }
+
+  .q-meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.4rem;
+  }
+
+  .q-num {
+    font-size: 0.75rem;
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--accent-cyan);
+  }
+
+  .cat-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+
+  .diff-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .diff-senior { color: #34d399; background: rgba(16, 185, 129, 0.15); }
+  .diff-lead { color: #fbbf24; background: rgba(245, 158, 11, 0.15); }
+  .diff-principal { color: #f87171; background: rgba(244, 63, 94, 0.15); }
+
+  .q-question {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .toggle-icon {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    min-width: 24px;
+    text-align: center;
+  }
+  .q-card.open .toggle-icon { transform: rotate(180deg); color: var(--accent-cyan); }
+
+  .q-body {
+    display: none;
+    padding: 0 1.25rem 1.25rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    background: rgba(10, 14, 23, 0.5);
+  }
+  .q-card.open .q-body { display: block; }
+
+  .section-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--accent-cyan);
+    margin: 1rem 0 0.4rem 0;
+  }
+
+  .answer-content {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    line-height: 1.65;
+  }
+  .answer-content p { margin-bottom: 0.75rem; }
+  .answer-content ul, .answer-content ol { margin-left: 1.4rem; margin-bottom: 0.75rem; }
+  .answer-content li { margin-bottom: 0.35rem; }
+
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.85rem;
+    color: #38bdf8;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+  }
+
+  .pro-tip {
+    background: rgba(37, 99, 235, 0.1);
+    border-left: 3px solid var(--accent-blue);
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.88rem;
+    color: #93c5fd;
+  }
+
+  .card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border-color);
+  }
+
+  .status-btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .status-btn:hover { color: var(--text-primary); }
+  .status-btn.mastered { background: rgba(16, 185, 129, 0.2); border-color: var(--accent-emerald); color: #34d399; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="badge-bar">
+      <span class="badge badge-blue">AMBA AXI3 / AXI4 / AXI5</span>
+      <span class="badge badge-cyan">Front-End Logic Design</span>
+      <span class="badge badge-emerald">NoC & Interconnect Architecture</span>
+    </div>
+    <h1>AMBA AXI Protocol Technical Interview Bank</h1>
+    <p class="subtitle">Comprehensive technical assessment questions covering channel handshakes, out-of-order execution, atomic transactions, 4KB boundary mechanics, and NoC packetization protocols for senior hardware design engineers.</p>
+  </header>
+
+  <div class="control-panel">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search by concept (e.g. 'WID removal', 'deadlock', 'exclusive access', '4KB', 'credit flow')...">
+    </div>
+    <div class="stats-tracker">
+      <div class="stat-item">
+        <div class="stat-val" id="totalVisibleCount">12</div>
+        <div class="stat-lbl">Questions</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="masteredCount">0</div>
+        <div class="stat-lbl">Mastered</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <button class="filter-btn active" data-filter="all">All Topics</button>
+    <button class="filter-btn" data-filter="handshake">Handshakes & Dependencies</button>
+    <button class="filter-btn" data-filter="ordering">Ordering & IDs</button>
+    <button class="filter-btn" data-filter="addressing">Addressing & Bursts</button>
+    <button class="filter-btn" data-filter="noc">NoC & Deadlock Architecture</button>
+    <button class="filter-btn" data-filter="atomics">Atomics & Advanced Features</button>
+  </div>
+
+  <div class="questions-grid" id="questionsGrid">
+
+    <!-- Q1 -->
+    <div class="q-card" data-category="handshake" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q01</span>
+            <span class="cat-tag">Handshakes & Dependencies</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">What are the strict specification dependencies between VALID and READY signals across all 5 channels in AXI4, and why is combinational loop creation a concern?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>Under the AMBA AXI4 specification (Section A3.3), <strong>VALID must never depend combinationally on READY</strong>. The master/source asserting VALID can only deassert or toggle its payload when both VALID and READY are high (the handshake completes). Conversely, <strong>READY can depend combinationally on VALID</strong>, though asserting READY speculatively before VALID is permitted.</p>
+          <p>Cross-channel handshake dependencies enforced by the specification:</p>
+          <ul>
+            <li><strong>Write Transaction:</strong> <code>BVALID</code> must wait for both the completion of the write address phase (<code>AWVALID & AWREADY</code>) and the last write data beat (<code>WVALID & WREADY & WLAST</code>). The master must not assert <code>BREADY</code> contingent on <code>BVALID</code>.</li>
+            <li><strong>Read Transaction:</strong> <code>RVALID</code> must wait for the completion of the read address phase (<code>ARVALID & ARREADY</code>).</li>
+            <li><strong>Independent Channels:</strong> <code>AWREADY</code> must not wait for <code>WVALID</code> or <code>WREADY</code>; <code>WREADY</code> must not wait for <code>AWVALID</code>. Any implementation violating this risks deadlocking against a master that holds <code>WVALID</code> until <code>AWREADY</code> asserts.</li>
+          </ul>
+        </div>
+        <div class="section-label">Microarchitectural Pitfall</div>
+        <div class="answer-content">
+          <p>If an RTL designer drives <code>VALID</code> using combinational logic fed directly by <code>READY</code> (e.g. <code>assign s_valid = m_ready & req_pending;</code>), cascading two such modules creates a closed combinational loop (<code>Ready → Valid → Ready</code>), rendering static timing analysis (STA) invalid and inducing synthesis loops.</p>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q1')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="q-card" data-category="ordering" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q02</span>
+            <span class="cat-tag">Ordering & IDs</span>
+            <span class="diff-tag diff-lead">Lead / Staff Design</span>
+          </div>
+          <div class="q-question">Why was WID removed in AXI4, and how does write data interleaving in AXI3 differ from AXI4 ordering requirements?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>In <strong>AXI3</strong>, the Write Data channel included a <code>WID</code> signal. This allowed an AXI3 master to interleave data beats belonging to different write bursts targeting different slaves or endpoints with different IDs (e.g., Beat 0 of ID 1, Beat 0 of ID 2, Beat 1 of ID 1...).</p>
+          <p><strong>Reason for Removal in AXI4:</strong></p>
+          <ul>
+            <li><strong>Silicon Area & Buffer Bloat:</strong> Interleaving required every slave and intermediate interconnect switch to instantiate reassembly buffers sized for the maximum burst length multiplied by the number of supported IDs.</li>
+            <li><strong>Minimal Real-World Benefit:</strong> Very few masters actually produced interleaved write data in practice; it complicated slave write controllers and introduced head-of-line blocking inside crossbars.</li>
+            <li><strong>AXI4 Rule:</strong> All write data on the W channel must be issued in the <em>exact same chronological order</em> as the write address transfers on the AW channel (<code>AWVALID & AWREADY</code>). As a result, <code>WID</code> became redundant and was formally eliminated.</li>
+          </ul>
+        </div>
+        <div class="section-label">Interview Follow-Up Trap</div>
+        <div class="pro-tip">
+          <strong>Follow-up:</strong> How does an AXI3-to-AXI4 bridge handle an AXI3 master that attempts to interleave write bursts?
+          <br><strong>Response:</strong> The bridge must instantiate a store-and-forward or re-ordering FIFO to assemble complete, non-interleaved bursts before forwarding them to the AXI4 slave, imposing added latency.
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q2')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="q-card" data-category="ordering" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q03</span>
+            <span class="cat-tag">Ordering & IDs</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Explain Out-of-Order (OoO) completion versus In-Order delivery. How does an AXI master ensure Read-After-Write (RAW) coherency to the same address?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>AXI uses ID tags (<code>AWID</code>, <code>ARID</code>, <code>BID</code>, <code>RID</code>) to govern ordering:</p>
+          <ul>
+            <li><strong>Same ID:</strong> Transactions with the identical ID <em>must</em> complete in the order they were issued. For reads, data beats of the same <code>ARID</code> must return strictly in order.</li>
+            <li><strong>Different IDs:</strong> Transactions with distinct IDs have no ordering constraints and can be processed, routed, and returned entirely out-of-order by intermediate NoC nodes and slaves.</li>
+          </ul>
+          <p><strong>Enforcing RAW Coherency:</strong></p>
+          <p>The AXI protocol provides <strong>no implicit ordering guarantees between the Read (AR) and Write (AW) channels</strong>, even if they share the exact same ID value. If an AXI master issues a Write to address <code>0x1000</code> and subsequently issues a Read to <code>0x1000</code>, the read can arrive at the memory subsystem before the write completes due to path divergence in the NoC.</p>
+          <p>To enforce RAW ordering:</p>
+          <ol>
+            <li>The master must wait for the write response (<code>BVALID & BREADY</code>) before asserting <code>ARVALID</code> for that address.</li>
+            <li>Alternatively, an active address hazard tracker in the master interface's Load-Store Unit (LSU) or interconnect bridge must stall the AR channel when an in-flight AW matches the target address.</li>
+          </ol>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q3')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="q-card" data-category="addressing" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q04</span>
+            <span class="cat-tag">Addressing & Bursts</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Why does the AXI protocol mandate that bursts must never cross a 4KB address boundary? What happens at the interconnect level if this is breached?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>The 4KB boundary rule originates from standard OS memory management architectures, where <strong>4KB is the smallest page allocation boundary in typical MMUs</strong>.</p>
+          <ul>
+            <li><strong>NoC Address Decoding:</strong> Interconnect routers and crossbars decode routing paths based on address aperture decode tables. Two adjacent 4KB pages may map to completely different physical targets (e.g., Page 0 maps to DDR, Page 1 maps to a PCIe controller or peripheral register space).</li>
+            <li><strong>Atomic Route Commitment:</strong> In AXI, routing decisions through crossbars/routers are determined exclusively during the address phase (<code>AWVALID</code> or <code>ARVALID</code>) for the entire burst. If a burst crossed a 4KB boundary, the transaction would seamlessly bridge across two physical peripherals, causing downstream slaves to drop beats, hang the fabric, or corrupt unrelated peripheral spaces without re-arbitration.</li>
+          </ul>
+        </div>
+        <div class="section-label">RTL Calculation Check</div>
+        <div class="code-block">
+// Check condition for 4KB boundary crossing:
+wire [11:0] start_offset   = AxADDR[11:0];
+wire [12:0] total_bytes    = (AxLEN + 1) &lt;&lt; AxSIZE;
+wire [12:0] end_offset     = start_offset + total_bytes;
+wire        crosses_4k_page = (end_offset &gt; 13'h1000);
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q4')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="q-card" data-category="addressing" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q05</span>
+            <span class="cat-tag">Addressing & Bursts</span>
+            <span class="diff-tag diff-lead">Lead / Staff Design</span>
+          </div>
+          <div class="q-question">Calculate the exact wrap boundary and sequence of addresses for a WRAP burst with Start_Address = 0x38, AxSIZE = 4 bytes (32-bit), and AxLEN = 3 (4 beats).</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Mathematical Calculation & Rules</div>
+        <div class="answer-content">
+          <p>For a WRAP burst, the burst length must be 2, 4, 8, or 16 transfers (AXI4 rules: <code>AxLEN</code> must equal 1, 3, 7, or 15). The start address must be aligned to the transfer size (<code>AxSIZE</code>).</p>
+          <ul>
+            <li><strong>Parameters:</strong> <code>Start_Address = 0x38</code>, <code>Number_Bytes = 2^AxSIZE = 4 bytes</code>, <code>Burst_Length = AxLEN + 1 = 4 beats</code>.</li>
+            <li><strong>Total Container Size:</strong> <code>Total_Bytes = Burst_Length × Number_Bytes = 4 × 4 = 16 bytes (0x10)</code>.</li>
+            <li><strong>Wrap Boundary:</strong> <code>Wrap_Boundary = INT(Start_Address / Total_Bytes) × Total_Bytes = INT(0x38 / 0x10) × 0x10 = 0x30</code>.</li>
+            <li><strong>Upper Limit:</strong> <code>Wrap_Boundary + Total_Bytes = 0x30 + 0x10 = 0x40</code>.</li>
+          </ul>
+          <p><strong>Generated Address Sequence:</strong></p>
+          <ol>
+            <li><strong>Beat 1:</strong> <code>0x38</code></li>
+            <li><strong>Beat 2:</strong> <code>0x3C</code></li>
+            <li><strong>Beat 3:</strong> <code>0x30</code> (Wraps back to Wrap_Boundary because <code>0x3C + 4 = 0x40 == Upper Limit</code>)</li>
+            <li><strong>Beat 4:</strong> <code>0x34</code></li>
+          </ol>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q5')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="q-card" data-category="noc" data-difficulty="principal">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q06</span>
+            <span class="cat-tag">NoC & Deadlock Architecture</span>
+            <span class="diff-tag diff-principal">Principal / System Architect</span>
+          </div>
+          <div class="q-question">How does an AXI-based Network-on-Chip (NoC) map 5 independent channels onto packetized flits, and why are Virtual Channels (VCs) mandatory to avoid protocol-level deadlock?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>In physical crossbars, all 5 AXI channels can have dedicated point-to-point wires. However, in a 2D mesh or ring NoC, physical wiring constraints demand that transactions are packetized into <strong>flits</strong> (Head, Body, Tail) transmitted over shared physical links using credit-based flow control.</p>
+          <p><strong>The Protocol Deadlock Hazard:</strong></p>
+          <p>In AXI, a request creates a dependency on a future response:</p>
+          <ul>
+            <li><code>AW/W Request → B Response</code></li>
+            <li><code>AR Request → R Response</code></li>
+          </ul>
+          <p>If Requests and Responses share the same physical buffer queue inside NoC routers, a cyclic dependency occurs:</p>
+          <ol>
+            <li>Router buffers become filled with incoming Request packets targeting busy slaves.</li>
+            <li>A slave generates a Response packet (e.g., <code>BVALID</code> or <code>RVALID</code>) intended to drain back to the master.</li>
+            <li>The Response packet cannot enter the network because the router queues are congested with Request packets.</li>
+            <li>The Request packets cannot drain because the slaves are stalled waiting for downstream credits or cannot process new requests until prior responses commit.</li>
+          </ol>
+          <p><strong>Solution via Virtual Channels (VCs):</strong></p>
+          <p>The NoC must partition its physical buffers into distinct Virtual Channel classes: <strong>Request VC (for AW, W, AR)</strong> and <strong>Response VC (for B, R)</strong>. Because Response packets can always forward independently of Requests, the dependency cycle is broken ($G_{dep}$ remains acyclic).</p>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q6')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="q-card" data-category="noc" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q07</span>
+            <span class="cat-tag">NoC & Deadlock Architecture</span>
+            <span class="diff-tag diff-lead">Lead / Staff Design</span>
+          </div>
+          <div class="q-question">Describe credit-based flow control used in NoC routers versus VALID/READY handshaking in standard AXI. How do you design an AXI-to-Credit bridge?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>Standard AXI uses reactive <strong>VALID/READY</strong> backpressure: the receiver asserts <code>READY</code> low to throttle the sender. Over long physical distances across an SoC, this creates a critical timing path because <code>READY</code> must propagate across multiple pipeline stages or require Skid Buffers to maintain 100% throughput.</p>
+          <p>In contrast, NoC interconnects utilize <strong>Credit-Based Flow Control</strong>:</p>
+          <ul>
+            <li>The transmitter maintains a <code>Credit Counter</code> representing free buffer slots in the downstream router.</li>
+            <li>Every time the transmitter sends a flit, it decrements the counter. If <code>Credit_Count == 0</code>, transmission halts.</li>
+            <li>When the downstream router pops a flit from its FIFO, it pulses a <code>credit_return</code> wire upstream, incrementing the transmitter's counter.</li>
+            <li><strong>Advantage:</strong> Round-trip latency can be pipelined with arbitrary register stages without throughput degradation, provided the downstream buffer depth $\ge \text{Round-Trip Latency (cycles)} \times \text{Flit Rate}$.</li>
+          </ul>
+          <p><strong>AXI-to-Credit Bridge Logic:</strong> Converts <code>VALID/READY</code> into credits by allowing the bridge to assert <code>READY = (credit_count > 0)</code>, converting accepted AXI beats into flits and dispatching credit updates back upon transaction commit.</p>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q7')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="q-card" data-category="handshake" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q08</span>
+            <span class="cat-tag">Handshakes & Dependencies</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">What is a Skid Buffer (Register Slice), and how does it prevent combinatorial path cuts without sacrificing channel throughput?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>Inserting a standard flip-flop register on both the forward data path (<code>VALID/DATA</code>) and the reverse backpressure path (<code>READY</code>) inherently introduces a 1-cycle bubble, dropping channel throughput to 50% unless an auxiliary holding register—known as a <strong>Skid Buffer</strong>—is implemented.</p>
+          <ul>
+            <li><strong>Operational Mechanism:</strong> A Skid Buffer contains two storage locations: the primary output stage and a secondary "skid" stage.</li>
+            <li><strong>Backpressure Handling:</strong> When the downstream receiver deasserts <code>m_ready</code>, the upstream transmitter has already launched data because <code>s_ready</code> was asserted high during that cycle. Instead of dropping the data or violating setup times, the newly arrived data is safely clocked into the skid buffer while <code>s_ready</code> is simultaneously brought low.</li>
+            <li><strong>Discharge:</strong> Once <code>m_ready</code> recovers, the primary stage is consumed, the skid register contents are forwarded, and <code>s_ready</code> is re-asserted without losing any clock cycles.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q8')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q9 -->
+    <div class="q-card" data-category="atomics" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q09</span>
+            <span class="cat-tag">Atomics & Advanced Features</span>
+            <span class="diff-tag diff-lead">Lead / Staff Design</span>
+          </div>
+          <div class="q-question">Compare AXI Exclusive Access (AxLOCK + EXOKAY) with AXI5 Atomic Transactions (AtomicStore, AtomicLoad, AtomicSwap, AtomicCompare).</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>1. AXI3/4 Exclusive Access (Load-Linked / Store-Conditional Model):</strong></p>
+          <ul>
+            <li>Master performs an exclusive read (<code>ARLOCK=1</code>). An <em>Exclusive Monitor</em> (either local to master or global in interconnect/slave) tags the address and master ID.</li>
+            <li>Master performs calculations locally.</li>
+            <li>Master performs an exclusive write (<code>AWLOCK=1</code>). If the monitor indicates no other agent modified that memory range, the write commits and returns <code>EXOKAY</code>. If another agent wrote to the location, the write is aborted, and the slave returns <code>OKAY</code> (not <code>EXOKAY</code>).</li>
+            <li><strong>Drawback:</strong> Excessive bus traffic and high abort rates under high cacheline contention across multi-core processors.</li>
+          </ul>
+          <p><strong>2. AXI5 Atomic Transactions (Near-Memory Computing):</strong></p>
+          <ul>
+            <li>AXI5 pushes the arithmetic operation (Add, Min, Max, Bitwise, Compare-and-Swap) <strong>directly down to the endpoint/memory controller</strong>.</li>
+            <li>The master sends the operand and opcode in a single transaction (e.g. <code>AWATOP[5:0]</code>). The slave fetches the memory, performs the arithmetic inside its local ALU, updates memory, and optionally sends the original data back on the R channel.</li>
+            <li><strong>Benefit:</strong> Cuts interconnect traffic by 50%, eliminates snooping ping-pong effects, and provides bounded wait times for multi-thread locks.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q9')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q10 -->
+    <div class="q-card" data-category="noc" data-difficulty="principal">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q10</span>
+            <span class="cat-tag">NoC & Deadlock Architecture</span>
+            <span class="diff-tag diff-principal">Principal / System Architect</span>
+          </div>
+          <div class="q-question">How does an interconnect down-sizer convert a 128-bit AXI data path to a 32-bit data path while maintaining burst integrity and handling byte strobes (WSTRB)?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>Downsizing requires dynamic translation of both the address/control channels and the write/read data channels:</p>
+          <ul>
+            <li><strong>Burst Length Scaling:</strong> If a master initiates a 128-bit burst with <code>AxLEN=1</code> (2 beats of 16 bytes = 32 bytes total), the down-sizer targeting a 32-bit slave (4 bytes/beat) must transform this into an 8-beat burst (<code>AxLEN_slave = 7</code>) with <code>AxSIZE_slave = 2</code>.</li>
+            <li><strong>4KB Rule Verification:</strong> The expanded burst must not breach the 4KB boundary. If the expanded transaction exceeds the boundary or <code>AxLEN_slave > 255</code>, the down-sizer must slice the transaction into multiple independent AXI transactions.</li>
+            <li><strong>Byte Strobe & Data Serialization:</strong> For each 128-bit beat, the down-sizer serializes the data into four sequential 32-bit transfers, routing <code>WDATA[31:0], WDATA[63:32], WDATA[95:64], WDATA[127:96]</code> alongside their matching 4-bit slices of <code>WSTRB</code>.</li>
+            <li><strong>Handling Inactive Slices:</strong> If a 32-bit slice contains all-zero strobes (<code>WSTRB=4'b0000</code>), the down-sizer can either transmit a null beat or suppress it if configured to optimize downstream memory bandwidth.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q10')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q11 -->
+    <div class="q-card" data-category="ordering" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q11</span>
+            <span class="cat-tag">Ordering & IDs</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">How do AXI Read Reorder Buffers (ROBs) track outstanding transactions, and what microarchitectural structures are needed to size them?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>When an AXI master issues multiple outstanding read requests across various IDs, memory latency variations cause read data packets to return out of order. If the internal CPU execution engine demands in-order data, a <strong>Read Reorder Buffer (ROB)</strong> or Content-Addressable Memory (CAM) tracking scoreboard is required.</p>
+          <ul>
+            <li><strong>Tracking Table:</strong> Upon asserting <code>ARVALID & ARREADY</code>, an entry is allocated in an outstanding transaction table storing <code>ARID</code>, expected beat count, destination register tag, and transaction state.</li>
+            <li><strong>Sizing using Little's Law:</strong> To avoid throttling throughput, the number of outstanding tracker slots must satisfy:
+              $$\text{Max In-Flight Transactions} \ge \frac{\text{Memory Latency (cycles)}}{\text{Burst Duration (cycles)}}$$
+            </li>
+            <li><strong>Completion CAM:</strong> When <code>RVALID & RREADY</code> arrives, the returned <code>RID</code> indexes the tracking CAM. Once the final beat with <code>RLAST=1</code> commits, the table entry is deallocated, releasing credits back to the master's instruction scheduler.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q11')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q12 -->
+    <div class="q-card" data-category="noc" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q12</span>
+            <span class="cat-tag">NoC & Deadlock Architecture</span>
+            <span class="diff-tag diff-lead">Lead / Staff Design</span>
+          </div>
+          <div class="q-question">What causes Head-of-Line (HoL) blocking in shared-bus crossbars, and how do multi-layer crossbars and distributed NoC meshes resolve it?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>Head-of-Line Blocking Mechanism:</strong></p>
+          <p>In a single-layer shared crossbar or multiplexed bus, if Master 1 issues a request targeting a slow peripheral (e.g. an SPI controller or low-power APB bridge), that transaction occupies the shared bus interface. Even if Master 2 has ready transactions targeting a high-speed SRAM or DDR memory with zero wait-states, Master 2 is blocked from gaining access until the slow slave clears the shared path.</p>
+          <p><strong>Architectural Mitigations:</strong></p>
+          <ul>
+            <li><strong>Multi-Layer Crossbars (AXI Interconnect):</strong> Implements parallel switching matrices such that Master 1 → Slave 1 and Master 2 → Slave 2 can communicate simultaneously on separate physical interconnect paths without sharing multiplexer stages.</li>
+            <li><strong>Packetized NoC Meshes:</strong> Distributes communication across intermediate switching routers. Transactions targeting distinct memory regions route through independent physical links (e.g., North-East routing paths vs. South-East routing paths), eliminating centralized bottlenecks.</li>
+            <li><strong>Separate Write/Read Matrices:</strong> Decoupling the write data crossbar from the read data crossbar guarantees that a stalled DDR write pipeline does not choke read bandwidth.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q12')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Filter logic
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const cards = document.querySelectorAll('.q-card');
+  const searchInput = document.getElementById('searchInput');
+  const totalCountEl = document.getElementById('totalVisibleCount');
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    });
+  });
+
+  searchInput.addEventListener('input', applyFilters);
+
+  function applyFilters() {
+    const activeCategory = document.querySelector('.filter-btn.active').dataset.filter;
+    const query = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const cardCategory = card.dataset.category;
+      const cardText = card.innerText.toLowerCase();
+
+      const matchesCategory = (activeCategory === 'all' || cardCategory === activeCategory);
+      const matchesSearch = (!query || cardText.includes(query));
+
+      if (matchesCategory && matchesSearch) {
+        card.style.display = 'block';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    totalCountEl.textContent = visibleCount;
+  }
+
+  // Accordion toggle
+  document.querySelectorAll('.q-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const card = header.parentElement;
+      card.classList.toggle('open');
+    });
+  });
+
+  // Track Mastered State
+  const masteredSet = new Set(JSON.parse(localStorage.getItem('axi_mastered_qs') || '[]'));
+  const masteredCountEl = document.getElementById('masteredCount');
+
+  function updateMasteredUI() {
+    masteredCountEl.textContent = masteredSet.size;
+    cards.forEach((card, idx) => {
+      const id = 'q' + (idx + 1);
+      const btn = card.querySelector('.status-btn');
+      if (btn) {
+        if (masteredSet.has(id)) {
+          btn.classList.add('mastered');
+          btn.textContent = '✓ Mastered';
+        } else {
+          btn.classList.remove('mastered');
+          btn.textContent = 'Mark as Mastered';
+        }
+      }
+    });
+  }
+
+  function toggleMastered(btn, id) {
+    if (masteredSet.has(id)) {
+      masteredSet.delete(id);
+    } else {
+      masteredSet.add(id);
+    }
+    localStorage.setItem('axi_mastered_qs', JSON.stringify(Array.from(masteredSet)));
+    updateMasteredUI();
+  }
+
+  updateMasteredUI();
+</script>
+
+</body>
+</html>
