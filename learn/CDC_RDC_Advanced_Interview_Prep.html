@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Clock Domain Crossing (CDC) & RDC — Senior/Staff Logic Design Interview Bank</title>
+<style>
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #121829;
+    --bg-tertiary: #1e273e;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-emerald: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --border-color: #2b3954;
+    --card-hover: #19233c;
+    --code-bg: #070b14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .badge-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .badge {
+    padding: 0.25rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+  }
+  .badge-blue { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+  .badge-cyan { background: rgba(6, 182, 212, 0.2); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.4); }
+  .badge-emerald { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    max-width: 950px;
+  }
+
+  /* Control Panel */
+  .control-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    .control-panel { grid-template-columns: 1fr; }
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-box input:focus { border-color: var(--accent-cyan); }
+
+  .stats-tracker {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    background: var(--bg-tertiary);
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+
+  .stat-item { text-align: center; }
+  .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); }
+  .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+
+  /* Filters */
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .filter-btn {
+    padding: 0.45rem 0.9rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+  .filter-btn.active {
+    background: var(--accent-blue);
+    color: #ffffff;
+    border-color: var(--accent-blue);
+  }
+
+  /* Question Cards */
+  .questions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .q-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  .q-card:hover { border-color: #3d5175; background-color: var(--card-hover); }
+
+  .q-header {
+    padding: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    user-select: none;
+  }
+
+  .q-title-wrap { flex: 1; }
+
+  .q-meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .q-num {
+    font-size: 0.75rem;
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--accent-cyan);
+  }
+
+  .cat-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+
+  .diff-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .diff-senior { color: #34d399; background: rgba(16, 185, 129, 0.15); }
+  .diff-staff { color: #fbbf24; background: rgba(245, 158, 11, 0.15); }
+  .diff-principal { color: #f87171; background: rgba(244, 63, 94, 0.15); }
+
+  .q-question {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .toggle-icon {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    min-width: 24px;
+    text-align: center;
+  }
+  .q-card.open .toggle-icon { transform: rotate(180deg); color: var(--accent-cyan); }
+
+  .q-body {
+    display: none;
+    padding: 0 1.25rem 1.25rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    background: rgba(10, 14, 26, 0.6);
+  }
+  .q-card.open .q-body { display: block; }
+
+  .section-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--accent-cyan);
+    margin: 1rem 0 0.4rem 0;
+  }
+
+  .answer-content {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    line-height: 1.65;
+  }
+  .answer-content p { margin-bottom: 0.75rem; }
+  .answer-content ul, .answer-content ol { margin-left: 1.4rem; margin-bottom: 0.75rem; }
+  .answer-content li { margin-bottom: 0.35rem; }
+
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.85rem;
+    color: #38bdf8;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+  }
+
+  .pro-tip {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 3px solid var(--accent-blue);
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.88rem;
+    color: #93c5fd;
+  }
+
+  .math-box {
+    background: rgba(6, 182, 212, 0.08);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9rem;
+    color: #67e8f9;
+    margin: 0.75rem 0;
+  }
+
+  .card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border-color);
+  }
+
+  .status-btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .status-btn:hover { color: var(--text-primary); }
+  .status-btn.mastered { background: rgba(16, 185, 129, 0.2); border-color: var(--accent-emerald); color: #34d399; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="badge-bar">
+      <span class="badge badge-blue">STA & Microarchitecture</span>
+      <span class="badge badge-cyan">Google & Qualcomm Staff Bar</span>
+      <span class="badge badge-emerald">Static CDC & RDC Sign-off</span>
+    </div>
+    <h1>Advanced Clock Domain Crossing (CDC) & RDC Interview Bank</h1>
+    <p class="subtitle">Comprehensive technical question bank covering 1-bit/multi-bit synchronization schemes, MTBF derivation, FIFO depth calculation, reset domain crossing (RDC), low-power isolation, SDC constraints, and dynamic jitter injection.</p>
+  </header>
+
+  <div class="control-panel">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search by topic (e.g. 'MTBF', 'FIFO depth', 'set_max_delay', 'RDC', 'toggle synchronizer', 'skid buffer')...">
+    </div>
+    <div class="stats-tracker">
+      <div class="stat-item">
+        <div class="stat-val" id="totalVisibleCount">11</div>
+        <div class="stat-lbl">Questions</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="masteredCount">0</div>
+        <div class="stat-lbl">Mastered</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <button class="filter-btn active" data-filter="all">All Topics</button>
+    <button class="filter-btn" data-filter="1bit">1-Bit & MTBF</button>
+    <button class="filter-btn" data-filter="multibit">Multi-Bit & Handshakes</button>
+    <button class="filter-btn" data-filter="fifo">Async FIFO & Depth</button>
+    <button class="filter-btn" data-filter="rdc_lp">RDC & Power Gating</button>
+    <button class="filter-btn" data-filter="sdc_eda">SDC & Static Verification</button>
+  </div>
+
+  <div class="questions-grid" id="questionsGrid">
+
+    <!-- Q1 -->
+    <div class="q-card" data-category="1bit" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q01</span>
+            <span class="cat-tag">1-Bit & MTBF</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Explain the "Three-Edge" (1.5x clock cycle) sampling requirement for CDC, and how a fast-to-slow toggle/pulse synchronizer solves it.</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>The "Three-Edge" Requirement:</strong></p>
+          <p>For a destination clock domain ($clk_{dst}$) to reliably capture a control signal from a source domain ($clk_{src}$) without data loss, the signal must remain stable for at least <strong>1.5 to 2 clock cycles of $clk_{dst}$</strong> (guaranteeing that it spans at least three active clock edges: setup edge, capture edge, hold edge).</p>
+          <ul>
+            <li><strong>Fast-to-Slow Problem:</strong> If $clk_{src} = 1	ext{ GHz}$ and $clk_{dst} = 200	ext{ MHz}$, a single-cycle pulse in the source domain lasts only $1	ext{ ns}$. The destination clock period is $5	ext{ ns}$. The fast pulse can easily rise and fall entirely between destination clock edges, disappearing undetected.</li>
+            <li><strong>Toggle Synchronizer Architecture:</strong>
+              <ol>
+                <li>In the source domain, an incoming single-cycle pulse toggles the state of a flip-flop: <code>t_src <= t_src ^ pulse_in</code>. This converts the short pulse into a semi-permanent level transition.</li>
+                <li>The level signal <code>t_src</code> passes through a standard 2-flop synchronizer in the destination domain (<code>t_dst_sync</code>).</li>
+                <li>In the destination domain, an edge detector compares the synchronized signal with its 1-cycle delayed copy: <code>pulse_out = t_dst_sync ^ t_dst_sync_q</code>. Every toggle transition reproduces a 1-cycle pulse in the destination domain.</li>
+              </ol>
+            </li>
+          </ul>
+        </div>
+        <div class="section-label">Limitations to Call Out in Interview</div>
+        <div class="answer-content">
+          <p>A toggle synchronizer cannot accept back-to-back pulses in the fast domain. The minimum spacing between consecutive input pulses must be $\ge 2 	imes T_{dst} + T_{src}$ to allow the destination synchronizer to resolve before the level toggles again. If pulses can occur in quick bursts, a <strong>handshake synchronizer</strong> or an <strong>asynchronous FIFO</strong> is mandatory.</p>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q1')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="q-card" data-category="1bit" data-difficulty="staff">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q02</span>
+            <span class="cat-tag">1-Bit & MTBF</span>
+            <span class="diff-tag diff-staff">Staff Logic Design</span>
+          </div>
+          <div class="q-question">Derive the MTBF formula for a 2-flop synchronizer. How does technology scaling (e.g. 5nm/3nm FinFET) impact MTBF, and why are dedicated synchronizer standard cells used?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Mathematical Derivation</div>
+        <div class="math-box">
+MTBF = 1 / Failure_Rate = (e ^ (t_r / τ)) / (T_0 × f_clk × f_data)
+
+Where:
+  t_r    = Available resolution time = T_clk - t_setup - t_cq
+  τ      = Resolving time constant of the flip-flop bistable latch
+  T_0    = Asymptotic aperture / metastability window parameter
+  f_clk  = Frequency of the destination receiving clock
+  f_data = Toggle frequency of the asynchronous input data
+        </div>
+        <div class="section-label">Core Technical Insights</div>
+        <div class="answer-content">
+          <ul>
+            <li><strong>Why exponential:</strong> In a cross-coupled inverter pair, the regenerative feedback amplifies small voltage differences: $\Delta V(t) = \Delta V_0 \cdot e^{t / 	au}$. Thus, the probability of remaining in an unresolved metastable state decays exponentially with the resolution time $t_r$.</li>
+            <li><strong>Process Scaling Impact:</strong> In advanced nodes (3nm/5nm), lower supply voltages ($V_{dd} pprox 0.7	ext{V}$) reduce overdrive voltage ($V_{gs} - V_{th}$), which can degrade gain. However, smaller parasitic capacitances decrease $	au$. The biggest issue is that $f_{clk}$ exceeds 2–3 GHz, shrinking $t_r$ to under 300 ps. Because $t_r$ is in the exponent, a small drop in clock period slashes MTBF by orders of magnitude!</li>
+            <li><strong>Dedicated Synchronizer Cells:</strong> Standard library flip-flops are optimized for area and low $t_{cq}$. In contrast, ASIC libraries include dedicated synchronizer cells where:
+              <ul>
+                <li>The first latch uses high-gain transistors sized specifically for minimal $	au$ and minimal $T_0$.</li>
+                <li>The physical layout places both flip-flops abutted in silicon with shielded, zero-routing metal to prevent parasitic RC delay and eliminate hold race hazards between sync stage 1 and stage 2.</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q2')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="q-card" data-category="multibit" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q03</span>
+            <span class="cat-tag">Multi-Bit & Handshakes</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Why is it strictly forbidden to synchronize a multi-bit data bus using individual 2-flop synchronizers? What is the MUX-Recirculation (MCP) synchronization technique?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>Why Bit-by-Bit Synchronization Fails:</strong></p>
+          <p>Even if an entire 32-bit bus transitions simultaneously from <code>0x00000000</code> to <code>0xFFFFFFFF</code> in the source domain, individual bit lines experience different physical wire routing delays, clock tree skew, and independent metastability resolution in destination flip-flops. One bit might resolve in 1 cycle, another in 2 cycles.</p>
+          <p>The destination clock can easily latch corrupt, intermediate ghost states (e.g., <code>0x00FF00FF</code> or <code>0x5555AAAA</code>) that never existed in the source domain.</p>
+          <p><strong>MUX-Recirculation (Multi-Cycle Path / MCP Scheme):</strong></p>
+          <ul>
+            <li>Instead of synchronizing the data bus directly, the multi-bit data is held stable at the source register and routed straight to the data input of a destination register or multiplexer.</li>
+            <li>A single-bit control signal (<code>data_valid</code> or <code>toggle_req</code>) is generated in the source domain once the data bus is stable.</li>
+            <li>The <code>data_valid</code> control signal is passed through a 2-flop synchronizer into the destination domain.</li>
+            <li>The destination register uses the synchronized control signal as a load-enable (<code>en</code>):
+              <div class="code-block">
+// Destination Domain:
+always_ff @(posedge clk_dst or negedge rst_dst_n) begin
+    if (!rst_dst_n)
+        data_dst <= '0;
+    else if (sync_load_en) // Asserted only when data has been stable for multiple cycles
+        data_dst <= async_data_bus;
+end
+              </div>
+            </li>
+            <li><strong>Constraint:</strong> The source logic must guarantee the data bus remains 100% stable until the destination has safely latched it (often verified via a returning acknowledge handshake).</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q3')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="q-card" data-category="multibit" data-difficulty="staff">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q04</span>
+            <span class="cat-tag">Multi-Bit & Handshakes</span>
+            <span class="diff-tag diff-staff">Staff Logic Design</span>
+          </div>
+          <div class="q-question">What is Reconvergence of synchronized control paths in CDC? Show an RTL failure mode and explain how to prevent it.</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>Reconvergence</strong> occurs when two or more related signals generated in the same source domain are synchronized independently through separate 2-flop synchronizers, and their synchronized outputs feed common combinational decision logic in the destination domain.</p>
+          <p><strong>Failure Scenario:</strong></p>
+          <p>Suppose a source state machine issues two mutually exclusive control strobes: <code>cmd_read</code> and <code>cmd_write</code>. Even if the source guarantees that <code>cmd_read</code> and <code>cmd_write</code> never assert in the same cycle, synchronizing each through independent 2-flop chains can result in one synchronizer resolving in 1 cycle and the other experiencing a 2-cycle delay. In the destination domain, both signals might appear high simultaneously for one clock cycle, or an unexpected cycle of both being low might occur, corrupting the destination state machine.</p>
+          <div class="code-block">
+// DANGEROUS BUG (Reconvergence):
+sync_2ff u_sync_rd (.clk(clk_dst), .in(src_rd), .out(dst_rd));
+sync_2ff u_sync_wr (.clk(clk_dst), .in(src_wr), .out(dst_wr));
+
+// Destination logic:
+assign error_condition = dst_rd & dst_wr; // Can inadvertently trigger!
+          </div>
+          <p><strong>Architectural Solutions:</strong></p>
+          <ol>
+            <li><strong>Consolidate into Encoded Bus:</strong> Encode the control signals into a single multi-bit vector (e.g. <code>cmd_type[1:0]</code>: 00=IDLE, 01=READ, 10=WRITE) and cross it using an MCP (Mux-recirculation) or FIFO scheme.</li>
+            <li><strong>Single Strobe with Data Payload:</strong> Generate a single <code>cmd_valid</code> crossing through a 2-flop synchronizer, while the command type is treated as quasi-static data captured by the destination only when the valid strobe fires.</li>
+          </ol>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q4')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="q-card" data-category="fifo" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q05</span>
+            <span class="cat-tag">Async FIFO & Depth</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Why are FIFO pointers converted to Gray code before clock crossing, and why is Gray code comparison for FIFO FULL/EMPTY inherently conservative ("safe-side")?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>1. Why Gray Code:</strong></p>
+          <p>In standard binary counting, multiple bits can change concurrently (e.g., from <code>3 (011)</code> to <code>4 (100)</code>, all three bits toggle). If sampled during transition, clock skew causes intermediate values (e.g., <code>111 (7)</code> or <code>000 (0)</code>) to be latched, creating massive false EMPTY or false FULL conditions.</p>
+          <p>In Gray code, adjacent numerical values differ by <strong>only one single bit</strong> ($B \oplus (B >> 1)$). If that transitioning bit experiences metastability:</p>
+          <ul>
+            <li>If it resolves to the new bit value: The destination sees the updated pointer value.</li>
+            <li>If it resolves to the old bit value: The destination sees the previous pointer value (a 1-cycle delay).</li>
+            <li>In neither case does it ever resolve to a bogus, non-adjacent pointer value!</li>
+          </ul>
+          <p><strong>2. Why "Safe-Side" (Conservative) Behavior:</strong></p>
+          <ul>
+            <li><strong>Empty Flag Generation:</strong> Evaluated in the Read domain by comparing the local binary read pointer with the synchronized write pointer. Because the write pointer was synchronized through a 2-flop chain, the read domain sees a <em>delayed, older version</em> of the write pointer. The FIFO might believe it is empty when a write has already occurred. This is completely safe: it merely stalls the reader by 1–2 cycles; it <em>never underflows</em>.</li>
+            <li><strong>Full Flag Generation:</strong> Evaluated in the Write domain by comparing the local binary write pointer with the synchronized read pointer. Because the read pointer is delayed by 2 cycles, the write domain may believe the FIFO is full even though the reader has just popped entries. This is also completely safe: it merely stalls the writer; it <em>never overflows</em>.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q5')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="q-card" data-category="fifo" data-difficulty="staff">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q06</span>
+            <span class="cat-tag">Async FIFO & Depth</span>
+            <span class="diff-tag diff-staff">Staff Logic Design</span>
+          </div>
+          <div class="q-question">Calculate the minimum depth of an Asynchronous FIFO: Write Clock = 200 MHz, Read Clock = 100 MHz, Burst Size = 80 words, 1 read/write per clock, 2-flop sync latency.</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Step-by-Step Numerical Calculation</div>
+        <div class="math-box">
+Given Parameters:
+  f_wr   = 200 MHz  -->  T_wr = 5 ns
+  f_rd   = 100 MHz  -->  T_rd = 10 ns
+  Burst  = 80 data words (continuous writes, 1 write per T_wr)
+  Read   = Continuous reads once available (1 read per T_rd)
+  Sync Latency = 2 destination clock cycles to synchronize pointers
+
+Step 1: Time required to complete the write burst:
+  T_burst = Burst_Size × T_wr = 80 × 5 ns = 400 ns
+
+Step 2: Number of words read during this burst period:
+  Note: When does reading begin?
+  The write pointer takes 2 read cycles (2 × T_rd = 20 ns) to synchronize into the read domain.
+  Actual available read time during burst = T_burst - (2 × T_rd) = 400 ns - 20 ns = 380 ns.
+  Number of words read = Floor(380 ns / T_rd) = Floor(380 / 10) = 38 words.
+
+Step 3: Calculate remaining words left in FIFO:
+  Remaining backlog = Total Written - Total Read
+                    = 80 - 38 = 42 words.
+
+Step 4: Power of 2 Allocation:
+  Minimum theoretical depth = 42.
+  Because Gray-code wrap-around requires power-of-2 depth:
+  Allocated FIFO Depth = 2^(ceil(log2(42))) = 64 words!
+        </div>
+        <div class="section-label">Senior Interview Caveats</div>
+        <div class="answer-content">
+          <p>Always clarify with the interviewer whether the read domain is capable of back-to-back zero-latency reads or if the read logic has pipeline bubbles (e.g. Memory read latency, DFI/DDR interface cycles, or Skid Buffers). If the write domain receives an additional backpressure cycle before deasserting <code>wready</code>, you must add 1-2 words to the headroom.</p>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q6')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="q-card" data-category="fifo" data-difficulty="staff">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q07</span>
+            <span class="cat-tag">Async FIFO & Depth</span>
+            <span class="diff-tag diff-staff">Staff Logic Design</span>
+          </div>
+          <div class="q-question">Can an Asynchronous FIFO have a depth of 2? Compare a 2-deep Async FIFO with a Ping-Pong buffer in high-frequency NoC routers.</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>Yes, a 2-deep Async FIFO is structurally possible and widely used</strong> in latency-critical NoC routers and pipeline bridges where data throughput is needed with minimal register overhead.</p>
+          <ul>
+            <li><strong>Pointer Representation:</strong> A 2-deep FIFO has 2 memory locations (indexes 0 and 1). A 2-bit pointer (1 bit for index, 1 bit for MSB wrap-around) is used:
+              <br>Binary sequence: <code>00, 01, 10, 11</code>.
+              <br>Gray sequence: <code>00, 01, 11, 10</code>.
+              <br>Because it is a power of 2, 1-bit transitions are preserved across all 4 state transitions!
+            </li>
+            <li><strong>Throughput Limitation:</strong> While functionally correct, a 2-deep FIFO cannot achieve 100% sustained throughput if the clock frequency ratio is large or synchronization takes multiple cycles. Once 2 words are written, the FIFO goes FULL and stalls the writer until the read pointer synchronizes back (which takes 2-3 clock cycles).</li>
+            <li><strong>Ping-Pong Buffer Alternative:</strong> In high-frequency NoC fabrics (like CMN-700 crosspoints), ping-pong buffers with credit-based flow control are favored:
+              <ul>
+                <li>The receiver allocates a bank of 2 registers.</li>
+                <li>Instead of passing Gray pointers continuously, single-bit credit pulses are returned asynchronously across domains, or an explicit toggle handshake alternates between Buffer A and Buffer B.</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q7')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="q-card" data-category="rdc_lp" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q08</span>
+            <span class="cat-tag">RDC & Power Gating</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Explain the architecture of an Asynchronous Reset Synchronizer (Asynchronous Assert, Synchronous Deassert). Why is synchronous release mandatory?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>An asynchronous reset pin allows the entire chip to enter a known state immediately upon power-up without waiting for the PLL or clock tree to stabilize. However, <strong>deasserting an asynchronous reset asynchronously causes metastability</strong>.</p>
+          <ul>
+            <li><strong>Reset Recovery & Removal Violations:</strong> Like setup and hold times, flip-flops have <em>recovery time</em> (minimum time reset must be inactive before the clock edge) and <em>removal time</em> (minimum time reset must remain active after the clock edge). If the reset release edge falls inside this window, some flip-flops in the pipeline wake up in cycle $N$, while others miss it and wake up in cycle $N+1$, splitting state machines into illegal states.</li>
+            <li><strong>Reset Bridge (Synchronizer) Implementation:</strong></li>
+          </ul>
+          <div class="code-block">
+always_ff @(posedge clk or negedge async_rst_n) begin
+    if (!async_rst_n) begin
+        sync_rst_stage1 <= 1'b0; // Asynchronous assertion
+        sync_rst_n      <= 1'b0;
+    end else begin
+        sync_rst_stage1 <= 1'b1; // Synchronous deassertion
+        sync_rst_n      <= sync_rst_stage1;
+    end
+end
+          </div>
+          <ul>
+            <li><strong>Assertion:</strong> When <code>async_rst_n</code> goes LOW, both flops reset to 0 immediately (propagation through async reset pin, 0 clock cycles).</li>
+            <li><strong>Deassertion:</strong> When <code>async_rst_n</code> goes HIGH, logic 1 ripples through the D inputs synchronously with <code>clk</code>, aligning the rising edge of <code>sync_rst_n</code> perfectly with the clock tree and meeting recovery/removal constraints across the entire domain.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q8')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q9 -->
+    <div class="q-card" data-category="rdc_lp" data-difficulty="staff">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q09</span>
+            <span class="cat-tag">RDC & Power Gating</span>
+            <span class="diff-tag diff-staff">Staff Logic Design</span>
+          </div>
+          <div class="q-question">How do UPF Isolation cells interact with Clock Domain Crossing boundaries when power-gating an IP core? What is the correct power-down/power-up sequence?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>When a power domain is switched off ($V_{dd} 	o 0	ext{V}$), all output nets become floating/high-Z. If these nets feed an always-on clock domain or a CDC synchronizer, they inject intermediate voltage levels, causing massive crowbar current in CMOS gates and propagating illegal 'X' states.</p>
+          <p><strong>UPF Isolation Placement:</strong> Isolation cells (AND/OR clamp gates driven by an always-on isolation enable signal <code>iso_en</code>) must be placed on every net exiting the power-gated domain.</p>
+          <p><strong>Strict Power-Down Sequence:</strong></p>
+          <ol>
+            <li><strong>Quiescence / Flush:</strong> Halt incoming transactions at the CDC interface (assert backpressure or wait for FIFO empty).</li>
+            <li><strong>Clock Gating:</strong> Gate off the clock to the domain being powered down.</li>
+            <li><strong>Isolation Assertion:</strong> Assert <code>iso_en = 1</code> to clamp all boundary outputs to a safe, inactive state (typically 0 for control strobes, 1 for active-low resets).</li>
+            <li><strong>Reset Assertion:</strong> Apply local reset.</li>
+            <li><strong>Power Cut:</strong> Switch off power FET switches ($V_{dd\_switched} 	o 0$).</li>
+          </ol>
+          <p><strong>Power-Up Sequence:</strong> Restore power $	o$ Wait for Power-Good acknowledge $	o$ Turn on clock $	o$ Deassert isolation $	o$ Release reset through the synchronous reset bridge $	o$ Re-enable CDC traffic.</p>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q9')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q10 -->
+    <div class="q-card" data-category="sdc_eda" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q10</span>
+            <span class="cat-tag">SDC & Static Verification</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Why is using `set_false_path` on CDC paths considered a dangerous anti-pattern? What exact SDC constraints should be used for Gray pointers and MCP data?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>The Danger of `set_false_path`:</strong></p>
+          <p>When you define <code>set_false_path -from [get_clocks clk_a] -to [get_clocks clk_b]</code>, you tell the Place-and-Route (P&R) tool: <em>"Timing does not matter at all on this path."</em></p>
+          <p>Consequently, the physical synthesis tool may route Bit 0 of a Gray pointer through a direct 100 ps route, while routing Bit 1 through an unbuffered detour spanning the entire chip with a 5 ns delay. This massive <strong>routing skew</strong> completely destroys the single-bit transition property of Gray code! Multiple bits will arrive at the synchronizer in different cycles, corrupting the FIFO pointers.</p>
+          <p><strong>Proper SDC Timing Constraints:</strong></p>
+          <div class="code-block">
+# 1. Constrain maximum datapath delay to prevent unconstrained routing latency:
+set_max_delay -from [get_cells rptr_gray_reg*] -to [get_cells sync_rptr_reg[0]*]               -datapath_only [get_property -min_period [list clk_wr clk_rd]]
+
+# 2. Constrain maximum skew across all bits of the Gray pointer bus:
+set_bus_skew -from [get_cells rptr_gray_reg*] -to [get_cells sync_rptr_reg[0]*]              [expr 0.5 * [get_property -min_period [list clk_wr clk_rd]]]
+
+# 3. For MCP Data buses:
+set_max_delay -from [get_cells src_data_reg*] -to [get_cells dst_data_reg*]               -datapath_only [expr 2 * [get_property period clk_dst]]
+          </div>
+          <p><code>-datapath_only</code> ignores clock skew between asynchronous domains while strictly bounding the physical wire delay, allowing STA tools to verify skew without false setup/hold violations.</p>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q10')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q11 -->
+    <div class="q-card" data-category="sdc_eda" data-difficulty="staff">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q11</span>
+            <span class="cat-tag">SDC & Static Verification</span>
+            <span class="diff-tag diff-staff">Staff Logic Design</span>
+          </div>
+          <div class="q-question">Compare Static CDC Analysis (Spyglass/JasperGold) with Dynamic CDC Verification (VCS/Questa CDC random delay injection). How do they complement each other?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>1. Static CDC Analysis (Spyglass / JasperGold CDC):</strong></p>
+          <ul>
+            <li><strong>Mechanism:</strong> Formal/structural rule checking on RTL netlists without requiring test vectors.</li>
+            <li><strong>Strengths:</strong> 100% path coverage. Flags structural issues: missing synchronizers, combinational logic feeding synchronizers, reconverging control signals, Gray code sequence violations, and improper SDC waivers.</li>
+            <li><strong>Weakness:</strong> Generates false positives on protocol-protected paths (e.g. Quasi-static registers or handshake-protected MCPs that require functional analysis to prove safety).</li>
+          </ul>
+          <p><strong>2. Dynamic CDC Verification (EDA CDC Jitter Injection / Random-Stage Models):</strong></p>
+          <ul>
+            <li><strong>Mechanism:</strong> During RTL simulation, the simulator automatically detects 2-flop synchronizers and randomly injects a 0-cycle or 1-cycle delay (or random 'X' during the setup/hold window) on the first stage flip-flop.</li>
+            <li><strong>Strengths:</strong> Proves whether the functional protocol/testbench survives real-world asynchronous race conditions. It catches bugs that static tools miss, such as a state machine that makes premature decisions assuming 0-cycle transfer or a handshake that drops data when delayed by 1 cycle.</li>
+            <li><strong>Sign-Off Recommendation:</strong> Static CDC is mandatory for structural sign-off; Dynamic CDC simulation is mandatory for functional protocol verification.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q11')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Filter logic
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const cards = document.querySelectorAll('.q-card');
+  const searchInput = document.getElementById('searchInput');
+  const totalCountEl = document.getElementById('totalVisibleCount');
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    });
+  });
+
+  searchInput.addEventListener('input', applyFilters);
+
+  function applyFilters() {
+    const activeCategory = document.querySelector('.filter-btn.active').dataset.filter;
+    const query = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const cardCategory = card.dataset.category;
+      const cardText = card.innerText.toLowerCase();
+
+      const matchesCategory = (activeCategory === 'all' || cardCategory === activeCategory);
+      const matchesSearch = (!query || cardText.includes(query));
+
+      if (matchesCategory && matchesSearch) {
+        card.style.display = 'block';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    totalCountEl.textContent = visibleCount;
+  }
+
+  // Accordion toggle
+  document.querySelectorAll('.q-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const card = header.parentElement;
+      card.classList.toggle('open');
+    });
+  });
+
+  // Track Mastered State
+  const masteredSet = new Set(JSON.parse(localStorage.getItem('cdc_mastered_qs') || '[]'));
+  const masteredCountEl = document.getElementById('masteredCount');
+
+  function updateMasteredUI() {
+    masteredCountEl.textContent = masteredSet.size;
+    cards.forEach((card, idx) => {
+      const id = 'cdc_q' + (idx + 1);
+      const btn = card.querySelector('.status-btn');
+      if (btn) {
+        if (masteredSet.has(id)) {
+          btn.classList.add('mastered');
+          btn.textContent = '✓ Mastered';
+        } else {
+          btn.classList.remove('mastered');
+          btn.textContent = 'Mark as Mastered';
+        }
+      }
+    });
+  }
+
+  function toggleMastered(btn, id) {
+    const prefixedId = 'cdc_' + id;
+    if (masteredSet.has(prefixedId)) {
+      masteredSet.delete(prefixedId);
+    } else {
+      masteredSet.add(prefixedId);
+    }
+    localStorage.setItem('cdc_mastered_qs', JSON.stringify(Array.from(masteredSet)));
+    updateMasteredUI();
+  }
+
+  updateMasteredUI();
+</script>
+
+</body>
+</html>

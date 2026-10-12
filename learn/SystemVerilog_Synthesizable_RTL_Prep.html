@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SystemVerilog Synthesizable Syntax — Senior Logic Design Interview Bank</title>
+<style>
+  :root {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-emerald: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --border-color: #475569;
+    --card-hover: #2dd4bf; /* Teal hover */
+    --code-bg: #0b1120;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .badge-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .badge {
+    padding: 0.25rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+  }
+  .badge-blue { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+  .badge-cyan { background: rgba(6, 182, 212, 0.2); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.4); }
+  .badge-emerald { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    max-width: 900px;
+  }
+
+  /* Control Panel */
+  .control-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    .control-panel { grid-template-columns: 1fr; }
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-box input:focus { border-color: var(--accent-cyan); }
+
+  .stats-tracker {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    background: var(--bg-tertiary);
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+
+  .stat-item { text-align: center; }
+  .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); }
+  .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+
+  /* Filters */
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .filter-btn {
+    padding: 0.45rem 0.9rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+  .filter-btn.active {
+    background: var(--accent-blue);
+    color: #ffffff;
+    border-color: var(--accent-blue);
+  }
+
+  /* Question Cards */
+  .questions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .q-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .q-card:hover { border-color: var(--card-hover); box-shadow: 0 4px 12px rgba(45, 212, 191, 0.1); }
+
+  .q-header {
+    padding: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    user-select: none;
+  }
+
+  .q-title-wrap { flex: 1; }
+
+  .q-meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .q-num {
+    font-size: 0.75rem;
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--accent-cyan);
+  }
+
+  .cat-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+
+  .diff-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .diff-senior { color: #34d399; background: rgba(16, 185, 129, 0.15); }
+  .diff-lead { color: #fbbf24; background: rgba(245, 158, 11, 0.15); }
+
+  .q-question {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .toggle-icon {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    min-width: 24px;
+    text-align: center;
+  }
+  .q-card.open .toggle-icon { transform: rotate(180deg); color: var(--accent-cyan); }
+
+  .q-body {
+    display: none;
+    padding: 0 1.25rem 1.25rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    background: rgba(15, 23, 42, 0.5);
+  }
+  .q-card.open .q-body { display: block; }
+
+  .section-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--accent-cyan);
+    margin: 1rem 0 0.4rem 0;
+  }
+
+  .answer-content {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    line-height: 1.65;
+  }
+  .answer-content p { margin-bottom: 0.75rem; }
+  .answer-content ul, .answer-content ol { margin-left: 1.4rem; margin-bottom: 0.75rem; }
+  .answer-content li { margin-bottom: 0.35rem; }
+
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.85rem;
+    color: #38bdf8;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+  }
+
+  .pro-tip {
+    background: rgba(37, 99, 235, 0.1);
+    border-left: 3px solid var(--accent-blue);
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.88rem;
+    color: #93c5fd;
+  }
+
+  .card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border-color);
+  }
+
+  .status-btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .status-btn:hover { color: var(--text-primary); }
+  .status-btn.mastered { background: rgba(16, 185, 129, 0.2); border-color: var(--accent-emerald); color: #34d399; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="badge-bar">
+      <span class="badge badge-blue">SystemVerilog</span>
+      <span class="badge badge-cyan">Synthesizable RTL</span>
+      <span class="badge badge-emerald">Qualcomm & Google</span>
+    </div>
+    <h1>SystemVerilog Synthesizable RTL Interview Bank</h1>
+    <p class="subtitle">Targeted technical questions covering advanced synthesizable constructs, FSM coding styles, struct/interface packing, and simulation-synthesis mismatches tailored for a 13-year Senior/Lead Front-End Logic Design Engineer.</p>
+  </header>
+
+  <div class="control-panel">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search by concept (e.g. 'always_comb', 'packed struct', 'unique case', 'interfaces')...">
+    </div>
+    <div class="stats-tracker">
+      <div class="stat-item">
+        <div class="stat-val" id="totalVisibleCount">9</div>
+        <div class="stat-lbl">Questions</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="masteredCount">0</div>
+        <div class="stat-lbl">Mastered</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <button class="filter-btn active" data-filter="all">All Topics</button>
+    <button class="filter-btn" data-filter="datatypes">Data Types & Structs</button>
+    <button class="filter-btn" data-filter="blocks">Procedural Blocks</button>
+    <button class="filter-btn" data-filter="fsm">FSMs & Control Logic</button>
+    <button class="filter-btn" data-filter="interfaces">Interfaces & Modports</button>
+    <button class="filter-btn" data-filter="mismatch">Sim/Synth Mismatch</button>
+  </div>
+
+  <div class="questions-grid" id="questionsGrid">
+
+    <!-- Q1 -->
+    <div class="q-card" data-category="blocks" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q01</span>
+            <span class="cat-tag">Procedural Blocks</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Explain the exact behavioral and synthesis differences between `always @(*)` and `always_comb` in SystemVerilog.</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>While both are used to model combinational logic, <code>always_comb</code> was introduced in SystemVerilog specifically to address the shortcomings of Verilog's <code>always @(*)</code>:</p>
+          <ul>
+            <li><strong>Implicit Evaluation at Time Zero:</strong> <code>always_comb</code> automatically executes once at simulation time zero, guaranteeing that its outputs are evaluated before any other procedural blocks. <code>always @(*)</code> only evaluates when one of its inferred sensitivities changes, potentially leading to 'x' propagation or mismatched initial states.</li>
+            <li><strong>Sensitivity List Accuracy:</strong> <code>always @(*)</code> infers sensitivity from signals read within the block. However, it fails to infer sensitivity to variables read inside tasks or functions called from within the block. <code>always_comb</code> recursively analyzes functions/tasks to build a complete, accurate sensitivity list.</li>
+            <li><strong>Tool Intent:</strong> <code>always_comb</code> explicitly tells synthesis, lint, and formal tools that the designer intends to create pure combinational logic. If the tool detects a latch (due to an unassigned path), it will generate a strict error or warning.</li>
+            <li><strong>Assignment Restrictions:</strong> Variables written on the LHS of an <code>always_comb</code> block cannot be written to by any other process (e.g., another <code>always_comb</code> or <code>always_ff</code> block).</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q1')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="q-card" data-category="datatypes" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q02</span>
+            <span class="cat-tag">Data Types & Structs</span>
+            <span class="diff-tag diff-lead">Lead Logic Design</span>
+          </div>
+          <div class="q-question">What is the synthesis difference between a `packed` struct and an `unpacked` struct? How do they map to physical hardware registers?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>Packed Struct:</strong></p>
+          <ul>
+            <li>Declared as <code>typedef struct packed { logic a; logic [3:0] b; } my_struct_t;</code></li>
+            <li><strong>Hardware Mapping:</strong> A packed struct is treated by the synthesis tool as a contiguous, single vector of bits (in this case, 5 bits).</li>
+            <li><strong>Usage:</strong> It can be directly assigned to buses, cast to integer types, sliced (e.g., <code>my_sig[4:1]</code>), and passed through module ports seamlessly. It is the standard for representing hardware fields like packet headers, CPU instruction formats, or coherency commands (like a 512-FSM command queue entry).</li>
+          </ul>
+          <p><strong>Unpacked Struct:</strong></p>
+          <ul>
+            <li>Declared without the <code>packed</code> keyword.</li>
+            <li><strong>Hardware Mapping:</strong> Synthesis tools treat it as a collection of disjoint, independent variables. There is no guaranteed contiguous bit-level representation.</li>
+            <li><strong>Usage:</strong> You cannot slice it as a single vector or reliably pass it through standard <code>logic [N:0]</code> module ports without explicit field-by-field assignment. Unpacked structs are primarily used in testbenches (verification) or when arrays need to be passed by reference.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q2')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="q-card" data-category="fsm" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q03</span>
+            <span class="cat-tag">FSMs & Control Logic</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Explain the synthesis impact of the `unique` and `priority` keywords in a SystemVerilog case statement. How do they compare to `full_case` and `parallel_case` pragmas?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>SystemVerilog introduced <code>unique</code> and <code>priority</code> modifiers as native language features to replace the unsafe, synthesis-only Verilog pragmas (<code>// synopsys full_case parallel_case</code>).</p>
+          <ul>
+            <li><strong>`unique case`:</strong> Asserts that exactly <em>one</em> condition must match. If multiple conditions match (overlapping cases), or if no condition matches and there is no <code>default</code> clause, the simulator will throw a run-time violation. Synthetically, it behaves like a <code>parallel_case</code> (generating parallel logic like multiplexers or one-hot structures) and <code>full_case</code> (preventing latch inference).</li>
+            <li><strong>`priority case`:</strong> Asserts that at least <em>one</em> condition must match, but multiple conditions may be true. It enforces that the first matching condition takes precedence. Synthetically, it behaves like a <code>full_case</code> but explicitly builds priority-encoder hardware logic.</li>
+          </ul>
+        </div>
+        <div class="section-label">Why is this safer for production tape-outs?</div>
+        <div class="answer-content">
+          <p>Verilog pragmas are comments ignored by the simulator. If a "don't care" state is reached, simulation might evaluate to 'x' or hold a previous state, while synthesis optimizes the logic away arbitrarily, causing a lethal <strong>simulation-synthesis mismatch</strong>. SystemVerilog keywords are enforced by the simulator, ensuring that if you violate the hardware assumption in simulation, the testbench fails immediately.</p>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q3')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="q-card" data-category="interfaces" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q04</span>
+            <span class="cat-tag">Interfaces & Modports</span>
+            <span class="diff-tag diff-lead">Lead Logic Design</span>
+          </div>
+          <div class="q-question">How do SystemVerilog `interface` constructs and `modport` definitions simplify complex interconnect fabrics (like AXI or PAU Nest Fabric), and what are the synthesis limitations?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>Interfaces</strong> bundle multiple related signals into a single port connection. In complex designs like a Power12 PAU Nest Fabric or AXI mesh, passing hundreds of signals (e.g., AWVALID, AWADDR, AWID, etc.) explicitly through every hierarchy level is error-prone and brittle.</p>
+          <p><strong>Modports (Module Ports):</strong> While an interface bundles wires, a <code>modport</code> defines the directionality (input, output, inout) of those wires for a specific endpoint.</p>
+        </div>
+        <div class="section-label">Example Syntax</div>
+        <div class="code-block">
+interface axi_if (input logic clk, input logic rst_n);
+    logic [31:0] awaddr;
+    logic        awvalid;
+    logic        awready;
+    
+    // Master drives request, receives ready
+    modport master (output awaddr, awvalid, input awready);
+    // Slave receives request, drives ready
+    modport slave  (input awaddr, awvalid, output awready);
+endinterface
+        </div>
+        <div class="section-label">Synthesis Limitations</div>
+        <div class="answer-content">
+          <p>While highly synthesizable, interfaces have physical design limitations:</p>
+          <ul>
+            <li><strong>Parameterized Interfaces:</strong> Passing parameters (like data widths) through interface instantiations can sometimes cause issues in older synthesis tools or during structural netlist generation, as the hierarchy gets flattened differently.</li>
+            <li><strong>Tasks/Functions inside Interfaces:</strong> While SV allows defining methods inside an interface, these are generally <em>not</em> synthesizable if they contain time delays or complex procedural logic. They are best reserved for verification (BFMs).</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q4')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="q-card" data-category="datatypes" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q05</span>
+            <span class="cat-tag">Data Types & Structs</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">In synthesizable RTL, what is the difference between `logic`, `bit`, and `wire`, and why is `logic` preferred in SystemVerilog?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <ul>
+            <li><strong>`wire`:</strong> A Verilog-95 net type. It represents a physical connection and can have multiple drivers (resolution function). It must be driven by continuous assignments (<code>assign</code>) or port connections, never inside an <code>always</code> block.</li>
+            <li><strong>`bit`:</strong> A SystemVerilog 2-state data type (0, 1). It is primarily used in verification/testbenches because it defaults to 0 (improving simulation speed). It is <em>highly dangerous</em> for synthesizable RTL because it cannot represent 'X' (unknown) or 'Z' (high-impedance), masking uninitialized registers or multiple-driver contentions during simulation.</li>
+            <li><strong>`logic`:</strong> A SystemVerilog 4-state data type (0, 1, X, Z). It is the successor to Verilog's <code>reg</code>. Unlike <code>reg</code>, <code>logic</code> can be driven by either continuous assignments (<code>assign</code>) OR procedural blocks (<code>always_comb</code>, <code>always_ff</code>). This eliminates the tedious need to switch between <code>wire</code> and <code>reg</code> depending on how the signal is driven.</li>
+          </ul>
+          <p><strong>Crucial Restriction:</strong> While <code>logic</code> is flexible, SystemVerilog enforces that a <code>logic</code> variable can only have a <em>single continuous driver</em>. If you need tri-state buses or multiple drivers, you must revert to using a <code>wire</code> net type.</p>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q5')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="q-card" data-category="blocks" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q06</span>
+            <span class="cat-tag">Procedural Blocks</span>
+            <span class="diff-tag diff-lead">Lead Logic Design</span>
+          </div>
+          <div class="q-question">Write a synthesizable `always_ff` block for an asynchronous active-low reset flip-flop. Why must the reset condition NOT evaluate `if (rst_n == 1'b0)` inside the block?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="code-block">
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        q <= 1'b0;
+    end else begin
+        q <= d;
+    end
+end
+        </div>
+        <div class="section-label">Why `(!rst_n)` over `(rst_n == 1'b0)`?</div>
+        <div class="answer-content">
+          <p>This is a subtle simulation-synthesis mismatch trap related to 4-state logic propagation.</p>
+          <p>If the reset signal goes to an unknown 'X' state during simulation (e.g., during power-up or a CDC violation):</p>
+          <ul>
+            <li>If you write <code>if (rst_n == 1'b0)</code>, the evaluation of <code>('x == 0)</code> returns <strong>false</strong>. The simulator jumps to the <code>else</code> block, and the flip-flop clocks in the value of <code>d</code> instead of resetting or going to 'X'.</li>
+            <li>If you write <code>if (!rst_n)</code>, the logical NOT of 'X' is 'X'. An 'X' in the <code>if</code> condition evaluates to false, jumping to the <code>else</code> block, but standard coding guidelines often pair this with X-propagation analysis tools or strict linting to catch it. However, the most robust, synthesis-safe way to handle 'X' in resets across all simulators is to rely on strict logical negation rather than exact equality matching, or to model the 'X' state explicitly using conditional operators (<code>? :</code>) in the datapath.</li>
+            <li><strong>Synthesis Tool Impact:</strong> Synthesis ignores the 'X' scenario completely; it just sees a multiplexer tied to the reset pin. The danger is purely in RTL simulation masking physical reset failures.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q6')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="q-card" data-category="mismatch" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q07</span>
+            <span class="cat-tag">Sim/Synth Mismatch</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">How does unintentional latch inference occur in SystemVerilog, and how does `always_comb` handle this compared to continuous assignments?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>Unintentional latch inference occurs when a variable within a combinational block is not assigned a value in every possible execution path (e.g., an incomplete <code>if-else</code> tree or a <code>case</code> statement without a <code>default</code>).</p>
+          <p>To preserve the logic state from the previous evaluation, the synthesis tool builds a physical level-sensitive D-Latch, which wreaks havoc on STA (Static Timing Analysis) and DFT (Design for Test) scan chains.</p>
+          <ul>
+            <li><strong>`always_comb` Protection:</strong> By using <code>always_comb</code>, you communicate design intent. Modern synthesis and linting tools (like Spyglass or JasperGold) will flag a fatal error if they detect an incomplete path inside an <code>always_comb</code>, whereas Verilog's <code>always @(*)</code> might just issue a warning.</li>
+            <li><strong>Default Assignments:</strong> The best defensive coding practice is to make default assignments at the top of the <code>always_comb</code> block before the <code>case</code> or <code>if</code> statements.
+              <br><br><code>always_comb begin<br>&nbsp;&nbsp;next_state = current_state; // Default prevents latch<br>&nbsp;&nbsp;case(current_state)...</code>
+            </li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q7')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="q-card" data-category="datatypes" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q08</span>
+            <span class="cat-tag">Data Types & Structs</span>
+            <span class="diff-tag diff-lead">Lead Logic Design</span>
+          </div>
+          <div class="q-question">Can you use Enums for state machine encoding? How do you force synthesis tools to use One-Hot or Gray encoding instead of binary?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>Yes, <code>enum</code> is the preferred method for FSMs in SystemVerilog because it provides strongly-typed states and makes waveform debugging human-readable.</p>
+          <div class="code-block">
+typedef enum logic [1:0] {
+    IDLE = 2'b00,
+    REQ  = 2'b01,
+    ACK  = 2'b10
+} state_t;
+state_t current_state, next_state;
+          </div>
+          <p><strong>Controlling Synthesis Implementation:</strong></p>
+          <p>Even if you explicitly define binary values (like above), synthesis tools (like Design Compiler or Genus) will often ignore your values and aggressively re-encode the FSM to optimize for timing or area (e.g., auto-converting a binary FSM to One-Hot if the state count is large).</p>
+          <p>To force a specific encoding, you must use synthesis attributes directly in the RTL:</p>
+          <div class="code-block">
+// (* syn_encoding = "onehot" *) or (* fsm_encoding = "one_hot" *) depending on tool
+(* fsm_encoding = "gray" *) 
+typedef enum logic [2:0] {
+    IDLE, REQ, ACK, DONE
+} state_t;
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q8')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q9 -->
+    <div class="q-card" data-category="fsm" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q09</span>
+            <span class="cat-tag">FSMs & Control Logic</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">What is the synthesis implication of using a `generate` block (like `genvar` loops) for instantiating logic arrays versus using a behavioral `for` loop inside an `always_comb` block?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>`generate` loops (genvar):</strong></p>
+          <ul>
+            <li>Evaluated during the <em>elaboration</em> phase of synthesis, before any logic optimization happens.</li>
+            <li>Used to structurally instantiate multiple modules, interfaces, or continuous assignments (<code>assign</code>) dynamically based on parameters.</li>
+            <li>Creates physical, distinct structural hierarchy elements in the netlist.</li>
+          </ul>
+          <p><strong>`for` loops inside `always_comb`:</strong></p>
+          <ul>
+            <li>Evaluated as part of the procedural behavior. The synthesis tool unrolls the loop completely and synthesizes the resulting combinational logic equations.</li>
+            <li>Cannot be used to instantiate modules or continuous assignments.</li>
+            <li>Used for things like combinational bit-reversal, priority encoders, or calculating parity across a data bus.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q9')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Filter logic
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const cards = document.querySelectorAll('.q-card');
+  const searchInput = document.getElementById('searchInput');
+  const totalCountEl = document.getElementById('totalVisibleCount');
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    });
+  });
+
+  searchInput.addEventListener('input', applyFilters);
+
+  function applyFilters() {
+    const activeCategory = document.querySelector('.filter-btn.active').dataset.filter;
+    const query = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const cardCategory = card.dataset.category;
+      const cardText = card.innerText.toLowerCase();
+
+      const matchesCategory = (activeCategory === 'all' || cardCategory === activeCategory);
+      const matchesSearch = (!query || cardText.includes(query));
+
+      if (matchesCategory && matchesSearch) {
+        card.style.display = 'block';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    totalCountEl.textContent = visibleCount;
+  }
+
+  // Accordion toggle
+  document.querySelectorAll('.q-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const card = header.parentElement;
+      card.classList.toggle('open');
+    });
+  });
+
+  // Track Mastered State
+  const masteredSet = new Set(JSON.parse(localStorage.getItem('sv_mastered_qs') || '[]'));
+  const masteredCountEl = document.getElementById('masteredCount');
+
+  function updateMasteredUI() {
+    masteredCountEl.textContent = masteredSet.size;
+    cards.forEach((card, idx) => {
+      const id = 'sv_q' + (idx + 1);
+      const btn = card.querySelector('.status-btn');
+      if (btn) {
+        if (masteredSet.has(id)) {
+          btn.classList.add('mastered');
+          btn.textContent = '✓ Mastered';
+        } else {
+          btn.classList.remove('mastered');
+          btn.textContent = 'Mark as Mastered';
+        }
+      }
+    });
+  }
+
+  function toggleMastered(btn, id) {
+    const prefixedId = 'sv_' + id;
+    if (masteredSet.has(prefixedId)) {
+      masteredSet.delete(prefixedId);
+    } else {
+      masteredSet.add(prefixedId);
+    }
+    localStorage.setItem('sv_mastered_qs', JSON.stringify(Array.from(masteredSet)));
+    updateMasteredUI();
+  }
+
+  updateMasteredUI();
+</script>
+
+</body>
+</html>
