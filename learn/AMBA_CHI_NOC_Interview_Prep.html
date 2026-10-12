@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMBA CHI Protocol — Senior NoC Design Interview Question Bank</title>
+<style>
+  :root {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #131a29;
+    --bg-tertiary: #1c263c;
+    --accent-blue: #2563eb;
+    --accent-purple: #8b5cf6;
+    --accent-emerald: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border-color: #24344d;
+    --card-hover: #172338;
+    --code-bg: #070b12;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .badge-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .badge {
+    padding: 0.25rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+  }
+  .badge-purple { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.4); }
+  .badge-blue { background: rgba(37, 99, 235, 0.2); color: #60a5fa; border: 1px solid rgba(37, 99, 235, 0.4); }
+  .badge-emerald { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    max-width: 900px;
+  }
+
+  /* Control Panel */
+  .control-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    .control-panel { grid-template-columns: 1fr; }
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-box input:focus { border-color: var(--accent-purple); }
+
+  .stats-tracker {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    background: var(--bg-tertiary);
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+
+  .stat-item { text-align: center; }
+  .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--accent-purple); }
+  .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+
+  /* Filters */
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .filter-btn {
+    padding: 0.45rem 0.9rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+  .filter-btn.active {
+    background: var(--accent-purple);
+    color: #ffffff;
+    border-color: var(--accent-purple);
+  }
+
+  /* Question Cards */
+  .questions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .q-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  .q-card:hover { border-color: #4c3b6b; background-color: var(--card-hover); }
+
+  .q-header {
+    padding: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    user-select: none;
+  }
+
+  .q-title-wrap { flex: 1; }
+
+  .q-meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .q-num {
+    font-size: 0.75rem;
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--accent-purple);
+  }
+
+  .cat-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+
+  .diff-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .diff-senior { color: #34d399; background: rgba(16, 185, 129, 0.15); }
+  .diff-lead { color: #fbbf24; background: rgba(245, 158, 11, 0.15); }
+  .diff-principal { color: #f87171; background: rgba(244, 63, 94, 0.15); }
+
+  .q-question {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .toggle-icon {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    min-width: 24px;
+    text-align: center;
+  }
+  .q-card.open .toggle-icon { transform: rotate(180deg); color: var(--accent-purple); }
+
+  .q-body {
+    display: none;
+    padding: 0 1.25rem 1.25rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    background: rgba(10, 14, 23, 0.5);
+  }
+  .q-card.open .q-body { display: block; }
+
+  .section-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--accent-purple);
+    margin: 1rem 0 0.4rem 0;
+  }
+
+  .answer-content {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    line-height: 1.65;
+  }
+  .answer-content p { margin-bottom: 0.75rem; }
+  .answer-content ul, .answer-content ol { margin-left: 1.4rem; margin-bottom: 0.75rem; }
+  .answer-content li { margin-bottom: 0.35rem; }
+
+  .pro-tip {
+    background: rgba(139, 92, 246, 0.1);
+    border-left: 3px solid var(--accent-purple);
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.88rem;
+    color: #c4b5fd;
+  }
+
+  .card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border-color);
+  }
+
+  .status-btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .status-btn:hover { color: var(--text-primary); }
+  .status-btn.mastered { background: rgba(16, 185, 129, 0.2); border-color: var(--accent-emerald); color: #34d399; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="badge-bar">
+      <span class="badge badge-purple">AMBA CHI (Issue E & F)</span>
+      <span class="badge badge-blue">CMN-700 / Mesh NoC</span>
+      <span class="badge badge-emerald">Server-Class Coherency</span>
+    </div>
+    <h1>AMBA CHI Coherent Interconnect Interview Bank</h1>
+    <p class="subtitle">Targeted technical questions on Coherent Hub Interfaces (CHI), Home Nodes (HN-F), Snoop Filters, Direct Cache Transfers (DCT), and protocol deadlock avoidance for senior logic design engineers.</p>
+  </header>
+
+  <div class="control-panel">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search by concept (e.g. 'HN-F', 'DCT', 'CompAck', 'deadlock', 'MakeReadUnique')...">
+    </div>
+    <div class="stats-tracker">
+      <div class="stat-item">
+        <div class="stat-val" id="totalVisibleCount">8</div>
+        <div class="stat-lbl">Questions</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="masteredCount">0</div>
+        <div class="stat-lbl">Mastered</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <button class="filter-btn active" data-filter="all">All Topics</button>
+    <button class="filter-btn" data-filter="coherency">Coherency Flows (HN/RN)</button>
+    <button class="filter-btn" data-filter="deadlock">NoC Routing & Deadlock</button>
+    <button class="filter-btn" data-filter="hazards">Hazards & Ordering</button>
+    <button class="filter-btn" data-filter="advanced">CHI Issue E/F & CMN-700</button>
+  </div>
+
+  <div class="questions-grid" id="questionsGrid">
+
+    <!-- Q1 -->
+    <div class="q-card" data-category="coherency" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q01</span>
+            <span class="cat-tag">Coherency Flows (HN/RN)</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Describe the complete CHI transaction flow for a ReadUnique (MakeUnique) request from an RN-F when the cache line is held in a Modified state by a different RN-F.</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>When an RN-F wants to write to a cache line it does not own, it must acquire exclusive permissions. The flow across the CHI channels (REQ, SNP, RSP, DAT) is as follows:</p>
+          <ol>
+            <li><strong>REQ Channel:</strong> The requesting RN-F sends a <code>ReadUnique</code> request to the Home Node (HN-F).</li>
+            <li><strong>HN-F Processing:</strong> The HN-F allocates a tracker, checks its Snoop Filter (SF), and identifies that RN-F_Owner holds the line in a Modified/Exclusive state.</li>
+            <li><strong>SNP Channel:</strong> The HN-F sends a <code>SnpMakeInvalid</code> (or <code>SnpCleanInvalid</code>) to the owning RN-F.</li>
+            <li><strong>RSP/DAT Channel (from Owner):</strong> The owning RN-F invalidates its local copy and responds. In a traditional flow, it sends <code>SnpRespData</code> (data + response) back to the HN-F.</li>
+            <li><strong>DAT Channel (to Requester):</strong> The HN-F forwards the data to the requesting RN-F via a <code>CompData</code> message.</li>
+            <li><strong>RSP Channel (from Requester):</strong> Once the requesting RN-F receives the data and completion, it sends a <code>CompAck</code> back to the HN-F, allowing the HN-F to deallocate the tracker and close the transaction.</li>
+          </ol>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q1')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="q-card" data-category="advanced" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q02</span>
+            <span class="cat-tag">CHI Issue E/F & CMN-700</span>
+            <span class="diff-tag diff-lead">Lead / Staff Design</span>
+          </div>
+          <div class="q-question">How does Direct Cache Transfer (DCT), heavily featured in CHI Issue E and implementations like CMN-700, optimize the standard snoop response flow?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>In the standard CHI flow, snoop data from an owning RN-F must be routed back to the HN-F, which then forwards it to the requesting RN-F. This adds an extra NoC hop and increases bandwidth utilization at the HN-F.</p>
+          <p><strong>Direct Cache Transfer (DCT) eliminates this middleman for the data payload:</strong></p>
+          <ul>
+            <li>When the HN-F issues the snoop (e.g., <code>SnpCleanInvalid</code>) on the SNP channel, it embeds the <code>ReturnNID</code> (Node ID) of the <strong>requesting RN-F</strong> instead of its own.</li>
+            <li>The owning RN-F splits its response:
+              <ul>
+                <li>It sends a <code>SnpRespFwded</code> (status only, no data) on the RSP channel back to the <strong>HN-F</strong> to update the directory/tracker.</li>
+                <li>It sends <code>CompData</code> directly on the DAT channel to the <strong>requesting RN-F</strong>.</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        <div class="section-label">Architectural Tradeoff</div>
+        <div class="pro-tip">
+          <strong>Pro-Tip for Interviews:</strong> While DCT reduces latency and HN-F datapath congestion, it complicates the RN-F design. The RN-F must now be capable of sinking <code>CompData</code> from peer RN-Fs, not just the HN-F, and must handle complex race conditions if the direct data arrives before the HN-F's completion acknowledgment.
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q2')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="q-card" data-category="hazards" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q03</span>
+            <span class="cat-tag">Hazards & Ordering</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Why is the `CompAck` (Completion Acknowledge) message strictly required in CHI, and what race condition does it prevent at the HN-F?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>Unlike AXI, where a transaction ends when the master receives the response (<code>BVALID</code> or <code>RLAST</code>), CHI requires the master (RN-F) to explicitly tell the Home Node (HN-F) that it has finalized the transaction by sending a <code>CompAck</code> on the RSP channel.</p>
+          <p><strong>The Race Condition (Without CompAck):</strong></p>
+          <ol>
+            <li>RN-F1 requests a line (ReadShared). HN-F sends <code>CompData</code>.</li>
+            <li>If the HN-F immediately clears its internal tracker upon sending <code>CompData</code>, it believes RN-F1 now holds the line in a Shared state.</li>
+            <li>Before the <code>CompData</code> physically traverses the NoC mesh to reach RN-F1, RN-F2 issues a <code>WriteUnique</code> to the same address.</li>
+            <li>The HN-F receives the write, checks its directory, and immediately fires a <code>SnpInvalidate</code> to RN-F1.</li>
+            <li>Because of NoC routing variations, the <code>SnpInvalidate</code> might arrive at RN-F1 <em>before</em> the original <code>CompData</code>. RN-F1 receives a snoop for a line it doesn't even know it has yet, leading to a fatal protocol error.</li>
+          </ol>
+          <p><strong>The Fix:</strong> The HN-F keeps the transaction "locked" in its active tracker until RN-F1 replies with <code>CompAck</code>. Any incoming snoops to that address are stalled or queued at the HN-F until the <code>CompAck</code> arrives.</p>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q3')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="q-card" data-category="deadlock" data-difficulty="principal">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q04</span>
+            <span class="cat-tag">NoC Routing & Deadlock</span>
+            <span class="diff-tag diff-principal">Principal / System Architect</span>
+          </div>
+          <div class="q-question">How does CHI utilize Virtual Networks (VNs) and Link-Layer Credits to ensure protocol-level deadlock avoidance across a mesh NoC?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>Protocol deadlock occurs when a cyclic dependency is formed. In coherency protocols, a Request triggers a Snoop, which triggers a Response, which may trigger Data. If all these messages share a single physical buffer queue in the NoC routers, the network will deadlock when the queues fill up.</p>
+          <p><strong>CHI Solution (Message Classes & VNs):</strong></p>
+          <p>CHI strictly divides communication into four independent Message Classes, mapped to isolated Virtual Networks (VNs) inside the NoC routers. Each VN has its own dedicated buffer space and its own independent pool of Link-Layer Credits (L-Credits):</p>
+          <ul>
+            <li><strong>REQ (Request):</strong> Lowest priority. Can be stalled indefinitely without causing deadlock.</li>
+            <li><strong>SNP (Snoop):</strong> Higher priority than REQ.</li>
+            <li><strong>RSP (Response):</strong> Higher priority than SNP.</li>
+            <li><strong>DAT (Data):</strong> Highest priority. Can always drain.</li>
+          </ul>
+          <p>Because an RN or HN is architecturally guaranteed to <em>always</em> be able to sink and process an RSP or DAT message without generating new outward dependencies, the response VNs will always drain. This breaks the cyclic dependency loop, allowing SNP and eventually REQ buffers to unblock.</p>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q4')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="q-card" data-category="coherency" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q05</span>
+            <span class="cat-tag">Coherency Flows (HN/RN)</span>
+            <span class="diff-tag diff-lead">Lead / Staff Design</span>
+          </div>
+          <div class="q-question">What is a Snoop Filter (SF) eviction, and why must the HN-F generate a back-invalidation to an RN-F when an eviction occurs?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>The Snoop Filter (SF) located at the HN-F acts as a directory to track which RN-Fs hold copies of which cache lines. It prevents the HN-F from having to broadcast snoops to all cores in a many-core system.</p>
+          <p>To function correctly, the SF must maintain an <strong>Inclusive</strong> property—meaning the SF must have an entry for <em>every</em> line present in <em>any</em> RN-F's L2/L3 cache. However, the SF has finite capacity.</p>
+          <p><strong>The Eviction Process:</strong></p>
+          <ul>
+            <li>When the SF is full and a new read request arrives, the SF must allocate a new entry by evicting an old one (usually via LRU/Pseudo-LRU).</li>
+            <li>If the SF simply dropped the old entry, it would lose track of a line that still exists in an RN-F's cache. If another core later wrote to that line, the HN-F wouldn't know to snoop the holding RN-F, breaking coherency.</li>
+            <li>Therefore, before the SF can evict an entry, the HN-F <strong>must issue a back-invalidation</strong> (e.g., <code>SnpCleanInvalid</code> or <code>SnpSharedInvalid</code>) to the RN-F(s) currently holding that line, forcing them to evict the line from their local caches and write back dirty data if necessary.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q5')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="q-card" data-category="advanced" data-difficulty="principal">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q06</span>
+            <span class="cat-tag">CHI Issue E/F & CMN-700</span>
+            <span class="diff-tag diff-principal">Principal / System Architect</span>
+          </div>
+          <div class="q-question">In a Server-class architecture, explain how CHI handles Atomic operations (e.g., AtomicCompare, AtomicAdd). Where are they executed and why?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>In legacy protocols, atomic operations were implemented using Load-Exclusive/Store-Exclusive (LL/SC) loops. In highly scaled server chips (like Power processors or high-core-count ARM SoCs), LL/SC causes massive thrashing, where a cache line ping-pongs between RN-Fs, consuming massive NoC bandwidth and causing livelocks.</p>
+          <p><strong>CHI Near-Memory Atomics:</strong></p>
+          <ul>
+            <li>CHI resolves this by pushing the atomic arithmetic logic (ALU) away from the requester and down into the <strong>Home Node (HN-F) or Memory Controller (SN-F)</strong>.</li>
+            <li>The RN-F sends an <code>AtomicAdd</code> or <code>AtomicCompare</code> request on the REQ channel, carrying the operands directly in the DAT channel.</li>
+            <li>The HN-F pulls the cache line from the SLC or memory, performs the arithmetic operation locally inside the HN-F's logic block, updates the directory, and returns the result (original or modified data) back to the RN-F.</li>
+            <li><strong>Advantage:</strong> The cache line never moves to the requesting core. This reduces interconnect traffic by &gt;50% for highly contented locks and guarantees forward progress for synchronization primitives.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q6')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Q7 -->
+    <div class="q-card" data-category="hazards" data-difficulty="senior">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q07</span>
+            <span class="cat-tag">Hazards & Ordering</span>
+            <span class="diff-tag diff-senior">Senior Logic Design</span>
+          </div>
+          <div class="q-question">Describe a WriteBack (WriteBackFull) hazard. How does the HN-F resolve a collision between an incoming WriteBack from an RN-F and an outgoing Snoop to that same RN-F?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p>A classic coherency hazard occurs when an RN-F decides to voluntarily evict a dirty cache line (issuing a <code>WriteBackFull</code> to the HN-F) at the exact same time another RN-F requests that line, causing the HN-F to issue a <code>SnpCleanInvalid</code>.</p>
+          <p>Because NoC routing is asynchronous, the requests cross paths in the mesh:</p>
+          <ol>
+            <li>The RN-F receives a snoop for a line it is in the process of writing back. It can no longer respond with data because the data is in the NoC DAT channel.</li>
+            <li><strong>RN-F Action:</strong> The RN-F responds to the snoop with a special status (e.g., <code>SnpResp_WrBack</code> or by deferring the response), indicating that it has already relinquished the line via a WriteBack.</li>
+            <li><strong>HN-F Action:</strong> The HN-F detects the collision. It must match the incoming <code>WriteBackFull</code> data with the outstanding Snoop tracker. It waits to receive the WriteBack data, sinks it, updates the directory, and then satisfies the new requester using the newly written-back data.</li>
+          </ol>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q7')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Q8 -->
+    <div class="q-card" data-category="advanced" data-difficulty="lead">
+      <div class="q-header">
+        <div class="q-title-wrap">
+          <div class="q-meta">
+            <span class="q-num">Q08</span>
+            <span class="cat-tag">CHI Issue E/F & CMN-700</span>
+            <span class="diff-tag diff-lead">Lead / Staff Design</span>
+          </div>
+          <div class="q-question">What is Stash (Stashing), and how do ReadPreferUnique/StashOnce operations allow endpoints to optimize memory placement ahead of software execution?</div>
+        </div>
+        <div class="toggle-icon">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="section-label">Core Technical Answer</div>
+        <div class="answer-content">
+          <p><strong>Stashing</strong> is a performance optimization feature in CHI where a master (like a PCIe controller or an accelerator) writes data to the system and simultaneously provides a "hint" to the interconnect to push that data directly into a specific CPU's L2/L3 cache, rather than leaving it in the HN-F's SLC or Main Memory.</p>
+          <ul>
+            <li>A transaction like <code>WriteStash</code> or <code>StashOnce</code> includes the NodeID (NID) of the target RN-F.</li>
+            <li>When the HN-F processes the write, it generates a <code>SnpMakeInvalidStash</code> or similar snoop to the target RN-F.</li>
+            <li>If the target RN-F has available cache capacity, it allocates a line and pulls the data directly. When the software running on that core eventually needs the data (e.g., a network packet descriptor), it results in a fast L2 cache hit instead of a high-latency main memory access.</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <button class="status-btn" onclick="toggleMastered(this, 'q8')">Mark as Mastered</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Filter logic
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const cards = document.querySelectorAll('.q-card');
+  const searchInput = document.getElementById('searchInput');
+  const totalCountEl = document.getElementById('totalVisibleCount');
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    });
+  });
+
+  searchInput.addEventListener('input', applyFilters);
+
+  function applyFilters() {
+    const activeCategory = document.querySelector('.filter-btn.active').dataset.filter;
+    const query = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const cardCategory = card.dataset.category;
+      const cardText = card.innerText.toLowerCase();
+
+      const matchesCategory = (activeCategory === 'all' || cardCategory === activeCategory);
+      const matchesSearch = (!query || cardText.includes(query));
+
+      if (matchesCategory && matchesSearch) {
+        card.style.display = 'block';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    totalCountEl.textContent = visibleCount;
+  }
+
+  // Accordion toggle
+  document.querySelectorAll('.q-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const card = header.parentElement;
+      card.classList.toggle('open');
+    });
+  });
+
+  // Track Mastered State
+  const masteredSet = new Set(JSON.parse(localStorage.getItem('chi_mastered_qs') || '[]'));
+  const masteredCountEl = document.getElementById('masteredCount');
+
+  function updateMasteredUI() {
+    masteredCountEl.textContent = masteredSet.size;
+    cards.forEach((card, idx) => {
+      const id = 'chi_q' + (idx + 1);
+      const btn = card.querySelector('.status-btn');
+      if (btn) {
+        if (masteredSet.has(id)) {
+          btn.classList.add('mastered');
+          btn.textContent = '✓ Mastered';
+        } else {
+          btn.classList.remove('mastered');
+          btn.textContent = 'Mark as Mastered';
+        }
+      }
+    });
+  }
+
+  function toggleMastered(btn, id) {
+    const prefixedId = 'chi_' + id;
+    if (masteredSet.has(prefixedId)) {
+      masteredSet.delete(prefixedId);
+    } else {
+      masteredSet.add(prefixedId);
+    }
+    localStorage.setItem('chi_mastered_qs', JSON.stringify(Array.from(masteredSet)));
+    updateMasteredUI();
+  }
+
+  updateMasteredUI();
+</script>
+
+</body>
+</html>
