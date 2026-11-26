@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Micron Principal ASIC Design - Interview Prep</title>
+<style>
+:root{--blue:#0066cc;--green:#00b359;--coral:#ff6b35;--bg:#fff;--side:#f8f8f8;--text:#1a1a1a;--line:#ddd;--gtint:#f0f9f4;--btint:#eaf3fc;--ctint:#fff3ee}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.6;letter-spacing:.3px;color:var(--text);background:var(--bg)}
+.container{display:flex;min-height:100vh}
+.sidebar{width:280px;flex:0 0 280px;background:var(--side);border-right:1px solid var(--line);position:sticky;top:0;height:100vh;overflow-y:auto;padding:20px 16px}
+.sidebar h2{margin:0 0 4px;font-size:17px;color:var(--blue);line-height:1.3}
+.sidebar .sub{font-size:12px;color:#555;margin-bottom:14px}
+.progress-bar{height:8px;background:#e3e3e3;border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;width:0;background:var(--green);transition:width .4s}
+.chapter-count{font-size:12px;color:#555;margin:4px 0 12px}
+.toc ul{list-style:none;margin:0;padding:0}
+.toc li a{display:block;padding:8px 10px;margin:2px 0;border-radius:6px;color:var(--text);text-decoration:none;font-size:14px;cursor:pointer;border-left:3px solid transparent}
+.toc li a:hover{background:var(--btint)}
+.toc li a.active{background:var(--btint);border-left-color:var(--blue);color:var(--blue);font-weight:600}
+.toc li a.done::after{content:" \2713";color:var(--green);font-weight:700}
+.content{flex:1;max-width:960px;margin:0 auto;padding:32px 36px 80px;min-width:0}
+.chapter{display:none;scroll-margin-top:60px}
+.chapter.active{display:block;animation:fade .5s ease-in}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h1{font-size:28px;color:var(--blue);margin:0 0 6px;line-height:1.25}
+h2{font-size:22px;color:var(--blue);margin:2rem 0 .6rem}
+h3{font-size:18px;color:#333;margin:1.4rem 0 .4rem;font-weight:600}
+.meta{color:#555;font-size:14px;margin-bottom:1.2rem}
+p{margin:.6rem 0}
+ul,ol{padding-left:1.3rem}
+li{margin:.25rem 0}
+code{font-family:Monaco,Consolas,'Courier New',monospace;font-size:13px;background:var(--ctint);padding:1px 5px;border-radius:4px;color:#7a2a0b}
+.codewrap{margin:1rem 0;border:1px solid #f0c9b8;border-radius:8px;overflow:hidden;background:#fffaf7}
+.codehead{display:flex;justify-content:space-between;align-items:center;background:var(--ctint);padding:5px 10px;font-size:12px;color:#7a2a0b;border-bottom:1px solid #f0c9b8}
+.copybtn{background:var(--coral);color:#fff;border:0;border-radius:4px;padding:3px 10px;font-size:12px;cursor:pointer}
+.copybtn:hover{background:#d9511f}
+pre.code{margin:0;padding:10px 0;overflow-x:auto;font-family:Monaco,Consolas,'Courier New',monospace;font-size:13px;line-height:1.5;letter-spacing:0;color:var(--text)}
+pre.code .ln{display:block;padding:0 12px 0 0;white-space:pre}
+pre.code .ln::before{content:attr(data-n);display:inline-block;width:38px;text-align:right;margin-right:12px;color:#aaa;user-select:none}
+.k{color:#0066cc;font-weight:600}.s{color:#00b359}.c{color:#666;font-style:italic}.n{color:#ff6b35}
+figure.diagram{margin:1.2rem 0;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;text-align:center;animation:fade .8s ease-in}
+figure.diagram svg{max-width:100%;height:auto}
+figcaption{font-size:13px;color:#555;margin-top:4px}
+svg text{font-family:-apple-system,'Segoe UI',sans-serif;font-size:13px;fill:#1a1a1a}
+.box{fill:#eaf3fc;stroke:#0066cc;stroke-width:2}.boxg{fill:#e8f7ef;stroke:#00b359;stroke-width:2}.boxo{fill:#fff3ee;stroke:#ff6b35;stroke-width:2}
+.box:hover,.boxg:hover,.boxo:hover{stroke-width:3.5}
+.qa{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:.7rem 0;background:#fff}
+.qa .q{font-weight:600;margin:0 0 6px}
+.tag{display:inline-block;font-size:11px;background:var(--btint);color:var(--blue);border-radius:10px;padding:1px 8px;margin-right:6px;font-weight:600}
+.rv{background:var(--coral);color:#fff;border:0;border-radius:5px;padding:5px 12px;cursor:pointer;font-size:13px}
+.rv:hover{background:#d9511f}
+.ans{display:none;margin-top:8px;padding:10px 12px;background:var(--gtint);border-left:4px solid var(--green);border-radius:4px}
+.ans.show{display:block;animation:fade .4s ease-in}
+.quiz{margin:1.6rem 0;padding:6px 16px 12px;border:2px solid var(--blue);border-radius:10px;background:#fbfdff}
+.quiz h3{color:var(--blue)}
+.key{margin:1.6rem 0;padding:6px 18px 12px;background:var(--gtint);border:1px solid #bfe6cf;border-left:6px solid var(--green);border-radius:8px}
+.key h3{color:#007a3d;margin-top:.6rem}
+details.collapsible{margin:1rem 0;border:1px solid var(--line);border-radius:8px;padding:8px 14px;background:#fafafa}
+details.collapsible summary{cursor:pointer;font-weight:600;color:var(--blue)}
+.callout{margin:1rem 0;padding:10px 14px;border-left:5px solid var(--coral);background:var(--ctint);border-radius:4px}
+.callout.blue{border-left-color:var(--blue);background:var(--btint)}
+table.t{border-collapse:collapse;width:100%;margin:1rem 0;font-size:14px}
+table.t th,table.t td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+table.t th{background:var(--btint);color:#003d7a}
+.widget{margin:1.2rem 0;padding:12px 16px;border:2px dashed var(--coral);border-radius:10px;background:#fffdfc}
+.widget h3{margin-top:0;color:var(--coral)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:6px 0}
+.row label{display:flex;flex-direction:column;font-size:12px;color:#444;gap:2px}
+.row input,.row select,textarea{font:inherit;font-size:14px;padding:5px 8px;border:1px solid #bbb;border-radius:5px;letter-spacing:0}
+.row input{width:96px}
+textarea{width:100%;min-height:90px;resize:vertical}
+.btn{background:var(--blue);color:#fff;border:0;border-radius:6px;padding:7px 14px;cursor:pointer;font-size:14px}
+.btn:hover:not(:disabled){background:#004c99}
+.btn:disabled{background:#b9c7d6;cursor:not-allowed}
+.btn.o{background:var(--coral)}.btn.o:hover:not(:disabled){background:#d9511f}
+.btn.g{background:var(--green)}.btn.g:hover:not(:disabled){background:#008f47}
+.out{margin-top:8px;padding:8px 12px;background:var(--gtint);border-left:4px solid var(--green);border-radius:4px;font-weight:600}
+.out.bad{background:#fdecea;border-left-color:#d93025;color:#9a1b12}
+.nav-buttons{display:flex;justify-content:space-between;margin-top:2.4rem;padding-top:1rem;border-top:1px solid var(--line)}
+.start-btn{font-size:17px;padding:10px 22px}
+.hamb{display:none;position:fixed;top:10px;left:10px;z-index:30;background:var(--blue);color:#fff;border:0;border-radius:6px;padding:8px 12px;font-size:18px;cursor:pointer}
+.plan{list-style:none;padding:0}
+.plan li{padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin:6px 0;background:#fff}
+.plan label{cursor:pointer}
+.plan input{margin-right:8px;transform:scale(1.2)}
+.fc{perspective:900px;height:190px;margin:10px 0;cursor:pointer}
+.fc-in{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.fc.flip .fc-in{transform:rotateY(180deg)}
+.fc-f,.fc-b{position:absolute;inset:0;backface-visibility:hidden;border-radius:10px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;overflow:auto}
+.fc-f{background:var(--btint);border:2px solid var(--blue);font-weight:600}
+.fc-b{background:var(--gtint);border:2px solid var(--green);transform:rotateY(180deg);font-size:15px}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.filters button{background:#fff;border:1px solid var(--blue);color:var(--blue);border-radius:16px;padding:3px 12px;cursor:pointer;font-size:13px}
+.filters button.on{background:var(--blue);color:#fff}
+.mesi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
+.st{border:3px solid var(--line);border-radius:10px;padding:10px 4px;text-align:center;background:#fff;transition:all .3s}
+.st b{display:block;font-size:26px}
+.st small{font-size:12px;color:#555}
+.st.cur{border-color:var(--blue);background:var(--btint);box-shadow:0 0 14px rgba(0,102,204,.55);transform:scale(1.04)}
+.log{max-height:150px;overflow:auto;font-size:13px;background:#fafafa;border:1px solid var(--line);border-radius:6px;padding:6px 10px;letter-spacing:0}
+.wave{display:flex;gap:0;margin:6px 0}
+.wave .cy{flex:1;text-align:center;font-size:11px;border-left:1px solid #ccc;padding:2px 0}
+.wave .cy.xfer{background:#d4f3e1}
+.wave .cy.viol{background:#fdd}
+.sig{display:flex;align-items:center;gap:8px;margin:2px 0;font-size:13px}
+.sig span.nm{width:70px;font-weight:600}
+.cbx{flex:1;display:flex}
+.cbx label{flex:1;text-align:center;border-left:1px solid #ccc;padding:3px 0;cursor:pointer}
+@media(max-width:768px){
+ .hamb{display:block}
+ .sidebar{position:fixed;left:-300px;z-index:25;transition:left .3s;width:280px;box-shadow:2px 0 8px rgba(0,0,0,.2)}
+ .sidebar.open{left:0}
+ .content{padding:56px 16px 60px}
+ .mesi{grid-template-columns:repeat(2,1fr)}
+}
+@media print{.sidebar,.hamb,.nav-buttons{display:none}.chapter{display:block!important}}
+</style>
+</head>
+<body>
+<button class="hamb" id="hamb" aria-label="Open menu">&#9776;</button>
+<div class="container">
+<aside class="sidebar" id="sidebar">
+ <h2>Micron Principal ASIC Design: Interview Prep</h2>
+ <div class="sub">Round 1 &middot; Tuesday 1 Dec 2026</div>
+ <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+ <div class="chapter-count" id="chapterCount">0/8 chapters visited</div>
+ <nav class="toc"><ul id="toc"></ul></nav>
+ <p style="font-size:12px;color:#666;margin-top:14px">Tip: use the left and right arrow keys to move between chapters.</p>
+</aside>
+<main class="content">
+<section id="chapter-0" class="chapter" data-title="Start here: plan and strategy">
+<h1>Micron Principal Engineer, ASIC Design: Round 1 Prep</h1>
+<div class="meta">Interview: Tuesday 1 Dec 2026 &middot; Prepared 26 Nov 2026 &middot; 8 chapters &middot; about 5 days</div>
+
+<p>This module covers what the posting asks for: micro-architecture, RTL, CDC and async design, the Lint/CDC/Synthesis/STA/Power flow, SoC integration, plus protocols (AXI/APB, CHI coherency, DDR/LPDDR). It also gives you practice for your own project stories, and a question bank.</p>
+
+<div class="callout blue"><b>What Round 1 usually looks like for a Principal role (confirm with your recruiter):</b>
+<ul>
+<li>A resume deep-dive: 15&ndash;25 minutes on your biggest design, in detail.</li>
+<li>Fundamentals: timing, CDC, FSMs, synthesis, low power. Expect "why" and "what if" follow-ups, not definitions.</li>
+<li>Possibly a whiteboard RTL task (arbiter, FIFO, ready/valid stage, clock divider).</li>
+<li>A check on your SoC ownership: what you integrated, what you owned from scratch, and how you worked with PD, DV and DFT.</li>
+</ul>
+Ask the recruiter: "How long is Round 1, who is interviewing (manager or senior engineer), and should I expect live RTL coding?"</div>
+
+<h2>The role in one view</h2>
+<table class="t">
+<tr><th>What the posting says</th><th>Where you are strong</th><th>Where to prepare hardest</th></tr>
+<tr><td>12+ yrs IP and SoC RTL</td><td>12.9 yrs; PAU, DDR controller, PHY</td><td>SoC-level ownership stories</td></tr>
+<tr><td>Micro-architecture, SV, integration</td><td>512-FSM coherency pipe, address remap and striping</td><td>Explain decisions and trade-offs clearly</td></tr>
+<tr><td>Async design, CDC</td><td>CDC random-stage model; Spyglass/Jasper CDC</td><td>Precise answers on async FIFO, handshakes, reconvergence</td></tr>
+<tr><td>Lint, CDC, Synthesis/STA, Power</td><td>Spyglass, DC, timing closure, low-power checks</td><td>Constraints (SDC), multicycle paths, UPF</td></tr>
+<tr><td>AI-enabled workflows</td><td>BOB-AI debug, Claude MCP/skills</td><td>Concrete before/after examples</td></tr>
+<tr><td>LPDDR subsystem, CPU subsystem, SoC test controller (preferred)</td><td>DDR controller, PHY, DFI</td><td>CPU subsystem and test controller basics (Chapter 5)</td></tr>
+</table>
+
+<h2>Your 5-day plan (tick as you go)</h2>
+<ul class="plan" id="plan">
+<li><label><input type="checkbox" data-k="p1"><b>Thu 26 Nov (tonight):</b> Chapter 1 (digital design and timing) and Chapter 2 (RTL drills). Write the arbiter and FIFO on paper without looking.</label></li>
+<li><label><input type="checkbox" data-k="p2"><b>Fri 27 Nov:</b> Chapter 3 (CDC) and Chapter 4 (synthesis, STA, low power). Redo every quiz.</label></li>
+<li><label><input type="checkbox" data-k="p3"><b>Sat 28 Nov:</b> Chapter 5 (AXI/APB, CHI, DDR/LPDDR, Micron-specific blocks).</label></li>
+<li><label><input type="checkbox" data-k="p4"><b>Sun 29 Nov:</b> Chapter 6. Write your STAR stories in the notebook and say each aloud in under 3 minutes.</label></li>
+<li><label><input type="checkbox" data-k="p5"><b>Mon 30 Nov:</b> Chapter 7 (mock questions and flashcards). Light revision, sleep early.</label></li>
+<li><label><input type="checkbox" data-k="p6"><b>Tue 1 Dec:</b> Re-read the cheat sheet (end of Chapter 7). Keep your resume and a notepad ready.</label></li>
+</ul>
+
+<div class="callout"><b>One rule for the interview:</b> never claim more than you did. Your resume says the PAU is fabric-attached and handles I/O coherency, and that CHI and CMN-700 are training and study. If asked about something you only studied, say so, then show you understand it by mapping it to what you built. Interviewers at your level trust honest scoping more than inflated claims.</div>
+
+<div class="nav-buttons"><span></span><button class="btn start-btn" onclick="goTo(1)">Start Chapter 1 &rarr;</button></div>
+</section>
+
+<section id="chapter-1" class="chapter" data-title="1. Digital design and timing">
+<h1>Chapter 1: Digital Design and Timing Fundamentals</h1>
+<div class="meta">About 20 minutes &middot; The base layer: every other question builds on this</div>
+
+<h2>1.1 Setup and hold: the two equations</h2>
+<figure class="diagram">
+<svg viewBox="0 0 640 150" role="img" aria-label="Launch flop, combinational logic, capture flop">
+<rect class="box" x="20" y="45" width="90" height="60" rx="6"/><text x="65" y="80" text-anchor="middle">Launch FF</text>
+<rect class="boxo" x="230" y="45" width="170" height="60" rx="6"/><text x="315" y="80" text-anchor="middle">Combinational logic</text>
+<rect class="box" x="520" y="45" width="90" height="60" rx="6"/><text x="565" y="80" text-anchor="middle">Capture FF</text>
+<line x1="110" y1="75" x2="230" y2="75" stroke="#0066cc" stroke-width="2"/><line x1="400" y1="75" x2="520" y2="75" stroke="#0066cc" stroke-width="2"/>
+<text x="170" y="66" text-anchor="middle">Tcq</text><text x="315" y="130" text-anchor="middle">Tlogic (max for setup, min for hold)</text><text x="460" y="66" text-anchor="middle">Tsu / Thold</text>
+<line x1="65" y1="20" x2="65" y2="45" stroke="#555"/><line x1="565" y1="20" x2="565" y2="45" stroke="#555"/>
+<text x="65" y="15" text-anchor="middle">CLK (launch)</text><text x="565" y="15" text-anchor="middle">CLK (capture, skew)</text>
+</svg>
+<figcaption>Timing path between two flops. Skew is the difference in clock arrival.</figcaption></figure>
+
+<ul>
+<li><b>Setup:</b> <code>Tclk + Tskew &ge; Tcq + Tlogic(max) + Tsu + uncertainty</code>, where <code>Tskew</code> = capture clock arrival minus launch clock arrival. Violating it means the data arrives too late. Fix by reducing logic depth, pipelining, retiming, upsizing cells, or restructuring. Slowing the clock also works but costs performance.</li>
+<li><b>Hold:</b> <code>Tcq + Tlogic(min) &ge; Thold + Tskew</code> (same skew definition). Violating it means new data races through before the capture flop has finished sampling. It does not depend on clock period, so a slower clock does not fix it. Fix with delay buffers (usually inserted during physical design).</li>
+<li><b>Slack</b> = required time minus arrival time. Negative slack means a violation. WNS is the worst negative slack; TNS is the sum of all negative slacks.</li>
+</ul>
+
+<div class="widget" id="w-slack">
+<h3>Try it: setup and hold slack calculator</h3>
+<div class="row">
+<label>Clock period (ns)<input id="sl-t" type="number" value="1.0" step="0.05"></label>
+<label>Tcq (ns)<input id="sl-cq" type="number" value="0.10" step="0.01"></label>
+<label>Logic max (ns)<input id="sl-lmax" type="number" value="0.70" step="0.01"></label>
+<label>Logic min (ns)<input id="sl-lmin" type="number" value="0.05" step="0.01"></label>
+<label>Tsu (ns)<input id="sl-su" type="number" value="0.05" step="0.01"></label>
+<label>Thold (ns)<input id="sl-h" type="number" value="0.04" step="0.01"></label>
+<label>Skew (ns)<input id="sl-sk" type="number" value="0.05" step="0.01"></label>
+<button class="btn o" id="sl-go">Calculate</button>
+</div>
+<div id="sl-out"></div>
+<p style="font-size:13px;color:#555">Skew here means capture clock arrives later than launch clock (positive skew): it helps setup and hurts hold. Try raising skew and watch which slack moves in which direction.</p>
+</div>
+
+<h2>1.2 Metastability</h2>
+<p>If data changes inside the setup/hold window, the flop output can sit at an in-between voltage and take an unpredictable time to resolve. It cannot be eliminated, only made rare enough. Mean time between failures:</p>
+<p><code>MTBF = e<sup>(Tr/&tau;)</sup> / (T0 &times; fclk &times; fdata)</code></p>
+<p>Here <code>Tr</code> is the resolution time you give the signal (one full clock period per extra synchroniser stage), and <code>&tau;</code> and <code>T0</code> are technology constants. The exponent is why each extra flop in a synchroniser improves MTBF enormously, and why a lower clock frequency helps.</p>
+
+<h2>1.3 Coding style that survives synthesis</h2>
+<ul>
+<li><code>always_ff</code> with non-blocking (<code>&lt;=</code>) for sequential logic; <code>always_comb</code> with blocking (<code>=</code>) for combinational logic. Mixing them causes simulation vs synthesis mismatches and races.</li>
+<li><b>Latches</b> are inferred when a signal is not assigned on every path (missing <code>else</code>, incomplete <code>case</code>). Fix with default assignments at the top of the block. <code>always_comb</code> and lint will flag this.</li>
+<li><code>unique case</code> tells tools the cases are mutually exclusive (parallel mux); <code>priority case</code> keeps the order (priority logic). Use <code>unique</code> only when it is truly one-hot, otherwise simulation and silicon can disagree.</li>
+<li><b>Reset:</b> asynchronous assert, synchronous deassert is the common recommendation. Async assert works even with no clock; sync deassert avoids recovery/removal violations and flops leaving reset in different cycles.</li>
+<li>Beware X-propagation: uninitialised flops, <code>case</code> defaults assigning X, and X-pessimism in gate-level simulation.</li>
+</ul>
+
+<h2>1.4 FSM design</h2>
+<table class="t">
+<tr><th>Topic</th><th>What to say</th></tr>
+<tr><td>Moore vs Mealy</td><td>Moore outputs depend only on state (glitch-free, one cycle later). Mealy outputs depend on state and inputs (faster response, but input glitches and combinational paths from input to output).</td></tr>
+<tr><td>Encoding</td><td>Binary (fewer flops), one-hot (faster, simpler decode, more flops; common in FPGA and speed-critical logic), Gray (when states change one bit at a time matters, for example power or CDC).</td></tr>
+<tr><td>Safety</td><td>Always cover unused states with a default that returns to IDLE. Consider an error state for illegal conditions.</td></tr>
+<tr><td>Style</td><td>One block for state register, one for next-state logic, one for outputs (registered outputs preferred to ease timing).</td></tr>
+</table>
+
+<script type="text/x-code" class="code-src" data-lang="systemverilog">
+// Recommended FSM template: registered state, combinational next-state, registered output
+typedef enum logic [1:0] {IDLE, REQ, WAIT, DONE} state_e;
+state_e state, next;
+
+always_ff @(posedge clk or negedge rst_n)
+  if (!rst_n) state <= IDLE;
+  else        state <= next;
+
+always_comb begin
+  next = state;                 // default avoids latches
+  case (state)
+    IDLE: if (start)        next = REQ;
+    REQ:  if (grant)        next = WAIT;
+    WAIT: if (resp_valid)   next = DONE;
+    DONE:                   next = IDLE;
+    default:                next = IDLE;  // safe recovery
+  endcase
+end
+
+always_ff @(posedge clk or negedge rst_n)
+  if (!rst_n) busy <= 1'b0;
+  else        busy <= (next != IDLE);   // registered output
+</script>
+
+<h2>1.5 Reset synchroniser and clock gating</h2>
+<script type="text/x-code" class="code-src" data-lang="systemverilog">
+// Async assert, synchronous deassert reset synchroniser
+module rst_sync (input clk, input arst_n, output rst_n_sync);
+  logic [1:0] q;
+  always_ff @(posedge clk or negedge arst_n)
+    if (!arst_n) q <= 2'b00;
+    else         q <= {q[0], 1'b1};
+  assign rst_n_sync = q[1];
+endmodule
+
+// Latch-based integrated clock gate (glitch-free)
+module icg (input clk, input en, output gclk);
+  logic en_l;
+  always_latch if (!clk) en_l = en;   // transparent while clk low
+  assign gclk = clk & en_l;
+endmodule
+</script>
+<p><b>Why the latch?</b> If <code>en</code> changed while <code>clk</code> was high, a plain AND gate would produce a truncated or glitching clock pulse. The latch holds <code>en</code> steady during the high phase. In real flows you use the library ICG cell, not hand-written gating.</p>
+
+<details class="collapsible"><summary>Deeper: clock skew, uncertainty and OCV</summary>
+<p>Skew is deliberate (useful skew) or accidental. Uncertainty in SDC models jitter and margin. OCV/AOCV/POCV derate launch and capture paths differently to cover on-chip variation. Common-path pessimism removal (CPPR) takes back the margin on the shared part of the clock tree. You do not need the maths at Round 1, but be ready to say what each one is for.</p>
+</details>
+
+<div class="quiz"><h3>Self-check quiz</h3>
+<div class="qa"><p class="q">Q1. Your design fails hold at one corner. Does lowering the clock frequency help? What do you do?</p><button class="rv">Reveal answer</button><div class="ans">No. Hold depends on the data path delay versus clock skew and flop hold time, not on the period. Fix by adding delay (hold buffers) on the short path, usually in physical design, or by reducing positive skew. Also check the RTL for paths that are accidentally too short.</div></div>
+<div class="qa"><p class="q">Q2. Why use non-blocking assignments in sequential blocks?</p><button class="rv">Reveal answer</button><div class="ans">Non-blocking assignments update at the end of the time step, so all flops sample the old values, as real hardware does. Blocking assignments in clocked logic can create order-dependent races and simulation vs synthesis mismatches.</div></div>
+<div class="qa"><p class="q">Q3. A signal is assigned only inside <code>if (en)</code> in an <code>always_comb</code> block. What happens?</p><button class="rv">Reveal answer</button><div class="ans">A latch is inferred (<code>always_comb</code> lint will warn). Add a default assignment or an <code>else</code> branch so the signal is assigned on every path.</div></div>
+<div class="qa"><p class="q">Q4. Why is "asynchronous assert, synchronous deassert" preferred for resets?</p><button class="rv">Reveal answer</button><div class="ans">Assertion works immediately, even without a running clock. Deassertion is aligned to the clock, so every flop leaves reset in the same cycle and there are no recovery/removal violations or metastability on release.</div></div>
+<div class="qa"><p class="q">Q5. Moore or Mealy for a registered control interface, and why?</p><button class="rv">Reveal answer</button><div class="ans">Moore (or a Mealy with registered outputs), because outputs are glitch-free and there is no combinational path from input to output, which makes timing closure and CDC easier. Mealy is chosen when you need to react in the same cycle.</div></div>
+</div>
+
+<div class="key"><h3>Key takeaways</h3><ul>
+<li>Setup depends on the clock period; hold does not.</li>
+<li>Latches come from incomplete assignments; use defaults.</li>
+<li>Non-blocking for flops, blocking for combinational logic.</li>
+<li>Reset: async assert, sync deassert. Register FSM outputs.</li>
+<li>Metastability cannot be removed, only made very rare.</li></ul></div>
+<div class="nav-buttons"><button class="btn" onclick="goTo(0)">&larr; Previous</button><button class="btn" onclick="goTo(2)">Next &rarr;</button></div>
+</section>
+<section id="chapter-2" class="chapter" data-title="2. RTL coding drills">
+<h1>Chapter 2: RTL Coding Drills</h1>
+<div class="meta">About 20 minutes &middot; Practise writing these on paper. Interviewers look at structure, edge cases and how you explain your thinking.</div>
+
+<div class="callout blue"><b>How to answer a coding question:</b> (1) restate the spec and ask about reset, widths and corner cases, (2) sketch the block diagram, (3) write the code in clean, synthesisable style, (4) test it with two or three examples aloud, (5) mention timing and area trade-offs.</div>
+
+<h2>2.1 Round-robin arbiter</h2>
+<p>Idea: keep a <b>mask</b> of ports that are "after" the last granted port. Do fixed-priority arbitration over the masked requests first; if none are active, fall back to unmasked requests. The trick <code>x &amp; (~x + 1)</code> isolates the lowest set bit.</p>
+<script type="text/x-code" class="code-src" data-lang="systemverilog">
+module rr_arb #(parameter int N = 4) (
+  input  logic         clk, rst_n,
+  input  logic [N-1:0] req,
+  output logic [N-1:0] gnt
+);
+  logic [N-1:0] mask, req_m, gnt_m, gnt_u;
+
+  assign req_m = req & mask;                     // requests after last grant
+  assign gnt_m = req_m & (~req_m + 1'b1);        // lowest set bit of masked
+  assign gnt_u = req   & (~req   + 1'b1);        // lowest set bit of all
+  assign gnt   = (|req_m) ? gnt_m : gnt_u;       // wrap around if none masked
+
+  always_ff @(posedge clk or negedge rst_n)
+    if (!rst_n)     mask <= '1;
+    else if (|gnt)  mask <= ~((gnt << 1) - 1'b1); // set bits above granted port
+endmodule
+</script>
+<p><b>Walk-through:</b> req = 4'b1011, last grant was port 1 (mask = 4'b1100). Masked requests = 4'b1000, so port 3 wins. Next mask after granting port 3 is 0 (shifted out), so the unmasked path runs and port 0 wins. That is the wrap-around.</p>
+<p><b>Follow-ups to expect:</b> weighted round-robin, fairness under bursts, locking a grant until the packet's last beat, and registering the grant to improve timing.</p>
+
+<h2>2.2 Synchronous FIFO with full and empty</h2>
+<p>Use one extra pointer bit. Empty when pointers are equal. Full when the lower bits are equal and the extra bit differs.</p>
+<script type="text/x-code" class="code-src" data-lang="systemverilog">
+module sync_fifo #(parameter int W = 8, D = 16, AW = $clog2(D)) (
+  input  logic         clk, rst_n,
+  input  logic         wr_en, rd_en,
+  input  logic [W-1:0] din,
+  output logic [W-1:0] dout,
+  output logic         full, empty
+);
+  logic [W-1:0] mem [D];
+  logic [AW:0]  wptr, rptr;               // one extra bit
+
+  assign empty = (wptr == rptr);
+  assign full  = (wptr[AW] != rptr[AW]) && (wptr[AW-1:0] == rptr[AW-1:0]);
+  assign dout  = mem[rptr[AW-1:0]];      // async read; use a registered read for SRAM
+
+  always_ff @(posedge clk)
+    if (wr_en && !full) mem[wptr[AW-1:0]] <= din;
+
+  always_ff @(posedge clk or negedge rst_n)
+    if (!rst_n) begin wptr <= '0; rptr <= '0; end
+    else begin
+      if (wr_en && !full)  wptr <= wptr + 1'b1;
+      if (rd_en && !empty) rptr <= rptr + 1'b1;
+    end
+endmodule
+</script>
+
+<div class="widget" id="w-fifo">
+<h3>Try it: FIFO depth calculator</h3>
+<p style="font-size:13px">Writer sends a burst of B words at rate fw; the reader drains at rate fr (both words per cycle, writer faster than reader). Depth needed &asymp; B &times; (1 &minus; fr/fw), plus margin for pointer latency (2&ndash;3 for async FIFOs).</p>
+<div class="row">
+<label>Burst B<input id="ff-b" type="number" value="120"></label>
+<label>fw (words/cycle)<input id="ff-w" type="number" value="1" step="0.1"></label>
+<label>fr (words/cycle)<input id="ff-r" type="number" value="0.6" step="0.1"></label>
+<label>Margin<input id="ff-m" type="number" value="3"></label>
+<button class="btn o" id="ff-go">Calculate</button></div>
+<div id="ff-out"></div></div>
+
+<h2>2.3 Ready/valid pipeline stage (skid buffer)</h2>
+<p>Goal: cut the combinational path from <code>out_ready</code> back to <code>in_ready</code> without losing throughput. A second storage slot (the "skid") catches the word that arrives while the output is stalled.</p>
+<figure class="diagram">
+<svg viewBox="0 0 640 140" role="img" aria-label="Skid buffer block diagram">
+<rect class="box" x="30" y="40" width="130" height="60" rx="6"/><text x="95" y="75" text-anchor="middle">Upstream</text>
+<rect class="boxg" x="250" y="25" width="150" height="40" rx="6"/><text x="325" y="50" text-anchor="middle">Main register</text>
+<rect class="boxo" x="250" y="80" width="150" height="40" rx="6"/><text x="325" y="105" text-anchor="middle">Skid register</text>
+<rect class="box" x="490" y="40" width="120" height="60" rx="6"/><text x="550" y="75" text-anchor="middle">Downstream</text>
+<line x1="160" y1="70" x2="250" y2="45" stroke="#0066cc" stroke-width="2"/><line x1="160" y1="70" x2="250" y2="100" stroke="#0066cc" stroke-width="2"/>
+<line x1="400" y1="45" x2="490" y2="70" stroke="#0066cc" stroke-width="2"/><line x1="400" y1="100" x2="490" y2="70" stroke="#0066cc" stroke-width="2" stroke-dasharray="4"/>
+<text x="205" y="125" text-anchor="middle" style="font-size:11px">in_ready = !skid_valid</text>
+</svg><figcaption>Input readiness depends only on registered state, so timing is clean.</figcaption></figure>
+<script type="text/x-code" class="code-src" data-lang="systemverilog">
+module skid #(parameter int W = 32) (
+  input  logic         clk, rst_n,
+  input  logic         in_valid,  output logic         in_ready,  input  logic [W-1:0] in_data,
+  output logic         out_valid, input  logic         out_ready, output logic [W-1:0] out_data
+);
+  logic [W-1:0] main_d, skid_d;
+  logic         main_v, skid_v;
+
+  assign in_ready  = !skid_v;               // depends on state only
+  assign out_valid = main_v;
+  assign out_data  = main_d;
+
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin main_v <= 1'b0; skid_v <= 1'b0; end
+    else if (out_ready || !main_v) begin     // main slot can accept
+      if (skid_v) begin main_d <= skid_d; main_v <= 1'b1; skid_v <= 1'b0; end
+      else        begin main_d <= in_data; main_v <= in_valid; end
+    end else if (in_valid && in_ready) begin // main stalled: park in skid
+      skid_d <= in_data; skid_v <= 1'b1;
+    end
+  end
+endmodule
+</script>
+
+<h2>2.4 Divide-by-3 clock with 50% duty cycle</h2>
+<p>An odd divider with 50% duty needs both clock edges: build a posedge waveform and a negedge-delayed copy, then AND them.</p>
+<script type="text/x-code" class="code-src" data-lang="systemverilog">
+module div3 (input logic clk, rst_n, output logic clk_div3);
+  logic [1:0] cnt;
+  logic       pa, na;
+
+  always_ff @(posedge clk or negedge rst_n)
+    if (!rst_n) cnt <= 2'd0;
+    else        cnt <= (cnt == 2'd2) ? 2'd0 : cnt + 1'b1;
+
+  always_ff @(posedge clk or negedge rst_n)   // registered to avoid glitches
+    if (!rst_n) pa <= 1'b1;
+    else        pa <= (cnt != 2'd1);            // pa low only for cycle 2
+
+  always_ff @(negedge clk or negedge rst_n)
+    if (!rst_n) na <= 1'b1;
+    else        na <= pa;                       // half-cycle delayed copy
+
+  assign clk_div3 = pa & na;                    // high 1.5 cycles, low 1.5 cycles
+endmodule
+</script>
+<p>Check by hand: <code>pa</code> is high for two cycles and low for one (period 3). <code>na</code> is the same waveform half a cycle later. The AND is high from the late rising edge to the early falling edge: 1.5 cycles high, 1.5 low. In real silicon, clock dividers are usually built from library cells and constrained with generated-clock definitions in SDC.</p>
+
+<details class="collapsible"><summary>More drills to practise (write each in under 10 minutes)</summary>
+<ul>
+<li>Rising-edge detector and pulse stretcher.</li>
+<li>Overlapping "1011" sequence detector (Moore and Mealy).</li>
+<li>Binary-to-Gray and Gray-to-binary converters; Gray counter.</li>
+<li>Priority encoder and count-leading-zeros.</li>
+<li>LFSR (x^8+x^6+x^5+x^4+1) and a CRC step.</li>
+<li>Serial-to-parallel and parallel-to-serial with valid flags.</li>
+<li>Pipelined adder with valid/ready flow control.</li>
+<li>Debouncer (counter-based) and a clock-enable generator.</li>
+<li>Byte-swap by endianness parameter; parameterised width converter (32-to-64).</li>
+</ul></details>
+
+<div class="quiz"><h3>Self-check quiz</h3>
+<div class="qa"><p class="q">Q1. In the round-robin arbiter, what happens if the last granted port was the highest-numbered port?</p><button class="rv">Reveal answer</button><div class="ans">The new mask has no bits set (the shift pushes the grant out of range), so the masked request vector is empty and the arbiter falls back to the unmasked fixed-priority result, which grants the lowest-numbered requester. That is the wrap-around.</div></div>
+<div class="qa"><p class="q">Q2. How can you tell a FIFO is full using pointers, and why the extra bit?</p><button class="rv">Reveal answer</button><div class="ans">With N-bit addresses, equal pointers could mean empty or full. A pointer one bit wider breaks the tie: equal pointers means empty; equal lower bits but different top bit means the writer has lapped the reader, so full.</div></div>
+<div class="qa"><p class="q">Q3. Why not simply drive <code>in_ready = out_ready</code> in a pipeline stage?</p><button class="rv">Reveal answer</button><div class="ans">It creates a combinational path that ripples back through every stage, hurting timing as the pipeline grows. A skid buffer registers the back-pressure at the cost of one extra storage slot, and keeps full throughput.</div></div>
+<div class="qa"><p class="q">Q4. Why is the divide-by-3 output <code>pa &amp; na</code> better built from registered signals?</p><button class="rv">Reveal answer</button><div class="ans">A combinational decode of a counter can glitch, and a glitching clock is dangerous. Registered signals change cleanly on an edge. Even then, production designs use library clock cells and generated-clock constraints.</div></div>
+</div>
+
+<div class="key"><h3>Key takeaways</h3><ul>
+<li>Clarify the spec first (reset values, widths, back-to-back cases), then code.</li>
+<li>Arbiter: mask plus fixed-priority; <code>x &amp; -x</code> isolates the lowest set bit.</li>
+<li>FIFO: extra pointer bit for full/empty; size by burst length and rate difference.</li>
+<li>Skid buffer: registered ready, one extra slot, full throughput.</li>
+<li>Odd dividers need both edges; avoid combinational clock logic.</li></ul></div>
+<div class="nav-buttons"><button class="btn" onclick="goTo(1)">&larr; Previous</button><button class="btn" onclick="goTo(3)">Next &rarr;</button></div>
+</section>
+
+<section id="chapter-3" class="chapter" data-title="3. CDC and async design">
+<h1>Chapter 3: Clock Domain Crossing and Asynchronous Design</h1>
+<div class="meta">About 25 minutes &middot; The posting asks for "solid knowledge of asynchronous design concepts and CDC methodologies". Expect several questions here.</div>
+
+<h2>3.1 The problem and the standard fixes</h2>
+<p>When a signal crosses from one clock domain to another with no fixed phase relationship, the receiving flop can go metastable. The scheme you choose depends on <b>what</b> crosses.</p>
+<table class="t">
+<tr><th>What crosses</th><th>Technique</th><th>Watch out for</th></tr>
+<tr><td>Single-bit level</td><td>Two-flop synchroniser</td><td>Source signal must be registered and glitch-free; the level must be held long enough to be sampled.</td></tr>
+<tr><td>Single-bit pulse, fast to slow</td><td>Toggle (pulse) synchroniser: toggle a flop in the source, sync the level, edge-detect in the destination</td><td>Pulses cannot arrive faster than the destination can recover.</td></tr>
+<tr><td>Multi-bit data, occasional</td><td>Handshake (req/ack) or enable-based multi-cycle path: data held stable while a synchronised request goes across</td><td>Latency of several cycles; data must not change until ack returns.</td></tr>
+<tr><td>Multi-bit stream</td><td>Asynchronous FIFO with Gray-coded pointers</td><td>Depth must cover the burst plus pointer-sync latency.</td></tr>
+<tr><td>Counter or pointer</td><td>Gray code (one bit changes per step)</td><td>Only valid when increments are by 1.</td></tr>
+<tr><td>Reset</td><td>Reset synchroniser per domain</td><td>Reset domain crossing (RDC) issues between domains.</td></tr>
+</table>
+
+<figure class="diagram">
+<svg viewBox="0 0 640 140" role="img" aria-label="Two-flop synchroniser">
+<rect class="box" x="30" y="40" width="110" height="60" rx="6"/><text x="85" y="68" text-anchor="middle">Source FF</text><text x="85" y="86" text-anchor="middle" style="font-size:11px">clk A</text>
+<rect class="boxo" x="240" y="40" width="90" height="60" rx="6"/><text x="285" y="68" text-anchor="middle">FF1</text><text x="285" y="86" text-anchor="middle" style="font-size:11px">may be unstable</text>
+<rect class="boxg" x="400" y="40" width="90" height="60" rx="6"/><text x="445" y="68" text-anchor="middle">FF2</text><text x="445" y="86" text-anchor="middle" style="font-size:11px">clk B, stable</text>
+<line x1="140" y1="70" x2="240" y2="70" stroke="#0066cc" stroke-width="2"/><line x1="330" y1="70" x2="400" y2="70" stroke="#0066cc" stroke-width="2"/><line x1="490" y1="70" x2="580" y2="70" stroke="#0066cc" stroke-width="2"/>
+<text x="190" y="62" text-anchor="middle" style="font-size:11px">async</text><text x="580" y="62" text-anchor="end" style="font-size:11px">to logic</text>
+<text x="320" y="125" text-anchor="middle" style="font-size:12px">Both flops use clk B; FF2 gives FF1 a full cycle to resolve.</text>
+</svg><figcaption>Two-flop synchroniser. Nothing but the synchroniser flops should sit between the crossing and the destination logic.</figcaption></figure>
+
+<script type="text/x-code" class="code-src" data-lang="systemverilog">
+// Two-flop synchroniser (level)
+module sync2 (input logic clk_b, rst_n, input logic d_async, output logic q);
+  (* ASYNC_REG = "TRUE" *) logic s1, s2;   // keep them together; tool attributes vary
+  always_ff @(posedge clk_b or negedge rst_n)
+    if (!rst_n) {s2, s1} <= 2'b00;
+    else        {s2, s1} <= {s1, d_async};
+  assign q = s2;
+endmodule
+
+// Toggle pulse synchroniser: source side
+always_ff @(posedge clk_a or negedge rst_a_n)
+  if (!rst_a_n)    tog <= 1'b0;
+  else if (pulse_a) tog <= ~tog;          // pulse_a is one clk_a cycle
+
+// destination side: sync2(tog) then edge-detect
+// pulse_b = tog_sync ^ tog_sync_d;
+</script>
+
+<h2>3.2 Asynchronous FIFO</h2>
+<ul>
+<li>Write pointer lives in the write domain, read pointer in the read domain. Each pointer is <b>converted to Gray code</b>, registered, then crosses through a two-flop synchroniser.</li>
+<li><b>Full</b> is generated in the write domain by comparing the write pointer with the synchronised read pointer. <b>Empty</b> is generated in the read domain with the synchronised write pointer.</li>
+<li>Full and empty are slightly <b>pessimistic</b> because of synchroniser latency. This is safe: the FIFO may report full or empty a little late, never wrong in the dangerous direction.</li>
+<li>Gray-code full condition: top two bits of the pointers are inverted, remaining bits equal.</li>
+<li>Data goes through the memory array, not through the synchronisers.</li>
+</ul>
+
+<div class="widget" id="w-gray">
+<h3>Try it: why Gray code works for pointers</h3>
+<p style="font-size:13px">Move the counter and count how many bits change at each step. If several bits change at once and the destination samples mid-change, it can read a value that was never valid. Gray code changes exactly one bit per step.</p>
+<div class="row"><label>Width (bits)<select id="gr-w"><option>3</option><option selected>4</option><option>5</option></select></label>
+<label>Value<input id="gr-v" type="number" value="7" min="0"></label>
+<button class="btn" id="gr-prev">&minus;1</button><button class="btn" id="gr-next">+1</button></div>
+<div id="gr-out"></div></div>
+
+<script type="text/x-code" class="code-src" data-lang="systemverilog">
+// Binary to Gray, and the write-pointer logic of an async FIFO
+function automatic logic [AW:0] bin2gray(input logic [AW:0] b);
+  return (b >> 1) ^ b;
+endfunction
+
+always_ff @(posedge wclk or negedge wrst_n)
+  if (!wrst_n) begin wbin <= '0; wgray <= '0; end
+  else begin
+    wbin  <= wbin_next;                 // wbin_next = wbin + (winc & ~wfull)
+    wgray <= bin2gray(wbin_next);       // registered Gray pointer, safe to cross
+  end
+
+// full: top two bits inverted, the rest equal (compare against synchronised read Gray pointer)
+assign wfull_next = (wgray_next == {~rgray_sync[AW:AW-1], rgray_sync[AW-2:0]});
+</script>
+
+<h2>3.3 Common CDC failure patterns (know the names)</h2>
+<ul>
+<li><b>Missing synchroniser:</b> signal crosses directly.</li>
+<li><b>Combinational logic before the synchroniser:</b> glitches can be sampled. Register the source first.</li>
+<li><b>Reconvergence:</b> two synchronised bits from the same source combine in the destination; they may arrive one cycle apart, giving a transient wrong combination.</li>
+<li><b>Multi-bit bus through separate synchronisers:</b> bits can arrive in different cycles. Use Gray, handshake or FIFO.</li>
+<li><b>Fan-out of a synchroniser output to multiple domains,</b> or a synchroniser output used before it is stable.</li>
+<li><b>Pulse too narrow</b> for the destination clock to see.</li>
+<li><b>Data/control mismatch:</b> control arrives before the data is stable.</li>
+<li><b>Reset domain crossing:</b> an asynchronous reset from one domain asserting into logic in another domain mid-operation.</li>
+</ul>
+
+<div class="callout blue"><b>Connect it to your experience:</b> at Cadence you built a "CDC random stage" model to catch convergence and functional issues. Be ready to say exactly what it did. A common idea is that a simulation model cannot capture metastability, so you randomly insert a one-cycle variation on a synchronised path to expose designs that only work when the crossing resolves in a fixed number of cycles. Use your own words based on what you actually built, and give one real bug it found.</div>
+
+<h2>3.4 Tools and sign-off</h2>
+<p>Structural CDC (Spyglass CDC, Questa CDC, JasperGold CDC) finds crossings and checks that each uses a recognised scheme. Functional checks use formal or assertions for protocols such as "data stable while request high". Every <b>waiver</b> needs a written reason; interviewers like to hear that waivers are reviewed, not just used to clear the report.</p>
+
+<div class="quiz"><h3>Self-check quiz</h3>
+<div class="qa"><p class="q">Q1. Why can't you pass a 4-bit binary counter through four separate two-flop synchronisers?</p><button class="rv">Reveal answer</button><div class="ans">Different bits can be sampled on different destination edges, so you may capture a value such as 0111 to 1000 as 1111 or 0000, which was never valid. Gray code changes one bit at a time, so the sampled value is always either the old or the new one.</div></div>
+<div class="qa"><p class="q">Q2. In an async FIFO, why is it safe that full and empty are slightly pessimistic?</p><button class="rv">Reveal answer</button><div class="ans">The synchronised pointer is an older value. For full, the old read pointer is smaller than the real one, so the FIFO looks fuller than it is: the writer might wait a little extra. For empty, the old write pointer makes it look emptier than it is: the reader waits a bit. Neither case causes overflow or underflow.</div></div>
+<div class="qa"><p class="q">Q3. A fast-clock pulse must go to a slow clock domain. What can go wrong with a plain two-flop synchroniser, and what is the fix?</p><button class="rv">Reveal answer</button><div class="ans">The pulse may be shorter than a slow-clock period and be missed. Use a toggle synchroniser (toggle in the source domain, synchronise the level, detect the edge in the destination), or stretch the pulse, or use a request/acknowledge handshake.</div></div>
+<div class="qa"><p class="q">Q4. How do you move a 32-bit configuration value occasionally between two domains with no FIFO?</p><button class="rv">Reveal answer</button><div class="ans">Hold the data stable, send a synchronised request (single bit) to the destination, capture the data when the request is seen, send a synchronised acknowledge back, and only change the data after the acknowledge. The data bus itself is not synchronised; the handshake guarantees it is stable when sampled.</div></div>
+<div class="qa"><p class="q">Q5. What is reconvergence and how do you avoid it?</p><button class="rv">Reveal answer</button><div class="ans">Two signals from the same source cross through separate synchronisers and are combined in the destination. Because each can resolve in a different cycle, the combination may briefly be wrong. Avoid it by synchronising a single encoded signal, using a handshake, or crossing a bus together with a qualifying control.</div></div>
+</div>
+
+<div class="key"><h3>Key takeaways</h3><ul>
+<li>Choose the scheme by what crosses: level, pulse, bus, stream, reset.</li>
+<li>Two-flop sync for single bits; toggle sync for pulses; handshake or async FIFO for buses.</li>
+<li>Gray code pointers guarantee one bit changes per step.</li>
+<li>Synchroniser latency makes full and empty conservative, which is safe.</li>
+<li>Know the failure patterns: missing sync, glitches, reconvergence, RDC.</li></ul></div>
+<div class="nav-buttons"><button class="btn" onclick="goTo(2)">&larr; Previous</button><button class="btn" onclick="goTo(4)">Next &rarr;</button></div>
+</section>
+<section id="chapter-4" class="chapter" data-title="4. Synthesis, STA, lint, power">
+<h1>Chapter 4: Lint, Synthesis, STA and Low Power</h1>
+<div class="meta">About 25 minutes &middot; The posting lists "Lint, CDC, Synthesis/STA, Power" as SoC flow expertise.</div>
+
+<h2>4.1 The flow in one picture</h2>
+<figure class="diagram">
+<svg viewBox="0 0 680 120" role="img" aria-label="RTL to sign-off flow">
+<rect class="box" x="10" y="35" width="95" height="50" rx="6"/><text x="57" y="65" text-anchor="middle">RTL</text>
+<rect class="boxo" x="135" y="35" width="95" height="50" rx="6"/><text x="182" y="65" text-anchor="middle">Lint / CDC</text>
+<rect class="boxg" x="260" y="35" width="95" height="50" rx="6"/><text x="307" y="65" text-anchor="middle">Synthesis</text>
+<rect class="box" x="385" y="35" width="95" height="50" rx="6"/><text x="432" y="65" text-anchor="middle">STA</text>
+<rect class="boxo" x="510" y="35" width="75" height="50" rx="6"/><text x="547" y="65" text-anchor="middle">Power</text>
+<rect class="boxg" x="605" y="35" width="65" height="50" rx="6"/><text x="637" y="65" text-anchor="middle">To PD</text>
+<g stroke="#0066cc" stroke-width="2"><line x1="105" y1="60" x2="135" y2="60"/><line x1="230" y1="60" x2="260" y2="60"/><line x1="355" y1="60" x2="385" y2="60"/><line x1="480" y1="60" x2="510" y2="60"/><line x1="585" y1="60" x2="605" y2="60"/></g>
+<text x="340" y="108" text-anchor="middle" style="font-size:12px">Constraints (SDC) and UPF feed synthesis, STA and power; failures loop back to RTL.</text>
+</svg><figcaption>RTL quality gates before physical design.</figcaption></figure>
+
+<h2>4.2 Lint</h2>
+<p>Lint catches structural and coding problems before simulation: inferred latches, width mismatches, multiple drivers, unconnected ports, combinational loops, unsynthesisable constructs, X-assignments, and clock/reset misuse. For an IP owner, the process matters: run lint on every check-in, agree a rule set, and review waivers. Mention Spyglass lint, CDC and low-power checks, which are on your resume.</p>
+
+<h2>4.3 Synthesis</h2>
+<ul>
+<li>Steps: read RTL, elaborate, apply constraints, map to the technology library, optimise for timing, area and power, then write the netlist and reports.</li>
+<li><b>Reports to check:</b> timing (WNS, TNS, critical paths), area (by hierarchy), power estimate, unmapped or unresolved items, latches, clock-gating coverage.</li>
+<li><b>If a path fails timing:</b> look at the structure first. Reduce logic depth (restructure, balance trees), pipeline, retime across a register, duplicate high-fanout drivers, move late-arriving signals closer to the output, check for an unintended priority chain, then let the tool upsize and buffer.</li>
+<li>Do not "fix" timing by adding false paths or multicycle paths unless the design truly behaves that way.</li>
+</ul>
+
+<h2>4.4 Constraints and STA</h2>
+<script type="text/x-code" class="code-src" data-lang="tcl">
+# Clock and I/O constraints
+create_clock -name clk -period 1.0 [get_ports clk]
+set_clock_uncertainty 0.05 [get_clocks clk]
+set_input_delay  0.30 -clock clk [get_ports din*]
+set_output_delay 0.30 -clock clk [get_ports dout*]
+
+# Truly asynchronous clock domains: do not time between them as synchronous
+set_clock_groups -asynchronous -group [get_clocks clk_a] -group [get_clocks clk_b]
+# Gray-coded bus between async clocks: bound the skew instead of ignoring it
+set_max_delay 1.0 -from [get_cells wgray_reg*] -to [get_cells wgray_sync1*] -datapath_only
+
+# Multicycle path: data is launched every 2 cycles, captured on the 2nd edge
+set_multicycle_path 2 -setup -from [get_pins a/Q] -to [get_pins b/D]
+set_multicycle_path 1 -hold  -from [get_pins a/Q] -to [get_pins b/D]   ;# hold = N-1 earlier edge
+</script>
+<table class="t">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td>False path</td><td>A path that can never be functionally exercised (or is covered by another scheme). Exempt from timing. Overuse hides real bugs.</td></tr>
+<tr><td>Multicycle path</td><td>A path that is designed to take N cycles. Setup is relaxed to N, and hold must be moved back to N&minus;1.</td></tr>
+<tr><td>Generated clock</td><td>A divided or gated clock derived from a master clock, declared so STA propagates it correctly.</td></tr>
+<tr><td>Recovery / removal</td><td>The "setup / hold" of asynchronous reset deassertion relative to the clock.</td></tr>
+<tr><td>Clock gating check</td><td>The enable of a clock gate must be stable while the clock is high (for AND-type gating).</td></tr>
+<tr><td>Path groups</td><td>Grouping by clock or type so a very bad group does not hide others.</td></tr>
+</table>
+
+<h2>4.5 Low power</h2>
+<p><b>Dynamic power:</b> <code>P = &alpha; &times; C &times; V&sup2; &times; f</code>. <b>Static power</b> is leakage, which grows with lower threshold voltage and with temperature.</p>
+<table class="t">
+<tr><th>Technique</th><th>Reduces</th><th>Notes</th></tr>
+<tr><td>Clock gating</td><td>Dynamic (clock toggling)</td><td>RTL enable conditions or tool-inserted ICGs. Check gating enable timing.</td></tr>
+<tr><td>Operand isolation / data gating</td><td>Dynamic (datapath toggling)</td><td>Hold inputs when the result is unused.</td></tr>
+<tr><td>Multi-Vt cells</td><td>Leakage</td><td>High-Vt where timing allows, low-Vt on critical paths.</td></tr>
+<tr><td>Power gating (power domains)</td><td>Leakage</td><td>Needs isolation cells, retention flops, level shifters, power switches, and a wake-up sequence.</td></tr>
+<tr><td>DVFS / multi-voltage</td><td>Dynamic (V&sup2;)</td><td>Needs level shifters and safe frequency/voltage sequencing.</td></tr>
+</table>
+
+<figure class="diagram">
+<svg viewBox="0 0 640 170" role="img" aria-label="Power domain with isolation and retention">
+<rect x="20" y="20" width="220" height="130" rx="8" fill="#e8f7ef" stroke="#00b359" stroke-width="2" stroke-dasharray="6"/><text x="130" y="40" text-anchor="middle">PD_ON (always on)</text>
+<rect class="box" x="45" y="60" width="170" height="50" rx="6"/><text x="130" y="90" text-anchor="middle">Power manager</text>
+<rect x="400" y="20" width="220" height="130" rx="8" fill="#fff3ee" stroke="#ff6b35" stroke-width="2" stroke-dasharray="6"/><text x="510" y="40" text-anchor="middle">PD_CPU (can be switched off)</text>
+<rect class="boxo" x="425" y="60" width="170" height="50" rx="6"/><text x="510" y="82" text-anchor="middle">CPU logic</text><text x="510" y="100" text-anchor="middle" style="font-size:11px">retention flops keep state</text>
+<rect class="box" x="290" y="60" width="70" height="50" rx="6"/><text x="325" y="82" text-anchor="middle">Isolation</text><text x="325" y="98" text-anchor="middle" style="font-size:11px">clamp 0 / 1</text>
+<line x1="215" y1="85" x2="290" y2="85" stroke="#0066cc" stroke-width="2"/><line x1="360" y1="85" x2="425" y2="85" stroke="#0066cc" stroke-width="2"/>
+<text x="320" y="140" text-anchor="middle" style="font-size:12px">Outputs of the off domain are clamped so the live domain never sees floating values.</text>
+</svg><figcaption>Isolation cells sit on the signals leaving a switchable domain.</figcaption></figure>
+
+<script type="text/x-code" class="code-src" data-lang="tcl">
+# Simplified UPF fragment (illustrative, not a complete working file)
+create_power_domain PD_TOP
+create_power_domain PD_CPU -elements {u_cpu}
+create_supply_net VDD_ON  -domain PD_TOP
+create_supply_net VDD_CPU -domain PD_CPU
+create_supply_net VSS     -domain PD_TOP
+set_domain_supply_net PD_CPU -primary_power_net VDD_CPU -primary_ground_net VSS
+
+# Isolation on outputs of the switchable domain, controlled by pm_iso_en
+set_isolation iso_cpu -domain PD_CPU -applies_to outputs -clamp_value 0 \
+                      -isolation_power_net VDD_ON -isolation_ground_net VSS
+set_isolation_control iso_cpu -domain PD_CPU -isolation_signal pm_iso_en \
+                      -isolation_sense high -location parent
+
+# Retention of selected registers while the domain is off
+set_retention ret_cpu -domain PD_CPU -retention_power_net VDD_ON -retention_ground_net VSS
+set_retention_control ret_cpu -domain PD_CPU -save_signal {pm_save high} -restore_signal {pm_restore high}
+</script>
+<p><b>Power-down sequence (be able to say it):</b> stop traffic, save state (retention), enable isolation, then switch off power. <b>Power-up</b> is the reverse: power on, wait for stable, reset as needed, restore state, then disable isolation. Getting the order wrong is a classic bug.</p>
+
+<div class="widget" id="w-pwr">
+<h3>Try it: dynamic power estimate</h3>
+<div class="row">
+<label>Activity &alpha;<input id="pw-a" type="number" value="0.2" step="0.05"></label>
+<label>Capacitance (pF)<input id="pw-c" type="number" value="500"></label>
+<label>Voltage (V)<input id="pw-v" type="number" value="0.8" step="0.05"></label>
+<label>Frequency (MHz)<input id="pw-f" type="number" value="1000"></label>
+<label>Clock gating cuts activity by (%)<input id="pw-g" type="number" value="40"></label>
+<button class="btn o" id="pw-go">Calculate</button></div>
+<div id="pw-out"></div>
+<p style="font-size:13px;color:#555">Notice how strongly voltage matters: P scales with V&sup2;. A drop from 0.8 V to 0.7 V saves about 23% of dynamic power.</p></div>
+
+<details class="collapsible"><summary>Deeper: how power is analysed</summary>
+<p>Power tools combine the netlist, parasitics and <b>switching activity</b> (SAIF, VCD or FSDB from simulation or emulation). Vectorless estimates use default toggle rates and are only a rough guide. Report peak, average and leakage, and compare against the budget. Power-aware simulation (UPF-based) checks isolation and retention behaviour in RTL and gate-level.</p></details>
+
+<div class="quiz"><h3>Self-check quiz</h3>
+<div class="qa"><p class="q">Q1. When is a multicycle path legitimate, and what is the hold setting?</p><button class="rv">Reveal answer</button><div class="ans">When the design guarantees data is launched less often than every clock (for example, a register updated once every N cycles with an enable, with the capture flop sampling only at the Nth edge). Set setup to N cycles, and hold to N&minus;1 so hold is checked against the right edge. Without the hold adjustment, the tool would demand an enormous hold fix.</div></div>
+<div class="qa"><p class="q">Q2. Why is a false path on an asynchronous crossing sometimes the wrong choice for a Gray-coded bus?</p><button class="rv">Reveal answer</button><div class="ans">A false path removes all timing checks, so skew between bits is unconstrained, which can break the one-bit-changes assumption. A <code>set_max_delay -datapath_only</code> keeps the skew within a bound while ignoring clock relationships.</div></div>
+<div class="qa"><p class="q">Q3. A critical path has a long priority <code>if/else if</code> chain. What would you try?</p><button class="rv">Reveal answer</button><div class="ans">Check if priority is really required; if the conditions are mutually exclusive, use a parallel structure (<code>unique case</code>, AND-OR mux). Otherwise restructure as a tree, or pre-compute conditions in the previous cycle (pipelining).</div></div>
+<div class="qa"><p class="q">Q4. Order the power-down sequence for a switchable domain.</p><button class="rv">Reveal answer</button><div class="ans">Quiesce the domain, save state (retention), enable isolation, then cut power. Power-up: restore power, wait for the supply to settle, release reset as needed, restore state, then disable isolation.</div></div>
+<div class="qa"><p class="q">Q5. Clock gating or power gating: which reduces leakage?</p><button class="rv">Reveal answer</button><div class="ans">Power gating. Clock gating stops toggling, so it saves dynamic power only; the cells still leak.</div></div>
+</div>
+
+<div class="key"><h3>Key takeaways</h3><ul>
+<li>Flow: lint and CDC, then synthesis, STA and power, with constraints and UPF as inputs.</li>
+<li>Fix timing in the RTL structure before relying on tool effort or exceptions.</li>
+<li>Multicycle: setup N, hold N&minus;1. False paths hide real bugs if overused.</li>
+<li>Dynamic power depends on activity, capacitance, V&sup2; and frequency; leakage needs power gating or high-Vt.</li>
+<li>Isolation and retention order matters in power-down and power-up.</li></ul></div>
+<div class="nav-buttons"><button class="btn" onclick="goTo(3)">&larr; Previous</button><button class="btn" onclick="goTo(5)">Next &rarr;</button></div>
+</section>
+<section id="chapter-5" class="chapter" data-title="5. Protocols: AXI, CHI, DDR">
+<h1>Chapter 5: Protocols (AXI/APB, Coherency and CHI, DDR/LPDDR)</h1>
+<div class="meta">About 30 minutes &middot; Plus the Micron-specific blocks named in the posting: LPDDR subsystem, CPU subsystem, SoC test controller.</div>
+
+<h2>5.1 APB and AXI</h2>
+<table class="t">
+<tr><th>Protocol</th><th>Use</th><th>Key points</th></tr>
+<tr><td>APB</td><td>Low-speed registers and peripherals</td><td>Two phases: SETUP (PSEL=1, PENABLE=0), then ACCESS (PENABLE=1) until PREADY=1. PSLVERR reports errors. At least 2 cycles per transfer. No pipelining.</td></tr>
+<tr><td>AHB</td><td>Older mid-speed bus</td><td>Address phase overlaps previous data phase; HREADY stalls; single master per layer.</td></tr>
+<tr><td>AXI4</td><td>High-performance memory-mapped</td><td>5 independent channels (AR, R, AW, W, B), valid/ready on each, bursts, IDs, outstanding transactions, out-of-order across IDs.</td></tr>
+<tr><td>AXI4-Lite</td><td>Control registers</td><td>No bursts, single beat, simple.</td></tr>
+<tr><td>AXI-Stream</td><td>Data streams</td><td>No addresses; TVALID/TREADY/TLAST.</td></tr>
+</table>
+
+<h3>The valid/ready rules (they ask this)</h3>
+<ul>
+<li>A source <b>must not wait for READY</b> before asserting VALID. It asserts VALID when data is available.</li>
+<li>Once VALID is asserted, it <b>must stay asserted</b> and the payload must stay <b>stable</b> until the handshake (VALID and READY both high on a clock edge).</li>
+<li>READY may be asserted before VALID, and may depend on VALID. A transfer occurs on any edge where both are high.</li>
+<li>Avoid combinational loops: do not make VALID depend combinationally on READY, and avoid READY and VALID depending on each other in the same cycle through logic.</li>
+</ul>
+
+<div class="widget" id="w-axi">
+<h3>Try it: valid/ready handshake checker</h3>
+<p style="font-size:13px">Tick VALID and READY for each clock cycle. Green cycles are transfers. Red means VALID was dropped before READY (a protocol violation).</p>
+<div id="axi-sig"></div>
+<div id="axi-out"></div>
+<div class="row"><button class="btn" id="axi-ok">Load a legal example</button><button class="btn o" id="axi-bad">Load a violation</button><button class="btn g" id="axi-clr">Clear</button></div></div>
+
+<h3>AXI facts to have ready</h3>
+<ul>
+<li><b>Burst types:</b> FIXED, INCR, WRAP (wrap lengths 2, 4, 8, 16). AXI4 INCR bursts up to 256 beats.</li>
+<li><b>4 KB rule:</b> a burst must not cross a 4 KB address boundary.</li>
+<li><b>Ordering:</b> responses with the same ID return in order; different IDs can be reordered. AXI4 has no write interleaving.</li>
+<li><b>Write channel:</b> AW and W are independent channels; B response comes after the last write beat.</li>
+<li><b>Responses:</b> OKAY, EXOKAY, SLVERR, DECERR.</li>
+<li><b>Outstanding transactions</b> hide latency; the number you support affects buffering and area.</li>
+</ul>
+
+<h2>5.2 Cache coherency basics</h2>
+<p>When several agents cache the same memory, the system needs a protocol so every agent sees a consistent value. Two common mechanisms: <b>snooping</b> (broadcast; simple, does not scale) and <b>directory or snoop-filter based</b> (track which agents hold a line; scales better). Your IBM PowerBus work is snoop-based coherency, with ownership tracked in a CAM.</p>
+
+<div class="widget" id="w-mesi">
+<h3>Try it: MESI state machine for one cache line in one core</h3>
+<p style="font-size:13px">Apply processor events (this core) or snoop events (other cores) and watch the line state.</p>
+<div class="mesi" id="mesi-states"></div>
+<div class="row" id="mesi-btns"></div>
+<div class="row"><button class="btn g" id="mesi-auto">Start auto-demo</button><button class="btn o" id="mesi-reset">Reset to Invalid</button></div>
+<div class="out" id="mesi-out">Current state: I (Invalid)</div>
+<div class="log" id="mesi-log"></div></div>
+
+<table class="t">
+<tr><th>State</th><th>Meaning</th></tr>
+<tr><td>M, Modified</td><td>Only copy, dirty. Memory is stale; must supply or write back on snoop.</td></tr>
+<tr><td>E, Exclusive</td><td>Only copy, clean. Can write silently (E to M) with no bus traffic.</td></tr>
+<tr><td>S, Shared</td><td>Possibly other copies, clean. A write needs an upgrade (invalidate others).</td></tr>
+<tr><td>I, Invalid</td><td>Not present.</td></tr>
+</table>
+
+<h2>5.3 AMBA CHI</h2>
+<figure class="diagram">
+<svg viewBox="0 0 680 230" role="img" aria-label="CHI node topology">
+<rect class="box" x="20" y="20" width="130" height="50" rx="6"/><text x="85" y="42" text-anchor="middle">RN-F</text><text x="85" y="58" text-anchor="middle" style="font-size:11px">CPU with cache</text>
+<rect class="box" x="20" y="95" width="130" height="50" rx="6"/><text x="85" y="117" text-anchor="middle">RN-I / RN-D</text><text x="85" y="133" text-anchor="middle" style="font-size:11px">I/O coherent, no cache</text>
+<rect class="boxo" x="250" y="20" width="180" height="125" rx="8"/><text x="340" y="45" text-anchor="middle">Interconnect (mesh)</text><text x="340" y="65" text-anchor="middle" style="font-size:11px">crosspoints (XP) + links</text>
+<rect class="boxg" x="290" y="85" width="100" height="45" rx="6"/><text x="340" y="105" text-anchor="middle">HN-F</text><text x="340" y="120" text-anchor="middle" style="font-size:11px">SLC + snoop filter</text>
+<rect class="box" x="530" y="20" width="130" height="50" rx="6"/><text x="595" y="42" text-anchor="middle">SN-F</text><text x="595" y="58" text-anchor="middle" style="font-size:11px">memory controller</text>
+<rect class="box" x="530" y="95" width="130" height="50" rx="6"/><text x="595" y="117" text-anchor="middle">HN-I / SN-I</text><text x="595" y="133" text-anchor="middle" style="font-size:11px">I/O, peripherals</text>
+<g stroke="#0066cc" stroke-width="2"><line x1="150" y1="45" x2="250" y2="60"/><line x1="150" y1="120" x2="250" y2="105"/><line x1="430" y1="60" x2="530" y2="45"/><line x1="430" y1="110" x2="530" y2="120"/></g>
+<text x="340" y="190" text-anchor="middle">Channels: REQ (requests) &middot; RSP (responses) &middot; SNP (snoops) &middot; DAT (data)</text>
+<text x="340" y="212" text-anchor="middle" style="font-size:12px">Flow control is credit-based; transactions are tracked by TxnID.</text>
+</svg><figcaption>CHI roles. The home node (HN-F) orders requests to an address, snoops caching agents using its snoop filter, and talks to memory.</figcaption></figure>
+
+<ul>
+<li><b>States:</b> I (invalid), UC (unique clean), UD (unique dirty), SC (shared clean), SD (shared dirty). Compare with MESI: UC&asymp;E, UD&asymp;M, SC&asymp;S, and SD allows a dirty line to be shared.</li>
+<li><b>Typical requests:</b> ReadShared (want a readable copy), ReadUnique (want to write: others invalidated), CleanUnique (already have data, want ownership), MakeUnique (will overwrite whole line), WriteBack, Evict, and non-snooping ReadNoSnp / WriteNoSnp.</li>
+<li><b>Flow of a ReadUnique miss:</b> RN-F sends the request on REQ to the HN-F; HN-F checks the snoop filter; sends snoops (SNP) to sharers; owner returns data (DAT) or HN-F fetches from SN-F; HN-F sends Comp with data; RN-F sends CompAck so the home node can release the address.</li>
+<li><b>Why the home node orders:</b> serialising all requests to one cache line at its home node is what keeps coherency simple; the cost is tracking conflicts and blocking (a point to mention for deadlock avoidance).</li>
+<li><b>Deadlock avoidance:</b> separate channels for REQ, RSP, SNP, DAT, with dependency rules so a response can always make progress.</li>
+</ul>
+
+<div class="callout blue"><b>Mapping to your experience (say this honestly):</b> "I have production experience with IBM PowerBus coherency, including snooping and CAM-based ownership tracking, in a block that handles I/O coherency on the Nest fabric. I have completed structured training on CHI and am studying CMN-700. The concepts map directly: my PAU behaves like an I/O-coherent requester (conceptually an RN-I/RN-D), PowerBus snooping corresponds to the snoop channel, and my ownership CAM does the job of conflict and ownership tracking that a CHI home node does." Do not claim you designed CHI nodes unless you did.</div>
+
+<h2>5.4 DDR and LPDDR</h2>
+<figure class="diagram">
+<svg viewBox="0 0 680 130" role="img" aria-label="Memory subsystem blocks">
+<rect class="box" x="10" y="30" width="110" height="60" rx="6"/><text x="65" y="55" text-anchor="middle">AXI / CHI</text><text x="65" y="73" text-anchor="middle" style="font-size:11px">ports, QoS</text>
+<rect class="boxo" x="160" y="30" width="150" height="60" rx="6"/><text x="235" y="55" text-anchor="middle">Controller</text><text x="235" y="73" text-anchor="middle" style="font-size:11px">address map, scheduler, ECC</text>
+<rect class="boxg" x="350" y="30" width="110" height="60" rx="6"/><text x="405" y="55" text-anchor="middle">DFI</text><text x="405" y="73" text-anchor="middle" style="font-size:11px">interface</text>
+<rect class="box" x="500" y="30" width="80" height="60" rx="6"/><text x="540" y="55" text-anchor="middle">PHY</text><text x="540" y="73" text-anchor="middle" style="font-size:11px">training</text>
+<rect class="boxg" x="610" y="30" width="60" height="60" rx="6"/><text x="640" y="65" text-anchor="middle">DRAM</text>
+<g stroke="#0066cc" stroke-width="2"><line x1="120" y1="60" x2="160" y2="60"/><line x1="310" y1="60" x2="350" y2="60"/><line x1="460" y1="60" x2="500" y2="60"/><line x1="580" y1="60" x2="610" y2="60"/></g>
+</svg><figcaption>Memory subsystem. This is your Cadence and Intel experience.</figcaption></figure>
+
+<ul>
+<li><b>Organisation:</b> channels, ranks, bank groups, banks, rows, columns. DDR4 has 16 banks (4 groups of 4); DDR5 has 32 banks (8 groups of 4), burst length 16 and two independent sub-channels per DIMM, plus on-die ECC.</li>
+<li><b>Commands:</b> ACTIVATE (open a row), READ/WRITE (column access), PRECHARGE (close the row), REFRESH.</li>
+<li><b>Key timings:</b> tRCD (activate to column), CL (read latency), tRP (precharge), tRAS (min row open), tRC = tRAS + tRP, tRFC and tREFI (refresh time and interval), tFAW and tRRD (limits on activates), tCCD_L/S (column to column, same or different bank group).</li>
+<li><b>Scheduler:</b> prefers row hits (FR-FCFS), balances fairness and QoS, groups reads and writes to reduce bus turnaround, interleaves across banks and bank groups, and inserts refreshes.</li>
+<li><b>Address mapping and striping:</b> mapping bits to bank, bank group and channel decides parallelism. Your CMN600-compliant remap and striping work is exactly this.</li>
+<li><b>ECC:</b> SECDED on the bus; chip-kill style symbol correction (your RSECC work); metadata carried with data.</li>
+<li><b>DFI:</b> the standard controller to PHY interface (commands, write/read data, update and training handshakes).</li>
+<li><b>Training:</b> write leveling, read gate and DQ/DQS training, command/address training (LPDDR), ZQ calibration, run by the PHY or by controller firmware at boot.</li>
+<li><b>LPDDR4/5 vs DDR4/5:</b> LPDDR is low voltage, narrower channels (x16 per channel), multiplexed command/address, burst 16, extra power states and fast frequency switching; LPDDR5 adds a separate write clock (WCK) and link ECC options.</li>
+</ul>
+
+<div class="widget" id="w-dram">
+<h3>Try it: DRAM access latency by row state</h3>
+<div class="row">
+<label>tRP (ns)<input id="dr-rp" type="number" value="14"></label>
+<label>tRCD (ns)<input id="dr-rcd" type="number" value="14"></label>
+<label>CL (ns)<input id="dr-cl" type="number" value="14"></label>
+<label>Access<select id="dr-t"><option value="hit">Row hit (row already open)</option><option value="empty">Row empty (bank precharged)</option><option value="conf">Row conflict (other row open)</option></select></label>
+<button class="btn o" id="dr-go">Calculate</button></div>
+<div id="dr-out"></div></div>
+
+<h2>5.5 Micron-specific blocks named in the posting</h2>
+<table class="t">
+<tr><th>Block</th><th>What it means for a Principal ASIC designer</th></tr>
+<tr><td>LPDDR subsystem</td><td>Controller, PHY, DFI, register block, clocking, training sequencing, QoS and ECC, plus the SoC hookup. You know most of this.</td></tr>
+<tr><td>CPU subsystem</td><td>Integration of a licensed or in-house core with its wrapper: interrupt controller, timers, local memory (TCM/caches), debug, clock and reset, and bus bridges to the rest of the SoC, with CDC and power handled at the boundary. It is <b>not</b> CPU micro-architecture design.</td></tr>
+<tr><td>SoC test controller</td><td>The block that manages test and debug modes: a JTAG TAP (IEEE 1149.1), test-mode control, scan and MBIST controllers, and access to internal test wrappers (IEEE 1500). Interview point: test modes must not break functional timing; test clocks and resets need care.</td></tr>
+<tr><td>Memory/storage ASIC controllers</td><td>Controllers that sit in front of DRAM or NAND: command queues, ECC engines, data path, firmware interface and error handling. Your DDR controller work transfers well.</td></tr>
+</table>
+
+<div class="quiz"><h3>Self-check quiz</h3>
+<div class="qa"><p class="q">Q1. Can an AXI slave deassert READY after asserting it, before VALID arrives?</p><button class="rv">Reveal answer</button><div class="ans">Yes. READY may be asserted or deasserted freely before VALID. The restriction applies to VALID: once asserted it must stay high with stable payload until the handshake completes.</div></div>
+<div class="qa"><p class="q">Q2. What is the difference between E and M in MESI, and why does E exist?</p><button class="rv">Reveal answer</button><div class="ans">E is a clean unique copy, M is a dirty unique copy. E lets a core write without any bus transaction (E to M silently) because it knows no one else has the line. Without E, the first write to a privately read line would always need an invalidation broadcast.</div></div>
+<div class="qa"><p class="q">Q3. What role does the home node play in CHI?</p><button class="rv">Reveal answer</button><div class="ans">It is the point of coherency for a range of addresses: it orders requests to the same cache line, uses a snoop filter or directory to decide which caching agents to snoop, collects data from a cache or from the memory controller, and manages the completion handshake. It may also contain a system-level cache.</div></div>
+<div class="qa"><p class="q">Q4. Why are row hits preferred in a DRAM scheduler, and what limits that preference?</p><button class="rv">Reveal answer</button><div class="ans">A row hit needs only CL, while a conflict needs tRP + tRCD + CL. Always preferring hits can starve other requests, so schedulers add age limits, QoS priorities, and fairness across masters. Refresh and write/read turnaround also interrupt hit streams.</div></div>
+<div class="qa"><p class="q">Q5. What does "CPU subsystem" mean on a memory ASIC job description?</p><button class="rv">Reveal answer</button><div class="ans">Integrating a processor core with its surrounding logic: wrapper, interrupts, local memory, debug, clock and reset, and bus connections, plus handling CDC, power and timing at the interface. It does not mean designing the core pipeline.</div></div>
+</div>
+
+<div class="key"><h3>Key takeaways</h3><ul>
+<li>Valid/ready: once VALID is up it stays up with stable data until the handshake.</li>
+<li>MESI/CHI: know the states, who supplies data on a snoop, and why E avoids traffic.</li>
+<li>The home node orders and snoops; map your PowerBus work to it honestly.</li>
+<li>DRAM: hit &lt; empty &lt; conflict in latency; scheduling balances hits, fairness and refresh.</li>
+<li>Micron specifics: LPDDR subsystem, CPU subsystem (integration), SoC test controller (JTAG, scan, MBIST).</li></ul></div>
+<div class="nav-buttons"><button class="btn" onclick="goTo(4)">&larr; Previous</button><button class="btn" onclick="goTo(6)">Next &rarr;</button></div>
+</section>
+<section id="chapter-6" class="chapter" data-title="6. SoC integration and your stories">
+<h1>Chapter 6: SoC Integration and Your Project Stories</h1>
+<div class="meta">About 30 minutes &middot; Round 1 will spend most of its time here. Write your answers in the notebook below; they are saved in your browser.</div>
+
+<h2>6.1 SoC integration flow</h2>
+<figure class="diagram">
+<svg viewBox="0 0 680 250" role="img" aria-label="SoC block diagram">
+<rect class="boxo" x="20" y="20" width="170" height="60" rx="6"/><text x="105" y="48" text-anchor="middle">CPU subsystem</text><text x="105" y="66" text-anchor="middle" style="font-size:11px">core + wrapper, IRQ, TCM</text>
+<rect class="box" x="255" y="20" width="170" height="130" rx="6"/><text x="340" y="75" text-anchor="middle">Interconnect</text><text x="340" y="93" text-anchor="middle" style="font-size:11px">AXI / CHI, address map, QoS</text>
+<rect class="boxg" x="490" y="20" width="170" height="60" rx="6"/><text x="575" y="48" text-anchor="middle">LPDDR subsystem</text><text x="575" y="66" text-anchor="middle" style="font-size:11px">controller + PHY</text>
+<rect class="box" x="20" y="90" width="170" height="60" rx="6"/><text x="105" y="118" text-anchor="middle">Accelerators / IO</text>
+<rect class="box" x="490" y="90" width="170" height="60" rx="6"/><text x="575" y="118" text-anchor="middle">Peripherals (APB)</text>
+<rect class="boxg" x="20" y="180" width="200" height="50" rx="6"/><text x="120" y="210" text-anchor="middle">Clock / reset / power mgr</text>
+<rect class="boxo" x="240" y="180" width="200" height="50" rx="6"/><text x="340" y="210" text-anchor="middle">DFT / SoC test controller</text>
+<rect class="boxg" x="460" y="180" width="200" height="50" rx="6"/><text x="560" y="210" text-anchor="middle">Debug / trace</text>
+<g stroke="#0066cc" stroke-width="2"><line x1="190" y1="50" x2="255" y2="50"/><line x1="190" y1="120" x2="255" y2="120"/><line x1="425" y1="50" x2="490" y2="50"/><line x1="425" y1="120" x2="490" y2="120"/></g>
+</svg><figcaption>A typical SoC top level. You integrate blocks, connect clock, reset, power and test, and prove the result.</figcaption></figure>
+
+<ol>
+<li><b>Spec and block list:</b> IP versions, memory map, interrupts, clock and reset architecture, power domains, pad and I/O plan.</li>
+<li><b>Top-level assembly:</b> connectivity (hand-written, scripted or IP-XACT generated); register maps (you used RDL); address decode.</li>
+<li><b>Boundary quality:</b> width and endianness, protocol bridges, CDC at every boundary, reset sequencing, power isolation.</li>
+<li><b>Checks:</b> lint, CDC and RDC, connectivity checking (formal), synthesis and STA, power analysis, UPF verification.</li>
+<li><b>DFT hookup:</b> scan chains, MBIST, test modes, JTAG.</li>
+<li><b>Handoff and ECOs:</b> floorplan feedback to PD, timing fixes, late spec changes, regression of every ECO.</li>
+<li><b>Post-silicon:</b> bring-up scripts, debug visibility, failure triage.</li>
+</ol>
+<p><b>Typical integration bugs:</b> mis-wired or unconnected ports, address map overlap, interrupt polarity or level/edge mismatch, a missing CDC, reset released in the wrong order, X-propagation at power-up, and test-mode clocks interfering with functional clocks.</p>
+
+<h2>6.2 Story bank from your resume</h2>
+<p>Use STAR: <b>Situation, Task, Action, Result</b>. Keep each story to about three minutes. Add real numbers; where you have none, describe the effect in words (for example, "the bug class was caught earlier"). Do not invent figures.</p>
+
+<table class="t">
+<tr><th>Story</th><th>What to be ready to explain</th></tr>
+<tr><td><b>1. IBM Power12 PAU coherency command queue</b></td><td>The 512-FSM machine pipe: why that many machines (outstanding operations), how snooping works, how the CAM tracks line ownership and address conflicts, handling of snoop collisions, server-client coherency, memory inception and page migration at a high level. Where PAU sits relative to the Nest fabric. One bring-up or late bug you debugged.</td></tr>
+<tr><td><b>2. IBM coverage and performance closure</b></td><td>The framework you proposed, functional coverage, PVP and PMU closure, how you worked with designers, and what the AI-assisted automation did.</td></tr>
+<tr><td><b>3. Cadence address remap and striping (CMN600)</b></td><td>Why striping matters (parallelism across channels and banks), how mapping was configured, timing optimisation across configurations, productisation.</td></tr>
+<tr><td><b>4. Cadence AXI/Denali port re-architecture and RSECC</b></td><td>Why the legacy design was replaced, what you changed, regression and quality validation.</td></tr>
+<tr><td><b>5. Cadence CDC random-stage model</b></td><td>What problem it solved, how it worked, a bug it found, who you mentored.</td></tr>
+<tr><td><b>6. Intel DDR PHY (Gen6.5, Gen6.9)</b></td><td>VCC DLL and DIMM Vref digital control, DFI 5.0, IP release to SoC and backend, Coverage Taskforce, Bennu/Pluto automation.</td></tr>
+<tr><td><b>7. AI-enabled engineering</b></td><td>The specific workflow (BOB-AI in debug; Claude MCP server and skills), what task, what changed, and how you check AI output before trusting it. The posting stresses governance, so mention review, no confidential data leaving approved tools, and verification of suggestions.</td></tr>
+</table>
+
+<div class="widget" id="w-star">
+<h3>Your STAR notebook (saved in this browser)</h3>
+<div class="row"><label>Story<select id="st-sel"></select></label></div>
+<label style="font-size:13px">Situation and task</label><textarea id="st-s" placeholder="What was the problem, and what were you responsible for?"></textarea>
+<label style="font-size:13px">Action (what YOU did, with the technical decision and the reason)</label><textarea id="st-a"></textarea>
+<label style="font-size:13px">Result (numbers if you have them: bugs, cycles, area, schedule, reuse)</label><textarea id="st-r"></textarea>
+<div class="row"><button class="btn g" id="st-save">Save</button><span id="st-msg" style="font-size:13px;color:#555"></span></div></div>
+
+<h2>6.3 Gap questions: honest framing</h2>
+<div class="qa"><p class="q">"Have you owned a full SoC end to end?"</p><button class="rv">Show a suggested answer</button><div class="ans">Be accurate: "I have owned IP and block-level design end to end, including release to SoC teams at Intel and productisation at Cadence. At IBM I support the PAU at both Nest and chip level, including lab bring-up. I have not been the single owner of a whole SoC top level, but I have done each part of the flow: RTL, lint and CDC, synthesis and timing, coverage, integration support and silicon debug. This role would extend that scope, and I am ready for it." Then give one concrete integration example.</div></div>
+<div class="qa"><p class="q">"You have had about two years at each recent company. Why?"</p><button class="rv">Show a suggested answer</button><div class="ans">Give a plain, positive reason tied to growth: for example, moving from DDR front-end work to coherency and SoC-level design to broaden your scope. Do not criticise past employers. End with why this role is the longer-term fit.</div></div>
+<div class="qa"><p class="q">"Why Micron, and why memory?"</p><button class="rv">Show a suggested answer</button><div class="ans">Link your DDR controller and PHY experience (Cadence, Intel) with Micron's position at the memory and storage layer, the role's SoC scope, and the opportunity to work on subsystems that sit between compute and memory, which you now understand from the coherency side as well.</div></div>
+<div class="qa"><p class="q">"How do you use AI in your work, and how do you control the risks?"</p><button class="rv">Show a suggested answer</button><div class="ans">Name one or two real workflows (hardware debug with BOB-AI; Claude-based MCP and skill setup for design tasks). Say what the AI does (draft, analyse, summarise logs), and what you do (verify against waveforms, simulation and lint; keep design data in approved tools; review before commit). Mention that you follow company AI governance. This aligns directly with the posting.</div></div>
+
+<div class="key"><h3>Key takeaways</h3><ul>
+<li>Prepare seven stories with decisions, reasons and one real bug each.</li>
+<li>Be exact about scope: PAU is fabric-attached I/O coherency; CHI and CMN-700 are study and training.</li>
+<li>For integration questions, walk the flow: assembly, boundary quality, checks, DFT, ECOs, bring-up.</li>
+<li>Gap questions: state the truth, show adjacent evidence, show readiness.</li></ul></div>
+<div class="nav-buttons"><button class="btn" onclick="goTo(5)">&larr; Previous</button><button class="btn" onclick="goTo(7)">Next &rarr;</button></div>
+</section>
+
+<section id="chapter-7" class="chapter" data-title="7. Mock questions and cheat sheet">
+<h1>Chapter 7: Mock Interview, Flashcards and Cheat Sheet</h1>
+<div class="meta">Answer each question aloud first, then reveal the model answer. Filter by topic.</div>
+
+<h2>7.1 Question bank</h2>
+<div class="filters" id="qb-filters"></div>
+<div id="qb-list"></div>
+
+<h2>7.2 Flashcards</h2>
+<p style="font-size:14px">Click a card to flip it. Use the buttons to move on or shuffle.</p>
+<div class="fc" id="fc"><div class="fc-in"><div class="fc-f" id="fc-f"></div><div class="fc-b" id="fc-b"></div></div></div>
+<div class="row"><button class="btn" id="fc-prev">&larr; Previous</button><button class="btn" id="fc-next">Next &rarr;</button><button class="btn o" id="fc-shuf">Shuffle</button><span id="fc-n" style="font-size:13px;color:#555"></span></div>
+
+<h2>7.3 One-page cheat sheet</h2>
+<details class="collapsible" open><summary>Timing and design</summary>
+<ul><li>Setup: <code>Tclk &ge; Tcq + Tlogic + Tsu + skew + uncertainty</code>. Hold: <code>Tcq + Tmin &ge; Thold + skew</code>. Hold is independent of period.</li>
+<li>Latches come from incomplete assignments. Non-blocking in clocked blocks.</li>
+<li>Reset: async assert, sync deassert.</li></ul></details>
+<details class="collapsible"><summary>CDC</summary>
+<ul><li>Level: 2FF. Pulse: toggle sync. Bus: handshake or async FIFO. Pointers: Gray code.</li>
+<li>Failure patterns: missing sync, glitch before sync, reconvergence, multi-bit through separate syncs, RDC.</li></ul></details>
+<details class="collapsible"><summary>STA and power</summary>
+<ul><li>Multicycle: setup N, hold N&minus;1. Use set_clock_groups for async clocks; bound Gray buses with max-delay.</li>
+<li>P = &alpha;CV&sup2;f. Clock gating: dynamic. Power gating and high-Vt: leakage.</li>
+<li>Power-down: save, isolate, power off. Power-up: power on, reset, restore, release isolation.</li></ul></details>
+<details class="collapsible"><summary>Protocols</summary>
+<ul><li>AXI: VALID must not wait for READY; stays up with stable payload until the handshake. 4 KB boundary. Same ID in order.</li>
+<li>APB: SETUP then ACCESS, PREADY, minimum 2 cycles.</li>
+<li>MESI: E to M is silent. CHI: RN-F, RN-I, HN-F, SN-F; REQ, RSP, SNP, DAT; states I, UC, UD, SC, SD.</li>
+<li>DRAM: hit = CL; empty = tRCD + CL; conflict = tRP + tRCD + CL.</li></ul></details>
+<details class="collapsible"><summary>Interview day checklist</summary>
+<ul><li>Resume printed or open, with the PAU and DDR stories ready.</li>
+<li>Paper and pen for whiteboard-style answers. Quiet room and charged laptop if remote.</li>
+<li>Questions to ask: team and block ownership, the SoC schedule, how AI tools are used, first-year expectations, how DV/DFT/PD interact with design.</li>
+<li>Be honest about scope; ask for clarification before answering; think aloud.</li></ul></details>
+
+<div class="callout blue"><b>After the interview:</b> note the questions you found hard and send a short thank-you message. If you want, bring them back here and we can practise them.</div>
+<div class="nav-buttons"><button class="btn" onclick="goTo(6)">&larr; Previous</button><span></span></div>
+</section>
+</main>
+</div>
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function store(k,v){try{if(v===undefined){return localStorage.getItem(k)}localStorage.setItem(k,v)}catch(e){return null}}
+function sstore(k,v){try{if(v===undefined){return sessionStorage.getItem(k)}sessionStorage.setItem(k,v)}catch(e){return null}}
+
+/* ---------- Navigation ---------- */
+var chapters=$$('.chapter'),cur=0,visited={};
+try{visited=JSON.parse(sstore('visited')||'{}')||{}}catch(e){visited={}}
+var toc=$('#toc');
+chapters.forEach(function(ch,i){
+  var li=document.createElement('li'),a=document.createElement('a');
+  a.textContent=ch.getAttribute('data-title');a.href='#chapter-'+i;a.setAttribute('data-i',i);
+  a.addEventListener('click',function(e){e.preventDefault();goTo(i);$('#sidebar').classList.remove('open')});
+  li.appendChild(a);toc.appendChild(li);
+});
+function goTo(i){
+  if(i<0||i>=chapters.length)return;
+  cur=i;visited[i]=1;sstore('visited',JSON.stringify(visited));
+  chapters.forEach(function(c,k){c.classList.toggle('active',k===i)});
+  $$('#toc a').forEach(function(a,k){a.classList.toggle('active',k===i);a.classList.toggle('done',!!visited[k]&&k!==i)});
+  var n=Object.keys(visited).length;
+  $('#progressFill').style.width=Math.round(100*n/chapters.length)+'%';
+  $('#chapterCount').textContent=n+'/'+chapters.length+' chapters visited';
+  try{history.replaceState(null,'','#chapter-'+i)}catch(e){}
+  window.scrollTo(0,0);
+}
+window.goTo=goTo;
+document.addEventListener('keydown',function(e){
+  var t=(e.target&&e.target.tagName)||'';
+  if(/INPUT|TEXTAREA|SELECT/.test(t))return;
+  if(e.key==='ArrowRight')goTo(cur+1);
+  if(e.key==='ArrowLeft')goTo(cur-1);
+});
+$('#hamb').addEventListener('click',function(){$('#sidebar').classList.toggle('open')});
+
+/* ---------- Code blocks ---------- */
+var KW={
+ systemverilog:'module endmodule input output inout logic wire reg parameter localparam int typedef enum always_ff always_comb always_latch assign if else case endcase default begin end posedge negedge function endfunction automatic return unique priority for generate endgenerate genvar bit byte',
+ tcl:'create_clock set_clock_uncertainty set_input_delay set_output_delay set_clock_groups set_max_delay set_multicycle_path create_power_domain create_supply_net set_domain_supply_net set_isolation set_isolation_control set_retention set_retention_control get_ports get_clocks get_cells get_pins'
+};
+function hl(line,lang){
+  var kws={};(KW[lang]||'').split(' ').forEach(function(k){kws[k]=1});
+  var re=lang==='tcl'?/(#[^\n]*)|("(?:[^"\\]|\\.)*")|(\b\d+'[sS]?[bBoOdDhH][0-9a-fA-F_xXzZ]+|\b\d+(?:\.\d+)?\b)|([A-Za-z_][\w$]*)/g
+                     :/(\/\/[^\n]*)|("(?:[^"\\]|\\.)*")|(\b\d+'[sS]?[bBoOdDhH][0-9a-fA-F_xXzZ]+|'[01]|\b\d+(?:\.\d+)?\b)|([A-Za-z_][\w$]*)/g;
+  var out='',last=0,m;
+  while((m=re.exec(line))){
+    out+=esc(line.slice(last,m.index));
+    if(m[1])out+='<span class="c">'+esc(m[1])+'</span>';
+    else if(m[2])out+='<span class="s">'+esc(m[2])+'</span>';
+    else if(m[3])out+='<span class="n">'+esc(m[3])+'</span>';
+    else if(kws[m[4]])out+='<span class="k">'+esc(m[4])+'</span>';
+    else out+=esc(m[4]);
+    last=re.lastIndex;
+  }
+  return out+esc(line.slice(last));
+}
+$$('script.code-src').forEach(function(s){
+  var lang=s.getAttribute('data-lang')||'systemverilog',raw=s.textContent.replace(/^\n/,'').replace(/\s+$/,'');
+  var w=document.createElement('div');w.className='codewrap';
+  var h=document.createElement('div');h.className='codehead';
+  var l=document.createElement('span');l.textContent=lang==='tcl'?'SDC / UPF (Tcl)':'SystemVerilog';
+  var b=document.createElement('button');b.className='copybtn';b.textContent='Copy';b.setAttribute('aria-label','Copy code');
+  b.addEventListener('click',function(){
+    var done=function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1200)};
+    try{navigator.clipboard.writeText(raw).then(done,function(){})}catch(e){}
+  });
+  h.appendChild(l);h.appendChild(b);
+  var pre=document.createElement('pre');pre.className='code';
+  pre.innerHTML=raw.split('\n').map(function(ln,i){return '<span class="ln" data-n="'+(i+1)+'">'+hl(ln,lang)+'</span>'}).join('');
+  w.appendChild(h);w.appendChild(pre);s.parentNode.insertBefore(w,s.nextSibling);
+});
+
+/* ---------- Reveal answers ---------- */
+document.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('.rv');if(!b)return;
+  var a=b.parentNode.querySelector('.ans');if(!a)return;
+  var show=a.classList.toggle('show');
+  b.textContent=show?'Hide answer':(b.getAttribute('data-l')||'Reveal answer');
+  if(!b.getAttribute('data-l'))b.setAttribute('data-l','Reveal answer');
+});
+$$('.rv').forEach(function(b){b.setAttribute('data-l',b.textContent)});
+
+/* ---------- Study plan ---------- */
+$$('#plan input').forEach(function(c){
+  var k='plan_'+c.getAttribute('data-k');c.checked=store(k)==='1';
+  c.addEventListener('change',function(){store(k,c.checked?'1':'0')});
+});
+
+/* ---------- Slack calculator ---------- */
+function num(id){return parseFloat($(id).value)||0}
+$('#sl-go').addEventListener('click',function(){
+  var T=num('#sl-t'),cq=num('#sl-cq'),lx=num('#sl-lmax'),ln=num('#sl-lmin'),su=num('#sl-su'),h=num('#sl-h'),sk=num('#sl-sk');
+  var s=T+sk-(cq+lx+su),hs=cq+ln-(h+sk);
+  var f=function(x){return (x>=0?'+':'')+x.toFixed(3)+' ns'};
+  $('#sl-out').innerHTML='<div class="out'+(s<0?' bad':'')+'">Setup slack: '+f(s)+(s<0?' (VIOLATED: shorten logic, pipeline, or raise the period)':' (met)')+'</div>'+
+   '<div class="out'+(hs<0?' bad':'')+'">Hold slack: '+f(hs)+(hs<0?' (VIOLATED: add delay on the short path; slower clock will not help)':' (met)')+'</div>';
+});
+$('#sl-go').click();
+
+/* ---------- FIFO depth ---------- */
+$('#ff-go').addEventListener('click',function(){
+  var B=num('#ff-b'),w=num('#ff-w'),r=num('#ff-r'),m=num('#ff-m');
+  if(w<=0){$('#ff-out').innerHTML='<div class="out bad">fw must be above 0.</div>';return}
+  var d=r>=w?0:Math.ceil(B*(1-r/w));
+  $('#ff-out').innerHTML='<div class="out">Minimum depth about '+d+' words, plus margin '+m+' = '+(d+m)+' (round up to a power of two for Gray pointers: '+Math.pow(2,Math.ceil(Math.log(Math.max(d+m,1))/Math.log(2)))+').</div>';
+});
+$('#ff-go').click();
+
+/* ---------- Gray code ---------- */
+function gray(v){return v^(v>>1)}
+function bin(v,w){var s=v.toString(2);while(s.length<w)s='0'+s;return s}
+function pop(x){var c=0;while(x){c+=x&1;x>>=1}return c}
+function drawGray(){
+  var w=parseInt($('#gr-w').value,10),n=1<<w,v=((parseInt($('#gr-v').value,10)||0)%n+n)%n;
+  $('#gr-v').value=v;
+  var p=(v-1+n)%n;
+  var rows='<table class="t"><tr><th>Value</th><th>Binary</th><th>Gray</th><th>Bits changed (binary step)</th><th>Bits changed (Gray step)</th></tr>';
+  for(var i=0;i<n;i++){
+    var pr=(i-1+n)%n;
+    rows+='<tr'+(i===v?' style="background:#fff3ee;font-weight:600"':'')+'><td>'+i+'</td><td>'+bin(i,w)+'</td><td>'+bin(gray(i),w)+'</td><td>'+pop(i^pr)+'</td><td>'+pop(gray(i)^gray(pr))+'</td></tr>';
+  }
+  rows+='</table>';
+  $('#gr-out').innerHTML='<div class="out">Step '+p+' to '+v+': binary changes '+pop(v^p)+' bit(s); Gray changes '+pop(gray(v)^gray(p))+' bit(s).</div><details class="collapsible"><summary>Show full table</summary>'+rows+'</details>';
+}
+$('#gr-w').addEventListener('change',drawGray);
+$('#gr-v').addEventListener('input',drawGray);
+$('#gr-next').addEventListener('click',function(){$('#gr-v').value=(parseInt($('#gr-v').value,10)||0)+1;drawGray()});
+$('#gr-prev').addEventListener('click',function(){$('#gr-v').value=(parseInt($('#gr-v').value,10)||0)-1;drawGray()});
+drawGray();
+
+/* ---------- Power ---------- */
+$('#pw-go').addEventListener('click',function(){
+  var a=num('#pw-a'),c=num('#pw-c'),v=num('#pw-v'),f=num('#pw-f'),g=num('#pw-g');
+  var base=a*c*v*v*f*1e-3, gated=base*(1-g/100);
+  $('#pw-out').innerHTML='<div class="out">Dynamic power: '+base.toFixed(1)+' mW. With gating (activity reduced '+g+'%): '+gated.toFixed(1)+' mW, saving '+(base-gated).toFixed(1)+' mW.</div>';
+});
+$('#pw-go').click();
+
+/* ---------- DRAM ---------- */
+$('#dr-go').addEventListener('click',function(){
+  var rp=num('#dr-rp'),rcd=num('#dr-rcd'),cl=num('#dr-cl'),t=$('#dr-t').value,r,d;
+  if(t==='hit'){r=cl;d='CL'}else if(t==='empty'){r=rcd+cl;d='tRCD + CL'}else{r=rp+rcd+cl;d='tRP + tRCD + CL'}
+  $('#dr-out').innerHTML='<div class="out">Latency to first data = '+d+' = '+r+' ns (hit '+cl+' ns, empty '+(rcd+cl)+' ns, conflict '+(rp+rcd+cl)+' ns).</div>';
+});
+$('#dr-go').click();
+
+/* ---------- AXI handshake checker ---------- */
+var NC=8,axiV=[],axiR=[];
+function axiBuild(){
+  var host=$('#axi-sig');host.innerHTML='';
+  ['VALID','READY'].forEach(function(nm,ri){
+    var row=document.createElement('div');row.className='sig';
+    var s=document.createElement('span');s.className='nm';s.textContent=nm;row.appendChild(s);
+    var c=document.createElement('div');c.className='cbx';
+    for(var i=0;i<NC;i++){
+      var l=document.createElement('label'),x=document.createElement('input');x.type='checkbox';
+      x.checked=!!(ri===0?axiV[i]:axiR[i]);
+      (function(i,ri,x){x.addEventListener('change',function(){(ri===0?axiV:axiR)[i]=x.checked?1:0;axiEval()})})(i,ri,x);
+      l.appendChild(x);c.appendChild(l);
+    }
+    row.appendChild(c);host.appendChild(row);
+  });
+  var w=document.createElement('div');w.className='sig';w.innerHTML='<span class="nm">Result</span><div class="wave" id="axi-wave" style="flex:1"></div>';host.appendChild(w);
+  axiEval();
+}
+function axiEval(){
+  var wv=$('#axi-wave'),html='',viol=0,xf=0;
+  for(var i=0;i<NC;i++){
+    var v=axiV[i]||0,r=axiR[i]||0,cls='cy',txt='&ndash;';
+    var pend=i>0&&axiV[i-1]&&!axiR[i-1];
+    if(pend&&!v){cls+=' viol';txt='DROP';viol++}
+    else if(v&&r){cls+=' xfer';txt='XFER';xf++}
+    else if(v){txt='wait'}
+    html+='<div class="'+cls+'">'+txt+'</div>';
+  }
+  wv.innerHTML=html;
+  $('#axi-out').innerHTML=viol?'<div class="out bad">Violation: VALID was dropped before READY accepted the transfer ('+viol+' time(s)). A source must hold VALID and the payload until the handshake.</div>':'<div class="out">Legal. Transfers completed: '+xf+'.</div>';
+}
+function axiSet(v,r){axiV=v.slice();axiR=r.slice();axiBuild()}
+$('#axi-ok').addEventListener('click',function(){axiSet([0,1,1,1,0,1,0,0],[1,0,0,1,0,1,1,0])});
+$('#axi-bad').addEventListener('click',function(){axiSet([0,1,1,0,0,1,0,0],[0,0,1,0,0,0,1,0])});
+$('#axi-clr').addEventListener('click',function(){axiSet([0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0])});
+axiSet([0,1,1,1,0,1,0,0],[1,0,0,1,0,1,1,0]);
+
+/* ---------- MESI ---------- */
+var NAMES={M:'Modified',E:'Exclusive',S:'Shared',I:'Invalid'},ms='I',ORDER=['M','E','S','I'];
+var EV=[
+ {id:'RdMissX',label:'PrRd miss (no sharers)',cls:'btn'},
+ {id:'RdMissS',label:'PrRd miss (others share)',cls:'btn'},
+ {id:'RdHit',label:'PrRd hit',cls:'btn'},
+ {id:'Wr',label:'PrWr',cls:'btn o'},
+ {id:'SnpRd',label:'Snoop: other core reads',cls:'btn g'},
+ {id:'SnpInv',label:'Snoop: other core writes / invalidates',cls:'btn g'}
+];
+function step(s,e){
+  if(s==='I'){
+    if(e==='RdMissX')return['E','Miss, memory supplies line, no other copy: load Exclusive.'];
+    if(e==='RdMissS')return['S','Miss, other caches hold it: load Shared.'];
+    if(e==='Wr')return['M','Write miss (read-for-ownership): others invalidated, line loaded and modified.'];
+    return['I','Line not present: nothing to do.'];
+  }
+  if(s==='S'){
+    if(e==='RdHit')return['S','Read hit, no bus traffic.'];
+    if(e==='Wr')return['M','Upgrade: invalidate other sharers, then modify.'];
+    if(e==='SnpRd')return['S','Another reader joins: stay Shared.'];
+    if(e==='SnpInv')return['I','Another core wants to write: invalidate.'];
+  }
+  if(s==='E'){
+    if(e==='RdHit')return['E','Read hit.'];
+    if(e==='Wr')return['M','Silent upgrade: no bus transaction needed (the benefit of E).'];
+    if(e==='SnpRd')return['S','Another reader: downgrade to Shared (data clean, memory is current).'];
+    if(e==='SnpInv')return['I','Invalidate (clean, no write-back needed).'];
+  }
+  if(s==='M'){
+    if(e==='RdHit')return['M','Read hit.'];
+    if(e==='Wr')return['M','Write hit, stay Modified.'];
+    if(e==='SnpRd')return['S','Supply the dirty data (and update memory), downgrade to Shared.'];
+    if(e==='SnpInv')return['I','Write back dirty data, then invalidate.'];
+  }
+  return[s,'No change.'];
+}
+function enabled(id){return id==='RdHit'?ms!=='I':(id==='RdMissX'||id==='RdMissS')?ms==='I':true}
+function mesiDraw(){
+  var st=$('#mesi-states');st.innerHTML='';
+  ORDER.forEach(function(k){
+    var d=document.createElement('div');d.className='st'+(k===ms?' cur':'');
+    d.innerHTML='<b>'+k+'</b><small>'+NAMES[k]+'</small>';st.appendChild(d);
+  });
+  $('#mesi-out').textContent='Current state: '+ms+' ('+NAMES[ms]+')';
+  $$('#mesi-btns button').forEach(function(b,i){b.disabled=!enabled(EV[i].id)});
+}
+function mesiDo(id){
+  if(!enabled(id))return;
+  var r=step(ms,id),prev=ms;ms=r[0];
+  var lg=$('#mesi-log'),p=document.createElement('div');
+  p.textContent=prev+' --'+id+'--> '+ms+': '+r[1];lg.insertBefore(p,lg.firstChild);
+  mesiDraw();
+}
+EV.forEach(function(e){
+  var b=document.createElement('button');b.className=e.cls;b.textContent=e.label;
+  b.addEventListener('click',function(){mesiDo(e.id)});$('#mesi-btns').appendChild(b);
+});
+var autoT=null;
+$('#mesi-auto').addEventListener('click',function(){
+  var b=$('#mesi-auto');
+  if(autoT){clearInterval(autoT);autoT=null;b.textContent='Start auto-demo';return}
+  b.textContent='Stop auto-demo';
+  autoT=setInterval(function(){
+    var ok=EV.filter(function(e){return enabled(e.id)});
+    mesiDo(ok[Math.floor(Math.random()*ok.length)].id);
+  },2000);
+});
+$('#mesi-reset').addEventListener('click',function(){ms='I';$('#mesi-log').innerHTML='';mesiDraw()});
+mesiDraw();
+
+/* ---------- STAR notebook ---------- */
+var STORIES=['1. IBM PAU coherency command queue','2. IBM coverage and performance closure','3. Cadence address remap and striping','4. Cadence AXI/Denali re-architecture and RSECC','5. Cadence CDC random-stage model','6. Intel DDR PHY and automation','7. AI-enabled engineering'];
+var sel=$('#st-sel');
+STORIES.forEach(function(s,i){var o=document.createElement('option');o.value=i;o.textContent=s;sel.appendChild(o)});
+function stLoad(){
+  var raw=store('star_'+sel.value),d={};
+  try{d=JSON.parse(raw||'{}')||{}}catch(e){d={}}
+  $('#st-s').value=d.s||'';$('#st-a').value=d.a||'';$('#st-r').value=d.r||'';$('#st-msg').textContent='';
+}
+sel.addEventListener('change',stLoad);
+$('#st-save').addEventListener('click',function(){
+  store('star_'+sel.value,JSON.stringify({s:$('#st-s').value,a:$('#st-a').value,r:$('#st-r').value}));
+  $('#st-msg').textContent='Saved in this browser.';
+});
+stLoad();
+
+/* ---------- Question bank ---------- */
+var QB=[
+ ['Digital','Explain setup and hold violations. Which one can you fix by changing the clock frequency?','Setup: data arrives too late before the capturing edge. Hold: data changes too soon after the edge. Only setup depends on the period, so slowing the clock fixes setup but never hold. Hold is fixed with added delay or skew changes.'],
+ ['Digital','What is metastability and how do you handle it?','A flop output that stays at an in-between level when its setup/hold window is violated. It cannot be removed; you give it time to resolve using a synchroniser (two or more flops), and design so that a late resolution cannot cause a functional failure.'],
+ ['Digital','Blocking vs non-blocking assignments: where and why?','Non-blocking in clocked always_ff so all flops sample old values; blocking in combinational always_comb. Mixing them in the same block risks races and mismatches between simulation and synthesis.'],
+ ['Digital','How do latches get inferred and how do you avoid them?','Any combinational path where a signal is not assigned. Use default assignments and complete if/else or case. Use always_comb so tools warn.'],
+ ['Digital','Why registered outputs in an FSM?','They are glitch-free, give a clean clock-to-output timing budget, and make downstream timing and CDC easier, at the cost of a one-cycle delay.'],
+ ['Coding','Write a round-robin arbiter. What are the corner cases?','Mask plus fixed priority: masked requests first, fall back to unmasked for wrap-around. Corner cases: no requests, single request, last port granted, grant lock for multi-beat packets, reset state.'],
+ ['Coding','How do you size a FIFO between a bursty writer and slower reader?','Depth about B x (1 - fr/fw) for a burst of B words, plus margin for pointer latency and any pipeline stages. Check worst-case back-to-back bursts.'],
+ ['Coding','Why use a skid buffer?','To register back-pressure (ready) and break a long combinational path, while still sustaining one transfer per cycle. The extra slot holds the word that arrives when the output stalls.'],
+ ['CDC','How do you cross a 32-bit bus between two unrelated clocks?','Async FIFO for streams. For occasional transfers, a req/ack handshake where the bus is held stable until the synchronised ack returns. Never through separate synchronisers per bit.'],
+ ['CDC','Why Gray code for async FIFO pointers?','Only one bit changes per increment, so a sample taken mid-change is either the old or new value, never a garbage value.'],
+ ['CDC','How do full and empty get generated in an async FIFO?','Full in the write domain: write Gray pointer compared with the synchronised read pointer (top two bits inverted, rest equal). Empty in the read domain: read pointer equals the synchronised write pointer.'],
+ ['CDC','What is reconvergence?','Related signals synchronised separately and then combined; they may resolve on different cycles, giving a temporary illegal combination. Cross a single encoded signal or use a handshake.'],
+ ['CDC','What is a reset domain crossing issue?','An asynchronous reset from one domain asserting or deasserting asynchronously relative to the clock of logic in another domain, which can corrupt state or cause metastability. Use per-domain reset synchronisers and plan reset ordering.'],
+ ['CDC','How do you handle CDC waivers?','Each waiver has a reason, an owner and a reviewer, and where possible is backed by an assertion or a protocol check. Waivers are reviewed at sign-off, not used simply to clear reports.'],
+ ['STA','What is a multicycle path and how do you constrain it?','A path that legitimately takes N cycles. Set setup to N and hold to N-1. It must be backed by RTL behaviour (for example an enable that guarantees N cycles).'],
+ ['STA','A path fails setup by 100 ps after synthesis. What do you do?','Inspect the path: depth, fan-out, wire loads. Restructure or pipeline in RTL, rebalance logic, duplicate drivers, check for an unintended priority chain. Only then rely on sizing and Vt swaps. Do not add exceptions unless the behaviour supports them.'],
+ ['STA','Difference between false path and set_clock_groups -asynchronous?','A false path exempts a specific path; clock groups remove all timing checks between whole clocks. For a Gray-coded bus, also add a max-delay constraint so bit skew stays bounded.'],
+ ['STA','What are recovery and removal checks?','Timing checks on asynchronous reset deassertion relative to the clock (recovery is like setup, removal like hold).'],
+ ['Power','Clock gating vs power gating?','Clock gating stops toggling (dynamic power). Power gating removes supply (leakage and dynamic) but needs isolation, retention and sequencing.'],
+ ['Power','What is needed to power-gate a block?','Power switches, isolation cells on outputs, retention flops (if state must survive), level shifters if voltages differ, a controller to sequence save, isolate, power off, and the reverse, and UPF to describe it all.'],
+ ['Power','How do you reduce dynamic power in RTL?','Clock gating, enable-based flops, operand isolation, reducing unnecessary toggling and glitches, narrower datapaths, and good data encoding. Verify with activity-based power analysis.'],
+ ['Protocol','State the AXI valid/ready rules.','VALID must not depend on READY; once VALID is high it stays high with stable payload until the handshake. READY can be asserted any time. Transfer happens when both are high at a clock edge.'],
+ ['Protocol','How does AXI ordering work?','Same ID returns in order; different IDs may be reordered. AXI4 has no write interleaving. Bursts cannot cross 4 KB.'],
+ ['Protocol','APB transfer phases?','SETUP (PSEL=1, PENABLE=0), then ACCESS (PENABLE=1) held until PREADY. PSLVERR flags errors. At least two cycles per transfer.'],
+ ['Protocol','Explain MESI and why E exists.','M: dirty and unique; E: clean and unique; S: clean, maybe shared; I: invalid. E lets a core write without a bus transaction because it knows no one else has the line.'],
+ ['Protocol','What does a CHI home node do?','It is the point of coherency: orders requests to the same address, uses a snoop filter or directory to snoop the right agents, gets data from a cache or the memory controller, completes the transaction, and may hold a system cache.'],
+ ['Protocol','How does your PAU experience map to CHI?','PAU keeps I/O devices coherent with the system: conceptually an I/O-coherent requester. PowerBus snooping corresponds to snoop traffic, and my ownership CAM does the conflict and ownership tracking a home node performs. CHI itself I know from structured training and study.'],
+ ['DDR','Row hit, empty and conflict latencies?','Hit: CL. Empty: tRCD + CL. Conflict: tRP + tRCD + CL. Schedulers favour hits but must enforce fairness, QoS and refresh.'],
+ ['DDR','What does address mapping and striping do?','Spreads consecutive accesses across channels, bank groups and banks to increase parallelism and reduce conflicts. Poor mapping causes bank hot-spots.'],
+ ['DDR','LPDDR vs DDR?','LPDDR: lower voltage, narrower channels, multiplexed command/address, more power states and fast frequency switching; LPDDR5 adds WCK. DDR: wider channels, DIMMs, higher capacity.'],
+ ['DDR','What is DFI and what does training do?','DFI is the standard interface between controller and PHY. Training (write leveling, read gate, DQ/DQS eye, CA training) aligns timing so data is captured reliably at speed.'],
+ ['SoC','Walk me through your SoC integration flow.','Spec and IP list, top-level assembly and register map, boundary quality (width, CDC, reset, power), checks (lint, CDC/RDC, connectivity, synthesis/STA, power, UPF), DFT hookup, handoff and ECOs, bring-up support.'],
+ ['SoC','What integration bugs do you usually see?','Mis-wired or unconnected ports, address overlaps, interrupt polarity, missing CDC, reset order, X at power-up, test-mode clock interference. Connectivity formal checks and top-level lint catch many.'],
+ ['SoC','What is a SoC test controller?','Logic managing test and debug access: JTAG TAP, test-mode control, scan and MBIST access, test wrappers. It must keep test clocks and resets from affecting functional paths.'],
+ ['Behavioural','Describe the hardest bug you debugged.','Use one real story: symptom, how you narrowed it (waveforms, coverage, assertions), root cause, fix, and what process change prevented a repeat. Keep to three minutes.'],
+ ['Behavioural','How do you use AI tools in design, safely?','Describe real workflows (debug assistance, scripting, documentation), always verifying output against simulation, lint and waveforms, using approved tools, protecting design data, and following governance.'],
+ ['Behavioural','How have you mentored others?','Training sessions on controller features at Cadence, mentoring juniors on the CDC model implementation and debug, coordinating training with experts. Add one result.']
+];
+var tags=['All'];QB.forEach(function(q){if(tags.indexOf(q[0])<0)tags.push(q[0])});
+var flt='All',fh=$('#qb-filters'),ql=$('#qb-list');
+function qbDraw(){
+  $$('#qb-filters button').forEach(function(b){b.classList.toggle('on',b.textContent===flt)});
+  ql.innerHTML='';
+  QB.forEach(function(q){
+    if(flt!=='All'&&q[0]!==flt)return;
+    var d=document.createElement('div');d.className='qa';
+    d.innerHTML='<p class="q"><span class="tag">'+esc(q[0])+'</span>'+esc(q[1])+'</p><button class="rv" data-l="Show model answer">Show model answer</button><div class="ans">'+esc(q[2])+'</div>';
+    ql.appendChild(d);
+  });
+}
+tags.forEach(function(t){var b=document.createElement('button');b.textContent=t;b.addEventListener('click',function(){flt=t;qbDraw()});fh.appendChild(b)});
+qbDraw();
+
+/* ---------- Flashcards ---------- */
+var deck=QB.slice(),fi=0;
+function fcDraw(){
+  var c=deck[fi];$('#fc').classList.remove('flip');
+  $('#fc-f').textContent=c[1];$('#fc-b').textContent=c[2];
+  $('#fc-n').textContent='Card '+(fi+1)+' of '+deck.length+' ('+c[0]+')';
+}
+$('#fc').addEventListener('click',function(){$('#fc').classList.toggle('flip')});
+$('#fc-next').addEventListener('click',function(){fi=(fi+1)%deck.length;fcDraw()});
+$('#fc-prev').addEventListener('click',function(){fi=(fi-1+deck.length)%deck.length;fcDraw()});
+$('#fc-shuf').addEventListener('click',function(){
+  for(var i=deck.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=deck[i];deck[i]=deck[j];deck[j]=t}
+  fi=0;fcDraw();
+});
+fcDraw();
+
+/* ---------- Start ---------- */
+var h=parseInt((location.hash||'').replace('#chapter-',''),10);
+goTo(isNaN(h)?0:Math.min(Math.max(h,0),chapters.length-1));
+})();
+</script>
+</body>
+</html>
